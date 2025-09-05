@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Guia ENEM: Redação • Conectivos • Conclusão</title>
+  <meta name="description" content="Site de estudo para ENEM: teoria rápida, conectivos, conclusão e quiz com nota.">
+  <!-- TailwindCSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --brand: #5b8def; }
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+    .brand { color: var(--brand); }
+    .brand-bg { background: var(--brand); }
+    .card { @apply bg-white rounded-2xl shadow-lg p-6; }
+    .btn { @apply px-5 py-3 rounded-xl font-semibold transition; }
+    .btn-primary { background: var(--brand); color: #fff; }
+    .btn-primary:hover { filter: brightness(0.95); }
+    .btn-muted { @apply bg-gray-100 text-gray-800; }
+    .badge { @apply inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full bg-gray-100; }
+    .option { @apply w-full text-left border rounded-xl p-4 hover:bg-gray-50 transition; }
+    .option.correct { @apply border-green-500 bg-green-50; }
+    .option.wrong { @apply border-red-500 bg-red-50; }
+    .disabled { pointer-events: none; opacity: .75; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
+  <header class="max-w-5xl mx-auto px-4 pt-8 pb-4">
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl sm:text-3xl font-extrabold"><span class="brand">ENEM</span> • Redação na Prática</h1>
+      <span class="badge">Versão 1.0 • Estudo</span>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 pb-24">
+
+    <!-- Intro / Registro -->
+    <section id="intro" class="card">
+      <div class="flex flex-col-reverse lg:flex-row gap-8">
+        <div class="flex-1">
+          <h2 class="text-xl font-bold mb-2">Teoria rápida</h2>
+          <div class="grid md:grid-cols-3 gap-4">
+            <article class="bg-slate-50 rounded-xl p-4">
+              <h3 class="font-semibold mb-2">Estrutura da Redação</h3>
+              <ul class="list-disc list-inside text-sm leading-relaxed text-slate-700">
+                <li><strong>Introdução:</strong> apresente o tema e a tese.</li>
+                <li><strong>Desenvolvimento:</strong> 2 parágrafos com argumentos, repertório e coesão.</li>
+                <li><strong>Conclusão:</strong> retome a tese e proponha <em>intervenção</em> (agente, ação, meio, finalidade e detalhamento).</li>
+              </ul>
+            </article>
+            <article class="bg-slate-50 rounded-xl p-4">
+              <h3 class="font-semibold mb-2">Conectivos úteis</h3>
+              <p class="text-sm text-slate-700 leading-relaxed">
+                <strong>Adição:</strong> além disso; outrossim; bem como. <br>
+                <strong>Contraste:</strong> contudo; porém; no entanto; apesar disso. <br>
+                <strong>Causa:</strong> porque; visto que; uma vez que. <br>
+                <strong>Consequência:</strong> portanto; assim; de modo que. <br>
+                <strong>Exemplo:</strong> por exemplo; como se vê; tal como. <br>
+                <strong>Conclusão:</strong> desse modo; logo; portanto.
+              </p>
+            </article>
+            <article class="bg-slate-50 rounded-xl p-4">
+              <h3 class="font-semibold mb-2">Conclusão modelo</h3>
+              <p class="text-sm text-slate-700 leading-relaxed">
+                Diante do exposto, é imperativo que o <strong>Governo Federal</strong>, em parceria com <strong>escolas</strong> e <strong>ONGs</strong>,
+                <strong>implemente</strong> programas de educação midiática <strong>por meio</strong> de cursos e campanhas, a fim de <strong>promover o uso crítico</strong> das tecnologias.
+                <em>Assim</em>, mitiga-se o problema e fortalece-se a cidadania.
+              </p>
+            </article>
+          </div>
+          <div class="mt-6 p-4 rounded-xl bg-blue-50 border border-blue-100 text-blue-900 text-sm">
+            <p><strong>Dica:</strong> use repertório legítimo, linguagem formal e mantenha a autoria. Evite 1ª pessoa e gírias.</p>
+          </div>
+        </div>
+        <div class="w-full lg:max-w-sm">
+          <div class="bg-white rounded-2xl shadow-inner p-6 border">
+            <h2 class="text-lg font-bold mb-4">Entre para começar</h2>
+            <label for="studentName" class="block text-sm font-medium text-slate-700 mb-1">Seu nome</label>
+            <input id="studentName" type="text" placeholder="Ex.: Ana Silva" class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-300" />
+            <p id="nameWarn" class="text-sm text-red-600 mt-2 hidden">Informe um nome para continuar.</p>
+            <button id="startBtn" class="btn btn-primary w-full mt-4">Começar o Quiz</button>
+            <p class="text-xs text-slate-500 mt-3">Obs.: os dados ficam apenas no seu navegador.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quiz -->
+    <section id="quiz" class="card hidden">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <span class="badge">Aluno: <span id="displayName" class="font-bold"></span></span>
+          <span class="badge">Questão <span id="qIndex">1</span>/<span id="qTotal">10</span></span>
+        </div>
+        <div class="w-40 bg-slate-200 rounded-full h-2 overflow-hidden">
+          <div id="progressBar" class="brand-bg h-full w-0"></div>
+        </div>
+      </div>
+
+      <div id="qCard" class="bg-slate-50 border rounded-2xl p-6">
+        <h2 id="qTitle" class="text-lg font-bold mb-4">Pergunta…</h2>
+        <div id="qOptions" class="grid gap-3"></div>
+        <p id="qFeedback" class="mt-4 text-sm hidden"></p>
+        <div class="mt-6 flex items-center justify-end">
+          <button id="nextBtn" class="btn btn-primary hidden">Próxima</button>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-500 mt-3">Regra: você <strong>não pode avançar</strong> sem responder e <strong>não pode voltar</strong> após responder.</p>
+    </section>
+
+    <!-- Resultado -->
+    <section id="result" class="card hidden">
+      <h2 class="text-2xl font-extrabold mb-2">Resultado</h2>
+      <p class="text-slate-700 mb-4">Parabéns, <span id="studentNameResult" class="font-semibold"></span>! Veja sua pontuação e sugestões para evoluir.</p>
+      <div class="grid md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-2xl border p-5">
+          <p class="text-sm text-slate-500">Acertos</p>
+          <p class="text-3xl font-extrabold" id="scoreHits">0</p>
+        </div>
+        <div class="bg-white rounded-2xl border p-5">
+          <p class="text-sm text-slate-500">Aproveitamento</p>
+          <p class="text-3xl font-extrabold" id="scorePct">0%</p>
+        </div>
+        <div class="bg-white rounded-2xl border p-5">
+          <p class="text-sm text-slate-500">Nota ENEM simulada</p>
+          <p class="text-3xl font-extrabold" id="scoreEnem">0</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 border rounded-2xl p-6">
+        <h3 class="font-bold mb-2">Recomendações</h3>
+        <ul class="list-disc list-inside text-slate-700 text-sm leading-relaxed">
+          <li>Revise os <strong>conectivos</strong> menos usados: "outrossim", "destarte", "por conseguinte".</li>
+          <li>Na <strong>conclusão</strong>, garanta os 5 elementos: agente, ação, meio/modo, finalidade e detalhamento.</li>
+          <li>Mantenha <strong>coesão</strong> entre parágrafos: retome a tese e evite contradições.</li>
+        </ul>
+        <div class="mt-4 p-4 bg-white border rounded-xl">
+          <p class="text-sm text-slate-700"><strong>Modelo de conclusão para treinar, <span id="nameInTemplate"></span>:</strong></p>
+          <p class="text-sm text-slate-700 mt-2">
+            Diante do exposto, o <strong>Ministério da Educação</strong>, em parceria com <strong>redes de ensino</strong> e <strong>mídias públicas</strong>, deve
+            <strong>promover a educação midiática</strong> por <strong>meio</strong> de oficinas e campanhas nacionais, a fim de <strong>qualificar o uso crítico</strong> das tecnologias e
+            <strong>reduzir a desinformação</strong>. Para tanto, é necessário <strong>financiamento contínuo</strong>, <strong>formação docente</strong> e <strong>avaliação periódica</strong> dos resultados.
+            Assim, avança-se rumo a uma sociedade mais informada e democrática.
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-6 flex gap-3">
+        <button id="restartBtn" class="btn btn-muted">Reiniciar</button>
+        <button id="shareBtn" class="btn btn-primary">Compartilhar Resultado</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="max-w-5xl mx-auto px-4 pb-10 text-center text-xs text-slate-500">
+    <p>Feito para estudo. Hospede no GitHub Pages (index.html). © 2025</p>
+  </footer>
+
+  <script>
+    // ====== DATA ======
+    const QUESTIONS = [
+      {
+        q: "Qual é a função principal da INTRODUÇÃO na redação do ENEM?",
+        options: [
+          "Apresentar o tema e a tese.",
+          "Citar dados e exemplos detalhados.",
+          "Apontar agentes e ações da intervenção.",
+          "Fazer a conclusão com conectivos."],
+        correct: 0,
+        why: "Introdução situa o leitor e apresenta a tese que será defendida."
+      },
+      {
+        q: "Qual sequência representa uma estrutura adequada de PARÁGRAFO do desenvolvimento?",
+        options: [
+          "Tese → Conclusão → Exemplo",
+          "Tópico frasal → Argumento/explicação → Exemplo/repertório",
+          "Exemplo → Citação → Tese",
+          "Ação → Agente → Finalidade"],
+        correct: 1,
+        why: "O parágrafo se organiza com uma ideia central (tópico frasal), desenvolvimento e exemplificação."
+      },
+      {
+        q: "Assinale o conectivo de CONTRASTE:",
+        options: ["além disso", "no entanto", "portanto", "assim"],
+        correct: 1,
+        why: "'No entanto' marca oposição/contraste."
+      },
+      {
+        q: "Na proposta de intervenção exigida pelo ENEM, quais elementos devem aparecer?",
+        options: [
+          "Agente, ação, meio/modo, finalidade e detalhamento.",
+          "Introdução, tese e conclusão.",
+          "Autor, obra e contexto histórico.",
+          "Tema, título e bibliografia."],
+        correct: 0,
+        why: "Os 5 elementos garantem completude e viabilidade da intervenção."
+      },
+      {
+        q: "Escolha a opção com conectivos de ADIÇÃO:",
+        options: [
+          "contudo; porém",
+          "por exemplo; como",
+          "além disso; outrossim",
+          "portanto; logo"],
+        correct: 2,
+        why: "'Além disso' e 'outrossim' somam ideias."
+      },
+      {
+        q: "O que NÃO é recomendado na redação do ENEM?",
+        options: [
+          "Linguagem formal e objetiva.",
+          "Uso de repertório legitimado.",
+          "Proposta de intervenção com agente definido.",
+          "Gírias e 1ª pessoa do singular (eu)."],
+        correct: 3,
+        why: "Evite coloquialidade e marcas fortes de subjetividade."
+      },
+      {
+        q: "Conectivo que indica CONSEQUÊNCIA:",
+        options: ["portanto", "entretanto", "todavia", "apesar disso"],
+        correct: 0,
+        why: "'Portanto' introduz uma conclusão/resultado."
+      },
+      {
+        q: "Qual alternativa apresenta um TÓPICO FRASAL válido?",
+        options: [
+          "Logo, o governo deve agir imediatamente.",
+          "Nesse sentido, por exemplo, a internet...",
+          "A desinformação nas redes sociais agrava a polarização política.",
+          "Como citado, além disso, portanto..."],
+        correct: 2,
+        why: "É uma ideia central clara que será desenvolvida no parágrafo."
+      },
+      {
+        q: "Na conclusão, é adequado iniciar com:",
+        options: ["Por exemplo,", "Desse modo,", "Contudo,", "Ademais,"] ,
+        correct: 1,
+        why: "Conectivos conclusivos como 'Desse modo' ajudam a fechar o texto."
+      },
+      {
+        q: "Marque a opção que traz uma PROPOSTA viável de intervenção:",
+        options: [
+          "As pessoas deveriam ser proibidas de usar internet.",
+          "O MEC deve promover oficinas de educação midiática nas escolas públicas, por meio de formação docente e material didático.",
+          "Deve-se resolver o problema o quanto antes.",
+          "As redes sociais precisam acabar."],
+        correct: 1,
+        why: "Define agente (MEC), ação (oficinas), meio (formação/material) e é plausível."
+      }
+    ];
+
+    // ====== STATE ======
+    let current = 0;
+    let hits = 0;
+    let locked = false; // trava após responder
+    let student = '';
+
+    // ====== ELEMENTS ======
+    const intro = document.getElementById('intro');
+    const quiz = document.getElementById('quiz');
+    const result = document.getElementById('result');
+    const studentName = document.getElementById('studentName');
+    const nameWarn = document.getElementById('nameWarn');
+    const startBtn = document.getElementById('startBtn');
+    const displayName = document.getElementById('displayName');
+    const qIndex = document.getElementById('qIndex');
+    const qTotal = document.getElementById('qTotal');
+    const qTitle = document.getElementById('qTitle');
+    const qOptions = document.getElementById('qOptions');
+    const qFeedback = document.getElementById('qFeedback');
+    const nextBtn = document.getElementById('nextBtn');
+    const progressBar = document.getElementById('progressBar');
+
+    const studentNameResult = document.getElementById('studentNameResult');
+    const nameInTemplate = document.getElementById('nameInTemplate');
+    const scoreHits = document.getElementById('scoreHits');
+    const scorePct = document.getElementById('scorePct');
+    const scoreEnem = document.getElementById('scoreEnem');
+    const restartBtn = document.getElementById('restartBtn');
+    const shareBtn = document.getElementById('shareBtn');
+
+    qTotal.textContent = String(QUESTIONS.length);
+
+    // ====== HELPERS ======
+    function renderQuestion() {
+      const data = QUESTIONS[current];
+      qIndex.textContent = String(current + 1);
+      qTitle.textContent = data.q;
+      qOptions.innerHTML = '';
+      qFeedback.classList.add('hidden');
+      nextBtn.classList.add('hidden');
+      locked = false;
+
+      data.options.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'option border-slate-200';
+        btn.innerHTML = `<span class="font-semibold mr-2">${String.fromCharCode(65 + i)}.</span> ${opt}`;
+        btn.addEventListener('click', () => handleAnswer(i, btn));
+        qOptions.appendChild(btn);
+      });
+
+      const pct = (current / QUESTIONS.length) * 100;
+      progressBar.style.width = pct + '%';
+    }
+
+    function handleAnswer(index, btnEl) {
+      if (locked) return; // sem voltar
+      locked = true; // trava após responder
+
+      const data = QUESTIONS[current];
+      const correct = data.correct === index;
+      if (correct) hits++;
+
+      // pinta opções
+      [...qOptions.children].forEach((el, i) => {
+        el.classList.add('disabled');
+        if (i === data.correct) el.classList.add('correct');
+        if (i === index && !correct) el.classList.add('wrong');
+      });
+
+      qFeedback.textContent = (correct ? '✅ Resposta correta. ' : '❌ Resposta incorreta. ') + (data.why || '');
+      qFeedback.classList.remove('hidden');
+      nextBtn.classList.remove('hidden');
+    }
+
+    function finish() {
+      quiz.classList.add('hidden');
+      result.classList.remove('hidden');
+
+      const pct = Math.round((hits / QUESTIONS.length) * 100);
+      const enem = Math.round((hits / QUESTIONS.length) * 1000);
+
+      studentNameResult.textContent = student;
+      nameInTemplate.textContent = student.split(' ')[0] || student;
+      scoreHits.textContent = `${hits} / ${QUESTIONS.length}`;
+      scorePct.textContent = pct + '%';
+      scoreEnem.textContent = enem;
+    }
+
+    // ====== EVENTS ======
+    startBtn.addEventListener('click', () => {
+      const name = studentName.value.trim();
+      if (!name) {
+        nameWarn.classList.remove('hidden');
+        return;
+      }
+      nameWarn.classList.add('hidden');
+      student = name;
+      localStorage.setItem('enem_student_name', student);
+      displayName.textContent = student;
+      intro.classList.add('hidden');
+      quiz.classList.remove('hidden');
+      current = 0; hits = 0; renderQuestion();
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (!locked) return; // não avança sem responder
+      current++;
+      if (current >= QUESTIONS.length) return finish();
+      renderQuestion();
+    });
+
+    restartBtn.addEventListener('click', () => {
+      // reinicia tudo
+      result.classList.add('hidden');
+      intro.classList.remove('hidden');
+      studentName.focus();
+    });
+
+    shareBtn.addEventListener('click', async () => {
+      const text = `Acabei o Quiz de Redação ENEM! Nota simulada: ${scoreEnem.textContent} — ${scoreHits.textContent} acertos. #ENEM`;
+      if (navigator.share) {
+        try { await navigator.share({ title: 'Meu resultado ENEM (simulado)', text, url: location.href }); } catch {}
+      } else {
+        navigator.clipboard.writeText(text);
+        alert('Resultado copiado para a área de transferência!');
+      }
+    });
+
+    // Restaura nome, se existir
+    window.addEventListener('load', () => {
+      const saved = localStorage.getItem('enem_student_name');
+      if (saved) studentName.value = saved;
+    });
+  </script>
+</body>
+</html>
