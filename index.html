@@ -3,25 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Avaliador de Redação do ENEM</title>
+  <title>Avaliador de Redação ENEM com IA</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
-  <script type="module">
-    import { pipeline } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.6.0";
-
-    // Carregar modelo leve de análise de texto
-    window.loadModel = async () => {
-      window.sentimentModel = await pipeline("text-classification", "Xenova/distilbert-base-uncased-finetuned-sst-2-english");
-    };
-    loadModel();
-  </script>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col items-center p-6">
   <header class="mb-6 text-center">
     <h1 class="text-3xl font-bold text-gray-800">Avaliador de Redação do ENEM</h1>
-    <p class="text-gray-600">Envie sua redação e receba uma avaliação inteligente!</p>
+    <p class="text-gray-600">Envie sua redação manuscrita e receba uma avaliação com inteligência artificial!</p>
   </header>
 
+  <!-- Upload e Câmera -->
   <div class="flex gap-4 mb-8">
     <label for="file-upload" class="bg-blue-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-700 transition">
       Upload de Imagem
@@ -32,35 +23,51 @@
     </button>
   </div>
 
+  <!-- Preview -->
   <div id="preview-container" class="hidden mb-6">
     <p class="text-gray-700 font-medium mb-2">Pré-visualização:</p>
     <img id="preview-image" class="w-80 rounded-lg shadow-md border" />
   </div>
 
-  <div id="loading" class="hidden text-blue-700 font-semibold">Processando imagem e avaliando...</div>
-
+  <!-- Resultados -->
   <div id="results" class="hidden w-full max-w-4xl space-y-4">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="p-4 bg-white rounded-2xl shadow-md"><h3 class="font-bold">Competência 1</h3><p id="c1">-</p></div>
-      <div class="p-4 bg-white rounded-2xl shadow-md"><h3 class="font-bold">Competência 2</h3><p id="c2">-</p></div>
-      <div class="p-4 bg-white rounded-2xl shadow-md"><h3 class="font-bold">Competência 3</h3><p id="c3">-</p></div>
-      <div class="p-4 bg-white rounded-2xl shadow-md"><h3 class="font-bold">Competência 4</h3><p id="c4">-</p></div>
-      <div class="p-4 bg-white rounded-2xl shadow-md"><h3 class="font-bold">Competência 5</h3><p id="c5">-</p></div>
+      <div class="p-4 bg-white rounded-2xl shadow-md">
+        <h3 class="font-bold text-lg mb-2">Competência 1</h3>
+        <p id="c1" class="text-gray-700">-</p>
+      </div>
+      <div class="p-4 bg-white rounded-2xl shadow-md">
+        <h3 class="font-bold text-lg mb-2">Competência 2</h3>
+        <p id="c2" class="text-gray-700">-</p>
+      </div>
+      <div class="p-4 bg-white rounded-2xl shadow-md">
+        <h3 class="font-bold text-lg mb-2">Competência 3</h3>
+        <p id="c3" class="text-gray-700">-</p>
+      </div>
+      <div class="p-4 bg-white rounded-2xl shadow-md">
+        <h3 class="font-bold text-lg mb-2">Competência 4</h3>
+        <p id="c4" class="text-gray-700">-</p>
+      </div>
+      <div class="p-4 bg-white rounded-2xl shadow-md">
+        <h3 class="font-bold text-lg mb-2">Competência 5</h3>
+        <p id="c5" class="text-gray-700">-</p>
+      </div>
     </div>
+
     <div class="p-6 bg-blue-100 rounded-2xl shadow-md text-center">
-      <h2 class="text-2xl font-bold">Nota Final Estimada</h2>
+      <h2 class="text-2xl font-bold mb-2">Nota Final Estimada</h2>
       <p id="nota-final" class="text-3xl font-extrabold text-blue-700">-</p>
     </div>
+
     <div class="p-6 bg-white rounded-2xl shadow-md">
       <h3 class="font-bold text-lg mb-2">Sugestões de Melhoria</h3>
-      <ul id="sugestoes" class="list-disc list-inside text-gray-700 space-y-1"><li>-</li></ul>
-    </div>
-    <div class="p-6 bg-gray-50 rounded-xl shadow-md">
-      <h3 class="font-bold">Texto Extraído (OCR):</h3>
-      <p id="ocr-text" class="text-gray-600 text-sm mt-2 whitespace-pre-wrap"></p>
+      <ul id="sugestoes" class="list-disc list-inside text-gray-700 space-y-1">
+        <li>-</li>
+      </ul>
     </div>
   </div>
 
+  <!-- Câmera -->
   <div id="camera-container" class="hidden flex flex-col items-center mt-6">
     <video id="camera-stream" autoplay playsinline class="w-80 rounded-lg shadow-md mb-4"></video>
     <button id="capture-btn" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">
@@ -69,109 +76,142 @@
   </div>
 
   <script>
+    const GEMINI_API_KEY = curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent" \
+  -H 'Content-Type: application/json' \
+  -H 'X-goog-api-key: GEMINI_API_KEY' \
+  -X POST \
+  -d '{
+    "contents": [
+      {
+        "parts": [
+          {
+            "text": "Explain how AI works in a few words"
+          }
+        ]
+      }
+    ]
+  }'; // 🔑 Coloque sua chave Gemini aqui
+    const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
+
     const fileInput = document.getElementById('file-upload');
     const previewImage = document.getElementById('preview-image');
     const previewContainer = document.getElementById('preview-container');
-    const loading = document.getElementById('loading');
     const results = document.getElementById('results');
-    const ocrTextEl = document.getElementById('ocr-text');
-    const comps = [c1, c2, c3, c4, c5];
-    const sugestoesEl = document.getElementById('sugestoes');
-    const notaFinalEl = document.getElementById('nota-final');
-
-    const temaENEM = "Desafios para a valorização da cultura indígena no Brasil";
-
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        previewImage.src = reader.result;
-        previewContainer.classList.remove('hidden');
-        processImage(reader.result);
-      };
-      reader.readAsDataURL(file);
-    });
-
-    async function processImage(imgData) {
-      loading.classList.remove('hidden');
-      results.classList.add('hidden');
-      const { data: { text } } = await Tesseract.recognize(imgData, 'por');
-      ocrTextEl.textContent = text.trim();
-      evaluateEssay(text.trim());
-    }
-
-    async function evaluateEssay(text) {
-      if (!text || text.length < 50) {
-        showZero("Texto ilegível ou muito curto para avaliação.");
-        return;
-      }
-
-      // Verificação do tema
-      if (!text.toLowerCase().includes("cultura") || !text.toLowerCase().includes("indígena")) {
-        showZero("A redação fugiu do tema proposto. Nota ZERO.");
-        return;
-      }
-
-      // Usando IA leve (sentiment analysis como exemplo)
-      const analysis = await window.sentimentModel(text);
-      const score = analysis[0].score;
-
-      // Transformar score em notas simuladas (600–1000)
-      let notas = [];
-      for (let i = 0; i < 5; i++) {
-        let base = Math.round(600 + score * 400 + (Math.random() * 50 - 25));
-        base = Math.min(1000, Math.max(600, base));
-        notas.push(base);
-      }
-
-      // Mostrar resultados
-      let total = 0;
-      comps.forEach((c, i) => {
-        c.textContent = notas[i];
-        total += notas[i];
-      });
-      notaFinalEl.textContent = Math.round(total / 5);
-      sugestoesEl.innerHTML = `
-        <li>Amplie a argumentação com dados e exemplos claros.</li>
-        <li>Garanta progressão lógica entre parágrafos.</li>
-        <li>Revise a pontuação e ortografia.</li>
-        <li>Inclua proposta de intervenção detalhada.</li>
-      `;
-      loading.classList.add('hidden');
-      results.classList.remove('hidden');
-    }
-
-    function showZero(msg) {
-      comps.forEach(c => c.textContent = 0);
-      notaFinalEl.textContent = 0;
-      sugestoesEl.innerHTML = `<li>${msg}</li>`;
-      loading.classList.add('hidden');
-      results.classList.remove('hidden');
-    }
-
-    // Câmera
+    const competencias = [document.getElementById('c1'), document.getElementById('c2'), document.getElementById('c3'), document.getElementById('c4'), document.getElementById('c5')];
+    const notaFinal = document.getElementById('nota-final');
+    const sugestoesList = document.getElementById('sugestoes');
     const cameraBtn = document.getElementById('camera-btn');
     const cameraContainer = document.getElementById('camera-container');
     const cameraStream = document.getElementById('camera-stream');
     const captureBtn = document.getElementById('capture-btn');
 
-    cameraBtn.addEventListener('click', async () => {
-      cameraContainer.classList.remove('hidden');
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      cameraStream.srcObject = stream;
-    });
+    let selectedImageBase64 = "";
 
-    captureBtn.addEventListener('click', () => {
+    fileInput.addEventListener('change', handleFile);
+    cameraBtn.addEventListener('click', startCamera);
+    captureBtn.addEventListener('click', captureImage);
+
+    function handleFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        selectedImageBase64 = reader.result.split(",")[1];
+        previewImage.src = reader.result;
+        previewContainer.classList.remove('hidden');
+        validateImage();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function startCamera() {
+      cameraContainer.classList.remove('hidden');
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        cameraStream.srcObject = stream;
+      } catch (err) {
+        alert("Erro ao acessar a câmera: " + err);
+      }
+    }
+
+    function captureImage() {
       const canvas = document.createElement('canvas');
       canvas.width = cameraStream.videoWidth;
       canvas.height = cameraStream.videoHeight;
       canvas.getContext('2d').drawImage(cameraStream, 0, 0);
-      const imgData = canvas.toDataURL('image/png');
-      previewImage.src = imgData;
+      selectedImageBase64 = canvas.toDataURL('image/png').split(",")[1];
+      previewImage.src = "data:image/png;base64," + selectedImageBase64;
       previewContainer.classList.remove('hidden');
-      processImage(imgData);
-    });
+      validateImage();
+    }
+
+    async function validateImage() {
+      alert("Validando imagem...");
+      const validationPrompt = `
+Verifique se a imagem contém uma redação manuscrita em português no formato típico do ENEM.
+Responda apenas com "SIM" se for uma redação manuscrita, ou "NAO" caso contrário.
+`;
+
+      const response = await callGemini(validationPrompt);
+      const result = response.trim().toUpperCase();
+
+      if (result.includes("SIM")) {
+        evaluateEssay();
+      } else {
+        alert("A imagem não parece conter uma redação manuscrita. Tente novamente.");
+      }
+    }
+
+    async function evaluateEssay() {
+      alert("Avaliando redação com IA...");
+      const evaluationPrompt = `
+Você é um avaliador oficial do ENEM. Analise a redação enviada (imagem) e:
+1. Extraia o texto usando OCR.
+2. Avalie com base nas 5 competências do ENEM (0 a 200 pontos cada).
+3. Dê nota 0 se houver fuga de tema.
+4. Forneça sugestões detalhadas para melhorar a redação.
+Responda em JSON no formato:
+{
+  "competencias": [c1, c2, c3, c4, c5],
+  "nota_final": total,
+  "sugestoes": ["sugestão 1", "sugestão 2", ...]
+}`;
+
+      const response = await callGemini(evaluationPrompt, true);
+      try {
+        const parsed = JSON.parse(response);
+        competencias.forEach((el, i) => el.textContent = parsed.competencias[i]);
+        notaFinal.textContent = parsed.nota_final;
+        sugestoesList.innerHTML = parsed.sugestoes.map(s => `<li>${s}</li>`).join('');
+        results.classList.remove('hidden');
+      } catch (err) {
+        alert("Erro ao interpretar resposta da IA. Veja console.");
+        console.log(response);
+      }
+    }
+
+    async function callGemini(prompt, includeImage = false) {
+      const body = {
+        contents: [{
+          parts: [{ text: prompt }]
+        }]
+      };
+
+      if (includeImage) {
+        body.contents[0].parts.push({
+          inline_data: { mime_type: "image/png", data: selectedImageBase64 }
+        });
+      }
+
+      const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    }
   </script>
 </body>
 </html>
