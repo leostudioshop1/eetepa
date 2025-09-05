@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Avaliador de Redação ENEM com IA</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col items-center p-6">
   <header class="mb-6 text-center">
@@ -28,6 +29,9 @@
     <p class="text-gray-700 font-medium mb-2">Pré-visualização:</p>
     <img id="preview-image" class="w-80 rounded-lg shadow-md border" />
   </div>
+
+  <!-- Status -->
+  <div id="status" class="hidden mb-6 text-gray-700 font-medium"></div>
 
   <!-- Resultados -->
   <div id="results" class="hidden w-full max-w-4xl space-y-4">
@@ -76,12 +80,14 @@
   </div>
 
   <script>
-    const GEMINI_API_KEY = AIzaSyCEhugqR1xqDkxMlJdODLGetsAX9n7JoyU; // 🔑 Coloque sua chave Gemini aqui
+    // 🔥 SUA CHAVE API AQUI (cuidado ao publicar!)
+    const GEMINI_API_KEY = "AIzaSyCEhugqR1xqDkxMlJdODLGetsAX9n7JoyU"; 
     const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
 
     const fileInput = document.getElementById('file-upload');
     const previewImage = document.getElementById('preview-image');
     const previewContainer = document.getElementById('preview-container');
+    const statusDiv = document.getElementById('status');
     const results = document.getElementById('results');
     const competencias = [document.getElementById('c1'), document.getElementById('c2'), document.getElementById('c3'), document.getElementById('c4'), document.getElementById('c5')];
     const notaFinal = document.getElementById('nota-final');
@@ -105,7 +111,7 @@
         selectedImageBase64 = reader.result.split(",")[1];
         previewImage.src = reader.result;
         previewContainer.classList.remove('hidden');
-        validateImage();
+        runOCR(reader.result);
       };
       reader.readAsDataURL(file);
     }
@@ -125,78 +131,72 @@
       canvas.width = cameraStream.videoWidth;
       canvas.height = cameraStream.videoHeight;
       canvas.getContext('2d').drawImage(cameraStream, 0, 0);
-      selectedImageBase64 = canvas.toDataURL('image/png').split(",")[1];
-      previewImage.src = "data:image/png;base64," + selectedImageBase64;
+      const imgData = canvas.toDataURL('image/png');
+      selectedImageBase64 = imgData.split(",")[1];
+      previewImage.src = imgData;
       previewContainer.classList.remove('hidden');
-      validateImage();
+      runOCR(imgData);
     }
 
-    async function validateImage() {
-      alert("Validando imagem...");
-      const validationPrompt = `
-Verifique se a imagem contém uma redação manuscrita em português no formato típico do ENEM.
-Responda apenas com "SIM" se for uma redação manuscrita, ou "NAO" caso contrário.
-`;
+    async function runOCR(imgData) {
+      statusDiv.textContent = "🔍 Reconhecendo texto (OCR)...";
+      statusDiv.classList.remove('hidden');
 
-      const response = await callGemini(validationPrompt);
-      const result = response.trim().toUpperCase();
+      const result = await Tesseract.recognize(imgData, 'por', { logger: m => console.log(m) });
+      const text = result.data.text.trim();
 
-      if (result.includes("SIM")) {
-        evaluateEssay();
-      } else {
-        alert("A imagem não parece conter uma redação manuscrita. Tente novamente.");
+      if (text.length < 30) {
+        alert("Não foi possível reconhecer corretamente a redação. Tente outra foto.");
+        statusDiv.classList.add('hidden');
+        return;
       }
+
+      console.log("Texto OCR:", text);
+      evaluateEssay(text);
     }
 
-    async function evaluateEssay() {
-      alert("Avaliando redação com IA...");
-      const evaluationPrompt = `
-Você é um avaliador oficial do ENEM. Analise a redação enviada (imagem) e:
-1. Extraia o texto usando OCR.
-2. Avalie com base nas 5 competências do ENEM (0 a 200 pontos cada).
-3. Dê nota 0 se houver fuga de tema.
-4. Forneça sugestões detalhadas para melhorar a redação.
-Responda em JSON no formato:
+    async function evaluateEssay(text) {
+      statusDiv.textContent = "🤖 Avaliando redação com IA...";
+
+      const prompt = `
+Você é um avaliador oficial do ENEM. Avalie o seguinte texto extraído de uma redação manuscrita:
+---
+${text}
+---
+Regras:
+1. Avalie com base nas 5 competências do ENEM (0 a 200 cada).
+2. Dê nota 0 se houver fuga de tema.
+3. Sugira melhorias detalhadas.
+Responda apenas em JSON:
 {
   "competencias": [c1, c2, c3, c4, c5],
   "nota_final": total,
   "sugestoes": ["sugestão 1", "sugestão 2", ...]
 }`;
 
-      const response = await callGemini(evaluationPrompt, true);
+      const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      });
+
+      const data = await res.json();
+      const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
       try {
-        const parsed = JSON.parse(response);
+        const parsed = JSON.parse(textResponse);
         competencias.forEach((el, i) => el.textContent = parsed.competencias[i]);
         notaFinal.textContent = parsed.nota_final;
         sugestoesList.innerHTML = parsed.sugestoes.map(s => `<li>${s}</li>`).join('');
         results.classList.remove('hidden');
       } catch (err) {
-        alert("Erro ao interpretar resposta da IA. Veja console.");
-        console.log(response);
-      }
-    }
-
-    async function callGemini(prompt, includeImage = false) {
-      const body = {
-        contents: [{
-          parts: [{ text: prompt }]
-        }]
-      };
-
-      if (includeImage) {
-        body.contents[0].parts.push({
-          inline_data: { mime_type: "image/png", data: selectedImageBase64 }
-        });
+        alert("Erro na resposta da IA. Veja console.");
+        console.log(textResponse);
       }
 
-      const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-
-      const data = await res.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      statusDiv.classList.add('hidden');
     }
   </script>
 </body>
