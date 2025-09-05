@@ -1,157 +1,312 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-
+<!doctype html>
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avaliador de Redação Gemini</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
-        body {
-            font-family: 'Inter', sans-serif;
-            @apply bg-gray-50 text-gray-800;
-        }
-
-        /* Classes personalizadas para animações */
-        .fade-in-up {
-            animation: fadeInUp 0.5s ease-out forwards;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Correção de Redação ENEM — Gemini (versão cliente, chave exposta)</title>
+  <style>
+    :root{--bg:#f6f8fb;--panel:#ffffff;--muted:#556;--accent:#2b6df6}
+    body{font-family:Inter,system-ui,Helvetica,Arial;margin:0;background:linear-gradient(180deg,#eef2ff,#f6f8fb);color:#102;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .wrap{width:100%;max-width:980px}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    h1{margin:0;font-size:20px}
+    .grid{display:grid;grid-template-columns:1fr 420px;gap:16px}
+    .card{background:var(--panel);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(20,30,60,.06)}
+    textarea{width:100%;min-height:360px;border:1px solid #e6e9f2;border-radius:10px;padding:12px;font-size:15px;resize:vertical}
+    input,select,button{font:inherit}
+    .controls{display:flex;flex-direction:column;gap:8px}
+    label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+    .small{font-size:13px;color:var(--muted)}
+    .btn{background:var(--accent);color:white;border:0;padding:10px;border-radius:10px;cursor:pointer}
+    .btn.alt{background:transparent;border:1px solid #d7defc;color:var(--accent)}
+    pre{white-space:pre-wrap;background:#0f1724;color:#e6eefc;padding:12px;border-radius:8px;max-height:380px;overflow:auto}
+    .warn{background:#fff4e6;border-left:4px solid #ffb020;padding:10px;border-radius:8px;color:#6a4b00}
+    .result-section{display:flex;flex-direction:column;gap:8px}
+    .score{font-weight:700;font-size:20px;color:#0b65d8}
+  </style>
 </head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Correção de Redação (ENEM) — Gemini (cliente — chave embutida)</h1>
+    </header>
 
-<body class="flex items-center justify-center min-h-screen p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full p-8 space-y-8 flex flex-col items-center text-center">
-        <header class="space-y-4">
-            <h1 class="text-4xl font-bold text-blue-600">Avaliador de Redação Gemini</h1>
-            <p class="text-lg text-gray-600">
-                Cole sua redação abaixo e a IA do Gemini irá avaliá-la e sugerir melhorias.
-            </p>
-        </header>
-
-        <!-- Campo de entrada para a redação -->
-        <div class="w-full">
-            <textarea id="essay-input"
-                class="w-full h-80 p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                placeholder="Cole sua redação aqui..."></textarea>
+    <div class="grid">
+      <section class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div>
+            <div class="small">Cole sua redação abaixo</div>
+          </div>
+          <div style="text-align:right">
+            <div class="small">Modo inseguro — chave exposta</div>
+          </div>
         </div>
 
-        <!-- Botão de avaliação -->
-        <button id="evaluate-btn"
-            class="px-8 py-3 bg-blue-600 text-white font-semibold rounded-full shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-            Avaliar Redação
-        </button>
+        <label for="essay">Redação</label>
+        <textarea id="essay" placeholder="Digite sua redação aqui..."></textarea>
 
-        <!-- Área de loading e feedback -->
-        <div id="loading" class="hidden text-blue-600 font-medium text-lg mt-4">
-            Avaliando...
+        <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+          <div style="flex:1">
+            <label for="apikey">Chave da API (Gemini) — **NÃO** compartilhe se não quiser expor</label>
+            <input id="apikey" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e3e7fb" value="AIzaSyCEhugqR1xqDkxMlJdODLGetsAX9n7JoyU" />
+            <div class="small" style="margin-top:6px">Se a chamada falhar, verifique se a chave é válida e se a conta permite o uso da API Gemini.</div>
+          </div>
+
+          <div style="width:240px">
+            <label for="model">Modelo</label>
+            <select id="model" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e3e7fb">
+              <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+              <option value="gemini-1.5-mini">gemini-1.5-mini</option>
+              <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+            </select>
+            <div class="small" style="margin-top:6px">Modelo usado para gerar a correção.</div>
+          </div>
         </div>
 
-        <!-- Área para exibir os resultados -->
-        <div id="results-container" class="hidden w-full mt-8 text-left space-y-6 p-6 bg-gray-50 rounded-2xl border border-gray-200">
-            <h2 class="text-2xl font-bold text-gray-900">Resultado da Avaliação</h2>
-            <div>
-                <h3 class="text-xl font-bold text-green-600">Nota:</h3>
-                <p id="score" class="text-4xl font-extrabold text-green-600 mt-2"></p>
-            </div>
-            <div>
-                <h3 class="text-xl font-bold text-gray-900">Feedback:</h3>
-                <p id="feedback" class="text-gray-700 mt-2 whitespace-pre-wrap leading-relaxed"></p>
-            </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button id="gradeBtn" class="btn">Corrigir e atribuir nota</button>
+          <button id="clearBtn" class="btn alt">Limpar</button>
         </div>
+
+        <div style="margin-top:12px" class="warn">
+          <strong>Atenção:</strong> esta página envia sua redação para a API do Gemini usando a chave inserida. A chave está visível no código da página — qualquer um com acesso público pode reutilizá-la.
+        </div>
+      </section>
+
+      <aside class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="small">Resultado</div>
+            <div class="small">As notas seguem o formato ENEM (Competências 1–5). O modelo retornará notas por competência (0–200) e nota final (0–1000) — se possível.</div>
+          </div>
+          <div style="text-align:right">
+            <div class="small">Formato de saída: texto estruturado + JSON</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px" class="result-section">
+          <div id="summary" style="min-height:40px"></div>
+          <pre id="out" aria-live="polite">Aguardando correção...</pre>
+          <div style="display:flex;gap:8px">
+            <button id="copyResult" class="btn alt">Copiar resultado</button>
+            <button id="downloadResult" class="btn alt">Baixar .txt</button>
+          </div>
+        </div>
+      </aside>
     </div>
 
-    <script>
-        // ATENÇÃO: Nunca exponha sua chave de API em um ambiente de produção.
-        // Para este exemplo simples no GitHub Pages, você pode inseri-la diretamente.
-        // Chave de API do Google Gemini
-        const GEMINI_API_KEY = "AIzaSyCEhugqR1xqDkxMlJdODLGetsAX9n7JoyU"; 
+    <div style="margin-top:12px" class="small">
+      <strong>Observação técnica:</strong> chamar a API diretamente do cliente é apenas para prototipagem e expõe sua chave. A opção recomendada é criar um backend simples que armazene a chave com segurança e repasse a requisição.
+    </div>
+  </div>
 
-        document.getElementById('evaluate-btn').addEventListener('click', async () => {
-            const essayInput = document.getElementById('essay-input').value;
-            const loadingIndicator = document.getElementById('loading');
-            const resultsContainer = document.getElementById('results-container');
-            const scoreElement = document.getElementById('score');
-            const feedbackElement = document.getElementById('feedback');
+  <script>
+    // Nota: este código implementa tentativa flexível de chamada ao Gemini REST.
+    // Ele tenta várias formas para acomodar diferenças de endpoint/auth.
+    // Se falhar, copie o log do painel e me encaminhe para eu ajustar.
 
-            // Verifica se o campo de texto não está vazio
-            if (!essayInput.trim()) {
-                alert("Por favor, cole sua redação para ser avaliada.");
-                return;
-            }
+    const essayEl = document.getElementById('essay');
+    const apiKeyEl = document.getElementById('apikey');
+    const modelEl = document.getElementById('model');
+    const outEl = document.getElementById('out');
+    const summaryEl = document.getElementById('summary');
+    const gradeBtn = document.getElementById('gradeBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const copyBtn = document.getElementById('copyResult');
+    const downloadBtn = document.getElementById('downloadResult');
 
-            // Esconde resultados anteriores e mostra o indicador de loading
-            resultsContainer.classList.add('hidden');
-            loadingIndicator.classList.remove('hidden');
+    function log(msg){
+      outEl.textContent = (new Date().toLocaleTimeString()) + ' — ' + msg + '\\n\\n' + outEl.textContent;
+    }
 
-            const prompt = `
-            Você é um avaliador de redações profissional e imparcial. Sua tarefa é avaliar a seguinte redação com base em critérios como coesão, coerência, gramática, argumentação e estrutura.
-            
-            Dê uma nota de 0 a 100 e forneça um feedback detalhado com sugestões de melhoria. Sua resposta deve ser formatada da seguinte maneira:
-            
-            Nota: [Nota de 0 a 100]
-            
-            Feedback:
-            [Seu feedback detalhado com parágrafos e pontos de melhoria]
-            
-            Redação a ser avaliada:
-            "${essayInput}"
-            `;
+    function buildPrompt(essay){
+      // Prompt específico pedindo correção segundo ENEM
+      return `
+Você é um corretor experiente que avalia redações do ENEM usando as 5 competências oficiais.
+Leia a redação abaixo e responda com:
+1) Comentário por competência (Competência 1 até Competência 5) — explique pontos fortes e fracos objetivamente.
+2) Nota em cada competência (número entre 0 e 200).
+3) Nota final no formato ENEM (soma das competências, 0 a 1000).
+4) Sugestões concretas para melhorar (lista breve).
+Retorne a resposta em formato claro e depois um bloco JSON com chaves:
+{
+  "competences": {
+    "c1": {"score":..., "comment":"..."},
+    "c2": {...},
+    "c3": {...},
+    "c4": {...},
+    "c5": {...}
+  },
+  "total": ...,
+  "suggestions": [...]
+}
 
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{
-                                text: prompt
-                            }]
-                        }]
-                    })
-                });
+Redação:
+\"\"\"${essay}
+\"\"\"
 
-                const data = await response.json();
+Se não houver informações suficientes para atribuir notas, indique claramente quais itens faltam.
+`;
+    }
 
-                if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0].text) {
-                    const fullResponse = data.candidates[0].content.parts[0].text;
-                    const notaMatch = fullResponse.match(/Nota: (\d+)/);
-                    const feedbackText = fullResponse.split("Feedback:")[1].trim();
+    async function tryGeminiRequest(url, apiKey, body, headers){
+      // Faz uma requisição POST; retorna {ok:bool, status, jsonText, error}
+      try{
+        const res = await fetch(url, {method:'POST', headers, body: JSON.stringify(body)});
+        const text = await res.text();
+        let json = null;
+        try{ json = JSON.parse(text); }catch(e){ /* não-JSON */ }
+        return {ok: res.ok, status: res.status, text, json};
+      }catch(err){
+        return {ok:false, error: err.message || String(err)};
+      }
+    }
 
-                    // Atualiza os elementos da interface com o resultado da avaliação
-                    scoreElement.textContent = notaMatch ? `${notaMatch[1]}/100` : "N/A";
-                    feedbackElement.textContent = feedbackText;
-                    resultsContainer.classList.remove('hidden');
-                    resultsContainer.classList.add('fade-in-up');
-                } else {
-                    alert("Não foi possível gerar a avaliação. Verifique sua chave de API e tente novamente.");
+    async function callGemini(apiKey, modelId, prompt){
+      // Tentativa 1: endpoint generateContent (v1beta)
+      const endpoints = [];
+
+      // Preferred modern endpoint variant (observado na documentação):
+      endpoints.push({
+        name: 'v1beta:generateContent (Authorization: Bearer)',
+        url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelId)}:generateContent`,
+        headers: {
+          'Content-Type':'application/json',
+          'Authorization': 'Bearer ' + apiKey
+        },
+        body: {
+          // body layout simples (client libraries abstract isso). Estamos pedindo texto simples.
+          // O campo pode ser `input`/`prompt` em variações; usamos "text" wrapper and "temperature".
+          prompt: { text: prompt },
+          temperature: 0.0,
+          max_output_tokens: 1000
+        }
+      });
+
+      // Alternative: generateText (older/newer naming)
+      endpoints.push({
+        name: 'v1beta:generateText (Authorization: Bearer)',
+        url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelId)}:generateText`,
+        headers: {
+          'Content-Type':'application/json',
+          'Authorization': 'Bearer ' + apiKey
+        },
+        body: { prompt: { text: prompt }, temperature: 0.0, max_output_tokens: 1000 }
+      });
+
+      // Try with ?key= API (some Google APIs accept key in query)
+      endpoints.push({
+        name: 'v1beta:generateContent (?key=)',
+        url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelId)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        headers: { 'Content-Type':'application/json' },
+        body: { prompt: { text: prompt }, temperature: 0.0, max_output_tokens: 1000 }
+      });
+
+      // Try fallback to "generate" naming seen in some docs
+      endpoints.push({
+        name: 'v1:generate (key=)',
+        url: `https://generativelanguage.googleapis.com/v1/models/${encodeURIComponent(modelId)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        headers: { 'Content-Type':'application/json' },
+        body: { prompt: { text: prompt }, temperature: 0.0, max_output_tokens: 1000 }
+      });
+
+      // Iterate endpoints until success
+      for(const ep of endpoints){
+        log('Tentando endpoint: ' + ep.name + '\\n' + ep.url);
+        const result = await tryGeminiRequest(ep.url, apiKey, ep.body, ep.headers);
+        if(result.ok){
+          log('Resposta recebida com status ' + result.status);
+          return { success: true, response: result.json || result.text, raw: result };
+        } else {
+          log('Falha endpoint (' + (result.status||'no-status') + '): ' + (result.error || (result.text && result.text.slice(0,300)) || 'sem detalhe'));
+        }
+      }
+
+      return { success: false, message: 'Todas as tentativas falharam. Veja logs acima.' };
+    }
+
+    function prettyShow(obj){
+      try{ return JSON.stringify(obj, null, 2); }catch(e){ return String(obj); }
+    }
+
+    gradeBtn.addEventListener('click', async ()=>{
+      const essay = essayEl.value.trim();
+      if(!essay){
+        alert('Por favor, digite sua redação antes de enviar.');
+        return;
+      }
+      outEl.textContent = 'Enviando...';
+      summaryEl.textContent = '';
+      const apiKey = apiKeyEl.value.trim();
+      const model = modelEl.value;
+
+      const prompt = buildPrompt(essay);
+      log('Preparando requisição ao Gemini — modelo: ' + model);
+
+      try{
+        const res = await callGemini(apiKey, model, prompt);
+        if(!res.success){
+          outEl.textContent = 'Erro: ' + res.message + '\\n\\nVerifique chave/endpoint. Copie estes logs e me envie para debugar.';
+          return;
+        }
+
+        // Tentamos extrair texto: se response for JSON com fields conhecidos, tentamos achar o texto gerado.
+        let generatedText = '';
+        if(res.response){
+          // Caso seja objeto JSON retornado pelo serviço
+          if(typeof res.response === 'object'){
+            // Possíveis caminhos: res.response.candidates[0].content[0].text, or res.response.output[0].content...
+            // Vamos procurar strings recursivamente
+            function findFirstString(o){
+              if(!o) return null;
+              if(typeof o === 'string') return o;
+              if(Array.isArray(o)){
+                for(const it of o){ const s = findFirstString(it); if(s) return s; }
+              } else if(typeof o === 'object'){
+                for(const k of Object.keys(o)){
+                  const s = findFirstString(o[k]); if(s) return s;
                 }
-
-            } catch (error) {
-                console.error('Erro na chamada da API:', error);
-                alert("Ocorreu um erro ao avaliar a redação. Verifique sua conexão e a chave de API.");
-            } finally {
-                // Esconde o indicador de loading no final
-                loadingIndicator.classList.add('hidden');
+              }
+              return null;
             }
-        });
-    </script>
-</body>
+            generatedText = findFirstString(res.response) || prettyShow(res.response);
+          } else {
+            generatedText = String(res.response);
+          }
+        } else {
+          generatedText = '(sem corpo na resposta)';
+        }
 
+        // Mostrar resultado
+        summaryEl.innerHTML = '<div class="score">Resultado recebido — copie o JSON abaixo para análise detalhada</div>';
+        outEl.textContent = generatedText;
+      }catch(err){
+        outEl.textContent = 'Erro inesperado: ' + (err.message || err);
+      }
+    });
+
+    clearBtn.addEventListener('click', ()=>{
+      essayEl.value = '';
+      outEl.textContent = 'Aguardando correção...';
+      summaryEl.textContent = '';
+    });
+
+    copyBtn.addEventListener('click', ()=>{
+      navigator.clipboard.writeText(outEl.textContent).then(()=> alert('Resultado copiado!'), (e)=> alert('Falha ao copiar: '+e));
+    });
+
+    downloadBtn.addEventListener('click', ()=>{
+      const blob = new Blob([outEl.textContent || ''], {type:'text/plain;charset=utf-8'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'correcao_redacao.txt';
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
+    });
+
+    // prefill a small example (opcional)
+    essayEl.value = `A tecnologia influencia fortemente o cotidiano dos indivíduos e da sociedade. Em uma perspectiva positiva, possibilita maior acesso à informação, educação e comunicação. Porém, também traz desafios, como a desigualdade de acesso, riscos à privacidade e mudanças no mercado de trabalho. É necessário a implementação de políticas públicas que garantam inclusão digital, proteção de dados e programas de requalificação profissional, promovendo assim um uso ético e igualitário da tecnologia.`;
+
+  </script>
+</body>
 </html>
- 
