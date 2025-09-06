@@ -3,310 +3,236 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Correção de Redação ENEM — Gemini (versão cliente, chave exposta)</title>
+  <title>OCR com Câmera — Página Única</title>
   <style>
-    :root{--bg:#f6f8fb;--panel:#ffffff;--muted:#556;--accent:#2b6df6}
-    body{font-family:Inter,system-ui,Helvetica,Arial;margin:0;background:linear-gradient(180deg,#eef2ff,#f6f8fb);color:#102;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-    .wrap{width:100%;max-width:980px}
-    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-    h1{margin:0;font-size:20px}
-    .grid{display:grid;grid-template-columns:1fr 420px;gap:16px}
-    .card{background:var(--panel);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(20,30,60,.06)}
-    textarea{width:100%;min-height:360px;border:1px solid #e6e9f2;border-radius:10px;padding:12px;font-size:15px;resize:vertical}
-    input,select,button{font:inherit}
-    .controls{display:flex;flex-direction:column;gap:8px}
-    label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
-    .small{font-size:13px;color:var(--muted)}
-    .btn{background:var(--accent);color:white;border:0;padding:10px;border-radius:10px;cursor:pointer}
-    .btn.alt{background:transparent;border:1px solid #d7defc;color:var(--accent)}
-    pre{white-space:pre-wrap;background:#0f1724;color:#e6eefc;padding:12px;border-radius:8px;max-height:380px;overflow:auto}
-    .warn{background:#fff4e6;border-left:4px solid #ffb020;padding:10px;border-radius:8px;color:#6a4b00}
-    .result-section{display:flex;flex-direction:column;gap:8px}
-    .score{font-weight:700;font-size:20px;color:#0b65d8}
+    :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+    body{margin:0;padding:18px;background:#f4f6f8;color:#111}
+    h1{margin:0 0 8px;font-size:20px}
+    p.lead{margin:6px 0 18px;color:#444}
+    .layout{display:grid;grid-template-columns:1fr 360px;gap:18px}
+    .card{background:white;border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(10,10,20,0.06)}
+    video, canvas{width:100%;border-radius:8px;background:#000}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    button{padding:8px 10px;border-radius:8px;border:0;background:#0b5cff;color:white;cursor:pointer}
+    button.secondary{background:#6c757d}
+    button.danger{background:#e03131}
+    label{display:inline-flex;align-items:center;gap:6px}
+    textarea{width:100%;height:220px;padding:10px;border-radius:8px;border:1px solid #ddd;font-family:monospace;resize:vertical}
+    .progress{height:10px;background:#e9eef6;border-radius:6px;overflow:hidden}
+    .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,#4a90e2,#2dd4bf)}
+    .small{font-size:13px;color:#666}
+    @media(max-width:900px){.layout{grid-template-columns:1fr} .card{padding:10px}}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>Correção de Redação (ENEM) — Gemini (cliente — chave embutida)</h1>
-    </header>
+  <h1>OCR com Câmera (única página)</h1>
+  <p class="lead">Abra esta página no navegador (desktop ou mobile). Permita o uso da câmera e capture uma foto para extrair texto em português.</p>
 
-    <div class="grid">
-      <section class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div>
-            <div class="small">Cole sua redação abaixo</div>
-          </div>
-          <div style="text-align:right">
-            <div class="small">Modo inseguro — chave exposta</div>
-          </div>
+  <div class="layout">
+    <div class="card">
+      <div>
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" style="display:none"></canvas>
+        <div class="controls">
+          <button id="startBtn">Iniciar Câmera</button>
+          <button id="snapBtn" class="secondary">Capturar</button>
+          <button id="uploadBtn" class="secondary">Carregar Imagem</button>
+          <input id="fileInput" type="file" accept="image/*" style="display:none" />
+          <button id="ocrBtn">Executar OCR</button>
+          <button id="downloadImg" class="secondary">Baixar Imagem</button>
         </div>
-
-        <label for="essay">Redação</label>
-        <textarea id="essay" placeholder="Digite sua redação aqui..."></textarea>
-
-        <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
-          <div style="flex:1">
-            <label for="apikey">Chave da API (Gemini) — **NÃO** compartilhe se não quiser expor</label>
-            <input id="apikey" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e3e7fb" value="AIzaSyCEhugqR1xqDkxMlJdODLGetsAX9n7JoyU" />
-            <div class="small" style="margin-top:6px">Se a chamada falhar, verifique se a chave é válida e se a conta permite o uso da API Gemini.</div>
-          </div>
-
-          <div style="width:240px">
-            <label for="model">Modelo</label>
-            <select id="model" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e3e7fb">
-              <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-              <option value="gemini-1.5-mini">gemini-1.5-mini</option>
-              <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-            </select>
-            <div class="small" style="margin-top:6px">Modelo usado para gerar a correção.</div>
-          </div>
+        <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <label><input type="checkbox" id="preproc"> Pré-processamento (binarizar)</label>
+          <label class="small">Idioma: <select id="lang"><option value="por" selected>Português (por)</option><option value="eng">Inglês (eng)</option></select></label>
         </div>
-
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <button id="gradeBtn" class="btn">Corrigir e atribuir nota</button>
-          <button id="clearBtn" class="btn alt">Limpar</button>
+        <div style="margin-top:12px">
+          <div class="small">Progresso do OCR</div>
+          <div class="progress"><i id="progressBar"></i></div>
+          <div id="progressText" class="small">Pronto.</div>
         </div>
-
-        <div style="margin-top:12px" class="warn">
-          <strong>Atenção:</strong> esta página envia sua redação para a API do Gemini usando a chave inserida. A chave está visível no código da página — qualquer um com acesso público pode reutilizá-la.
-        </div>
-      </section>
-
-      <aside class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div class="small">Resultado</div>
-            <div class="small">As notas seguem o formato ENEM (Competências 1–5). O modelo retornará notas por competência (0–200) e nota final (0–1000) — se possível.</div>
-          </div>
-          <div style="text-align:right">
-            <div class="small">Formato de saída: texto estruturado + JSON</div>
-          </div>
-        </div>
-
-        <div style="margin-top:12px" class="result-section">
-          <div id="summary" style="min-height:40px"></div>
-          <pre id="out" aria-live="polite">Aguardando correção...</pre>
-          <div style="display:flex;gap:8px">
-            <button id="copyResult" class="btn alt">Copiar resultado</button>
-            <button id="downloadResult" class="btn alt">Baixar .txt</button>
-          </div>
-        </div>
-      </aside>
+      </div>
     </div>
 
-    <div style="margin-top:12px" class="small">
-      <strong>Observação técnica:</strong> chamar a API diretamente do cliente é apenas para prototipagem e expõe sua chave. A opção recomendada é criar um backend simples que armazene a chave com segurança e repasse a requisição.
+    <div class="card">
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">
+        <strong>Resultado do OCR</strong>
+        <button id="copyBtn" class="secondary">Copiar</button>
+        <button id="clearBtn" class="danger">Limpar</button>
+      </div>
+      <textarea id="result" placeholder="O texto extraído aparecerá aqui..."></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button id="downloadTxt">Baixar .txt</button>
+        <button id="openInNew" class="secondary">Abrir em nova aba</button>
+      </div>
+      <hr style="margin:12px 0">
+      <div class="small">Dicas: Texto alinhado, boa iluminação e contraste melhoram a acurácia. Use o pré-processamento para textos escuros em fundo claro.</div>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <script>
-    // Nota: este código implementa tentativa flexível de chamada ao Gemini REST.
-    // Ele tenta várias formas para acomodar diferenças de endpoint/auth.
-    // Se falhar, copie o log do painel e me encaminhe para eu ajustar.
-
-    const essayEl = document.getElementById('essay');
-    const apiKeyEl = document.getElementById('apikey');
-    const modelEl = document.getElementById('model');
-    const outEl = document.getElementById('out');
-    const summaryEl = document.getElementById('summary');
-    const gradeBtn = document.getElementById('gradeBtn');
+    // Elementos
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const startBtn = document.getElementById('startBtn');
+    const snapBtn = document.getElementById('snapBtn');
+    const ocrBtn = document.getElementById('ocrBtn');
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const result = document.getElementById('result');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const preproc = document.getElementById('preproc');
+    const langSelect = document.getElementById('lang');
+    const copyBtn = document.getElementById('copyBtn');
     const clearBtn = document.getElementById('clearBtn');
-    const copyBtn = document.getElementById('copyResult');
-    const downloadBtn = document.getElementById('downloadResult');
+    const downloadTxt = document.getElementById('downloadTxt');
+    const downloadImg = document.getElementById('downloadImg');
+    const openInNew = document.getElementById('openInNew');
 
-    function log(msg){
-      outEl.textContent = (new Date().toLocaleTimeString()) + ' — ' + msg + '\\n\\n' + outEl.textContent;
-    }
+    let stream = null;
+    let lastImageBlob = null;
 
-    function buildPrompt(essay){
-      // Prompt específico pedindo correção segundo ENEM
-      return `
-Você é um corretor experiente que avalia redações do ENEM usando as 5 competências oficiais.
-Leia a redação abaixo e responda com:
-1) Comentário por competência (Competência 1 até Competência 5) — explique pontos fortes e fracos objetivamente.
-2) Nota em cada competência (número entre 0 e 200).
-3) Nota final no formato ENEM (soma das competências, 0 a 1000).
-4) Sugestões concretas para melhorar (lista breve).
-Retorne a resposta em formato claro e depois um bloco JSON com chaves:
-{
-  "competences": {
-    "c1": {"score":..., "comment":"..."},
-    "c2": {...},
-    "c3": {...},
-    "c4": {...},
-    "c5": {...}
-  },
-  "total": ...,
-  "suggestions": [...]
-}
-
-Redação:
-\"\"\"${essay}
-\"\"\"
-
-Se não houver informações suficientes para atribuir notas, indique claramente quais itens faltam.
-`;
-    }
-
-    async function tryGeminiRequest(url, apiKey, body, headers){
-      // Faz uma requisição POST; retorna {ok:bool, status, jsonText, error}
+    startBtn.onclick = async () => {
       try{
-        const res = await fetch(url, {method:'POST', headers, body: JSON.stringify(body)});
-        const text = await res.text();
-        let json = null;
-        try{ json = JSON.parse(text); }catch(e){ /* não-JSON */ }
-        return {ok: res.ok, status: res.status, text, json};
-      }catch(err){
-        return {ok:false, error: err.message || String(err)};
+        stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}, audio:false});
+        video.srcObject = stream;
+        startBtn.textContent = 'Câmera ativa';
+      }catch(e){
+        alert('Erro ao acessar a câmera: '+e.message);
       }
     }
 
-    async function callGemini(apiKey, modelId, prompt){
-      // Tentativa 1: endpoint generateContent (v1beta)
-      const endpoints = [];
-
-      // Preferred modern endpoint variant (observado na documentação):
-      endpoints.push({
-        name: 'v1beta:generateContent (Authorization: Bearer)',
-        url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelId)}:generateContent`,
-        headers: {
-          'Content-Type':'application/json',
-          'Authorization': 'Bearer ' + apiKey
-        },
-        body: {
-          // body layout simples (client libraries abstract isso). Estamos pedindo texto simples.
-          // O campo pode ser `input`/`prompt` em variações; usamos "text" wrapper and "temperature".
-          prompt: { text: prompt },
-          temperature: 0.0,
-          max_output_tokens: 1000
-        }
-      });
-
-      // Alternative: generateText (older/newer naming)
-      endpoints.push({
-        name: 'v1beta:generateText (Authorization: Bearer)',
-        url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelId)}:generateText`,
-        headers: {
-          'Content-Type':'application/json',
-          'Authorization': 'Bearer ' + apiKey
-        },
-        body: { prompt: { text: prompt }, temperature: 0.0, max_output_tokens: 1000 }
-      });
-
-      // Try with ?key= API (some Google APIs accept key in query)
-      endpoints.push({
-        name: 'v1beta:generateContent (?key=)',
-        url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelId)}:generateContent?key=${encodeURIComponent(apiKey)}`,
-        headers: { 'Content-Type':'application/json' },
-        body: { prompt: { text: prompt }, temperature: 0.0, max_output_tokens: 1000 }
-      });
-
-      // Try fallback to "generate" naming seen in some docs
-      endpoints.push({
-        name: 'v1:generate (key=)',
-        url: `https://generativelanguage.googleapis.com/v1/models/${encodeURIComponent(modelId)}:generateContent?key=${encodeURIComponent(apiKey)}`,
-        headers: { 'Content-Type':'application/json' },
-        body: { prompt: { text: prompt }, temperature: 0.0, max_output_tokens: 1000 }
-      });
-
-      // Iterate endpoints until success
-      for(const ep of endpoints){
-        log('Tentando endpoint: ' + ep.name + '\\n' + ep.url);
-        const result = await tryGeminiRequest(ep.url, apiKey, ep.body, ep.headers);
-        if(result.ok){
-          log('Resposta recebida com status ' + result.status);
-          return { success: true, response: result.json || result.text, raw: result };
-        } else {
-          log('Falha endpoint (' + (result.status||'no-status') + '): ' + (result.error || (result.text && result.text.slice(0,300)) || 'sem detalhe'));
-        }
-      }
-
-      return { success: false, message: 'Todas as tentativas falharam. Veja logs acima.' };
-    }
-
-    function prettyShow(obj){
-      try{ return JSON.stringify(obj, null, 2); }catch(e){ return String(obj); }
-    }
-
-    gradeBtn.addEventListener('click', async ()=>{
-      const essay = essayEl.value.trim();
-      if(!essay){
-        alert('Por favor, digite sua redação antes de enviar.');
+    snapBtn.onclick = () => {
+      if(!video.srcObject && !lastImageBlob){
+        alert('Ative a câmera ou carregue uma imagem primeiro.');
         return;
       }
-      outEl.textContent = 'Enviando...';
-      summaryEl.textContent = '';
-      const apiKey = apiKeyEl.value.trim();
-      const model = modelEl.value;
-
-      const prompt = buildPrompt(essay);
-      log('Preparando requisição ao Gemini — modelo: ' + model);
-
-      try{
-        const res = await callGemini(apiKey, model, prompt);
-        if(!res.success){
-          outEl.textContent = 'Erro: ' + res.message + '\\n\\nVerifique chave/endpoint. Copie estes logs e me envie para debugar.';
-          return;
-        }
-
-        // Tentamos extrair texto: se response for JSON com fields conhecidos, tentamos achar o texto gerado.
-        let generatedText = '';
-        if(res.response){
-          // Caso seja objeto JSON retornado pelo serviço
-          if(typeof res.response === 'object'){
-            // Possíveis caminhos: res.response.candidates[0].content[0].text, or res.response.output[0].content...
-            // Vamos procurar strings recursivamente
-            function findFirstString(o){
-              if(!o) return null;
-              if(typeof o === 'string') return o;
-              if(Array.isArray(o)){
-                for(const it of o){ const s = findFirstString(it); if(s) return s; }
-              } else if(typeof o === 'object'){
-                for(const k of Object.keys(o)){
-                  const s = findFirstString(o[k]); if(s) return s;
-                }
-              }
-              return null;
-            }
-            generatedText = findFirstString(res.response) || prettyShow(res.response);
-          } else {
-            generatedText = String(res.response);
-          }
-        } else {
-          generatedText = '(sem corpo na resposta)';
-        }
-
-        // Mostrar resultado
-        summaryEl.innerHTML = '<div class="score">Resultado recebido — copie o JSON abaixo para análise detalhada</div>';
-        outEl.textContent = generatedText;
-      }catch(err){
-        outEl.textContent = 'Erro inesperado: ' + (err.message || err);
+      const w = video.videoWidth || 1280;
+      const h = video.videoHeight || 720;
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if(video.srcObject){
+        ctx.drawImage(video,0,0,w,h);
       }
-    });
+      // if preproc requested, apply filter
+      if(preproc.checked){
+        const imgData = ctx.getImageData(0,0,w,h);
+        // simple grayscale + threshold
+        for(let i=0;i<imgData.data.length;i+=4){
+          const r=imgData.data[i], g=imgData.data[i+1], b=imgData.data[i+2];
+          const gray = 0.299*r+0.587*g+0.114*b;
+          const v = gray>150?255:0;
+          imgData.data[i]=imgData.data[i+1]=imgData.data[i+2]=v;
+        }
+        ctx.putImageData(imgData,0,0);
+      }
+      canvas.style.display = 'block';
+      canvas.toBlob((blob)=>{ lastImageBlob = blob; }, 'image/jpeg', 0.92);
+    }
 
-    clearBtn.addEventListener('click', ()=>{
-      essayEl.value = '';
-      outEl.textContent = 'Aguardando correção...';
-      summaryEl.textContent = '';
-    });
+    uploadBtn.onclick = ()=> fileInput.click();
+    fileInput.onchange = (e)=>{
+      const f = e.target.files[0];
+      if(!f) return;
+      const img = new Image();
+      const url = URL.createObjectURL(f);
+      img.onload = ()=>{
+        const w = img.naturalWidth; const h = img.naturalHeight;
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img,0,0);
+        canvas.style.display = 'block';
+        canvas.toBlob((blob)=>{ lastImageBlob = blob; }, 'image/jpeg', 0.92);
+        URL.revokeObjectURL(url);
+      }
+      img.src = url;
+    }
 
-    copyBtn.addEventListener('click', ()=>{
-      navigator.clipboard.writeText(outEl.textContent).then(()=> alert('Resultado copiado!'), (e)=> alert('Falha ao copiar: '+e));
-    });
+    async function runOCR(){
+      if(!lastImageBlob){ alert('Capture ou carregue uma imagem primeiro.'); return; }
+      result.value = '';
+      progressBar.style.width = '0%';
+      progressText.textContent = 'Iniciando...';
 
-    downloadBtn.addEventListener('click', ()=>{
-      const blob = new Blob([outEl.textContent || ''], {type:'text/plain;charset=utf-8'});
+      // create a worker
+      const worker = Tesseract.createWorker({
+        logger: m => {
+          if(m.status === 'recognizing text' && m.progress !== undefined){
+            const p = Math.round(m.progress*100);
+            progressBar.style.width = p+'%';
+            progressText.textContent = `${m.status} — ${p}%`;
+          } else if(m.status){
+            progressText.textContent = m.status;
+          }
+        }
+      });
+
+      const selectedLang = langSelect.value || 'por';
+
+      await worker.load();
+      // carrega o idioma; Tesseract vai buscar os arquivos .traineddata automaticamente do CDN
+      await worker.loadLanguage(selectedLang);
+      await worker.initialize(selectedLang);
+
+      // converter blob para dataURL para o worker
+      const imgDataURL = await blobToDataURL(lastImageBlob);
+      const { data: { text } } = await worker.recognize(imgDataURL);
+
+      result.value = text.trim();
+      progressBar.style.width = '100%';
+      progressText.textContent = 'Concluído.';
+
+      await worker.terminate();
+    }
+
+    ocrBtn.onclick = runOCR;
+
+    function blobToDataURL(blob){
+      return new Promise((res, rej)=>{
+        const r = new FileReader();
+        r.onload = ()=>res(r.result);
+        r.onerror = rej;
+        r.readAsDataURL(blob);
+      });
+    }
+
+    copyBtn.onclick = async ()=>{
+      if(!result.value){ alert('Nada para copiar.'); return; }
+      try{ await navigator.clipboard.writeText(result.value); alert('Copiado para a área de transferência.'); }catch(e){ alert('Falha ao copiar: '+e.message); }
+    }
+
+    clearBtn.onclick = ()=>{ result.value=''; progressBar.style.width='0%'; progressText.textContent='Pronto.' }
+
+    downloadTxt.onclick = ()=>{
+      const blob = new Blob([result.value||''], {type:'text/plain;charset=utf-8'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'correcao_redacao.txt';
+      a.download = 'ocr_result.txt';
       a.click();
-      setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
-    });
+      URL.revokeObjectURL(a.href);
+    }
 
-    // prefill a small example (opcional)
-    essayEl.value = `A tecnologia influencia fortemente o cotidiano dos indivíduos e da sociedade. Em uma perspectiva positiva, possibilita maior acesso à informação, educação e comunicação. Porém, também traz desafios, como a desigualdade de acesso, riscos à privacidade e mudanças no mercado de trabalho. É necessário a implementação de políticas públicas que garantam inclusão digital, proteção de dados e programas de requalificação profissional, promovendo assim um uso ético e igualitário da tecnologia.`;
+    downloadImg.onclick = ()=>{
+      if(!lastImageBlob){ alert('Nenhuma imagem para baixar.'); return; }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(lastImageBlob);
+      a.download = 'captura.jpg';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
 
+    openInNew.onclick = ()=>{
+      const w = window.open('about:blank','_blank');
+      w.document.write('<pre>'+escapeHtml(result.value||'')+'</pre>');
+      w.document.title = 'Resultado OCR';
+    }
+
+    function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+    // quick init: try enabling camera on load (optional)
+    // navigator.mediaDevices.getUserMedia && navigator.mediaDevices.getUserMedia({video:true}).then(s=>{stream=s;video.srcObject=s}).catch(()=>{});
   </script>
 </body>
 </html>
