@@ -1,103 +1,104 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>OCR com OCR.Space API</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roleta de Sorteio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f6f8; color: #333; }
-    h1 { margin-bottom: 10px; }
-    .container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    video, canvas { width: 100%; border-radius: 8px; background: #000; margin-bottom: 10px; }
-    textarea { width: 100%; height: 200px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 10px; resize: vertical; }
-    button { padding: 10px 15px; border: none; border-radius: 8px; background: #007bff; color: white; cursor: pointer; margin: 5px 0; }
-    button:disabled { background: #aaa; }
-    .btn-secondary { background: #6c757d; }
+    body {
+      background: linear-gradient(135deg, #1a202c, #2d3748);
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+    .roleta {
+      width: 300px;
+      height: 300px;
+      border: 10px solid #fff;
+      border-radius: 50%;
+      position: relative;
+      margin: 0 auto;
+      overflow: hidden;
+      transform: rotate(0deg);
+      transition: transform 4s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+    }
+    .seta {
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-bottom: 30px solid red;
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .numero {
+      position: absolute;
+      width: 50%;
+      height: 50%;
+      left: 50%;
+      top: 50%;
+      transform-origin: 0% 0%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 20px;
+    }
   </style>
 </head>
-<body>
-  <div class="container">
-    <h1>OCR com OCR.Space API</h1>
-    <p>Capture uma imagem ou carregue um arquivo e extraia texto usando a OCR.Space API.</p>
-    <video id="video" autoplay playsinline></video>
-    <canvas id="canvas" style="display:none"></canvas>
-    <button id="startBtn">Ativar Câmera</button>
-    <button id="snapBtn" class="btn-secondary">Capturar Foto</button>
-    <input type="file" id="fileInput" accept="image/*" style="display:none">
-    <button id="uploadBtn" class="btn-secondary">Carregar Imagem</button>
-    <button id="ocrBtn">Executar OCR</button>
-    <textarea id="result" placeholder="O texto extraído aparecerá aqui..."></textarea>
+<body class="p-6">
+  <h1 class="text-3xl font-bold text-center mb-6">Roleta de Sorteio</h1>
+  <div class="relative">
+    <div class="seta"></div>
+    <div id="roleta" class="roleta"></div>
   </div>
+  <div class="flex justify-center mt-6 space-x-4">
+    <button onclick="girarRoleta()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Girar</button>
+    <button onclick="resetRoleta()" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Reset</button>
+  </div>
+  <h2 class="text-xl mt-6">Histórico de Números:</h2>
+  <ul id="historico" class="mt-2 list-disc ml-6"></ul>
 
   <script>
-    const API_KEY = 'K81214316388957'; // Sua chave API OCR.Space
-    const API_URL = 'https://api.ocr.space/parse/image';
+    const roleta = document.getElementById('roleta');
+    const historico = document.getElementById('historico');
+    let anguloAtual = 0;
+    const total = 8;
+    const numeros = Array.from({ length: total }, (_, i) => i + 1);
 
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const startBtn = document.getElementById('startBtn');
-    const snapBtn = document.getElementById('snapBtn');
-    const uploadBtn = document.getElementById('uploadBtn');
-    const fileInput = document.getElementById('fileInput');
-    const ocrBtn = document.getElementById('ocrBtn');
-    const result = document.getElementById('result');
+    // Criar divisões da roleta
+    numeros.forEach((num, i) => {
+      const div = document.createElement('div');
+      div.classList.add('numero');
+      div.textContent = num;
+      div.style.transform = `rotate(${(360 / total) * i}deg) translate(0, -140px)`;
+      roleta.appendChild(div);
+    });
 
-    let lastImageBlob = null;
+    function girarRoleta() {
+      const sorteado = Math.floor(Math.random() * total) + 1;
+      const anguloFinal = 360 * 5 + (360 / total) * (sorteado - 1);
+      anguloAtual = anguloFinal;
 
-    startBtn.onclick = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        video.srcObject = stream;
-      } catch (err) {
-        alert('Erro ao acessar a câmera: ' + err.message);
-      }
-    };
+      roleta.style.transform = `rotate(-${anguloFinal}deg)`;
 
-    snapBtn.onclick = () => {
-      const w = video.videoWidth;
-      const h = video.videoHeight;
-      canvas.width = w;
-      canvas.height = h;
-      canvas.getContext('2d').drawImage(video, 0, 0, w, h);
-      canvas.toBlob(blob => { lastImageBlob = blob; });
-    };
+      setTimeout(() => {
+        const li = document.createElement('li');
+        li.textContent = `Grupo ${sorteado}`;
+        historico.appendChild(li);
+      }, 4000);
+    }
 
-    uploadBtn.onclick = () => fileInput.click();
-
-    fileInput.onchange = e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const img = new Image();
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        canvas.getContext('2d').drawImage(img, 0, 0);
-        canvas.toBlob(blob => { lastImageBlob = blob; });
-      };
-      img.src = URL.createObjectURL(file);
-    };
-
-    ocrBtn.onclick = async () => {
-      if (!lastImageBlob) return alert('Capture ou carregue uma imagem primeiro.');
-      result.value = 'Processando...';
-      const formData = new FormData();
-      formData.append('apikey', API_KEY);
-      formData.append('language', 'por');
-      formData.append('isOverlayRequired', false);
-      formData.append('file', lastImageBlob, 'image.jpg');
-
-      try {
-        const response = await fetch(API_URL, { method: 'POST', body: formData });
-        const data = await response.json();
-        if (data.ParsedResults && data.ParsedResults.length > 0) {
-          result.value = data.ParsedResults[0].ParsedText.trim() || 'Nenhum texto encontrado';
-        } else {
-          result.value = 'Falha ao reconhecer texto';
-        }
-      } catch (error) {
-        result.value = 'Erro: ' + error.message;
-      }
-    };
+    function resetRoleta() {
+      anguloAtual = 0;
+      roleta.style.transition = 'transform 0.5s ease-out';
+      roleta.style.transform = 'rotate(0deg)';
+      setTimeout(() => {
+        roleta.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.83, 0.67)';
+      }, 500);
+    }
   </script>
 </body>
 </html>
