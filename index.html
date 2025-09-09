@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roleta de Sorteio</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roleta de Sorteio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
     body {
       background: linear-gradient(135deg, #1a202c, #2d3748);
       color: white;
@@ -47,21 +47,27 @@
       font-size: 20px;
     }
   </style>
-</head>
-<body class="p-6">
-  <h1 class="text-3xl font-bold text-center mb-6">Roleta de Sorteio</h1>
-  <div class="relative">
-    <div class="seta"></div>
-    <div id="roleta" class="roleta"></div>
-  </div>
-  <div class="flex justify-center mt-6 space-x-4">
-    <button onclick="girarRoleta()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Girar</button>
-    <button onclick="resetRoleta()" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Reset</button>
-  </div>
-  <h2 class="text-xl mt-6">Histórico de Números:</h2>
-  <ul id="historico" class="mt-2 list-disc ml-6"></ul>
-
-  <script>
+  </head>
+  <body class="p-6">
+    <h1 class="text-3xl font-bold text-center mb-6">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      ROLETA DE SORTE - JOGOS 1 ANO - EETEPA</h1>
+    <p><img src="https://th.bing.com/th/id/R.518c826a8c9641ca711301c4985e7f2a?rik=rMNY2AzU7e6UbA&amp;pid=ImgRaw&amp;r=0"
+        alt="XINGUARA: EETEPA disponibiliza cursos gratuitos para qualificação ..."
+        style="width: 320px; height: 231px;"></p>
+    <div class="relative">
+      <div class="seta"></div>
+      <div id="roleta" class="roleta"></div>
+    </div>
+    <div class="flex justify-center mt-6 space-x-4"> <button onclick="girarRoleta()"
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Girar</button>
+      <button onclick="resetRoleta()" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Reset</button>
+    </div>
+    <h2 class="text-xl mt-6">Histórico de Números:</h2>
+    <p><br>
+    </p>
+    <ul id="historico" class="mt-2 list-disc ml-6">
+    </ul>
+    <script>
     const roleta = document.getElementById('roleta');
     const historico = document.getElementById('historico');
     let anguloAtual = 0;
@@ -100,5 +106,5 @@
       }, 500);
     }
   </script>
-</body>
+  </body>
 </html>
