@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resultado — Conselheiro Tutelar (desenvolvido por: Léo Cruz)</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --accent: #0b63d6;
+    --bg: #f5f7fb;
+    --card: #fff;
+    --muted: #334;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Inter, Segoe UI, Arial;
+    background: var(--bg);
+    color: var(--muted);
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+  }
+  header {
+    text-align: center;
+    background: linear-gradient(90deg, var(--accent), #0f87ff);
+    color: #fff;
+    padding: 1rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    padding: 1rem;
+    gap: 1rem;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    padding: 1rem;
+    width: 100%;
+    max-width: 1200px;
+  }
+  #grafico {
+    width: 100%;
+    height: 70vh;
+  }
+  h2 {
+    text-align: center;
+    margin-bottom: 0.5rem;
+    color: var(--accent);
+  }
+  ol {
+    margin-left: 2rem;
+    font-size: 1.1rem;
+  }
+  footer {
+    text-align: center;
+    color: #778;
+    font-size: 0.9rem;
+    padding: 0.5rem;
+  }
+  @media (max-width: 800px) {
+    #grafico { height: 50vh; }
+    ol { font-size: 1rem; }
+  }
+</style>
+</head>
+<body>
+  <header>🗳️ Resultado — Conselheiro Tutelar</header>
+  <main>
+    <div class="card" style="flex:1;">
+      <canvas id="grafico"></canvas>
+    </div>
+    <div class="card">
+      <h2>Ranking de Candidatos - Desenvolvido por: Premium Sistemas</h2>
+      <ol id="ranking"></ol>
+    </div>
+    <div class="card">
+      <h2>Eleitos</h2>
+      <ol id="eleitos"></ol>
+    </div>
+  </main>
+  <footer>Atualiza automaticamente a cada 5 segundos • Dados locais (localStorage)</footer>
+  <script>
+    const KEY = 'apuracao_conselho_v1';
+    const COLOR_KEY = 'cores_candidatos';
+    const $grafico = document.getElementById('grafico');
+    const $ranking = document.getElementById('ranking');
+    const $eleitos = document.getElementById('eleitos');
+    let chartInstance = null;
+
+    // Paleta fixa solicitada: vermelho, verde, azul, amarelo, cinza e marrom
+    const PALETA = [
+      '#e53935', // vermelho
+      '#43a047', // verde
+      '#1e88e5', // azul
+      '#fdd835', // amarelo
+      '#9e9e9e', // cinza
+      '#8d6e63'  // marrom
+    ];
+
+    // Carrega ou cria mapeamento de cores aderente à paleta fixa.
+    // Estratégia: se já existir um mapeamento salvo, força para a paleta
+    // (substitui cores inválidas). Para novos candidatos, atribui cores
+    // ciclicamente pegando as cores não usadas primeiro.
+    function loadColors(candidatos) {
+      let coresSalvas = {};
+      try {
+        coresSalvas = JSON.parse(localStorage.getItem(COLOR_KEY) || '{}');
+      } catch (e) {
+        coresSalvas = {};
+      }
+
+      // Normaliza: garante que todas as cores salvas pertençam à paleta.
+      Object.keys(coresSalvas).forEach(k => {
+        if (!PALETA.includes(coresSalvas[k])) {
+          delete coresSalvas[k];
+        }
+      });
+
+      // Lista de cores já utilizadas no mapeamento atual
+      const usadas = new Set(Object.values(coresSalvas));
+
+      // Função que retorna a próxima cor disponível (prioriza cores não usadas)
+      function proximaCorDisponivel(idx) {
+        // tenta pegar a primeira cor da paleta que ainda não foi usada
+        for (let c of PALETA) {
+          if (!usadas.has(c)) {
+            usadas.add(c);
+            return c;
+          }
+        }
+        // se todas já usadas, atribui ciclicamente pela posição do candidato
+        return PALETA[idx % PALETA.length];
+      }
+
+      let alterado = false;
+      candidatos.forEach((c, idx) => {
+        if (!coresSalvas[c.nome]) {
+          coresSalvas[c.nome] = proximaCorDisponivel(idx);
+          alterado = true;
+        }
+      });
+
+      if (alterado) localStorage.setItem(COLOR_KEY, JSON.stringify(coresSalvas));
+      return coresSalvas;
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch (e) {
+        console.error(e);
+        return null;
+      }
+    }
+
+    function render() {
+      const state = loadState();
+      if (!state || !state.candidatos) return;
+      const arr = state.candidatos.map((c, idx) => ({
+        nome: c.nome,
+        numero: c.numero,
+        partido: c.partido,
+        votos: state.votos?.byIndex?.[idx] || 0
+      })).sort((a, b) => b.votos - a.votos || a.nome.localeCompare(b.nome));
+
+      const cores = loadColors(state.candidatos);
+      const labels = arr.map(a => a.nome);
+      const data = arr.map(a => a.votos);
+      const coresFixas = arr.map(a => cores[a.nome]);
+
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart($grafico, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Votos',
+            data,
+            backgroundColor: coresFixas
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#334' } },
+            y: { beginAtZero: true, ticks: { color: '#334' } }
+          }
+        }
+      });
+
+      $ranking.innerHTML = arr.length
+        ? arr.map(r => `<li style=\"color:${cores[r.nome]}\">${r.nome} — <strong>${r.votos}</strong> votos</li>`).join('')
+        : '<div style="text-align:center;color:#889">Sem dados</div>';
+
+      const vagas = parseInt(state.vagas) || 5;
+      const eleitos = arr.slice(0, vagas).filter(e => e.votos > 0);
+      $eleitos.innerHTML = eleitos.length
+        ? eleitos.map(e => `<li style=\"color:${cores[e.nome]}\">${e.nome} — <strong>${e.votos}</strong> votos</li>`).join('')
+        : '<div style="text-align:center;color:#889">Nenhum eleito</div>';
+    }
+    render();
+    setInterval(render, 5000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,425 @@
+<!--
+Urna de Apuração - Conselheiro Tutelar (Single Page, no DB)
+Arquivo: urna-conselho-tutelar.html
+Como usar:
+ 1. Salve este arquivo como `index.html` em um repositório GitHub.
+ 2. Ative GitHub Pages nas configurações do repositório (branch main / root) para hospedar.
+ 3. Todos os dados são salvos no localStorage do navegador (sem servidor).
+
+Funcionalidades:
+ - Cadastro de candidatos (nome, partido, número, foto opcional via URL)
+ - Registro de votos (votar por candidato, voto em branco, voto nulo)
+ - Configurar número de vagas (quantos conselheiros serão eleitos)
+ - Apuração automática com ranking e definição dos eleitos
+ - Gráfico de barras (Chart.js) e exportação CSV/JSON
+ - Log de auditoria (timestamp) visível e exportável
+ - Importar/Exportar estado (backup) e botão de reset
+ - Tudo em uma única página, responsivo e pronto para GitHub Pages
+-->
+
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Apuração - Conselheiro Tutelar (SP)</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root{--accent:#0b63d6;--bg:#f5f7fb;--card:#fff;--muted:#556}
+    *{box-sizing:border-box}
+    body{font-family:Inter,Segoe UI,Arial; margin:0; background:var(--bg); color:var(--muted)}
+    header{background:linear-gradient(90deg,var(--accent),#0f87ff); color:#fff; padding:1rem; text-align:center}
+    main{max-width:1100px;margin:1rem auto;padding:1rem}
+    .grid{display:grid;gap:1rem;grid-template-columns:1fr 420px}
+    .card{background:var(--card);border-radius:10px;padding:1rem;box-shadow:0 6px 18px rgba(10,20,40,0.06)}
+    h2{margin:0 0 .5rem}
+    label{display:block;font-size:.9rem;margin:.2rem 0}
+    input[type=text], input[type=number], select, textarea{width:100%;padding:.5rem;border:1px solid #d7dbe9;border-radius:6px}
+    button{background:var(--accent);border:none;color:#fff;padding:.5rem .7rem;border-radius:8px;cursor:pointer}
+    .btn-ghost{background:transparent;color:var(--accent);border:1px solid rgba(11,99,214,.12)}
+    .list{max-height:300px;overflow:auto;margin:0;padding:0;list-style:none}
+    .candidate{display:flex;gap:.6rem;align-items:center;padding:.5rem;border-bottom:1px solid #eff2f8}
+    .candidate img{width:46px;height:46px;border-radius:6px;object-fit:cover}
+    .candidate .meta{flex:1}
+    .controls{display:flex;gap:.5rem;flex-wrap:wrap}
+    .footer-actions{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:flex-end}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+    .small{font-size:.85rem;color:#556}
+    .topbar{display:flex;gap:1rem;align-items:center;justify-content:space-between}
+    .row{display:flex;gap:.5rem;align-items:center}
+    .kpi{display:flex;gap:.6rem;align-items:center}
+    .kpi .value{font-weight:700;font-size:1.25rem}
+    .danger{background:#ff4d4f}
+    .export-area{display:flex;gap:.5rem;flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🗳️ Sistema de Apuração — Conselheiro Tutelar (single page)</h1>
+    <div class="small">Sem banco de dados — usa <strong>localStorage</strong> (pode exportar/importar para backup). Pronto para GitHub Pages.</div>
+  </header>
+
+  <main>
+    <div class="topbar">
+      <div class="row">
+        <div class="kpi card" style="padding:.6rem">
+          <div>
+            <div class="small">Vagas (conselheiros)</div>
+            <div class="value"><input id="vagas" type="number" min="1" value="5" style="width:72px;padding:.25rem;border-radius:6px;border:1px solid #d7dbe9"/></div>
+          </div>
+        </div>
+        <div class="kpi card" style="padding:.6rem">
+          <div>
+            <div class="small">Total de Candidatos</div>
+            <div class="value" id="total-candidatos">0</div>
+          </div>
+        </div>
+        <div class="kpi card" style="padding:.6rem">
+          <div>
+            <div class="small">Total de Votos</div>
+            <div class="value" id="total-votos">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="export-area">
+          <button id="export-json" class="btn-ghost">Exportar JSON</button>
+          <button id="export-csv" class="btn-ghost">Exportar CSV</button>
+          <button id="print" class="btn-ghost">Imprimir resultado</button>
+          <button id="reset" class="btn-ghost">Resetar (limpar)</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="grid" style="margin-top:1rem">
+      <div>
+        <div class="card">
+          <h2>1. Cadastro de candidatos</h2>
+          <form id="form-cad" style="display:grid;grid-template-columns:1fr 160px;gap:.5rem">
+            <div>
+              <label>Nome</label>
+              <input id="cad-nome" type="text" placeholder="Nome completo" required />
+            </div>
+            <div>
+              <label>Número</label>
+              <input id="cad-num" type="number" placeholder="Nº" required />
+            </div>
+            <div>
+              <label>Partido / Grupo</label>
+              <input id="cad-partido" type="text" placeholder="Partido ou comunidade" />
+            </div>
+            <div>
+              <label>Foto (URL opcional)</label>
+              <input id="cad-foto" type="text" placeholder="https://..." />
+            </div>
+            <div style="grid-column:1/-1;display:flex;gap:.5rem;justify-content:flex-end">
+              <button type="submit">Adicionar candidato</button>
+            </div>
+          </form>
+
+          <ul id="lista" class="list" style="margin-top:.8rem"></ul>
+        </div>
+
+        <div class="card" style="margin-top:1rem">
+          <h2>2. Registrar votos</h2>
+          <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+            <select id="select-voto" style="flex:1;padding:.5rem;border-radius:6px;border:1px solid #d7dbe9"></select>
+            <input id="qtd-voto" type="number" min="1" value="1" style="width:120px;padding:.5rem;border-radius:6px;border:1px solid #d7dbe9"/>
+            <button id="btn-votar">Votar</button>
+            <button id="btn-branco" class="btn-ghost">Voto em branco</button>
+            <button id="btn-nulo" class="btn-ghost">Voto nulo</button>
+          </div>
+
+          <div style="margin-top:.8rem">
+            <label>Motivo / Observação (opcional)</label>
+            <input id="obs" type="text" placeholder="Ex: Urna móvel - escola X" />
+          </div>
+
+          <div style="margin-top:.8rem">
+            <h3 class="small">Log de Auditoria</h3>
+            <div id="log" style="max-height:180px;overflow:auto;border:1px solid #eef2fb;padding:.6rem;border-radius:6px;background:#fbfdff"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <aside>
+        <div class="card">
+          <h2>3. Resultados & Gráfico</h2>
+          <canvas id="grafico" height="240"></canvas>
+          <div style="margin-top:.6rem">
+            <h3 class="small">Ranking (ordem decrescente)</h3>
+            <ol id="ranking"></ol>
+          </div>
+          <div style="margin-top:.6rem">
+            <h3 class="small">Eleitos (vagas definidas)</h3>
+            <ol id="eleitos"></ol>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:1rem">
+          <h2>Backup / Importar</h2>
+          <div class="small">Faça backup antes de resetar.</div>
+          <div style="margin-top:.6rem;display:flex;gap:.5rem">
+            <input id="import-file" type="file" accept="application/json" />
+            <button id="import-btn" class="btn-ghost">Importar</button>
+          </div>
+          <div style="margin-top:.6rem">
+            <button id="export-state" class="btn-ghost">Exportar estado (JSON)</button>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <footer style="margin-top:1rem;text-align:center;color:#889">Feito para aprovação — salve como <code>index.html</code> e publique no GitHub Pages.</footer>
+  </main>
+
+  <script>
+    // Keys
+    const KEY = 'apuracao_conselho_v1';
+
+    // State
+    let state = {
+      vagas: 5,
+      candidatos: [], // {nome, numero, partido, foto}
+      votos: { blank:0, null:0, byIndex: {} },
+      log: []
+    };
+
+    // DOM
+    const $vagas = document.getElementById('vagas');
+    const $totalCandidatos = document.getElementById('total-candidatos');
+    const $totalVotos = document.getElementById('total-votos');
+    const $formCad = document.getElementById('form-cad');
+    const $lista = document.getElementById('lista');
+    const $selectVoto = document.getElementById('select-voto');
+    const $qtdVoto = document.getElementById('qtd-voto');
+    const $btnVotar = document.getElementById('btn-votar');
+    const $btnBranco = document.getElementById('btn-branco');
+    const $btnNulo = document.getElementById('btn-nulo');
+    const $obs = document.getElementById('obs');
+    const $log = document.getElementById('log');
+    const $ranking = document.getElementById('ranking');
+    const $eleitos = document.getElementById('eleitos');
+    const $grafico = document.getElementById('grafico');
+
+    // Load/save
+    function load(){
+      try{
+        const raw = localStorage.getItem(KEY);
+        if(raw) state = JSON.parse(raw);
+        // migration safety
+        state.votos = state.votos || {blank:0, null:0, byIndex:{}};
+      }catch(e){ console.error(e); }
+      renderAll();
+    }
+    function save(actionDesc){
+      localStorage.setItem(KEY, JSON.stringify(state));
+      if(actionDesc) addLog(actionDesc);
+      renderAll();
+    }
+
+    // Utils
+    function addLog(text){
+      const time = new Date().toLocaleString();
+      state.log.unshift({time,text});
+      if(state.log.length>200) state.log.pop();
+      syncLog();
+      localStorage.setItem(KEY, JSON.stringify(state));
+    }
+
+    function syncLog(){
+      $log.innerHTML = state.log.map(l=>`<div style="padding:.25rem;border-bottom:1px dashed #eef">[${l.time}] ${escapeHtml(l.text)}</div>`).join('');
+    }
+
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+
+    // Render
+    function renderAll(){
+      $vagas.value = state.vagas;
+      $totalCandidatos.textContent = state.candidatos.length;
+      const totalV = totalVotos();
+      $totalVotos.textContent = totalV;
+      renderLista();
+      renderSelect();
+      renderRanking();
+      renderChart();
+      syncLog();
+    }
+
+    function renderLista(){
+      $lista.innerHTML = state.candidatos.map((c,idx)=>{
+        return `<li class="candidate">
+          ${c.foto?`<img src="${escapeHtml(c.foto)}" alt="${escapeHtml(c.nome)}">` : `<div style="width:46px;height:46px;border-radius:6px;background:#eef;display:flex;align-items:center;justify-content:center;color:#556">${escapeHtml(c.nome.charAt(0)||'–')}</div>`}
+          <div class="meta">
+            <div style="font-weight:700">${escapeHtml(c.nome)} <span class="small">(Nº ${escapeHtml(c.numero)})</span></div>
+            <div class="small">${escapeHtml(c.partido||'sem partido')}</div>
+          </div>
+          <div style="display:flex;gap:.4rem;align-items:center">
+            <div class="small">${state.votos.byIndex[idx]||0} votos</div>
+            <button class="btn-ghost" data-idx="${idx}" onclick="removeCandidate(${idx})">Remover</button>
+          </div>
+        </li>`;
+      }).join('') || '<div class="small">Nenhum candidato cadastrado</div>';
+    }
+
+    function renderSelect(){
+      $selectVoto.innerHTML = state.candidatos.map((c,idx)=>`<option value="${idx}">${escapeHtml(c.nome)} (Nº ${escapeHtml(c.numero)})</option>`).join('') || '<option value="">-- sem candidatos --</option>';
+    }
+
+    function totalVotos(){
+      const by = Object.values(state.votos.byIndex||{}).reduce((a,b)=>a+(b||0),0);
+      return by + (state.votos.blank||0) + (state.votos.null||0);
+    }
+
+    function rankingArray(){
+      return state.candidatos.map((c,idx)=>({
+        idx, nome:c.nome, numero:c.numero, partido:c.partido, votos: state.votos.byIndex[idx]||0
+      })).sort((a,b)=>b.votos - a.votos || a.nome.localeCompare(b.nome));
+    }
+
+    function renderRanking(){
+      const arr = rankingArray();
+      $ranking.innerHTML = arr.map(r=>`<li>${escapeHtml(r.nome)} — ${r.votos} votos</li>`).join('') || '<div class="small">Sem votos ainda</div>';
+
+      const vagas = parseInt($vagas.value)||state.vagas||1;
+      state.vagas = vagas;
+      const eleitos = arr.slice(0,vagas).filter(x=>x.votos>0);
+      $eleitos.innerHTML = eleitos.length? eleitos.map(e=>`<li>${escapeHtml(e.nome)} — ${e.votos} votos</li>`).join('') : '<div class="small">Nenhum eleito (sem votos)</div>';
+    }
+
+    let chartInstance = null;
+    function renderChart(){
+      const arr = rankingArray();
+      const labels = arr.map(a=>a.nome);
+      const data = arr.map(a=>a.votos);
+      if(chartInstance) chartInstance.destroy();
+      chartInstance = new Chart($grafico, {type:'bar',data:{labels,datasets:[{label:'Votos',data,backgroundColor: labels.map((_,i)=>`hsl(${i*40 % 360} 70% 50%)`)}]}, options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+    }
+
+    // Actions
+    $formCad.addEventListener('submit', e=>{
+      e.preventDefault();
+      const nome = document.getElementById('cad-nome').value.trim();
+      const numero = document.getElementById('cad-num').value.trim();
+      const partido = document.getElementById('cad-partido').value.trim();
+      const foto = document.getElementById('cad-foto').value.trim();
+      if(!nome||!numero) return alert('Nome e número são obrigatórios');
+      state.candidatos.push({nome,numero,partido,foto});
+      save(`Candidato adicionado: ${nome} (Nº ${numero})`);
+      $formCad.reset();
+    });
+
+    window.removeCandidate = function(idx){
+      if(!confirm('Remover candidato? Essa ação preserva votos (serão reindexados).')) return;
+      // remove candidato and shift votes byIndex
+      state.candidatos.splice(idx,1);
+      const newBy = {};
+      const old = state.votos.byIndex||{};
+      // rebuild mapping shifting indices > idx
+      let newIndex=0;
+      for(let i=0;i<=Object.keys(old).length+10;i++){
+        if(old[i]===undefined) continue;
+        const candidateStillExists = (i<idx) || (i>idx && i-1 < state.candidatos.length);
+        if(i===idx) continue; // drop
+        if(i<idx) newBy[i]=old[i];
+        else newBy[i-1]=old[i];
+      }
+      state.votos.byIndex = newBy;
+      save(`Candidato removido (índice ${idx})`);
+    };
+
+    $btnVotar.addEventListener('click', ()=>{
+      const sel = $selectVoto.value;
+      const qtd = Math.max(1, parseInt($qtdVoto.value)||1);
+      const obsText = $obs.value.trim();
+      if(sel==='') return alert('Selecione um candidato');
+      state.votos.byIndex[sel] = (state.votos.byIndex[sel]||0) + qtd;
+      save(`Registro: ${qtd} voto(s) para ${state.candidatos[sel].nome}${obsText? ' — '+obsText:''}`);
+      $qtdVoto.value = 1; $obs.value='';
+    });
+
+    $btnBranco.addEventListener('click', ()=>{
+      const qtd = Math.max(1, parseInt($qtdVoto.value)||1);
+      state.votos.blank = (state.votos.blank||0) + qtd;
+      save(`Registro: ${qtd} voto(s) em branco`);
+    });
+    $btnNulo.addEventListener('click', ()=>{
+      const qtd = Math.max(1, parseInt($qtdVoto.value)||1);
+      state.votos.null = (state.votos.null||0) + qtd;
+      save(`Registro: ${qtd} voto(s) nulo(s)`);
+    });
+
+    // Exports
+    document.getElementById('export-json').addEventListener('click', ()=>{
+      const data = JSON.stringify(state, null, 2);
+      downloadFile('apuracao.json', data);
+    });
+    document.getElementById('export-csv').addEventListener('click', ()=>{
+      // CSV: nome,numero,partido,votos
+      const arr = rankingArray();
+      const rows = [['nome','numero','partido','votos']].concat(arr.map(a=>[a.nome,a.numero,a.partido||'',a.votos]));
+      const csv = rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+      downloadFile('apuracao.csv', csv);
+    });
+
+    document.getElementById('export-state').addEventListener('click', ()=>{
+      const data = JSON.stringify(state, null, 2);
+      downloadFile('apuracao_state.json', data);
+    });
+
+    function downloadFile(name, content){
+      const blob = new Blob([content],{type:'application/octet-stream'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+
+    // Import
+    document.getElementById('import-btn').addEventListener('click', ()=>{
+      const f = document.getElementById('import-file').files[0];
+      if(!f) return alert('Selecione um arquivo JSON para importar');
+      const reader = new FileReader();
+      reader.onload = e=>{
+        try{
+          const obj = JSON.parse(e.target.result);
+          // basic validation
+          if(!obj || !Array.isArray(obj.candidatos)) return alert('Arquivo inválido');
+          state = obj;
+          save('Estado importado (backup)');
+          alert('Importado com sucesso');
+        }catch(err){alert('Erro ao importar: '+err.message)}
+      };
+      reader.readAsText(f);
+    });
+
+    // Reset / print
+    document.getElementById('reset').addEventListener('click', ()=>{
+      if(!confirm('Tem certeza que deseja apagar TODOS os dados?')) return;
+      state = {vagas:parseInt($vagas.value)||5,candidatos:[],votos:{blank:0,null:0,byIndex:{}},log:[]};
+      save('Reset do sistema');
+      localStorage.removeItem(KEY);
+      alert('Dados apagados');
+      renderAll();
+    });
+
+    document.getElementById('print').addEventListener('click', ()=>{
+      window.print();
+    });
+
+    // On vagas change
+    $vagas.addEventListener('change', ()=>{ state.vagas = parseInt($vagas.value)||state.vagas; save('Vagas atualizadas: '+state.vagas); });
+
+    // Initialize
+    load();
+
+    // For initial demo - add sample data if empty (comment out in production)
+    if(state.candidatos.length===0){
+      // leave empty by default; user can add
+    }
+
+    // Expose for debug
+    window.__apuracao_state = () => state;
+  </script>
+</body>
+</html>

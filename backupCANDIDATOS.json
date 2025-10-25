@@ -1,0 +1,66 @@
+{
+  "vagas": 5,
+  "candidatos": [
+    {
+      "nome": "Mateus Pereira da Silva",
+      "numero": "101",
+      "partido": "101",
+      "foto": ""
+    },
+    {
+      "nome": "Igor Borges Santiago",
+      "numero": "102",
+      "partido": "102",
+      "foto": ""
+    },
+    {
+      "nome": "Vilma Barbosa de Sousa",
+      "numero": "103",
+      "partido": "103",
+      "foto": ""
+    },
+    {
+      "nome": "Janaina Santos Ferreira",
+      "numero": "104",
+      "partido": "104",
+      "foto": ""
+    },
+    {
+      "nome": "Jane Maria de Barros",
+      "numero": "106",
+      "partido": "106",
+      "foto": ""
+    }
+  ],
+  "votos": {
+    "blank": 0,
+    "null": 0,
+    "byIndex": {}
+  },
+  "log": [
+    {
+      "time": "25/10/2025, 08:40:44",
+      "text": "Candidato adicionado: Jane Maria de Barros (Nº 106)"
+    },
+    {
+      "time": "25/10/2025, 08:40:28",
+      "text": "Candidato adicionado: Janaina Santos Ferreira (Nº 104)"
+    },
+    {
+      "time": "25/10/2025, 08:40:13",
+      "text": "Candidato adicionado: Vilma Barbosa de Sousa (Nº 103)"
+    },
+    {
+      "time": "25/10/2025, 08:39:54",
+      "text": "Candidato adicionado: Igor Borges Santiago (Nº 102)"
+    },
+    {
+      "time": "25/10/2025, 08:39:27",
+      "text": "Candidato adicionado: Mateus Pereira da Silva (Nº 101)"
+    },
+    {
+      "time": "25/10/2025, 08:37:12",
+      "text": "Reset do sistema"
+    }
+  ]
+}
