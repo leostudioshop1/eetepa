@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gestão de Despesas - 80 Apartamentos (Single Page)</title>
+  <style>
+    :root{--bg:#f5f7fb;--card:#fff;--muted:#6b7280;--accent:#0b74de}
+    body{font-family:Inter,system-ui,Segoe UI,Arial; background:var(--bg); margin:0; padding:24px}
+    .container{max-width:1100px;margin:0 auto}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{font-size:20px;margin:0}
+    .card{background:var(--card);padding:14px;border-radius:10px;box-shadow:0 6px 18px rgba(11,16,30,0.06);}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:14px}
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    input,select,textarea{width:100%;padding:8px;border-radius:6px;border:1px solid #e6e9ee;font-size:14px}
+    button{background:var(--accent);color:#fff;border:0;padding:8px 12px;border-radius:8px;cursor:pointer}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:8px;border-bottom:1px solid #eef2f6;text-align:left;font-size:13px}
+    .muted{color:var(--muted)}
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    .small{font-size:12px;padding:6px 8px}
+    .sum{font-weight:700}
+    .right{text-align:right}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#eef7ff;color:#064a9c;font-size:12px}
+    footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Gestão de Despesas - 80 Apartamentos</h1>
+    <div class="muted">Arquivo local (LocalStorage) • único ficheiro HTML</div>
+  </header>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h3>Registrar despesa</h3>
+        <div style="margin-top:8px">
+          <label>Apartamento</label>
+          <select id="aptoSelect"></select>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <div style="flex:1">
+            <label>Data</label>
+            <input type="date" id="dateInput" />
+          </div>
+          <div style="width:150px">
+            <label>Valor (R$)</label>
+            <input type="number" step="0.01" id="amountInput" placeholder="0.00" />
+          </div>
+        </div>
+        <div style="margin-top:8px">
+          <label>Categoria</label>
+          <select id="categoryInput">
+            <option>Manutenção</option>
+            <option>Limpeza</option>
+            <option>Energia</option>
+            <option>Água</option>
+            <option>Internet</option>
+            <option>Outros</option>
+          </select>
+        </div>
+        <div style="margin-top:8px">
+          <label>Descrição</label>
+          <textarea id="descInput" rows="2" placeholder="Ex: troca de lâmpadas"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+          <button id="addBtn">Adicionar despesa</button>
+          <button id="clearForm" class="small" style="background:#e6e9ee;color:#111">Limpar</button>
+          <div style="margin-left:auto" class="muted">Total registros: <span id="countSpan">0</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h3>Filtros & Relatórios</h3>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <div style="flex:1">
+            <label>Filtro por Apto</label>
+            <select id="filterApto"><option value="all">Todos</option></select>
+          </div>
+          <div style="flex:1">
+            <label>Categoria</label>
+            <select id="filterCategory"><option value="all">Todas</option><option>Manutenção</option><option>Limpeza</option><option>Energia</option><option>Água</option><option>Internet</option><option>Outros</option></select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <div style="flex:1">
+            <label>De</label>
+            <input type="date" id="fromDate" />
+          </div>
+          <div style="flex:1">
+            <label>Até</label>
+            <input type="date" id="toDate" />
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+          <button id="applyFilter" class="small">Aplicar</button>
+          <button id="resetFilter" class="small" style="background:#e6e9ee;color:#111">Limpar filtros</button>
+          <button id="exportCSV" class="small">Exportar CSV</button>
+          <button id="downloadJSON" class="small">Baixar JSON</button>
+          <button id="importJSON" class="small" style="background:#f3e8ff;color:#111">Importar JSON</button>
+          <input type="file" id="fileInput" accept="application/json" style="display:none" />
+          <div style="margin-left:auto;text-align:right">
+            <div class="muted">Soma no filtro:</div>
+            <div class="sum" id="sumFiltered">R$ 0,00</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h3>Registros</h3>
+        <div style="overflow:auto;max-height:380px">
+          <table id="table">
+            <thead>
+              <tr><th>Apto</th><th>Data</th><th>Categoria</th><th>Descrição</th><th class="right">Valor (R$)</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <aside>
+      <div class="card">
+        <h3>Visão rápida</h3>
+        <div style="margin-top:10px">
+          <div class="muted">Total despesas (todas)</div>
+          <div class="sum" id="totalAll">R$ 0,00</div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="muted">Total por apartamento (clique no apto)</div>
+          <div style="margin-top:8px;display:grid;grid-template-columns:repeat(2,1fr);gap:6px;max-height:380px;overflow:auto" id="aptoGrid"></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-direction:column">
+          <button id="resetStorage" style="background:#fff;color:#111;border:1px solid #eee">Apagar todos dados</button>
+          <button id="seedData" style="background:#fff;color:#111;border:1px solid #eee">Gerar dados de teste (80 aptos)</button>
+          <div class="muted" style="font-size:12px;margin-top:6px">Dica: faça backup com 'Baixar JSON' antes de apagar.</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <footer>
+    Arquivo único HTML. Para hospedar no GitHub Pages: crie um repositório, faça upload deste .html e ative GitHub Pages na branch principal. Para uso local, basta abrir no navegador.
+  </footer>
+</div>
+
+<script>
+// --- Single-file app: armazenamento local (LocalStorage) ---
+const STORAGE_KEY = 'gestao_despesas_80_v1';
+let state = { expenses: [] };
+
+// util
+const q = sel => document.querySelector(sel);
+const fmt = v => Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+// init apartments
+function initApartments(){
+  const select = q('#aptoSelect');
+  const filter = q('#filterApto');
+  const grid = q('#aptoGrid');
+  select.innerHTML = '';
+  filter.innerHTML = '<option value="all">Todos</option>';
+  grid.innerHTML = '';
+  for(let i=1;i<=80;i++){
+    const opt = document.createElement('option'); opt.value = `Apto ${i}`; opt.textContent = `Apto ${i}`; select.appendChild(opt);
+    const opt2 = opt.cloneNode(true); filter.appendChild(opt2);
+    const btn = document.createElement('button'); btn.className = 'small'; btn.textContent = `Apto ${i}`;
+    btn.onclick = ()=>{ q('#filterApto').value = `Apto ${i}`; applyFilter(); };
+    grid.appendChild(btn);
+  }
+}
+
+function load(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw){ try{ state = JSON.parse(raw);}catch(e){state={expenses:[]}} }
+  else state = {expenses:[]};
+}
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); render(); }
+
+function addExpense(obj){ state.expenses.push(obj); save(); }
+
+function removeExpense(idx){ if(confirm('Remover este registro?')){ state.expenses.splice(idx,1); save(); } }
+
+function render(){
+  const tbody = q('#table tbody'); tbody.innerHTML='';
+  const count = state.expenses.length; q('#countSpan').textContent = count;
+  let total = 0;
+  state.expenses.forEach((e, i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${e.apto}</td><td>${e.date}</td><td>${e.category}</td><td>${e.desc||''}</td><td class='right'>${fmt(e.amount)}</td><td><button class='small' onclick='removeExpense(${i})'>Excluir</button></td>`;
+    tbody.appendChild(tr);
+    total += Number(e.amount||0);
+  });
+  q('#totalAll').textContent = `R$ ${fmt(total)}`;
+  renderFilteredSum();
+}
+
+function getFiltered(){
+  const apt = q('#filterApto').value;
+  const cat = q('#filterCategory').value;
+  const from = q('#fromDate').value;
+  const to = q('#toDate').value;
+  return state.expenses.filter(e=>{
+    if(apt!=='all' && e.apto!==apt) return false;
+    if(cat!=='all' && e.category!==cat) return false;
+    if(from && e.date < from) return false;
+    if(to && e.date > to) return false;
+    return true;
+  });
+}
+
+function renderFilteredSum(){
+  const list = getFiltered();
+  const sum = list.reduce((s,it)=>s+Number(it.amount||0),0);
+  q('#sumFiltered').textContent = `R$ ${fmt(sum)}`;
+}
+
+// CSV export
+function exportCSV(){
+  const rows = [['apto','date','category','desc','amount']];
+  state.expenses.forEach(e=> rows.push([e.apto,e.date,e.category,`"${(e.desc||'').replace(/"/g,'""') }"`,Number(e.amount).toFixed(2)]));
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='despesas.csv'; a.click(); URL.revokeObjectURL(url);
+}
+
+function downloadJSON(){
+  const blob = new Blob([JSON.stringify(state, null, 2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='despesas_80_apts.json'; a.click(); URL.revokeObjectURL(url);
+}
+
+function importJSONFile(file){
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{ const data = JSON.parse(reader.result); if(data && Array.isArray(data.expenses)){
+      if(confirm('Substituir os dados atuais pelo JSON importado?')){ state = data; save(); alert('Importação concluída.'); }
+    } else alert('Formato inválido. Esperado { expenses: [...] }'); }
+    catch(e){ alert('Erro ao ler JSON: '+e.message); }
+  };
+  reader.readAsText(file);
+}
+
+// seed
+function seed(){
+  if(!confirm('Gerar 200 registros de teste? Isso adicionará muitos registros ao localStorage.')) return;
+  const cats = ['Manutenção','Limpeza','Energia','Água','Internet','Outros'];
+  for(let i=0;i<200;i++){
+    const apt = `Apto ${Math.floor(Math.random()*80)+1}`;
+    const date = new Date(Date.now()-Math.floor(Math.random()*1000*3600*24*365)).toISOString().slice(0,10);
+    const amount = (Math.random()*500).toFixed(2);
+    const category = cats[Math.floor(Math.random()*cats.length)];
+    state.expenses.push({apto,date,amount:Number(amount),category,desc:'registro teste'});
+  }
+  save();
+}
+
+function resetStorage(){ if(confirm('Apagar todos os dados armazenados? Esta ação é irreversível.')){ state={expenses:[]}; save(); alert('Dados apagados.'); } }
+
+// events
+q('#addBtn').onclick = ()=>{
+  const apt = q('#aptoSelect').value;
+  const date = q('#dateInput').value || new Date().toISOString().slice(0,10);
+  const amount = Number(q('#amountInput').value||0);
+  const category = q('#categoryInput').value;
+  const desc = q('#descInput').value;
+  if(!amount || amount<=0){ alert('Informe um valor maior que 0'); return; }
+  addExpense({apto,date,amount,category,desc});
+  q('#amountInput').value=''; q('#descInput').value='';
+};
+
+q('#clearForm').onclick = ()=>{ q('#amountInput').value=''; q('#descInput').value=''; };
+q('#applyFilter').onclick = ()=>{ renderFilteredTable(); };
+q('#resetFilter').onclick = ()=>{ q('#filterApto').value='all'; q('#filterCategory').value='all'; q('#fromDate').value=''; q('#toDate').value=''; renderFilteredTable(); };
+q('#exportCSV').onclick = ()=> exportCSV();
+q('#downloadJSON').onclick = ()=> downloadJSON();
+q('#importJSON').onclick = ()=> q('#fileInput').click();
+q('#fileInput').onchange = e=>{ if(e.target.files.length) importJSONFile(e.target.files[0]); };
+q('#seedData').onclick = ()=> seed();
+q('#resetStorage').onclick = ()=> resetStorage();
+
+// render filtered table
+function renderFilteredTable(){
+  const list = getFiltered();
+  const tbody = q('#table tbody'); tbody.innerHTML='';
+  list.forEach((e,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${e.apto}</td><td>${e.date}</td><td>${e.category}</td><td>${e.desc||''}</td><td class='right'>${fmt(e.amount)}</td><td></td>`;
+    tbody.appendChild(tr);
+  });
+  renderFilteredSum();
+}
+
+// startup
+initApartments(); load(); render();
+
+// expose removeExpense to global (used in inline onclick)
+window.removeExpense = removeExpense;
+</script>
+</body>
+</html>
