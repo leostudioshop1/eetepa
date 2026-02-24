@@ -1,0 +1,41 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Quiz - Professor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{font-family:'Segoe UI',Arial;background:#0f0f1a;color:#fff;text-align:center}
+table{margin:20px auto;border-collapse:collapse;width:60%}
+th,td{padding:10px;border:1px solid #444}
+th{background:#00f7ff;color:#000}
+</style>
+</head>
+<body>
+
+<h2>Ranking em Tempo Real</h2>
+<table>
+<thead><tr><th>#</th><th>Nome</th><th>Pontos</th></tr></thead>
+<tbody id="ranking"></tbody>
+</table>
+
+<script>
+const socket = new WebSocket("ws://localhost:3000");
+
+socket.onmessage = function(event){
+let dados = JSON.parse(event.data);
+if(dados.tipo==="ranking"){
+let ranking = Object.entries(dados.placar).sort((a,b)=>b[1]-a[1]);
+let tbody = document.getElementById("ranking");
+tbody.innerHTML="";
+ranking.forEach((item,i)=>{
+let row = `<tr><td>${i+1}</td><td>${item[0]}</td><td>${item[1]}</td></tr>`;
+tbody.innerHTML += row;
+});
+}
+};
+</script>
+
+</body>
+</html>

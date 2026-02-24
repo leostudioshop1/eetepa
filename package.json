@@ -1,0 +1,10 @@
+
+{
+  "name": "quiz-multiplayer",
+  "version": "1.0.0",
+  "description": "Quiz Multiplayer Rede Local",
+  "main": "server.js",
+  "dependencies": {
+    "ws": "^8.13.0"
+  }
+}

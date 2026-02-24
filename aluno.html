@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Quiz - Aluno</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{font-family:'Segoe UI',Arial;background:radial-gradient(circle at top,#1b1b2f,#0f0f1a);color:#fff;text-align:center;margin:0}
+.card{background:#1f1f35;padding:25px;max-width:600px;margin:30px auto;border-radius:20px}
+button{padding:12px 20px;margin:8px;border:none;border-radius:10px;font-weight:bold;cursor:pointer}
+.true{background:#00c853}
+.false{background:#d50000}
+.start{background:#2196f3}
+</style>
+</head>
+<body>
+
+<div class="card">
+<h2>Modo Aluno</h2>
+<input type="text" id="nome" placeholder="Seu nome">
+<br><br>
+<button class="start" onclick="entrar()">Entrar</button>
+</div>
+
+<div class="card" id="quiz" style="display:none;">
+<h3 id="pergunta"></h3>
+<button class="true" onclick="responder(true)">Verdadeiro</button>
+<button class="false" onclick="responder(false)">Falso</button>
+<p>Pontos: <span id="pontos">0</span></p>
+</div>
+
+<script>
+const socket = new WebSocket("ws://localhost:3000");
+
+let perguntas=[
+{text:"(true AND false) é verdadeiro.",resposta:false},
+{text:"(true OR false) é verdadeiro.",resposta:true},
+{text:"(NOT false) é verdadeiro.",resposta:true}
+];
+
+let nome="";
+let pontuacao=0;
+let perguntaAtual;
+
+function entrar(){
+nome=document.getElementById("nome").value;
+if(!nome) return alert("Digite seu nome");
+document.querySelector(".card").style.display="none";
+document.getElementById("quiz").style.display="block";
+novaPergunta();
+}
+
+function novaPergunta(){
+let i=Math.floor(Math.random()*perguntas.length);
+perguntaAtual=perguntas[i];
+document.getElementById("pergunta").innerText=perguntaAtual.text;
+}
+
+function responder(resp){
+if(resp===perguntaAtual.resposta){
+pontuacao++;
+socket.send(JSON.stringify({tipo:"pontuar",nome:nome,pontos:pontuacao}));
+}
+document.getElementById("pontos").innerText=pontuacao;
+novaPergunta();
+}
+</script>
+
+</body>
+</html>
