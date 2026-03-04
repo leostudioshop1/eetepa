@@ -2,14 +2,17 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Votação</title>
+    <title>Escola Pedro Ribeiro Mota - Eleição da Tutoria</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body{ background:#0f0f0f; color:#fff; font-family:Arial; display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; margin:0; }
-        .container{ background:#1c1c1c; padding:30px; border-radius:12px; width:380px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        input, select, button{ width:100%; padding:12px; margin:10px 0; border:none; border-radius:6px; box-sizing: border-box; }
-        input, select{ background:#2b2b2b; color:#fff; }
-        button{ background:#7c3aed; color:#fff; cursor:pointer; font-weight:bold; }
+        body{ background:#0f0f0f; color:#fff; font-family:Arial; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:100vh; margin:0; padding: 20px; }
+        .container{ background:#1c1c1c; padding:30px; border-radius:12px; width:100%; max-width:400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; }
+        h1{ font-size: 22px; color: #7c3aed; margin-bottom: 5px; }
+        h2{ font-size: 18px; margin-bottom: 20px; color: #ccc; }
+        input, select, button{ width:100%; padding:12px; margin:10px 0; border:none; border-radius:6px; box-sizing: border-box; font-size: 16px; }
+        input, select{ background:#2b2b2b; color:#fff; border: 1px solid #444; }
+        button{ background:#7c3aed; color:#fff; cursor:pointer; font-weight:bold; transition: 0.3s; }
+        button:hover{ background: #6d28d9; }
         button:disabled{ background:#444; cursor:not-allowed; }
         footer{ margin-top:20px; font-size:12px; color:#888; }
     </style>
@@ -17,14 +20,18 @@
 <body>
 
 <div class="container">
-    <h2>Votação</h2>
+    <h1>Escola Pedro Ribeiro Mota</h1>
+    <h2>Eleição da Tutoria</h2>
+    
     <input type="text" id="nome" placeholder="Seu nome completo">
     <input type="text" id="turma" placeholder="Sua turma (ex: 3º A)">
+    
     <select id="professor">
-        <option value="">Carregando professores...</option>
+        <option value="">Carregando professores e vagas...</option>
     </select>
-    <button id="btnVotar" onclick="votar()">Votar</button>
-    <p style="font-size:13px;color:#ccc;">Cada aluno só poderá votar uma única vez por dispositivo.</p>
+    
+    <button id="btnVotar" onclick="votar()">Confirmar Voto</button>
+    <p style="font-size:13px;color:#888; margin-top: 15px;">Atenção: Limite de 14 alunos por tutor. Voto único por dispositivo.</p>
 </div>
 
 <footer>Desenvolvido por Léo Cruz</footer>
@@ -32,18 +39,37 @@
 <script>
     const _supabase = supabase.createClient('https://hjvlgklyhzvpfyxhpjdb.supabase.co', 'sb_publishable_AtYA70tt9Nh03Gz-RR6c1w_J2PHVdJv');
 
-    document.addEventListener("DOMContentLoaded", carregarProfessores);
+    document.addEventListener("DOMContentLoaded", carregarProfessoresComVagas);
 
-    async function carregarProfessores() {
-        const { data, error } = await _supabase.from('professores').select('nome').order('nome', { ascending: true });
+    async function carregarProfessoresComVagas() {
+        // Busca professores e contagem de votos simultaneamente
+        const { data: profs } = await _supabase.from('professores').select('nome').order('nome');
+        const { data: votos } = await _supabase.from('votos').select('professor_nome');
+
+        const contagem = {};
+        if (votos) {
+            votos.forEach(v => {
+                contagem[v.professor_nome] = (contagem[v.professor_nome] || 0) + 1;
+            });
+        }
+
         let select = document.getElementById("professor");
-        select.innerHTML = '<option value="">Escolha o professor</option>';
+        select.innerHTML = '<option value="">Escolha seu Tutor</option>';
         
-        if (data) {
-            data.forEach(p => {
+        if (profs) {
+            profs.forEach(p => {
+                const totalVotos = contagem[p.nome] || 0;
+                const vagasRestantes = 14 - totalVotos;
                 let opt = document.createElement("option");
+                
                 opt.value = p.nome;
-                opt.textContent = p.nome;
+                if (vagasRestantes <= 0) {
+                    opt.textContent = `${p.nome} (ESGOTADO)`;
+                    opt.disabled = true;
+                    opt.style.color = "#ff4444";
+                } else {
+                    opt.textContent = `${p.nome} (${vagasRestantes} vagas restantes)`;
+                }
                 select.appendChild(opt);
             });
         }
@@ -66,7 +92,21 @@
         }
 
         btn.disabled = true;
-        btn.innerText = "Enviando...";
+        btn.innerText = "Processando...";
+
+        // Verificação de última hora se ainda há vaga
+        const { count } = await _supabase
+            .from('votos')
+            .select('*', { count: 'exact', head: true })
+            .eq('professor_nome', professor);
+
+        if (count >= 14) {
+            alert("Desculpe, as vagas para este professor acabaram de esgotar! Escolha outro.");
+            carregarProfessoresComVagas();
+            btn.disabled = false;
+            btn.innerText = "Confirmar Voto";
+            return;
+        }
 
         const { error } = await _supabase
             .from('votos')
@@ -75,7 +115,7 @@
         if (error) {
             alert("Erro ao votar: " + error.message);
             btn.disabled = false;
-            btn.innerText = "Votar";
+            btn.innerText = "Confirmar Voto";
         } else {
             localStorage.setItem("jaVotou", "true");
             alert("Voto registrado com sucesso!");

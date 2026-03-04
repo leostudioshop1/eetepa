@@ -2,41 +2,71 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Painel de Apuração</title>
+    <title>Apuração - Escola Pedro Ribeiro Mota</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
     <style>
-        body{ background:#0f0f0f; color:#fff; font-family:Arial; padding:30px; }
-        .container{ max-width:1000px; margin:auto; }
-        .card{ background:#1c1c1c; padding:20px; border-radius:12px; margin-bottom:20px; }
-        input, button{ padding:10px; margin:5px; border:none; border-radius:6px; }
-        input{ background:#2b2b2b; color:#fff; width:250px; }
-        button{ background:#7c3aed; color:#fff; cursor:pointer; font-weight:bold; }
-        table{ width:100%; border-collapse:collapse; margin-top:10px; }
-        th, td{ padding:10px; border-bottom:1px solid #333; text-align:left; }
-        canvas{ background:#fff; border-radius:8px; padding:10px; }
+        body{ background:#0f0f0f; color:#fff; font-family:Arial; padding:20px; }
+        .container{ max-width:1100px; margin:auto; }
+        h1{ text-align: center; color: #7c3aed; }
+        .card{ background:#1c1c1c; padding:20px; border-radius:12px; margin-bottom:20px; border: 1px solid #333; }
+        .flex-buttons{ display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        input, button{ padding:10px; border:none; border-radius:6px; font-weight:bold; }
+        input{ background:#2b2b2b; color:#fff; width:250px; border: 1px solid #444; }
+        .btn-add{ background:#7c3aed; color:#fff; }
+        .btn-excel{ background:#16a34a; color:#fff; }
+        .btn-pdf{ background:#dc2626; color:#fff; }
+        .btn-danger{ background:#444; color:#ff4444; border: 1px solid #ff4444; margin-left: auto; }
+        table{ width:100%; border-collapse:collapse; margin-top:10px; background: #111; }
+        th, td{ padding:12px; border: 1px solid #333; text-align:left; }
+        th{ background: #222; color: #7c3aed; }
+        .chart-container{ background:#fff; border-radius:8px; padding:15px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <h1>Escola Pedro Ribeiro Mota - Painel de Controle</h1>
+
     <div class="card">
-        <h2>Gerenciar Professores</h2>
-        <input type="text" id="novoProfessor" placeholder="Nome do professor">
-        <button onclick="adicionarProfessor()">Cadastrar</button>
+        <h3>Gerenciar Professores</h3>
+        <input type="text" id="novoProfessor" placeholder="Nome do novo tutor">
+        <button class="btn-add" onclick="adicionarProfessor()">Cadastrar Professor</button>
     </div>
 
     <div class="card">
-        <h2>Resultado Geral</h2>
+        <h3>Ações e Relatórios</h3>
+        <div class="flex-buttons">
+            <button class="btn-excel" onclick="exportarExcel()">Exportar para Excel</button>
+            <button class="btn-pdf" onclick="exportarPDF()">Exportar para PDF</button>
+            <button class="btn-danger" onclick="zerarBanco()">Zerar Sistema (CUIDADO)</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Quadro de Vagas</h3>
         <table id="tabelaVotos">
-            <thead><tr><th>Professor</th><th>Total de Votos</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>Professor / Tutor</th>
+                    <th>Votos Recebidos</th>
+                    <th>Vagas Restantes</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
             <tbody id="corpoTabela"></tbody>
         </table>
     </div>
 
     <div class="card">
-        <h2>Gráfico em Tempo Real</h2>
-        <canvas id="graficoVotos"></canvas>
+        <h3>Gráfico de Preenchimento</h3>
+        <div class="chart-container">
+            <canvas id="graficoVotos"></canvas>
+        </div>
     </div>
 </div>
 
@@ -50,28 +80,36 @@
         const nome = document.getElementById("novoProfessor").value.trim();
         if(!nome) return;
         const { error } = await _supabase.from('professores').insert([{ nome }]);
-        if(error) alert("Erro ou professor já existe!");
+        if(error) alert("Erro: Nome já cadastrado ou falha na conexão.");
         document.getElementById("novoProfessor").value = "";
         atualizarDados();
     }
 
     async function atualizarDados() {
-        // Busca professores e votos
-        const { data: profs } = await _supabase.from('professores').select('*');
+        const { data: profs } = await _supabase.from('professores').select('*').order('nome');
         const { data: votos } = await _supabase.from('votos').select('professor_nome');
 
         const contagem = {};
         profs.forEach(p => contagem[p.nome] = 0);
         votos.forEach(v => { if(contagem[v.professor_nome] !== undefined) contagem[v.professor_nome]++; });
 
-        // Atualiza Tabela
         const tbody = document.getElementById("corpoTabela");
         tbody.innerHTML = "";
+        
         Object.keys(contagem).forEach(nome => {
-            tbody.innerHTML += `<tr><td>${nome}</td><td>${contagem[nome]}</td></tr>`;
+            const v = contagem[nome];
+            const restantes = 14 - v;
+            const status = restantes <= 0 ? "<b style='color:#ff4444'>LOTADO</b>" : "<span style='color:#4ade80'>Disponível</span>";
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td>${nome}</td>
+                    <td>${v}</td>
+                    <td>${restantes < 0 ? 0 : restantes}</td>
+                    <td>${status}</td>
+                </tr>`;
         });
 
-        // Atualiza Gráfico
         renderizarGrafico(Object.keys(contagem), Object.values(contagem));
     }
 
@@ -82,14 +120,49 @@
             type: 'bar',
             data: {
                 labels: labels,
-                datasets: [{ label: 'Votos', data: valores, backgroundColor: '#7c3aed' }]
+                datasets: [{ 
+                    label: 'Votos Atuais (Máx 14)', 
+                    data: valores, 
+                    backgroundColor: valores.map(v => v >= 14 ? '#ef4444' : '#7c3aed')
+                }]
             },
-            options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            options: { 
+                scales: { y: { max: 14, beginAtZero: true } }
+            }
         });
     }
 
-    // Atualiza automaticamente a cada 30 segundos
-    setInterval(atualizarDados, 30000);
+    function exportarExcel() {
+        const table = document.getElementById("tabelaVotos");
+        const wb = XLSX.utils.table_to_book(table);
+        XLSX.writeFile(wb, "Eleicao_Tutoria_PedroMota.xlsx");
+    }
+
+    async function exportarPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.text("Relatório de Votação - Escola Pedro Ribeiro Mota", 14, 15);
+        doc.autoTable({ html: '#tabelaVotos', margin: { top: 25 } });
+        doc.save("apuracao_tutoria.pdf");
+    }
+
+    async function zerarBanco() {
+        if (!confirm("⚠️ ATENÇÃO: Isso apagará TODOS os votos e TODOS os professores permanentemente. Tem certeza?")) return;
+        if (!confirm("Confirmação final: Deseja REALMENTE formatar o banco de dados?")) return;
+
+        const { error: errVotos } = await _supabase.from('votos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        const { error: errProfs } = await _supabase.from('professores').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+        if (!errVotos && !errProfs) {
+            alert("Banco de dados resetado com sucesso!");
+            localStorage.clear(); // Limpa trava de votos local para testes
+            location.reload();
+        } else {
+            alert("Erro ao zerar banco. Verifique as permissões de DELETE no Supabase.");
+        }
+    }
+
+    setInterval(atualizarDados, 15000);
 </script>
 </body>
 </html>
