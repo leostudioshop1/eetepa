@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel de Apuração</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body{ background:#0f0f0f; color:#fff; font-family:Arial; padding:30px; }
+        .container{ max-width:1000px; margin:auto; }
+        .card{ background:#1c1c1c; padding:20px; border-radius:12px; margin-bottom:20px; }
+        input, button{ padding:10px; margin:5px; border:none; border-radius:6px; }
+        input{ background:#2b2b2b; color:#fff; width:250px; }
+        button{ background:#7c3aed; color:#fff; cursor:pointer; font-weight:bold; }
+        table{ width:100%; border-collapse:collapse; margin-top:10px; }
+        th, td{ padding:10px; border-bottom:1px solid #333; text-align:left; }
+        canvas{ background:#fff; border-radius:8px; padding:10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2>Gerenciar Professores</h2>
+        <input type="text" id="novoProfessor" placeholder="Nome do professor">
+        <button onclick="adicionarProfessor()">Cadastrar</button>
+    </div>
+
+    <div class="card">
+        <h2>Resultado Geral</h2>
+        <table id="tabelaVotos">
+            <thead><tr><th>Professor</th><th>Total de Votos</th></tr></thead>
+            <tbody id="corpoTabela"></tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>Gráfico em Tempo Real</h2>
+        <canvas id="graficoVotos"></canvas>
+    </div>
+</div>
+
+<script>
+    const _supabase = supabase.createClient('https://hjvlgklyhzvpfyxhpjdb.supabase.co', 'sb_publishable_AtYA70tt9Nh03Gz-RR6c1w_J2PHVdJv');
+    let meuGrafico = null;
+
+    document.addEventListener("DOMContentLoaded", atualizarDados);
+
+    async function adicionarProfessor() {
+        const nome = document.getElementById("novoProfessor").value.trim();
+        if(!nome) return;
+        const { error } = await _supabase.from('professores').insert([{ nome }]);
+        if(error) alert("Erro ou professor já existe!");
+        document.getElementById("novoProfessor").value = "";
+        atualizarDados();
+    }
+
+    async function atualizarDados() {
+        // Busca professores e votos
+        const { data: profs } = await _supabase.from('professores').select('*');
+        const { data: votos } = await _supabase.from('votos').select('professor_nome');
+
+        const contagem = {};
+        profs.forEach(p => contagem[p.nome] = 0);
+        votos.forEach(v => { if(contagem[v.professor_nome] !== undefined) contagem[v.professor_nome]++; });
+
+        // Atualiza Tabela
+        const tbody = document.getElementById("corpoTabela");
+        tbody.innerHTML = "";
+        Object.keys(contagem).forEach(nome => {
+            tbody.innerHTML += `<tr><td>${nome}</td><td>${contagem[nome]}</td></tr>`;
+        });
+
+        // Atualiza Gráfico
+        renderizarGrafico(Object.keys(contagem), Object.values(contagem));
+    }
+
+    function renderizarGrafico(labels, valores) {
+        const ctx = document.getElementById('graficoVotos').getContext('2d');
+        if(meuGrafico) meuGrafico.destroy();
+        meuGrafico = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{ label: 'Votos', data: valores, backgroundColor: '#7c3aed' }]
+            },
+            options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+    }
+
+    // Atualiza automaticamente a cada 30 segundos
+    setInterval(atualizarDados, 30000);
+</script>
+</body>
+</html>
