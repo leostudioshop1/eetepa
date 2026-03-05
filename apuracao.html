@@ -12,8 +12,7 @@
     <style>
         body{ background:#0f0f0f; color:#fff; font-family:Arial; padding:20px; }
         .container{ max-width:1100px; margin:auto; }
-        h1{ text-align: center; color: #7c3aed; margin-bottom: 5px; }
-        h4{ text-align: center; color: #aaa; margin-top: 0; margin-bottom: 30px; }
+        h1{ text-align: center; color: #7c3aed; }
         .card{ background:#1c1c1c; padding:20px; border-radius:12px; margin-bottom:20px; border: 1px solid #333; }
         .flex-buttons{ display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
         input, button{ padding:10px; border:none; border-radius:6px; font-weight:bold; }
@@ -22,7 +21,7 @@
         .btn-excel{ background:#16a34a; color:#fff; cursor:pointer; }
         .btn-pdf{ background:#dc2626; color:#fff; cursor:pointer; }
         .btn-danger{ background:#444; color:#ff4444; border: 1px solid #ff4444; margin-left: auto; cursor:pointer; }
-        table{ width:100%; border-collapse:collapse; margin-top:10px; background: #111; }
+        table{ width:100%; border-collapse:collapse; margin-top:10px; background: #111; font-size: 14px; }
         th, td{ padding:12px; border: 1px solid #333; text-align:left; }
         th{ background: #222; color: #7c3aed; }
         .chart-container{ background:#fff; border-radius:8px; padding:15px; margin-top: 10px; }
@@ -31,8 +30,7 @@
 <body>
 
 <div class="container">
-    <h1>Escola Pedro Ribeiro Mota</h1>
-    <h4>Eleição da Tutoria - Painel de Controle</h4>
+    <h1>Escola Pedro Ribeiro Mota - Painel de Controle</h1>
 
     <div class="card">
         <h3>Gerenciar Professores</h3>
@@ -44,23 +42,25 @@
         <h3>Ações e Relatórios</h3>
         <div class="flex-buttons">
             <button class="btn-excel" onclick="exportarExcel()">Exportar para Excel</button>
-            <button class="btn-pdf" onclick="exportarPDF()">Exportar PDF Detalhado</button>
+            <button class="btn-pdf" onclick="exportarPDF()">Exportar para PDF Detalhado</button>
             <button class="btn-danger" onclick="zerarBanco()">Zerar Sistema (CUIDADO)</button>
         </div>
     </div>
 
     <div class="card">
-        <h3>Quadro de Resumo</h3>
+        <h3>Quadro de Vagas (Log de Votos)</h3>
         <table id="tabelaVotos">
             <thead>
                 <tr>
+                    <th>Data/Hora</th>
+                    <th>Aluno</th>
+                    <th>Turma</th>
                     <th>Professor / Tutor</th>
-                    <th>Votos Recebidos</th>
-                    <th>Vagas Restantes</th>
-                    <th>Status</th>
                 </tr>
             </thead>
-            <tbody id="corpoTabela"></tbody>
+            <tbody id="corpoTabela">
+                <tr><td colspan="4">Carregando dados...</td></tr>
+            </tbody>
         </table>
     </div>
 
@@ -88,29 +88,38 @@
     }
 
     async function atualizarDados() {
+        // Busca professores para o gráfico
         const { data: profs } = await _supabase.from('professores').select('*').order('nome');
-        const { data: votos } = await _supabase.from('votos').select('professor_nome');
+        // Busca todos os votos com detalhes para a tabela
+        const { data: votos } = await _supabase.from('votos').select('*').order('created_at', { ascending: false });
 
-        const contagem = {};
-        profs.forEach(p => contagem[p.nome] = 0);
-        if(votos) votos.forEach(v => { if(contagem[v.professor_nome] !== undefined) contagem[v.professor_nome]++; });
-
+        // Atualiza Tabela com detalhes dos alunos
         const tbody = document.getElementById("corpoTabela");
         tbody.innerHTML = "";
         
-        Object.keys(contagem).forEach(nome => {
-            const v = contagem[nome];
-            const restantes = 14 - v;
-            const status = restantes <= 0 ? "<b style='color:#ff4444'>LOTADO</b>" : "<span style='color:#4ade80'>Disponível</span>";
-            
-            tbody.innerHTML += `
-                <tr>
-                    <td>${nome}</td>
-                    <td>${v}</td>
-                    <td>${restantes < 0 ? 0 : restantes}</td>
-                    <td>${status}</td>
-                </tr>`;
-        });
+        if (votos && votos.length > 0) {
+            votos.forEach(v => {
+                const dataFormatada = new Date(v.created_at).toLocaleString('pt-BR');
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${dataFormatada}</td>
+                        <td>${v.aluno_nome}</td>
+                        <td>${v.turma}</td>
+                        <td>${v.professor_nome}</td>
+                    </tr>`;
+            });
+        } else {
+            tbody.innerHTML = "<tr><td colspan='4'>Nenhum voto registrado.</td></tr>";
+        }
+
+        // Lógica para o Gráfico (contagem por professor)
+        const contagem = {};
+        if (profs) profs.forEach(p => contagem[p.nome] = 0);
+        if (votos) {
+            votos.forEach(v => { 
+                if(contagem[v.professor_nome] !== undefined) contagem[v.professor_nome]++; 
+            });
+        }
 
         renderizarGrafico(Object.keys(contagem), Object.values(contagem));
     }
@@ -137,89 +146,39 @@
     function exportarExcel() {
         const table = document.getElementById("tabelaVotos");
         const wb = XLSX.utils.table_to_book(table);
-        XLSX.writeFile(wb, "Eleicao_Tutoria_Resumo.xlsx");
+        XLSX.writeFile(wb, "Eleicao_Tutoria_Detalhado.xlsx");
     }
 
     async function exportarPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        
-        // Título do PDF
-        doc.setFontSize(18);
-        doc.text("Relatório Detalhado - Escola Pedro Ribeiro Mota", 14, 20);
-        doc.setFontSize(12);
-        doc.text("Eleição da Tutoria - Lista de Alunos por Professor", 14, 28);
-        
-        // Busca todos os dados do banco para o PDF
-        const { data: todosVotos, error } = await _supabase
-            .from('votos')
-            .select('aluno_nome, turma, professor_nome, created_at')
-            .order('professor_nome', { ascending: true });
-
-        if (error || !todosVotos) {
-            alert("Erro ao buscar dados para o PDF");
-            return;
-        }
-
-        // Agrupar votos por professor
-        const agrupado = {};
-        todosVotos.forEach(v => {
-            if (!agrupado[v.professor_nome]) agrupado[v.professor_nome] = [];
-            agrupado[v.professor_nome].push(v);
+        doc.text("Relatório Detalhado de Votos - Escola Pedro Ribeiro Mota", 14, 15);
+        doc.autoTable({ 
+            html: '#tabelaVotos', 
+            margin: { top: 25 },
+            styles: { fontSize: 10 }
         });
-
-        let yPos = 35;
-
-        // Gerar tabelas para cada professor
-        for (const professor in agrupado) {
-            doc.setFontSize(14);
-            doc.setTextColor(124, 58, 237); // Cor Roxa
-            doc.text(`Tutor: ${professor} (${agrupado[professor].length} votos)`, 14, yPos);
-            
-            const rows = agrupado[professor].map(v => [
-                v.aluno_nome,
-                v.turma,
-                new Date(v.created_at).toLocaleString('pt-BR')
-            ]);
-
-            doc.autoTable({
-                head: [['Aluno', 'Turma', 'Data/Hora do Voto']],
-                body: rows,
-                startY: yPos + 5,
-                theme: 'striped',
-                headStyles: { fillColor: [124, 58, 237] },
-                margin: { bottom: 20 }
-            });
-
-            yPos = doc.lastAutoTable.finalY + 15;
-
-            // Adiciona nova página se o espaço acabar
-            if (yPos > 250) {
-                doc.addPage();
-                yPos = 20;
-            }
-        }
-
-        doc.save("Relatorio_Detalhado_Tutoria.pdf");
+        doc.save("relatorio_detalhado_tutoria.pdf");
     }
 
     async function zerarBanco() {
         if (!confirm("⚠️ ATENÇÃO: Isso apagará TODOS os votos e TODOS os professores permanentemente. Tem certeza?")) return;
         if (!confirm("Confirmação final: Deseja REALMENTE formatar o banco de dados?")) return;
 
-        // No Supabase, sem filtros complexos, usamos uma gambiarra comum para deletar tudo:
-        const { error: errVotos } = await _supabase.from('votos').delete().neq('aluno_nome', 'SISTEMA_NULL');
-        const { error: errProfs } = await _supabase.from('professores').delete().neq('nome', 'SISTEMA_NULL');
+        // Tenta deletar usando um filtro que sempre será verdadeiro (como id diferente de zero)
+        const { error: errVotos } = await _supabase.from('votos').delete().neq('aluno_nome', '0');
+        const { error: errProfs } = await _supabase.from('professores').delete().neq('nome', '0');
 
         if (!errVotos && !errProfs) {
             alert("Banco de dados resetado com sucesso!");
-            localStorage.clear();
+            localStorage.clear(); 
             location.reload();
         } else {
-            alert("Erro ao zerar banco. Certifique-se de que o RLS do Supabase permite DELETE.");
+            alert("Erro ao zerar banco. Verifique as permissões de DELETE no Supabase.");
         }
     }
 
+    // Atualiza os dados a cada 15 segundos
     setInterval(atualizarDados, 15000);
 </script>
 </body>
