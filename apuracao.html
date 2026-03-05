@@ -12,15 +12,16 @@
     <style>
         body{ background:#0f0f0f; color:#fff; font-family:Arial; padding:20px; }
         .container{ max-width:1100px; margin:auto; }
-        h1{ text-align: center; color: #7c3aed; }
+        h1{ text-align: center; color: #7c3aed; margin-bottom: 5px; }
+        h4{ text-align: center; color: #aaa; margin-top: 0; margin-bottom: 30px; }
         .card{ background:#1c1c1c; padding:20px; border-radius:12px; margin-bottom:20px; border: 1px solid #333; }
         .flex-buttons{ display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
         input, button{ padding:10px; border:none; border-radius:6px; font-weight:bold; }
         input{ background:#2b2b2b; color:#fff; width:250px; border: 1px solid #444; }
-        .btn-add{ background:#7c3aed; color:#fff; }
-        .btn-excel{ background:#16a34a; color:#fff; }
-        .btn-pdf{ background:#dc2626; color:#fff; }
-        .btn-danger{ background:#444; color:#ff4444; border: 1px solid #ff4444; margin-left: auto; }
+        .btn-add{ background:#7c3aed; color:#fff; cursor:pointer; }
+        .btn-excel{ background:#16a34a; color:#fff; cursor:pointer; }
+        .btn-pdf{ background:#dc2626; color:#fff; cursor:pointer; }
+        .btn-danger{ background:#444; color:#ff4444; border: 1px solid #ff4444; margin-left: auto; cursor:pointer; }
         table{ width:100%; border-collapse:collapse; margin-top:10px; background: #111; }
         th, td{ padding:12px; border: 1px solid #333; text-align:left; }
         th{ background: #222; color: #7c3aed; }
@@ -30,7 +31,8 @@
 <body>
 
 <div class="container">
-    <h1>Escola Pedro Ribeiro Mota - Painel de Controle</h1>
+    <h1>Escola Pedro Ribeiro Mota</h1>
+    <h4>Eleição da Tutoria - Painel de Controle</h4>
 
     <div class="card">
         <h3>Gerenciar Professores</h3>
@@ -42,13 +44,13 @@
         <h3>Ações e Relatórios</h3>
         <div class="flex-buttons">
             <button class="btn-excel" onclick="exportarExcel()">Exportar para Excel</button>
-            <button class="btn-pdf" onclick="exportarPDF()">Exportar para PDF</button>
+            <button class="btn-pdf" onclick="exportarPDF()">Exportar PDF Detalhado</button>
             <button class="btn-danger" onclick="zerarBanco()">Zerar Sistema (CUIDADO)</button>
         </div>
     </div>
 
     <div class="card">
-        <h3>Quadro de Vagas</h3>
+        <h3>Quadro de Resumo</h3>
         <table id="tabelaVotos">
             <thead>
                 <tr>
@@ -91,7 +93,7 @@
 
         const contagem = {};
         profs.forEach(p => contagem[p.nome] = 0);
-        votos.forEach(v => { if(contagem[v.professor_nome] !== undefined) contagem[v.professor_nome]++; });
+        if(votos) votos.forEach(v => { if(contagem[v.professor_nome] !== undefined) contagem[v.professor_nome]++; });
 
         const tbody = document.getElementById("corpoTabela");
         tbody.innerHTML = "";
@@ -127,7 +129,7 @@
                 }]
             },
             options: { 
-                scales: { y: { max: 14, beginAtZero: true } }
+                scales: { y: { max: 14, beginAtZero: true, ticks: { stepSize: 1 } } }
             }
         });
     }
@@ -135,30 +137,86 @@
     function exportarExcel() {
         const table = document.getElementById("tabelaVotos");
         const wb = XLSX.utils.table_to_book(table);
-        XLSX.writeFile(wb, "Eleicao_Tutoria_PedroMota.xlsx");
+        XLSX.writeFile(wb, "Eleicao_Tutoria_Resumo.xlsx");
     }
 
     async function exportarPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.text("Relatório de Votação - Escola Pedro Ribeiro Mota", 14, 15);
-        doc.autoTable({ html: '#tabelaVotos', margin: { top: 25 } });
-        doc.save("apuracao_tutoria.pdf");
+        
+        // Título do PDF
+        doc.setFontSize(18);
+        doc.text("Relatório Detalhado - Escola Pedro Ribeiro Mota", 14, 20);
+        doc.setFontSize(12);
+        doc.text("Eleição da Tutoria - Lista de Alunos por Professor", 14, 28);
+        
+        // Busca todos os dados do banco para o PDF
+        const { data: todosVotos, error } = await _supabase
+            .from('votos')
+            .select('aluno_nome, turma, professor_nome, created_at')
+            .order('professor_nome', { ascending: true });
+
+        if (error || !todosVotos) {
+            alert("Erro ao buscar dados para o PDF");
+            return;
+        }
+
+        // Agrupar votos por professor
+        const agrupado = {};
+        todosVotos.forEach(v => {
+            if (!agrupado[v.professor_nome]) agrupado[v.professor_nome] = [];
+            agrupado[v.professor_nome].push(v);
+        });
+
+        let yPos = 35;
+
+        // Gerar tabelas para cada professor
+        for (const professor in agrupado) {
+            doc.setFontSize(14);
+            doc.setTextColor(124, 58, 237); // Cor Roxa
+            doc.text(`Tutor: ${professor} (${agrupado[professor].length} votos)`, 14, yPos);
+            
+            const rows = agrupado[professor].map(v => [
+                v.aluno_nome,
+                v.turma,
+                new Date(v.created_at).toLocaleString('pt-BR')
+            ]);
+
+            doc.autoTable({
+                head: [['Aluno', 'Turma', 'Data/Hora do Voto']],
+                body: rows,
+                startY: yPos + 5,
+                theme: 'striped',
+                headStyles: { fillColor: [124, 58, 237] },
+                margin: { bottom: 20 }
+            });
+
+            yPos = doc.lastAutoTable.finalY + 15;
+
+            // Adiciona nova página se o espaço acabar
+            if (yPos > 250) {
+                doc.addPage();
+                yPos = 20;
+            }
+        }
+
+        doc.save("Relatorio_Detalhado_Tutoria.pdf");
     }
 
     async function zerarBanco() {
         if (!confirm("⚠️ ATENÇÃO: Isso apagará TODOS os votos e TODOS os professores permanentemente. Tem certeza?")) return;
         if (!confirm("Confirmação final: Deseja REALMENTE formatar o banco de dados?")) return;
 
-        const { error: errVotos } = await _supabase.from('votos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-        const { error: errProfs } = await _supabase.from('professores').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        // No Supabase, sem filtros complexos, usamos uma gambiarra comum para deletar tudo:
+        const { error: errVotos } = await _supabase.from('votos').delete().neq('aluno_nome', 'SISTEMA_NULL');
+        const { error: errProfs } = await _supabase.from('professores').delete().neq('nome', 'SISTEMA_NULL');
 
         if (!errVotos && !errProfs) {
             alert("Banco de dados resetado com sucesso!");
-            localStorage.clear(); // Limpa trava de votos local para testes
+            localStorage.clear();
             location.reload();
         } else {
-            alert("Erro ao zerar banco. Verifique as permissões de DELETE no Supabase.");
+            alert("Erro ao zerar banco. Certifique-se de que o RLS do Supabase permite DELETE.");
         }
     }
 
