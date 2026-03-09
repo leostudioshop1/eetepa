@@ -1,0 +1,155 @@
+<script>
+
+const SUPABASE_URL = "https://osofdmgokrxdzsxozsrf.supabase.co";
+const SUPABASE_KEY = "SUA_CHAVE_AQUI";
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentQuestion = 0;
+let score = 0;
+let user = "";
+let playerId = null;
+
+const questions = [
+{ q: "Qual o resultado de (true && false)?", o: ["true","false"], a:1 },
+{ q: "Qual operador representa NOT?", o:["&&","||","!"], a:2 },
+{ q: "true || false resulta em:", o:["true","false"], a:0 },
+{ q: "(5 > 3 && 2 < 1) retorna:", o:["true","false"], a:1 },
+{ q: "!(10 == 10) retorna:", o:["true","false"], a:1 },
+{ q: "Qual operador é OR?", o:["&","||","AND"], a:1 },
+{ q: "(false || !false) resulta:", o:["true","false"], a:0 },
+{ q: "&& exige:", o:["Ambos verdadeiros","Um verdadeiro","Nenhum"], a:0 },
+{ q: "!(true && false) é:", o:["true","false"], a:0 },
+{ q: "(5 != 5 || 1 == 1) retorna:", o:["true","false"], a:0 }
+];
+
+async function startQuiz(){
+
+const input = document.getElementById("username");
+user = input.value.trim();
+
+if(!user) return alert("Digite seu nome");
+
+document.getElementById("setup").classList.add("hidden");
+document.getElementById("quiz-container").classList.remove("hidden");
+
+/* cria jogador no banco */
+const {data,error} = await db
+.from("ranking")
+.insert([{username:user,score:0}])
+.select();
+
+if(data) playerId = data[0].id;
+
+showQuestion();
+
+}
+
+function showQuestion(){
+
+const q = questions[currentQuestion];
+
+document.getElementById("progress").innerText =
+`Questão ${currentQuestion+1} de ${questions.length}`;
+
+document.getElementById("question-text").innerText = q.q;
+
+const container = document.getElementById("options-container");
+container.innerHTML = "";
+
+q.o.forEach((opt,i)=>{
+const btn = document.createElement("button");
+btn.innerText = opt;
+btn.onclick = ()=>selectOption(btn,i);
+container.appendChild(btn);
+});
+
+document.getElementById("next-btn").disabled=true;
+
+}
+
+async function selectOption(btn,index){
+
+const q = questions[currentQuestion];
+const allBtns = document.querySelectorAll("#options-container button");
+
+allBtns.forEach(b=>b.disabled=true);
+
+if(index===q.a){
+
+score++;
+btn.style.background="#22c55e";
+
+/* atualiza score no banco */
+await db
+.from("ranking")
+.update({score:score})
+.eq("id",playerId);
+
+}else{
+
+btn.style.background="#ef4444";
+
+}
+
+document.getElementById("next-btn").disabled=false;
+
+}
+
+function nextQuestion(){
+
+currentQuestion++;
+
+if(currentQuestion < questions.length){
+
+showQuestion();
+
+}else{
+
+finishQuiz();
+
+}
+
+}
+
+function finishQuiz(){
+
+document.getElementById("quiz-container").innerHTML=`
+
+<h2>Quiz finalizado</h2>
+
+<p>Você fez ${score} pontos</p>
+
+<button onclick="location.reload()">Jogar novamente</button>
+
+`;
+
+}
+
+async function fetchRanking(){
+
+const {data} = await db
+.from("ranking")
+.select("username,score")
+.order("score",{ascending:false})
+.limit(10);
+
+const body = document.getElementById("ranking-body");
+
+body.innerHTML = data.map(r=>`
+
+<tr>
+<td>${r.username}</td>
+<td>${r.score}</td>
+</tr>
+
+`).join("");
+
+}
+
+/* atualiza ranking a cada segundo */
+setInterval(fetchRanking,1000);
+
+fetchRanking();
+
+</script>
