@@ -1,219 +1,366 @@
-Para atualizar o seu sistema com o placar em tempo real (atualizado a cada segundo) e incluir a assinatura solicitada, realizei os seguintes ajustes no código:
-
-1. **Sincronização de Tempo Real**: Ajustei o `setInterval` do ranking para **1000ms** (1 segundo).
-2. **Assinatura**: Adicionei o rodapé fixo "ENGENHEIRO DE SOFTWARE - LÉO CRUZ" no final da barra lateral.
-3. **Correção Crítica no Código**: Notei que o arquivo enviado continha um erro de inicialização do Supabase (variáveis duplicadas e indefinidas como `SB_URL`). Corrigi a lógica para usar diretamente as credenciais que você forneceu.
-
-Aqui está o código completo e corrigido:
-
-```html
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevQuest Elite - 60 Questões</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #050508;
-            --card: #111118;
-            --primary: #8b5cf6;
-            --secondary: #06b6d4;
-            --text: #e2e8f0;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevQuest Elite - 60 Questões</title>
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); font-family: 'Roboto', sans-serif; display: flex; min-height: 100vh; overflow: hidden; }
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-        /* Sidebar */
-        #sidebar { 
-            width: 300px; 
-            background: #0a0a0f; 
-            border-right: 2px solid var(--primary); 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: b;
-        }
-        #ranking-container { flex-grow: 1; overflow-y: auto; }
-        #sidebar h2 { font-family: 'Orbitron'; color: var(--secondary); font-size: 1rem; margin-bottom: 20px; text-align: center; letter-spacing: 2px; }
-        .rank-box { background: rgba(139, 92, 246, 0.1); padding: 12px; margin-bottom: 8px; border-radius: 4px; display: flex; justify-content: space-between; font-family: 'Orbitron'; font-size: 0.75rem; border-left: 3px solid var(--primary); }
-        
-        /* Assinatura */
-        .signature {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #222;
-            font-family: 'Orbitron';
-            font-size: 0.65rem;
-            color: var(--secondary);
-            text-align: center;
-            letter-spacing: 1px;
-            opacity: 0.8;
-        }
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
-        /* Main */
-        #main-content { flex-grow: 1; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .quiz-card { width: 100%; max-width: 650px; background: var(--card); padding: 40px; border-radius: 15px; box-shadow: 0 0 50px rgba(0,0,0,0.8); border: 1px solid #222; }
+<style>
 
-        h1 { font-family: 'Orbitron'; text-align: center; margin-bottom: 25px; color: var(--primary); text-shadow: 0 0 10px var(--primary); }
-        input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--primary); color: white; margin-bottom: 20px; outline: none; font-family: 'Orbitron'; text-align: center; }
-        
-        .btn-start { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; cursor: pointer; font-family: 'Orbitron'; clip-path: polygon(5% 0, 100% 0, 95% 100%, 0 100%); transition: 0.3s; }
-        .btn-start:hover { background: var(--secondary); box-shadow: 0 0 20px var(--secondary); }
+:root{
+--bg:#050508;
+--card:#111118;
+--primary:#8b5cf6;
+--secondary:#06b6d4;
+--text:#e2e8f0;
+}
 
-        .option-btn { width: 100%; padding: 14px; margin-bottom: 12px; background: #1a1a24; border: 1px solid #333; color: white; text-align: left; cursor: pointer; border-radius: 8px; transition: 0.2s; }
-        .option-btn:hover { background: #252535; border-color: var(--secondary); transform: translateX(5px); }
+*{box-sizing:border-box;margin:0;padding:0;}
 
-        #game-area, #finish-area { display: none; }
-        .progress-bar { height: 4px; background: #222; margin-top: 25px; border-radius: 2px; }
-        #inner-progress { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0%; transition: 0.4s; }
-    </style>
+body{
+background:var(--bg);
+color:var(--text);
+font-family:'Roboto',sans-serif;
+display:flex;
+min-height:100vh;
+overflow:hidden;
+}
+
+#sidebar{
+width:300px;
+background:#0a0a0f;
+border-right:2px solid var(--primary);
+padding:20px;
+display:flex;
+flex-direction:column;
+}
+
+#sidebar h2{
+font-family:'Orbitron';
+color:var(--secondary);
+font-size:1rem;
+margin-bottom:20px;
+text-align:center;
+letter-spacing:2px;
+}
+
+.rank-box{
+background:rgba(139,92,246,0.1);
+padding:12px;
+margin-bottom:8px;
+border-radius:4px;
+display:flex;
+justify-content:space-between;
+font-family:'Orbitron';
+font-size:0.75rem;
+border-left:3px solid var(--primary);
+}
+
+#main-content{
+flex-grow:1;
+display:flex;
+justify-content:center;
+align-items:center;
+padding:20px;
+flex-direction:column;
+}
+
+.quiz-card{
+width:100%;
+max-width:650px;
+background:var(--card);
+padding:40px;
+border-radius:15px;
+box-shadow:0 0 50px rgba(0,0,0,0.8);
+border:1px solid #222;
+}
+
+h1{
+font-family:'Orbitron';
+text-align:center;
+margin-bottom:25px;
+color:var(--primary);
+text-shadow:0 0 10px var(--primary);
+}
+
+input{
+width:100%;
+padding:15px;
+background:#000;
+border:1px solid var(--primary);
+color:white;
+margin-bottom:20px;
+outline:none;
+font-family:'Orbitron';
+text-align:center;
+}
+
+.btn-start{
+width:100%;
+padding:15px;
+background:var(--primary);
+color:white;
+border:none;
+cursor:pointer;
+font-family:'Orbitron';
+clip-path:polygon(5% 0,100% 0,95% 100%,0 100%);
+transition:0.3s;
+}
+
+.btn-start:hover{
+background:var(--secondary);
+box-shadow:0 0 20px var(--secondary);
+}
+
+.option-btn{
+width:100%;
+padding:14px;
+margin-bottom:12px;
+background:#1a1a24;
+border:1px solid #333;
+color:white;
+text-align:left;
+cursor:pointer;
+border-radius:8px;
+transition:0.2s;
+}
+
+.option-btn:hover{
+background:#252535;
+border-color:var(--secondary);
+transform:translateX(5px);
+}
+
+#game-area,#finish-area{
+display:none;
+}
+
+.progress-bar{
+height:4px;
+background:#222;
+margin-top:25px;
+border-radius:2px;
+}
+
+#inner-progress{
+height:100%;
+background:linear-gradient(90deg,var(--primary),var(--secondary));
+width:0%;
+transition:0.4s;
+}
+
+footer{
+margin-top:20px;
+font-size:12px;
+opacity:0.6;
+text-align:center;
+font-family:'Orbitron';
+}
+
+</style>
 </head>
+
 <body>
 
-    <aside id="sidebar">
-        <div id="ranking-container">
-            <h2>GLOBAL_RANKING</h2>
-            <div id="ranking-list"></div>
-        </div>
-        <div class="signature">
-            ENGENHEIRO DE SOFTWARE - LÉO CRUZ
-        </div>
-    </aside>
+<aside id="sidebar">
+<h2>GLOBAL_RANKING</h2>
+<div id="ranking-list"></div>
+</aside>
 
-    <main id="main-content">
-        <div class="quiz-card">
-            <div id="start-area">
-                <h1>SISTEMA_LOGIN</h1>
-                <input type="text" id="username" placeholder="DIGITE SEU CODINOME" maxlength="12">
-                <button class="btn-start" onclick="startQuiz()">AUTENTICAR</button>
-            </div>
+<main id="main-content">
 
-            <div id="game-area">
-                <h3 id="question-text" style="margin-bottom: 25px; min-height: 60px;"></h3>
-                <div id="options-container"></div>
-                <div class="progress-bar"><div id="inner-progress"></div></div>
-                <p id="counter" style="margin-top: 15px; font-size: 0.7rem; font-family: 'Orbitron'; opacity: 0.5;"></p>
-            </div>
+<div class="quiz-card">
 
-            <div id="finish-area" style="text-align: center;">
-                <h1 style="color: var(--secondary)">MISSÃO_CONCLUÍDA</h1>
-                <p id="final-result" style="font-size: 3.5rem; margin: 30px 0; font-family: 'Orbitron'; color: #fff;"></p>
-                <p style="opacity: 0.6">Sua pontuação foi sincronizada com o banco de dados.</p>
-            </div>
-        </div>
-    </main>
+<div id="start-area">
+<h1>SISTEMA_LOGIN</h1>
+<input type="text" id="username" placeholder="DIGITE SEU CODINOME" maxlength="12">
+<button class="btn-start" onclick="startQuiz()">AUTENTICAR</button>
+</div>
 
-    <script>
-        // --- CONFIGURAÇÃO SUPABASE CORRIGIDA ---
-        const SB_URL = 'https://osofdmgokrxdzsxozsrf.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zb2ZkbWdva3J4ZHpzeG96c3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMzk4ODMsImV4cCI6MjA4ODYxNTg4M30.lALjkQ65DPLFiLboHNH4mKzwoNZPFyGjwRLW-IrMH4c';
-        const supabase = supabase.createClient(SB_URL, SB_KEY);
+<div id="game-area">
+<h3 id="question-text" style="margin-bottom:25px;min-height:60px;"></h3>
+<div id="options-container"></div>
 
-        let currentUser = "";
-        let score = 0;
-        let currentIdx = 0;
+<div class="progress-bar">
+<div id="inner-progress"></div>
+</div>
 
-        // Gerador de 60 Questões Fáceis
-        const questions = [];
-        const baseQuestions = [
-            { q: "Qual o resultado de 2 + 2?", a: ["3", "4", "5", "22"], c: 1 },
-            { q: "O que significa 'False'?", a: ["Verdadeiro", "Falso", "Talvez", "Erro"], c: 1 },
-            { q: "Qual comando Linux cria uma pasta?", a: ["cd", "rm", "mkdir", "ls"], c: 2 },
-            { q: "Símbolo de atribuição (dar valor)?", a: ["==", "=", "===", "!="], c: 1 },
-            { q: "Extensão de arquivos de texto?", a: [".jpg", ".mp3", ".txt", ".exe"], c: 2 },
-            { q: "Onde os arquivos ficam salvos?", a: ["RAM", "CPU", "HD/SSD", "Monitor"], c: 2 },
-            { q: "Qual o símbolo de maior que?", a: [">", "<", "=", "!"], c: 0 },
-            { q: "Operador 'E' em lógica?", a: ["||", "&&", "!", "=="], c: 1 },
-            { q: "O que o 'rm' faz no terminal?", a: ["Cria", "Move", "Remove", "Copia"], c: 2 },
-            { q: "A lixeira serve para?", a: ["Baixar música", "Deletar", "Salvar", "Ver vídeo"], c: 1 }
-        ];
+<p id="counter" style="margin-top:15px;font-size:0.7rem;font-family:'Orbitron';opacity:0.5;"></p>
+</div>
 
-        for(let i=0; i<60; i++) {
-            let base = baseQuestions[i % baseQuestions.length];
-            questions.push({
-                q: `[Q${i+1}] ${base.q}`,
-                options: base.a,
-                correct: base.c
-            });
-        }
+<div id="finish-area" style="text-align:center;">
+<h1 style="color:var(--secondary)">MISSÃO_CONCLUÍDA</h1>
+<p id="final-result" style="font-size:3.5rem;margin:30px 0;font-family:'Orbitron';color:#fff;"></p>
+<p style="opacity:0.6">Pontuação enviada ao ranking.</p>
+</div>
 
-        async function startQuiz() {
-            const nameInput = document.getElementById("username").value;
-            if(nameInput.trim().length < 2) return alert("Codinome muito curto!");
-            currentUser = nameInput.toUpperCase();
-            
-            document.getElementById("start-area").style.display = "none";
-            document.getElementById("game-area").style.display = "block";
-            
-            renderQuestion();
-            fetchRanking();
-            setInterval(fetchRanking, 1000); // ATUALIZAÇÃO EM TEMPO REAL (1 SEGUNDO)
-        }
+</div>
 
-        function renderQuestion() {
-            const q = questions[currentIdx];
-            document.getElementById("question-text").innerText = q.q;
-            document.getElementById("counter").innerText = `STATUS: ${currentIdx + 1} / 60`;
-            
-            const container = document.getElementById("options-container");
-            container.innerHTML = "";
-            
-            q.options.forEach((opt, i) => {
-                const btn = document.createElement("button");
-                btn.className = "option-btn";
-                btn.innerText = opt;
-                btn.onclick = () => handleAnswer(i);
-                container.appendChild(btn);
-            });
+<footer>
+Desenvolvido por = Léo Cruz - Engenheiro de Software
+</footer>
 
-            document.getElementById("inner-progress").style.width = `${(currentIdx / questions.length) * 100}%`;
-        }
+</main>
 
-        function handleAnswer(choice) {
-            if(choice === questions[currentIdx].correct) score += 100;
-            currentIdx++;
+<script>
 
-            if(currentIdx < questions.length) {
-                renderQuestion();
-            } else {
-                finishQuiz();
-            }
-        }
+const SB_URL = "https://osofdmgokrxdzsxozsrf.supabase.co";
+const SB_KEY = "sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe";
 
-        async function finishQuiz() {
-            document.getElementById("game-area").style.display = "none";
-            document.getElementById("finish-area").style.display = "block";
-            document.getElementById("final-result").innerText = score + " PTS";
-            
-            await supabase.from('ranking').insert([{ name: currentUser, score: score }]);
-            fetchRanking();
-        }
+const supabaseClient = supabase.createClient(SB_URL,SB_KEY);
 
-        async function fetchRanking() {
-            const { data, error } = await supabase
-                .from('ranking')
-                .select('*')
-                .order('score', { ascending: false })
-                .limit(10);
+let currentUser="";
+let score=0;
+let currentIdx=0;
 
-            if (error) return;
+const questions=[];
 
-            const list = document.getElementById("ranking-list");
-            list.innerHTML = "";
-            data.forEach((p, i) => {
-                const div = document.createElement("div");
-                div.className = "rank-box";
-                if(p.name === currentUser) div.style.borderColor = "var(--secondary)";
-                div.innerHTML = `<span>#${i+1} ${p.name}</span> <span>${p.score}</span>`;
-                list.appendChild(div);
-            });
-        }
-    </script>
+const baseQuestions=[
+{q:"Qual o resultado de 2 + 2?",a:["3","4","5","22"],c:1},
+{q:"O que significa 'False'?",a:["Verdadeiro","Falso","Talvez","Erro"],c:1},
+{q:"Qual comando Linux cria uma pasta?",a:["cd","rm","mkdir","ls"],c:2},
+{q:"Símbolo de atribuição?",a:["==","=","===","!="],c:1},
+{q:"Extensão de arquivo texto?",a:[".jpg",".mp3",".txt",".exe"],c:2},
+{q:"Onde arquivos ficam salvos?",a:["RAM","CPU","HD/SSD","Monitor"],c:2},
+{q:"Símbolo maior que?",a:[">","<","=","!"],c:0},
+{q:"Operador lógico E?",a:["||","&&","!","=="],c:1},
+{q:"O que faz rm?",a:["Cria","Move","Remove","Copia"],c:2},
+{q:"A lixeira serve para?",a:["Baixar","Deletar","Salvar","Ver"],c:1}
+];
+
+for(let i=0;i<60;i++){
+
+let base=baseQuestions[i%baseQuestions.length];
+
+questions.push({
+q:`[Q${i+1}] ${base.q}`,
+options:base.a,
+correct:base.c
+});
+
+}
+
+function startQuiz(){
+
+const nameInput=document.getElementById("username").value;
+
+if(nameInput.trim().length<2){
+alert("Codinome muito curto");
+return;
+}
+
+currentUser=nameInput.toUpperCase();
+
+document.getElementById("start-area").style.display="none";
+document.getElementById("game-area").style.display="block";
+
+renderQuestion();
+
+fetchRanking();
+
+setInterval(fetchRanking,1000); // ATUALIZA A CADA 1 SEGUNDO
+
+}
+
+function renderQuestion(){
+
+const q=questions[currentIdx];
+
+document.getElementById("question-text").innerText=q.q;
+
+document.getElementById("counter").innerText=`STATUS: ${currentIdx+1} / 60`;
+
+const container=document.getElementById("options-container");
+
+container.innerHTML="";
+
+q.options.forEach((opt,i)=>{
+
+const btn=document.createElement("button");
+
+btn.className="option-btn";
+
+btn.innerText=opt;
+
+btn.onclick=()=>handleAnswer(i);
+
+container.appendChild(btn);
+
+});
+
+document.getElementById("inner-progress").style.width=
+`${(currentIdx/questions.length)*100}%`;
+
+}
+
+function handleAnswer(choice){
+
+if(choice===questions[currentIdx].correct){
+score+=100;
+}
+
+currentIdx++;
+
+if(currentIdx<questions.length){
+renderQuestion();
+}else{
+finishQuiz();
+}
+
+}
+
+async function finishQuiz(){
+
+document.getElementById("game-area").style.display="none";
+document.getElementById("finish-area").style.display="block";
+
+document.getElementById("final-result").innerText=score+" PTS";
+
+await supabaseClient
+.from("ranking")
+.insert([{name:currentUser,score:score}]);
+
+fetchRanking();
+
+}
+
+async function fetchRanking(){
+
+const {data,error}=await supabaseClient
+.from("ranking")
+.select("*")
+.order("score",{ascending:false})
+.limit(10);
+
+if(error)return;
+
+const list=document.getElementById("ranking-list");
+
+list.innerHTML="";
+
+data.forEach((p,i)=>{
+
+const div=document.createElement("div");
+
+div.className="rank-box";
+
+if(p.name===currentUser){
+div.style.borderColor="var(--secondary)";
+}
+
+div.innerHTML=`<span>#${i+1} ${p.name}</span> <span>${p.score}</span>`;
+
+list.appendChild(div);
+
+});
+
+}
+
+</script>
+
 </body>
 </html>
-
-```
