@@ -2,126 +2,226 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Escola Pedro Ribeiro Mota - Eleição da Tutoria</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevQuest Elite - 60 Levels</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body{ background:#0f0f0f; color:#fff; font-family:Arial; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:100vh; margin:0; padding: 20px; }
-        .container{ background:#1c1c1c; padding:30px; border-radius:12px; width:100%; max-width:400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; }
-        h1{ font-size: 22px; color: #7c3aed; margin-bottom: 5px; }
-        h2{ font-size: 18px; margin-bottom: 20px; color: #ccc; }
-        input, select, button{ width:100%; padding:12px; margin:10px 0; border:none; border-radius:6px; box-sizing: border-box; font-size: 16px; }
-        input, select{ background:#2b2b2b; color:#fff; border: 1px solid #444; }
-        button{ background:#7c3aed; color:#fff; cursor:pointer; font-weight:bold; transition: 0.3s; }
-        button:hover{ background: #6d28d9; }
-        button:disabled{ background:#444; cursor:not-allowed; }
-        footer{ margin-top:20px; font-size:12px; color:#888; }
+        :root {
+            --bg: #050508;
+            --card: #111118;
+            --primary: #8b5cf6;
+            --secondary: #06b6d4;
+            --text: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Roboto', sans-serif; display: flex; min-height: 100vh; overflow: hidden; }
+
+        /* Sidebar Ranking */
+        #sidebar { width: 300px; background: #0a0a0f; border-right: 2px solid var(--primary); padding: 20px; display: flex; flex-direction: column; overflow-y: auto; }
+        #sidebar h2 { font-family: 'Orbitron'; color: var(--secondary); font-size: 1rem; margin-bottom: 20px; text-align: center; letter-spacing: 2px; }
+        .rank-box { background: rgba(139, 92, 246, 0.1); padding: 12px; margin-bottom: 8px; border-radius: 4px; display: flex; justify-content: space-between; font-family: 'Orbitron'; font-size: 0.75rem; border-left: 3px solid var(--primary); transition: 0.3s; }
+        .is-me { border-left-color: var(--secondary); background: rgba(6, 182, 212, 0.15); color: var(--secondary); }
+
+        /* Main Content */
+        #main-content { flex-grow: 1; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .quiz-card { width: 100%; max-width: 650px; background: var(--card); padding: 40px; border-radius: 15px; box-shadow: 0 0 50px rgba(0,0,0,0.8); border: 1px solid #222; }
+
+        h1 { font-family: 'Orbitron'; text-align: center; margin-bottom: 25px; color: var(--primary); text-shadow: 0 0 10px var(--primary); }
+        input { width: 100%; padding: 15px; background: #000; border: 1px solid var(--primary); color: white; margin-bottom: 20px; outline: none; font-family: 'Orbitron'; text-align: center; font-size: 1.1rem; }
+        
+        .btn-start { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; cursor: pointer; font-family: 'Orbitron'; clip-path: polygon(5% 0, 100% 0, 95% 100%, 0 100%); transition: 0.3s; }
+        .btn-start:hover { background: var(--secondary); box-shadow: 0 0 20px var(--secondary); }
+
+        .option-btn { width: 100%; padding: 14px; margin-bottom: 12px; background: #1a1a24; border: 1px solid #333; color: white; text-align: left; cursor: pointer; border-radius: 8px; transition: 0.2s; font-size: 0.9rem; }
+        .option-btn:hover { background: #252535; border-color: var(--secondary); transform: translateX(8px); }
+
+        #game-area, #finish-area { display: none; }
+        .progress-bar { height: 6px; background: #222; margin-top: 25px; border-radius: 3px; overflow: hidden; }
+        #inner-progress { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0%; transition: 0.4s; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Escola Pedro Ribeiro Mota</h1>
-    <h2>Eleição da Tutoria</h2>
-    
-    <input type="text" id="nome" placeholder="Seu nome completo">
-    <input type="text" id="turma" placeholder="Sua turma (ex: 3º A)">
-    
-    <select id="professor">
-        <option value="">Carregando professores e vagas...</option>
-    </select>
-    
-    <button id="btnVotar" onclick="votar()">Confirmar Voto</button>
-    <p style="font-size:13px;color:#888; margin-top: 15px;">Atenção: Limite de 14 alunos por tutor. Voto único por dispositivo.</p>
-</div>
+    <aside id="sidebar">
+        <h2>GLOBAL_RANKING</h2>
+        <div id="ranking-list"></div>
+    </aside>
 
-<footer>Desenvolvido por Léo Cruz</footer>
+    <main id="main-content">
+        <div class="quiz-card">
+            <div id="start-area">
+                <h1>IDENTITY_CHECK</h1>
+                <input type="text" id="username" placeholder="DIGITE SEU NOME" maxlength="15">
+                <button class="btn-start" onclick="startQuiz()">INICIAR SEQUÊNCIA</button>
+            </div>
 
-<script>
-    const _supabase = supabase.createClient('https://hjvlgklyhzvpfyxhpjdb.supabase.co', 'sb_publishable_AtYA70tt9Nh03Gz-RR6c1w_J2PHVdJv');
+            <div id="game-area">
+                <h3 id="question-text" style="margin-bottom: 25px; min-height: 60px;"></h3>
+                <div id="options-container"></div>
+                <div class="progress-bar"><div id="inner-progress"></div></div>
+                <p id="counter" style="margin-top: 15px; font-size: 0.7rem; font-family: 'Orbitron'; opacity: 0.5;"></p>
+            </div>
 
-    document.addEventListener("DOMContentLoaded", carregarProfessoresComVagas);
+            <div id="finish-area" style="text-align: center;">
+                <h1 style="color: var(--secondary)">DATA_SYNC_COMPLETE</h1>
+                <p id="final-result" style="font-size: 3.5rem; margin: 30px 0; font-family: 'Orbitron'; color: #fff;"></p>
+                <p style="opacity: 0.6; line-height: 1.6;">Seus dados foram enviados para o servidor central.<br>O ranking lateral mostra sua posição global.</p>
+            </div>
+        </div>
+    </main>
 
-    async function carregarProfessoresComVagas() {
-        // Busca professores e contagem de votos simultaneamente
-        const { data: profs } = await _supabase.from('professores').select('nome').order('nome');
-        const { data: votos } = await _supabase.from('votos').select('professor_nome');
+    <script>
+        const SB_URL = "https://osofdmgokrxdzsxozsrf.supabase.co";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zb2ZkbWdva3J4ZHpzeG96c3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMzk4ODMsImV4cCI6MjA4ODYxNTg4M30.lALjkQ65DPLFiLboHNH4mKzwoNZPFyGjwRLW-IrMH4c";
+        const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
-        const contagem = {};
-        if (votos) {
-            votos.forEach(v => {
-                contagem[v.professor_nome] = (contagem[v.professor_nome] || 0) + 1;
+        let currentUser = "";
+        let score = 0;
+        let currentIdx = 0;
+
+        const questions = [
+            { q: "Na lógica de programação, o que representa o valor 'True'?", options: ["Falso", "Verdadeiro", "Vazio", "Erro"], correct: 1 },
+            { q: "Qual destes operadores é usado para somar valores?", options: ["-", "*", "/", "+"], correct: 3 },
+            { q: "O símbolo '==' é usado para:", options: ["Atribuir valor", "Comparar igualdade", "Somar", "Multiplicar"], correct: 1 },
+            { q: "Qual comando Linux serve para listar arquivos de uma pasta?", options: ["cd", "ls", "mkdir", "rm"], correct: 1 },
+            { q: "O que o operador '!=' significa?", options: ["Igual", "Diferente", "Maior", "Menor"], correct: 1 },
+            { q: "Qual a extensão padrão de um arquivo de texto simples?", options: [".jpg", ".txt", ".exe", ".mp3"], correct: 1 },
+            { q: "O operador '&&' representa qual porta lógica?", options: ["OU", "NÃO", "E", "XOR"], correct: 2 },
+            { q: "O que o comando 'mkdir' faz no terminal?", options: ["Remove pasta", "Cria pasta", "Move arquivo", "Renomeia"], correct: 1 },
+            { q: "Qual destes é um valor booleano?", options: ["'Texto'", "100", "False", "10.5"], correct: 2 },
+            { q: "Onde os dados do computador são guardados permanentemente?", options: ["Processador", "Memória RAM", "Disco Rígido (HD/SSD)", "Monitor"], correct: 2 },
+            { q: "Qual símbolo representa o operador de negação (NOT)?", options: ["&", "|", "!", "="], correct: 2 },
+            { q: "O que o comando 'cd' faz?", options: ["Cria arquivo", "Deleta pasta", "Muda de diretório", "Copia dados"], correct: 2 },
+            { q: "Qual é o resultado de 10 > 5?", options: ["True", "False", "Error", "Null"], correct: 0 },
+            { q: "Qual destes é um operador de multiplicação?", options: ["+", "-", "*", "/"], correct: 2 },
+            { q: "O que significa 'Bug'?", options: ["Uma peça nova", "Um erro no código", "Um comando de voz", "Um tipo de monitor"], correct: 1 },
+            { q: "A lixeira do sistema serve para:", options: ["Salvar arquivos", "Arquivos excluídos", "Aumentar velocidade", "Instalar jogos"], correct: 1 },
+            { q: "O que é um algoritmo?", options: ["Um hardware", "Passos lógicos para uma tarefa", "Um vírus de e-mail", "Um tipo de cabo"], correct: 1 },
+            { q: "O operador '||' significa:", options: ["Porta E", "Porta OU", "Porta NÃO", "Igualdade"], correct: 1 },
+            { q: "Qual o resultado de 2 + 2 * 0?", options: ["0", "2", "4", "Error"], correct: 1 },
+            { q: "Qual extensão indica um arquivo de imagem?", options: [".exe", ".png", ".txt", ".pdf"], correct: 1 },
+            { q: "O comando 'rm' serve para:", options: ["Renomear", "Remover", "Rodar", "Recortar"], correct: 1 },
+            { q: "Qual o símbolo de menor que?", options: [">", "<", "=", "!"], correct: 1 },
+            { q: "Um arquivo .exe no Windows é um:", options: ["Vídeo", "Executável", "Documento", "Som"], correct: 1 },
+            { q: "O que é o 'Desktop'?", options: ["Teclado", "Área de Trabalho", "Lixeira", "Mouse"], correct: 1 },
+            { q: "Qual o resultado lógico de (True && False)?", options: ["True", "False", "Null", "Syntax Error"], correct: 1 },
+            { q: "O que significa a sigla 'OS' em tecnologia?", options: ["Order System", "Operating System", "Open Software", "Only Sound"], correct: 1 },
+            { q: "O comando 'clear' no terminal serve para:", options: ["Apagar arquivos", "Limpar a tela", "Fechar o sistema", "Reiniciar"], correct: 1 },
+            { q: "Qual destes é um tipo de dado numérico inteiro?", options: ["'10'", "10.5", "10", "True"], correct: 2 },
+            { q: "O que o atalho Ctrl+C faz?", options: ["Cola", "Recorta", "Copia", "Salva"], correct: 2 },
+            { q: "O que o atalho Ctrl+V faz?", options: ["Copia", "Recorta", "Cola", "Salva"], correct: 2 },
+            { q: "O que significa formatar um disco?", options: ["Pintar o HD", "Apagar e preparar o sistema de arquivos", "Trocar o cabo", "Aumentar o brilho"], correct: 1 },
+            { q: "Qual o símbolo de maior que?", options: [">", "<", "=", "!"], correct: 0 },
+            { q: "O que é uma 'String'?", options: ["Um número decimal", "Uma sequência de caracteres (texto)", "Um erro de lógica", "Um tipo de bateria"], correct: 1 },
+            { q: "A memória RAM é:", options: ["Permanente", "Volátil (apaga ao desligar)", "Um tipo de vírus", "Onde fica o mouse"], correct: 1 },
+            { q: "O que significa 'Download'?", options: ["Enviar dados", "Receber dados da internet", "Apagar dados", "Mover arquivos"], correct: 1 },
+            { q: "Qual o resultado de 5 + 5?", options: ["55", "10", "0", "25"], correct: 1 },
+            { q: "Qual o resto da divisão de 10 por 3?", options: ["1", "3", "0", "2"], correct: 0 },
+            { q: "O que é 'Nuvem' (Cloud)?", options: ["Um arquivo no céu", "Armazenamento via internet", "Um tipo de cabo", "Um vírus"], correct: 1 },
+            { q: "O que o comando 'pwd' faz no Linux?", options: ["Muda senha", "Mostra o caminho atual", "Desliga o PC", "Cria usuário"], correct: 1 },
+            { q: "O que é o cursor do mouse?", options: ["A tela", "O ponteiro na tela", "O botão esquerdo", "O cabo"], correct: 1 },
+            { q: "Em lógica, !True é igual a:", options: ["True", "False", "1", "Null"], correct: 1 },
+            { q: "O que significa 'PC'?", options: ["Pasta de Código", "Personal Computer", "Porta Celular", "Ponto Central"], correct: 1 },
+            { q: "Qual o símbolo usado para comentários de uma linha em muitas linguagens?", options: ["//", "##", "@@", "!!"], correct: 0 },
+            { q: "Qual sistema de arquivos é comum no Windows?", options: ["EXT4", "NTFS", "APFS", "BTRFS"], correct: 1 },
+            { q: "O que é um loop 'While'?", options: ["Uma decisão única", "Uma repetição baseada em condição", "Um tipo de variável", "Um erro de som"], correct: 1 },
+            { q: "Qual atalho geralmente salva um arquivo?", options: ["Ctrl+S", "Ctrl+P", "Ctrl+X", "Ctrl+Z"], correct: 0 },
+            { q: "Para que serve o 'Backup'?", options: ["Aumentar a internet", "Cópia de segurança dos dados", "Limpar o monitor", "Acelerar o processador"], correct: 1 },
+            { q: "O que é o Linux?", options: ["Um jogo", "Um navegador", "Um Kernel/Sistema Operacional", "Uma marca de mouse"], correct: 2 },
+            { q: "O que é um arquivo compactado (.zip)?", options: ["Um arquivo maior", "Um arquivo reduzido em espaço", "Um vírus", "Uma imagem"], correct: 1 },
+            { q: "A tecla 'Esc' geralmente serve para:", options: ["Confirmar", "Sair/Cancelar", "Apagar", "Escrever"], correct: 1 },
+            { q: "O que é a 'Home' no Linux?", options: ["Pasta do sistema", "Pasta pessoal do usuário", "Lixeira", "Navegador"], correct: 1 },
+            { q: "O símbolo '%' na programação geralmente retorna:", options: ["Porcentagem", "Resto da divisão", "Multiplicação", "Raiz quadrada"], correct: 1 },
+            { q: "Qual o resultado de 1 == 1?", options: ["True", "False", "Null", "1"], correct: 0 },
+            { q: "A sigla 'GUI' significa:", options: ["Geral User Interface", "Graphical User Interface", "Good User Icon", "Global Unit Id"], correct: 1 },
+            { q: "O que é o Kernel?", options: ["A carcaça do PC", "O núcleo do sistema operacional", "O monitor", "Um tipo de teclado"], correct: 1 },
+            { q: "O que faz o atalho Ctrl+Z?", options: ["Refaz", "Copia", "Desfaz", "Deleta"], correct: 2 },
+            { q: "Um Bit pode ser:", options: ["1 ou 2", "0 ou 1", "A ou B", "True ou Null"], correct: 1 },
+            { q: "O que é o diretório raiz no Linux?", options: ["/root", "C:", "/", "/home"], correct: 2 },
+            { q: "O que é um arquivo .pdf?", options: ["Arquivo de áudio", "Documento portátil", "Imagem animada", "Planilha"], correct: 1 },
+            { q: "Qual o resultado de (True || False)?", options: ["True", "False", "Error", "Null"], correct: 0 }
+        ];
+
+        async function startQuiz() {
+            const nameInput = document.getElementById("username").value;
+            if(nameInput.trim().length < 2) return alert("Por favor, digite um nome válido!");
+            currentUser = nameInput.toUpperCase();
+            
+            document.getElementById("start-area").style.display = "none";
+            document.getElementById("game-area").style.display = "block";
+            
+            renderQuestion();
+            fetchRanking();
+            setInterval(fetchRanking, 3000); 
+        }
+
+        function renderQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById("question-text").innerText = q.q;
+            document.getElementById("counter").innerText = `NÍVEL: ${currentIdx + 1} / 60`;
+            
+            const container = document.getElementById("options-container");
+            container.innerHTML = "";
+            
+            q.options.forEach((opt, i) => {
+                const btn = document.createElement("button");
+                btn.className = "option-btn";
+                btn.innerText = opt;
+                btn.onclick = () => handleAnswer(i);
+                container.appendChild(btn);
             });
+
+            document.getElementById("inner-progress").style.width = `${(currentIdx / questions.length) * 100}%`;
         }
 
-        let select = document.getElementById("professor");
-        select.innerHTML = '<option value="">Escolha seu Tutor</option>';
-        
-        if (profs) {
-            profs.forEach(p => {
-                const totalVotos = contagem[p.nome] || 0;
-                const vagasRestantes = 14 - totalVotos;
-                let opt = document.createElement("option");
-                
-                opt.value = p.nome;
-                if (vagasRestantes <= 0) {
-                    opt.textContent = `${p.nome} (ESGOTADO)`;
-                    opt.disabled = true;
-                    opt.style.color = "#ff4444";
-                } else {
-                    opt.textContent = `${p.nome} (${vagasRestantes} vagas restantes)`;
-                }
-                select.appendChild(opt);
-            });
-        }
-    }
+        function handleAnswer(choice) {
+            if(choice === questions[currentIdx].correct) score += 100;
+            currentIdx++;
 
-    async function votar() {
-        if(localStorage.getItem("jaVotou")) {
-            alert("Você já votou neste dispositivo!");
-            return;
+            if(currentIdx < questions.length) {
+                renderQuestion();
+            } else {
+                finishQuiz();
+            }
         }
 
-        const nome = document.getElementById("nome").value.trim();
-        const turma = document.getElementById("turma").value.trim();
-        const professor = document.getElementById("professor").value;
-        const btn = document.getElementById("btnVotar");
-
-        if(!nome || !turma || !professor) {
-            alert("Por favor, preencha todos os campos!");
-            return;
+        async function finishQuiz() {
+            document.getElementById("game-area").style.display = "none";
+            document.getElementById("finish-area").style.display = "block";
+            document.getElementById("final-result").innerText = score + " PTS";
+            
+            try {
+                await _supabase.from('ranking').insert([{ name: currentUser, score: score }]);
+            } catch (e) {
+                console.error("Erro ao salvar:", e);
+            }
+            fetchRanking();
         }
 
-        btn.disabled = true;
-        btn.innerText = "Processando...";
+        async function fetchRanking() {
+            try {
+                const { data, error } = await _supabase
+                    .from('ranking')
+                    .select('*')
+                    .order('score', { ascending: false })
+                    .limit(15);
 
-        // Verificação de última hora se ainda há vaga
-        const { count } = await _supabase
-            .from('votos')
-            .select('*', { count: 'exact', head: true })
-            .eq('professor_nome', professor);
+                if (error) throw error;
 
-        if (count >= 14) {
-            alert("Desculpe, as vagas para este professor acabaram de esgotar! Escolha outro.");
-            carregarProfessoresComVagas();
-            btn.disabled = false;
-            btn.innerText = "Confirmar Voto";
-            return;
+                const list = document.getElementById("ranking-list");
+                list.innerHTML = "";
+                data.forEach((p, i) => {
+                    const div = document.createElement("div");
+                    div.className = `rank-box ${p.name === currentUser ? 'is-me' : ''}`;
+                    div.innerHTML = `<span>#${i+1} ${p.name}</span> <span>${p.score}</span>`;
+                    list.appendChild(div);
+                });
+            } catch (e) {
+                console.warn("Ranking em atualização...");
+            }
         }
-
-        const { error } = await _supabase
-            .from('votos')
-            .insert([{ aluno_nome: nome, turma: turma, professor_nome: professor }]);
-
-        if (error) {
-            alert("Erro ao votar: " + error.message);
-            btn.disabled = false;
-            btn.innerText = "Confirmar Voto";
-        } else {
-            localStorage.setItem("jaVotou", "true");
-            alert("Voto registrado com sucesso!");
-            location.reload();
-        }
-    }
-</script>
+    </script>
 </body>
 </html>
