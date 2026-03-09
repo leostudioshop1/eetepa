@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz: Operadores Lógicos</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #3f51b5;
+            --secondary: #f50057;
+            --bg: #f4f4f9;
+            --success: #4caf50;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; color: #333; }
+        #setup, #quiz-container, #leaderboard { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 600px; margin-bottom: 20px; }
+        .question { font-size: 1.2rem; margin-bottom: 1.5rem; font-weight: bold; color: var(--primary); }
+        .options { display: flex; flex-direction: column; gap: 10px; }
+        button { padding: 12px; cursor: pointer; border: 1px solid #ddd; border-radius: 6px; background: white; transition: 0.3s; font-size: 1rem; }
+        button:hover:not(:disabled) { background: #f0f0f0; border-color: var(--primary); }
+        button:disabled { cursor: not-allowed; opacity: 0.6; }
+        .btn-submit { background: var(--primary); color: white; border: none; margin-top: 20px; width: 100%; font-weight: bold; }
+        .btn-submit:hover { background: #303f9f; }
+        .hidden { display: none; }
+        #progress { margin-bottom: 10px; font-size: 0.9rem; color: #666; }
+        
+        /* Estilos da Tabela */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { background-color: #f8f9fa; color: var(--primary); text-transform: uppercase; font-size: 0.8rem; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+        tr:nth-child(even) { background-color: #fafafa; }
+        h2 { color: var(--primary); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        
+        input[type="text"] { padding: 12px; width: 100%; box-sizing: border-box; border: 2px solid #ddd; border-radius: 6px; margin-bottom: 10px; font-size: 1rem; }
+    </style>
+</head>
+<body>
+
+    <div id="setup">
+        <h2>Desafio de Lógica</h2>
+        <p>Teste seus conhecimentos em operadores lógicos (AND, OR, NOT).</p>
+        <input type="text" id="username" placeholder="Seu nome ou apelido..." maxlength="20">
+        <button class="btn-submit" onclick="startQuiz()">INICIAR QUIZ</button>
+    </div>
+
+    <div id="quiz-container" class="hidden">
+        <div id="progress">Questão 1 de 10</div>
+        <div class="question" id="question-text"></div>
+        <div class="options" id="options-container"></div>
+        <button id="next-btn" class="btn-submit" onclick="nextQuestion()" disabled>PRÓXIMA PERGUNTA</button>
+    </div>
+
+    <div id="leaderboard">
+        <h2>🏆 Ranking Top 10</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Jogador</th>
+                    <th>Pontuação</th>
+                </tr>
+            </thead>
+            <tbody id="ranking-body">
+                <tr><td colspan="2">Carregando placar...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+<script>
+    // Configurações fornecidas do Supabase
+    const SUPABASE_URL = "https://osofdmgokrxdzsxozsrf.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zb2ZkbWdva3J4ZHpzeG96c3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMzk4ODMsImV4cCI6MjA4ODYxNTg4M30.lALjkQ65DPLFiLboHNH4mKzwoNZPFyGjwRLW-IrMH4c";
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentQuestion = 0;
+    let score = 0;
+    let user = "";
+
+    const questions = [
+        { q: "Qual o resultado de (true && false)?", o: ["true", "false"], a: 1 },
+        { q: "Qual operador representa a negação (NOT)?", o: ["&&", "||", "!"], a: 2 },
+        { q: "O resultado de (true || false) é?", o: ["true", "false"], a: 0 },
+        { q: "Em lógica, (5 > 3 && 2 < 1) retorna:", o: ["true", "false"], a: 1 },
+        { q: "Qual o resultado de !(10 == 10)?", o: ["true", "false"], a: 1 },
+        { q: "Qual operador é o 'OU' (OR) lógico?", o: ["&", "||", "AND"], a: 1 },
+        { q: "(false || !false) resulta em:", o: ["true", "false"], a: 0 },
+        { q: "O que o operador && exige para retornar TRUE?", o: ["Ambos verdadeiros", "Apenas um verdadeiro", "Nenhum verdadeiro"], a: 0 },
+        { q: "O resultado de !(true && false) é:", o: ["true", "false"], a: 0 },
+        { q: "(5 != 5 || 1 == 1) retorna:", o: ["true", "false"], a: 0 }
+    ];
+
+    async function startQuiz() {
+        const input = document.getElementById('username');
+        user = input.value.trim();
+        if(!user) return alert("Por favor, digite seu nome para entrar no ranking!");
+        
+        document.getElementById('setup').classList.add('hidden');
+        document.getElementById('quiz-container').classList.remove('hidden');
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const q = questions[currentQuestion];
+        document.getElementById('progress').innerText = `Questão ${currentQuestion + 1} de ${questions.length}`;
+        document.getElementById('question-text').innerText = q.q;
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = "";
+        
+        q.o.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.innerText = opt;
+            btn.onclick = () => selectOption(btn, i);
+            container.appendChild(btn);
+        });
+        document.getElementById('next-btn').disabled = true;
+    }
+
+    function selectOption(clickedBtn, index) {
+        const q = questions[currentQuestion];
+        const allBtns = document.querySelectorAll('#options-container button');
+        
+        allBtns.forEach(btn => btn.disabled = true);
+        
+        if(index === q.a) {
+            score++;
+            clickedBtn.style.background = "#c8e6c9";
+            clickedBtn.style.borderColor = "var(--success)";
+        } else {
+            clickedBtn.style.background = "#ffcdd2";
+            clickedBtn.style.borderColor = "var(--secondary)";
+        }
+        
+        document.getElementById('next-btn').disabled = false;
+    }
+
+    async function nextQuestion() {
+        currentQuestion++;
+        if(currentQuestion < questions.length) {
+            showQuestion();
+        } else {
+            await finishQuiz();
+        }
+    }
+
+    async function finishQuiz() {
+        document.getElementById('quiz-container').innerHTML = `
+            <div style="text-align:center">
+                <h2>Quiz Finalizado!</h2>
+                <p style="font-size:1.5rem">Você acertou <strong>${score}</strong> de 10.</p>
+                <p>Sua pontuação foi enviada para o ranking.</p>
+                <button class="btn-submit" onclick="location.reload()">Jogar Novamente</button>
+            </div>
+        `;
+        
+        // Salva os dados no Supabase
+        try {
+            const { error } = await _supabase
+                .from('ranking')
+                .insert([{ username: user, score: score }]);
+            
+            if (error) throw error;
+        } catch (err) {
+            console.error("Erro ao salvar:", err.message);
+        }
+    }
+
+    async function fetchRanking() {
+        try {
+            const { data, error } = await _supabase
+                .from('ranking')
+                .select('username, score')
+                .order('score', { ascending: false })
+                .limit(10);
+            
+            if (error) throw error;
+
+            const body = document.getElementById('ranking-body');
+            if(data && data.length > 0) {
+                body.innerHTML = data.map(row => `
+                    <tr>
+                        <td><strong>${row.username}</strong></td>
+                        <td>${row.score} pts</td>
+                    </tr>
+                `).join('');
+            } else {
+                body.innerHTML = "<tr><td colspan='2'>Nenhum recorde ainda. Seja o primeiro!</td></tr>";
+            }
+        } catch (err) {
+            console.error("Erro ao carregar ranking:", err.message);
+        }
+    }
+
+    // Escuta atualizações em tempo real (Realtime)
+    _supabase.channel('custom-all-channel')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ranking' }, (payload) => {
+        fetchRanking();
+    })
+    .subscribe();
+
+    // Carrega o ranking assim que abrir a página
+    fetchRanking();
+</script>
+</body>
+</html>
