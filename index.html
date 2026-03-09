@@ -199,9 +199,9 @@ letter-spacing: 1px;
 </main>
 
 <script>
-const SB_URL="https://osofdmgokrxdzsxozsrf.supabase.co";
-const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zb2ZkbWdva3J4ZHpzeG96c3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMzk4ODMsImV4cCI6MjA4ODYxNTg4M30.lALjkQ65DPLFiLboHNH4mKzwoNZPFyGjwRLW-IrMH4c"; 
-const supabaseClient=supabase.createClient(SB_URL,SB_KEY);
+ const _supabase = supabase.createClient('https://osofdmgokrxdzsxozsrf.supabase.co', 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe');
+        const supabase = supabase.createClient(SB_URL, SB_KEY);
+
 
 let currentUser="";
 let score=0;
