@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Master - TI & Lógica</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root{
+            --bg:#0f172a;
+            --card:#111827;
+            --neon:#22c55e;
+            --danger:#ef4444;
+            --accent:#3b82f6;
+            --text:#e5e7eb;
+        }
+
+        body{
+            font-family:'Segoe UI',sans-serif;
+            background: radial-gradient(circle at top,#0f172a,#020617);
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            padding:20px;
+            color:var(--text);
+        }
+
+        #setup,#quiz-container,#leaderboard{
+            background:var(--card);
+            padding:2rem;
+            border-radius:14px;
+            box-shadow:0 0 25px rgba(0,0,0,0.8);
+            width:100%;
+            max-width:650px;
+            margin-bottom:20px;
+            border:1px solid #1f2937;
+        }
+
+        h2{ color:var(--neon); margin-top:0; border-bottom:1px solid #1f2937; padding-bottom:10px; }
+        .question{ font-size:1.2rem; margin-bottom:20px; color:#93c5fd; font-weight:bold; min-height: 60px; }
+        .options{ display:flex; flex-direction:column; gap:10px; }
+        
+        button{
+            padding:12px;
+            cursor:pointer;
+            border:1px solid #1f2937;
+            border-radius:8px;
+            background:#020617;
+            color:white;
+            transition:0.25s;
+            font-size:1rem;
+            text-align: left;
+        }
+
+        button:hover:not(:disabled){ background:var(--accent); transform:scale(1.01); }
+        button:disabled{ opacity:0.5; cursor:not-allowed; }
+        .btn-submit{ background:linear-gradient(90deg,#22c55e,#4ade80); color:#022c22; border:none; margin-top:20px; width:100%; font-weight:bold; font-size:1.1rem; text-align: center; }
+        .hidden{ display:none; }
+        #progress{ margin-bottom:10px; font-size:0.9rem; color:#9ca3af; }
+        
+        table{ width:100%; border-collapse:collapse; margin-top:15px; }
+        th{ background:#020617; color:var(--neon); text-transform:uppercase; font-size:0.8rem; padding:12px; }
+        td{ padding:12px; border-bottom:1px solid #1f2937; text-align: center; }
+        input[type="text"]{ padding:12px; width:100%; box-sizing:border-box; border:2px solid #1f2937; border-radius:8px; margin-bottom:10px; font-size:1rem; background:#020617; color:white; }
+    </style>
+</head>
+<body>
+
+<div id="setup">
+    <h2>🎮 Desafio Full Stack</h2>
+    <p>60 Questões: Lógica, Hardware e Sistemas.</p>
+    <input type="text" id="username" placeholder="Digite seu nome para o ranking..." maxlength="20">
+    <button class="btn-submit" onclick="startQuiz()">INICIAR DESAFIO</button>
+</div>
+
+<div id="quiz-container" class="hidden">
+    <div id="progress">Questão 1 de 60</div>
+    <div class="question" id="question-text"></div>
+    <div class="options" id="options-container"></div>
+    <button id="next-btn" class="btn-submit" onclick="nextQuestion()" disabled>PRÓXIMA PERGUNTA</button>
+</div>
+
+<div id="leaderboard">
+    <h2>🏆 Ranking Top 10</h2>
+    <table>
+        <thead><tr><th>Jogador</th><th>Pontos</th></tr></thead>
+        <tbody id="ranking-body"><tr><td colspan="2">Carregando...</td></tr></tbody>
+    </table>
+</div>
+
+<script>
+const SUPABASE_URL="https://osofdmgokrxdzsxozsrf.supabase.co";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zb2ZkbWdva3J4ZHpzeG96c3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMzk4ODMsImV4cCI6MjA4ODYxNTg4M30.lALjkQ65DPLFiLboHNH4mKzwoNZPFyGjwRLW-IrMH4c";
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentQuestion = 0;
+let score = 0;
+let user = "";
+
+const questions = [
+    // LÓGICA E OPERADORES (1-20)
+    {q:"O que o operador && faz?", o:["Retorna verdadeiro se ambos forem verdadeiros","Retorna verdadeiro se um for verdadeiro"], a:0},
+    {q:"Qual o símbolo do operador OU (OR)?", o:["&&","||","!"], a:1},
+    {q:"O que o operador ! faz?", o:["Soma valores","Inverte o valor lógico","Multiplica"], a:1},
+    {q:"Resultado de (10 > 5 && 3 < 2)?", o:["true","false"], a:1},
+    {q:"Resultado de (5 == 5 || 4 > 10)?", o:["true","false"], a:0},
+    {q:"Qual o resultado de !true?", o:["false","true"], a:0},
+    {q:"(true && true) é:", o:["Verdadeiro","Falso"], a:0},
+    {q:"(false || false) é:", o:["Verdadeiro","Falso"], a:1},
+    {q:"Se A=true e B=false, quanto é A && B?", o:["true","false"], a:1},
+    {q:"Se A=false, quanto é !A?", o:["true","false"], a:0},
+    {q:"O que significa '==' em programação?", o:["Atribuição","Comparação de igualdade"], a:1},
+    {q:"O que significa '!='?", o:["Diferente de","Igual a"], a:0},
+    {q:"O resultado de (10 != 10) é:", o:["true","false"], a:1},
+    {q:"Qual operador tem prioridade?", o:["&&","||"], a:0},
+    {q:"Em lógica, 'false && !false' resulta em:", o:["true","false"], a:1},
+    {q:"(5 >= 5) retorna:", o:["true","false"], a:0},
+    {q:"(2 < 1 || 3 > 2) retorna:", o:["true","false"], a:0},
+    {q:"O que é um algoritmo?", o:["Um erro no PC","Uma sequência de passos para resolver um problema"], a:1},
+    {q:"Qual dessas é uma variável booleana?", o:["'Olá'","true"], a:1},
+    {q:"O símbolo '>' significa:", o:["Menor que","Maior que"], a:1},
+    
+    // SISTEMA DE ARQUIVOS (21-40)
+    {q:"O que significa NTFS?", o:["New Technology File System","No Transport File System"], a:0},
+    {q:"Qual sistema de arquivos é comum no Linux?", o:["FAT32","EXT4"], a:1},
+    {q:"O FAT32 suporta arquivos maiores que 4GB?", o:["Sim","Não"], a:1},
+    {q:"O que é a extensão .txt?", o:["Imagem","Arquivo de texto simples"], a:1},
+    {q:"Qual extensão refere-se a um executável no Windows?", o: [".exe", ".pdf"], a:0},
+    {q:"Onde ficam salvos os arquivos permanentemente?", o:["Memória RAM","Disco Rígido (HD/SSD)"], a:1},
+    {q:"O que é 'formatar' um disco?", o:["Limpar os dados e preparar o sistema de arquivos","Aumentar o tamanho do HD"], a:0},
+    {q:"O que é uma pasta (diretório)?", o:["Um arquivo de música","Um local para organizar arquivos"], a:1},
+    {q:"Qual dessas é uma extensão de imagem?", o:[".png",".mp3"], a:0},
+    {q:"O que o comando 'ls' faz no Linux?", o:["Desliga o PC","Lista arquivos"], a:1},
+    {q:"O que o comando 'dir' faz no Windows CMD?", o:["Lista diretórios","Cria uma pasta"], a:0},
+    {q:"Qual a função da Lixeira?", o:["Excluir permanentemente na hora","Armazenar arquivos deletados temporariamente"], a:1},
+    {q:"O que é o caminho (path) de um arquivo?", o:["O tamanho dele","O endereço de onde ele está no disco"], a:1},
+    {q:"Qual sistema de arquivos é usado em pendrives para maior compatibilidade?", o:["FAT32","exFAT"], a:0},
+    {q:"O que significa comprimir um arquivo?", o:["Aumentar a resolução","Reduzir o tamanho ocupado no disco"], a:1},
+    {q:"Qual extensão é de um arquivo comprimido?", o:[".zip",".docx"], a:0},
+    {q:"O que é um arquivo 'Oculto'?", o:["Um arquivo que não aparece por padrão","Um arquivo infectado"], a:0},
+    {q:"Qual o sistema de arquivos padrão do macOS?", o:["APFS","NTFS"], a:0},
+    {q:"O que acontece ao deletar um atalho?", o:["O programa original é apagado","Apenas o acesso rápido é apagado"], a:1},
+    {q:"O que é 'fragmentação' de disco?", o:["Arquivos espalhados pelo HD","O HD quebrado fisicamente"], a:0},
+
+    // HARDWARE / HD / SSD (41-60)
+    {q:"O que significa HD?", o:["Hard Disk","High Definition"], a:0},
+    {q:"Qual a principal diferença do SSD para o HD?", o:["O SSD é mais lento","O SSD é muito mais rápido e não tem discos físicos"], a:1},
+    {q:"O HD usa qual tecnologia para ler dados?", o:["Laser","Agulha magnética e discos"], a:1},
+    {q:"O que significa SSD?", o:["Solid State Drive","Super System Disk"], a:0},
+    {q:"Qual componente é mais resistente a quedas?", o:["HD","SSD"], a:1},
+    {q:"Onde se conecta o HD na placa-mãe?", o:["Porta SATA","Porta USB interna"], a:0},
+    {q:"O que é a tecnologia NVMe?", o:["Um tipo de SSD muito rápido via porta M.2","Um tipo de cabo"], a:0},
+    {q:"Qual a unidade de medida de capacidade de um HD atual?", o:["GB ou TB","MHz"], a:0},
+    {q:"O que é RPM em um HD?", o:["Rotações Por Minuto","Rápida Parada de Memória"], a:0},
+    {q:"Qual HD é mais comum em notebooks antigos?", o:["3.5 polegadas","2.5 polegadas"], a:1},
+    {q:"O que é o 'Cache' do HD?", o:["Memória interna para acelerar a leitura","Onde fica a poeira"], a:0},
+    {q:"SSD consome mais energia que o HD?", o:["Sim","Não"], a:1},
+    {q:"O que é um HD Externo?", o:["Um HD dentro do processador","Um HD que se conecta via USB"], a:1},
+    {q:"Qual a vida útil média de escrita de um SSD?", o:["TBW (Terabytes Written)","Horas de luz"], a:0},
+    {q:"O que acontece se um ímã forte chegar perto de um HD?", o:["Nada","Pode apagar os dados"], a:1},
+    {q:"Qual o tamanho padrão de um HD de Desktop?", o:["3.5 polegadas","5.25 polegadas"], a:0},
+    {q:"O SSD faz barulho enquanto trabalha?", o:["Sim, gira rápido","Não, é totalmente silencioso"], a:1},
+    {q:"Qual cabo transmite dados do HD para a placa-mãe?", o:["Cabo SATA","Cabo HDMI"], a:0},
+    {q:"Podemos usar SSD e HD juntos no mesmo PC?", o:["Sim","Não"], a:0},
+    {q:"O que é o S.M.A.R.T. no HD?", o:["Um sistema que monitora a saúde do disco","Um sistema de cores"], a:0}
+];
+
+async function startQuiz(){
+    const input = document.getElementById('username');
+    user = input.value.trim();
+    if(!user) return alert("Por favor, digite seu nome para salvar sua pontuação!"); // Filtro de usuário
+
+    document.getElementById('setup').classList.add('hidden');
+    document.getElementById('quiz-container').classList.remove('hidden');
+    showQuestion();
+}
+
+function showQuestion(){
+    const q = questions[currentQuestion];
+    document.getElementById('progress').innerText = `Questão ${currentQuestion + 1} de ${questions.length}`;
+    document.getElementById('question-text').innerText = q.q;
+
+    const container = document.getElementById('options-container');
+    container.innerHTML = "";
+
+    q.o.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.innerText = opt;
+        btn.onclick = () => selectOption(btn, i);
+        container.appendChild(btn);
+    });
+
+    document.getElementById('next-btn').disabled = true;
+}
+
+function selectOption(clickedBtn, index){
+    const q = questions[currentQuestion];
+    const allBtns = document.querySelectorAll('#options-container button');
+    allBtns.forEach(btn => btn.disabled = true);
+
+    if(index === q.a){
+        score++;
+        clickedBtn.style.background = "#16a34a";
+    } else {
+        clickedBtn.style.background = "#dc2626";
+    }
+    document.getElementById('next-btn').disabled = false;
+}
+
+async function nextQuestion(){
+    currentQuestion++;
+    if(currentQuestion < questions.length){
+        showQuestion();
+    } else {
+        await finishQuiz();
+    }
+}
+
+async function finishQuiz(){
+    document.getElementById('quiz-container').innerHTML = `
+        <div style="text-align:center">
+            <h2>🎉 Quiz Concluído!</h2>
+            <p style="font-size:1.5rem">Sua pontuação final: <strong>${score}</strong> de 60.</p>
+            <button class="btn-submit" onclick="location.reload()">Reiniciar</button>
+        </div>
+    `;
+
+    try {
+        const { error } = await _supabase.from('ranking').insert([{ username: user, score: score }]);
+        if(error) throw error;
+    } catch(err) {
+        console.error("Erro ao salvar:", err.message);
+    }
+}
+
+async function fetchRanking(){
+    const { data, error } = await _supabase.from('ranking').select('username,score').order('score', {ascending:false}).limit(10);
+    if(error) return;
+    const body = document.getElementById('ranking-body');
+    body.innerHTML = data.map(row => `<tr><td><strong>${row.username}</strong></td><td>${row.score} pts</td></tr>`).join('');
+}
+
+_supabase.channel('ranking-live').on('postgres_changes', {event:'INSERT', schema:'public', table:'ranking'}, () => fetchRanking()).subscribe();
+fetchRanking();
+</script>
+</body>
+</html>
