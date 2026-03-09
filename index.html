@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DevQuest Elite</title>
+<title>DevQuest Elite - Real Time</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
@@ -40,6 +40,7 @@ font-family:'Orbitron';
 color:var(--secondary);
 text-align:center;
 margin-bottom:20px;
+font-size: 1.2rem;
 }
 
 .rank-box{
@@ -52,25 +53,30 @@ justify-content:space-between;
 font-family:'Orbitron';
 font-size:12px;
 border-left:3px solid var(--primary);
+transition: all 0.3s ease;
 }
 
-/* Destaque para o usuário atual no ranking */
 .rank-me {
 border-left: 3px solid var(--secondary);
 background: rgba(6, 182, 212, 0.2);
 color: var(--secondary);
+box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
 }
 
 #reset-btn{
 margin-top:auto;
-padding:10px;
+padding:12px;
 background:#ff0044;
 border:none;
 color:white;
 cursor:pointer;
 font-family:Orbitron;
 border-radius: 5px;
+font-size: 0.7rem;
+transition: 0.3s;
 }
+
+#reset-btn:hover { background: #cc0033; }
 
 #main-content{
 flex-grow:1;
@@ -88,6 +94,7 @@ background:var(--card);
 padding:40px;
 border-radius:15px;
 box-shadow:0 0 50px rgba(0,0,0,0.8);
+border: 1px solid #222;
 }
 
 h1{
@@ -106,6 +113,7 @@ color:white;
 margin-bottom:20px;
 text-align:center;
 font-family:Orbitron;
+outline: none;
 }
 
 .btn-start{
@@ -116,7 +124,10 @@ border:none;
 color:white;
 cursor:pointer;
 font-family:Orbitron;
+transition: 0.3s;
 }
+
+.btn-start:hover { background: var(--secondary); }
 
 .option-btn{
 width:100%;
@@ -127,7 +138,8 @@ border:1px solid #333;
 color:white;
 cursor:pointer;
 border-radius:6px;
-transition: 0.3s;
+transition: 0.2s;
+text-align: left;
 }
 
 .option-btn:hover{
@@ -135,29 +147,18 @@ background:#252535;
 border-color: var(--secondary);
 }
 
-#game-area,#finish-area{
-display:none;
-}
+#game-area,#finish-area{ display:none; }
 
-.progress-bar{
-height:4px;
-background:#222;
-margin-top:20px;
-}
-
-#inner-progress{
-height:100%;
-background:linear-gradient(90deg,var(--primary),var(--secondary));
-width:0%;
-transition: 0.5s;
-}
+.progress-bar{ height:4px; background:#222; margin-top:20px; }
+#inner-progress{ height:100%; background:linear-gradient(90deg,var(--primary),var(--secondary)); width:0%; transition: 0.4s; }
 
 footer{
 margin-top:20px;
-font-size:12px;
+font-size:11px;
 opacity:0.6;
 font-family:Orbitron;
 text-align:center;
+letter-spacing: 1px;
 }
 </style>
 </head>
@@ -167,29 +168,28 @@ text-align:center;
 <aside id="sidebar">
     <h2>GLOBAL RANKING</h2>
     <div id="ranking-list"></div>
-    <button id="reset-btn" onclick="resetRanking()">ZERAR BANCO</button>
+    <button id="reset-btn" onclick="resetRanking()">ZERAR BANCO DE DADOS</button>
 </aside>
 
 <main id="main-content">
     <div class="quiz-card">
         <div id="start-area">
             <h1>SISTEMA LOGIN</h1>
-            <input type="text" id="username" placeholder="DIGITE SEU CODINOME">
-            <button class="btn-start" onclick="startQuiz()">INICIAR</button>
+            <input type="text" id="username" placeholder="CODINOME DE ACESSO">
+            <button class="btn-start" onclick="startQuiz()">INICIAR SEQUÊNCIA</button>
         </div>
 
         <div id="game-area">
-            <h3 id="question-text"></h3>
+            <h3 id="question-text" style="margin-bottom: 20px; min-height: 50px;"></h3>
             <div id="options-container"></div>
-            <div class="progress-bar">
-                <div id="inner-progress"></div>
-            </div>
-            <p id="counter" style="margin-top:10px; font-size:12px; opacity:0.7; font-family:Orbitron;"></p>
+            <div class="progress-bar"><div id="inner-progress"></div></div>
+            <p id="counter" style="margin-top:10px; font-size:11px; font-family:Orbitron; opacity:0.7;"></p>
         </div>
 
-        <div id="finish-area">
-            <h1>MISSÃO CONCLUÍDA</h1>
-            <p id="final-result" style="font-size:40px;text-align:center; font-family:Orbitron; color:var(--secondary); margin-top:20px;"></p>
+        <div id="finish-area" style="text-align: center;">
+            <h1 style="color: var(--secondary);">MISSÃO CONCLUÍDA</h1>
+            <p id="final-result" style="font-size:40px; margin: 20px 0; font-family:Orbitron;"></p>
+            <p style="opacity: 0.5; font-size: 12px;">PONTUAÇÃO SINCRONIZADA COM O BANCO.</p>
         </div>
     </div>
 
@@ -200,15 +200,14 @@ text-align:center;
 
 <script>
 const SB_URL="https://osofdmgokrxdzsxozsrf.supabase.co";
-// Chave fornecida no código original
-const SB_KEY="sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe"; 
-
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zb2ZkbWdva3J4ZHpzeG96c3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMzk4ODMsImV4cCI6MjA4ODYxNTg4M30.lALjkQ65DPLFiLboHNH4mKzwoNZPFyGjwRLW-IrMH4c"; 
 const supabaseClient=supabase.createClient(SB_URL,SB_KEY);
 
 let currentUser="";
 let score=0;
 let currentIdx=0;
 
+// Base de 60 questões geradas dinamicamente
 const baseQuestions=[
     {q:"2 + 2 = ?",a:["3","4","5","22"],c:1},
     {q:"False significa?",a:["Verdadeiro","Falso","Erro","Talvez"],c:1},
@@ -223,19 +222,19 @@ const baseQuestions=[
 ];
 
 const questions=[];
-for(let i=0;i<60;i++){
-    let base=baseQuestions[i%baseQuestions.length];
+for(let i=0; i<60; i++){
+    let base = baseQuestions[i % baseQuestions.length];
     questions.push({
-        q:`[Q${i+1}] ${base.q}`,
-        options:base.a,
-        correct:base.c
+        q: `[LEVEL ${i+1}] ${base.q}`,
+        options: base.a,
+        correct: base.c
     });
 }
 
 async function startQuiz(){
     let name=document.getElementById("username").value;
-    if(name.length<2){
-        alert("Nome muito curto");
+    if(name.trim().length < 2){
+        alert("Codinome inválido.");
         return;
     }
     currentUser=name.toUpperCase();
@@ -245,14 +244,13 @@ async function startQuiz(){
 
     renderQuestion();
     fetchRanking();
-    setInterval(fetchRanking, 2000); // Atualiza o ranking visual a cada 2 segundos
+    setInterval(fetchRanking, 1500); // Placar global atualiza a cada 1.5s
 }
 
 function renderQuestion(){
     let q=questions[currentIdx];
     document.getElementById("question-text").innerText=q.q;
-    document.getElementById("counter").innerText=`QUESTÃO ${currentIdx+1} / 60`;
-
+    document.getElementById("counter").innerText=`STATUS: ${currentIdx+1} / 60`;
     let container=document.getElementById("options-container");
     container.innerHTML="";
 
@@ -273,49 +271,45 @@ async function handleAnswer(choice){
     }
     currentIdx++;
 
-    // ENVIA PONTUAÇÃO EM TEMPO REAL PARA O BANCO
+    // SINCRONIZAÇÃO EM TEMPO REAL
     await updateLiveScore();
 
-    if(currentIdx<questions.length){
+    if(currentIdx < questions.length){
         renderQuestion();
-    }else{
+    } else {
         finishQuiz();
     }
 }
 
 async function updateLiveScore(){
-    try {
-        await supabaseClient
-            .from("ranking")
-            .upsert([{ name: currentUser, score: score }], { onConflict: 'name' });
-    } catch (e) {
-        console.error("Erro ao atualizar placar:", e);
-    }
+    // Upsert garante que se o usuário já existe ele atualiza, se não ele cria
+    const { error } = await supabaseClient
+        .from("ranking")
+        .upsert([{ name: currentUser, score: score }], { onConflict: 'name' });
+    
+    if(!error) fetchRanking(); // Atualiza o visual na hora
 }
 
 async function finishQuiz(){
     document.getElementById("game-area").style.display="none";
     document.getElementById("finish-area").style.display="block";
     document.getElementById("final-result").innerText=score+" PTS";
-    
-    await updateLiveScore();
 }
 
 async function fetchRanking(){
-    let {data,error}=await supabaseClient
+    const {data, error} = await supabaseClient
         .from("ranking")
         .select("*")
-        .order("score",{ascending:false})
+        .order("score", {ascending:false})
         .limit(10);
 
     if(error) return;
 
-    let list=document.getElementById("ranking-list");
+    const list=document.getElementById("ranking-list");
     list.innerHTML="";
 
     data.forEach((p,i)=>{
         let div=document.createElement("div");
-        // Verifica se o nome no ranking é o do usuário atual para destacar
         div.className = (p.name === currentUser) ? "rank-box rank-me" : "rank-box";
         div.innerHTML=`<span>#${i+1} ${p.name}</span> <span>${p.score}</span>`;
         list.appendChild(div);
@@ -323,25 +317,19 @@ async function fetchRanking(){
 }
 
 async function resetRanking(){
-    let senha=prompt("Digite a senha administrativa para ZERAR o banco:");
-    if(senha!=="102030"){
-        alert("Senha incorreta");
-        return;
-    }
+    let senha=prompt("SENHA DE ACESSO:");
+    if(senha!=="102030") return alert("NEGADO.");
 
-    let confirmar=confirm("ATENÇÃO: Deseja apagar TODOS os registros do ranking permanentemente?");
-    if(!confirmar) return;
+    if(confirm("Deseja expurgar todos os dados do ranking?")){
+        const { error } = await supabaseClient
+            .from("ranking")
+            .delete()
+            .neq("name", ""); // Remove tudo
 
-    const { error } = await supabaseClient
-        .from("ranking")
-        .delete()
-        .neq("name", ""); // Deleta todos onde o nome não é vazio
-
-    if(error) {
-        alert("Erro ao zerar banco: " + error.message);
-    } else {
-        alert("Banco de dados zerado com sucesso!");
-        fetchRanking();
+        if(!error){
+            alert("SISTEMA RESETADO.");
+            fetchRanking();
+        }
     }
 }
 </script>
