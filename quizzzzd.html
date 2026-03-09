@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Gamer - Operadores Lógicos</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+
+:root{
+--bg:#0f172a;
+--card:#111827;
+--neon:#22c55e;
+--danger:#ef4444;
+--accent:#3b82f6;
+--text:#e5e7eb;
+}
+
+body{
+font-family:'Segoe UI',sans-serif;
+background: radial-gradient(circle at top,#0f172a,#020617);
+display:flex;
+flex-direction:column;
+align-items:center;
+padding:20px;
+color:var(--text);
+}
+
+#setup,#quiz-container,#leaderboard{
+background:var(--card);
+padding:2rem;
+border-radius:14px;
+box-shadow:0 0 25px rgba(0,0,0,0.8);
+width:100%;
+max-width:650px;
+margin-bottom:20px;
+border:1px solid #1f2937;
+}
+
+h2{
+color:var(--neon);
+margin-top:0;
+border-bottom:1px solid #1f2937;
+padding-bottom:10px;
+}
+
+.question{
+font-size:1.3rem;
+margin-bottom:20px;
+color:#93c5fd;
+font-weight:bold;
+}
+
+.options{
+display:flex;
+flex-direction:column;
+gap:10px;
+}
+
+button{
+padding:12px;
+cursor:pointer;
+border:1px solid #1f2937;
+border-radius:8px;
+background:#020617;
+color:white;
+transition:0.25s;
+font-size:1rem;
+}
+
+button:hover:not(:disabled){
+background:var(--accent);
+transform:scale(1.02);
+}
+
+button:disabled{
+opacity:0.5;
+cursor:not-allowed;
+}
+
+.btn-submit{
+background:linear-gradient(90deg,#22c55e,#4ade80);
+color:#022c22;
+border:none;
+margin-top:20px;
+width:100%;
+font-weight:bold;
+font-size:1.1rem;
+}
+
+.hidden{
+display:none;
+}
+
+#progress{
+margin-bottom:10px;
+font-size:0.9rem;
+color:#9ca3af;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:15px;
+}
+
+th{
+background:#020617;
+color:var(--neon);
+text-transform:uppercase;
+font-size:0.8rem;
+}
+
+th,td{
+padding:12px;
+border-bottom:1px solid #1f2937;
+}
+
+tr:nth-child(even){
+background:#020617;
+}
+
+input{
+padding:12px;
+width:100%;
+border:2px solid #1f2937;
+border-radius:8px;
+margin-bottom:10px;
+background:#020617;
+color:white;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="setup">
+<h2>🎮 Desafio de Lógica</h2>
+
+<input type="text" id="username" placeholder="Seu nome..." maxlength="20">
+
+<button class="btn-submit" onclick="startQuiz()">
+INICIAR QUIZ
+</button>
+</div>
+
+<div id="quiz-container" class="hidden">
+
+<div id="progress"></div>
+
+<div class="question" id="question-text"></div>
+
+<div class="options" id="options-container"></div>
+
+<button id="next-btn" class="btn-submit" onclick="nextQuestion()" disabled>
+PRÓXIMA PERGUNTA
+</button>
+
+</div>
+
+<div id="leaderboard">
+
+<h2>🏆 Ranking da Sala</h2>
+
+<table>
+
+<thead>
+<tr>
+<th>Jogador</th>
+<th>Pontos</th>
+</tr>
+</thead>
+
+<tbody id="ranking-body">
+<tr><td colspan="2">Carregando...</td></tr>
+</tbody>
+
+</table>
+
+</div>
+
+<script>
+
+const SUPABASE_URL="https://osofdmgokrxdzsxozsrf.supabase.co";
+const SUPABASE_KEY="SUA_CHAVE_SUPABASE";
+
+const _supabase=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+let currentQuestion=0;
+let score=0;
+let user="";
+
+const questions=[
+
+{q:"Qual o resultado de (true && false)?",o:["true","false"],a:1},
+{q:"Qual operador representa NOT?",o:["&&","||","!"],a:2},
+{q:"O resultado de (true || false) é?",o:["true","false"],a:0},
+{q:"(5 > 3 && 2 < 1) retorna:",o:["true","false"],a:1},
+{q:"!(10 == 10) resulta:",o:["true","false"],a:1},
+{q:"Operador OR é:",o:["&","||","AND"],a:1},
+{q:"(false || !false) =",o:["true","false"],a:0},
+{q:"&& retorna TRUE quando:",o:["ambos verdadeiros","um verdadeiro","nenhum"],a:0},
+{q:"!(true && false) =",o:["true","false"],a:0},
+{q:"(5 != 5 || 1 == 1) =",o:["true","false"],a:0}
+
+];
+
+function startQuiz(){
+
+user=document.getElementById("username").value.trim();
+
+if(!user) return alert("Digite seu nome");
+
+document.getElementById("setup").classList.add("hidden");
+document.getElementById("quiz-container").classList.remove("hidden");
+
+showQuestion();
+}
+
+function showQuestion(){
+
+const q=questions[currentQuestion];
+
+document.getElementById("progress").innerText=
+`Questão ${currentQuestion+1} de ${questions.length}`;
+
+document.getElementById("question-text").innerText=q.q;
+
+const container=document.getElementById("options-container");
+
+container.innerHTML="";
+
+q.o.forEach((opt,i)=>{
+
+const btn=document.createElement("button");
+
+btn.innerText=opt;
+
+btn.onclick=()=>selectOption(btn,i);
+
+container.appendChild(btn);
+
+});
+
+document.getElementById("next-btn").disabled=true;
+
+}
+
+function selectOption(btn,index){
+
+const q=questions[currentQuestion];
+
+document.querySelectorAll("#options-container button")
+.forEach(b=>b.disabled=true);
+
+if(index===q.a){
+
+score++;
+btn.style.background="#16a34a";
+
+}else{
+
+btn.style.background="#dc2626";
+
+}
+
+document.getElementById("next-btn").disabled=false;
+
+}
+
+function nextQuestion(){
+
+currentQuestion++;
+
+if(currentQuestion<questions.length){
+
+showQuestion();
+
+}else{
+
+finishQuiz();
+
+}
+
+}
+
+async function finishQuiz(){
+
+document.getElementById("quiz-container").innerHTML=`
+
+<h2>Fim do Quiz</h2>
+
+<p style="font-size:1.4rem">
+Pontuação: <strong>${score}</strong>
+</p>
+
+<button class="btn-submit" onclick="location.reload()">
+Jogar novamente
+</button>
+
+`;
+
+await _supabase.from("ranking")
+.insert([{username:user,score:score}]);
+
+}
+
+async function fetchRanking(){
+
+const {data}=await _supabase
+.from("ranking")
+.select("username,score")
+.order("score",{ascending:false})
+.limit(10);
+
+if(!data) return;
+
+const body=document.getElementById("ranking-body");
+
+body.innerHTML=data.map(r=>`
+
+<tr>
+<td>${r.username}</td>
+<td>${r.score}</td>
+</tr>
+
+`).join("");
+
+}
+
+fetchRanking();
+
+// atualização automática a cada 1 segundo
+setInterval(fetchRanking,1000);
+
+</script>
+
+</body>
+</html>
