@@ -3,15 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>DevQuest Elite</title>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
-
 :root{
 --bg:#050508;
 --card:#111118;
@@ -20,11 +16,7 @@
 --text:#e2e8f0;
 }
 
-*{
-box-sizing:border-box;
-margin:0;
-padding:0;
-}
+*{ box-sizing:border-box; margin:0; padding:0; }
 
 body{
 background:var(--bg);
@@ -62,14 +54,22 @@ font-size:12px;
 border-left:3px solid var(--primary);
 }
 
+/* Destaque para o usuário atual no ranking */
+.rank-me {
+border-left: 3px solid var(--secondary);
+background: rgba(6, 182, 212, 0.2);
+color: var(--secondary);
+}
+
 #reset-btn{
-margin-top:10px;
+margin-top:auto;
 padding:10px;
 background:#ff0044;
 border:none;
 color:white;
 cursor:pointer;
 font-family:Orbitron;
+border-radius: 5px;
 }
 
 #main-content{
@@ -127,10 +127,12 @@ border:1px solid #333;
 color:white;
 cursor:pointer;
 border-radius:6px;
+transition: 0.3s;
 }
 
 .option-btn:hover{
 background:#252535;
+border-color: var(--secondary);
 }
 
 #game-area,#finish-area{
@@ -147,6 +149,7 @@ margin-top:20px;
 height:100%;
 background:linear-gradient(90deg,var(--primary),var(--secondary));
 width:0%;
+transition: 0.5s;
 }
 
 footer{
@@ -156,70 +159,49 @@ opacity:0.6;
 font-family:Orbitron;
 text-align:center;
 }
-
 </style>
 </head>
 
 <body>
 
 <aside id="sidebar">
-
-<h2>GLOBAL RANKING</h2>
-
-<div id="ranking-list"></div>
-
-<button id="reset-btn" onclick="resetRanking()">ZERAR</button>
-
+    <h2>GLOBAL RANKING</h2>
+    <div id="ranking-list"></div>
+    <button id="reset-btn" onclick="resetRanking()">ZERAR BANCO</button>
 </aside>
 
 <main id="main-content">
+    <div class="quiz-card">
+        <div id="start-area">
+            <h1>SISTEMA LOGIN</h1>
+            <input type="text" id="username" placeholder="DIGITE SEU CODINOME">
+            <button class="btn-start" onclick="startQuiz()">INICIAR</button>
+        </div>
 
-<div class="quiz-card">
+        <div id="game-area">
+            <h3 id="question-text"></h3>
+            <div id="options-container"></div>
+            <div class="progress-bar">
+                <div id="inner-progress"></div>
+            </div>
+            <p id="counter" style="margin-top:10px; font-size:12px; opacity:0.7; font-family:Orbitron;"></p>
+        </div>
 
-<div id="start-area">
+        <div id="finish-area">
+            <h1>MISSÃO CONCLUÍDA</h1>
+            <p id="final-result" style="font-size:40px;text-align:center; font-family:Orbitron; color:var(--secondary); margin-top:20px;"></p>
+        </div>
+    </div>
 
-<h1>SISTEMA LOGIN</h1>
-
-<input type="text" id="username" placeholder="DIGITE SEU CODINOME">
-
-<button class="btn-start" onclick="startQuiz()">INICIAR</button>
-
-</div>
-
-<div id="game-area">
-
-<h3 id="question-text"></h3>
-
-<div id="options-container"></div>
-
-<div class="progress-bar">
-<div id="inner-progress"></div>
-</div>
-
-<p id="counter"></p>
-
-</div>
-
-<div id="finish-area">
-
-<h1>MISSÃO CONCLUÍDA</h1>
-
-<p id="final-result" style="font-size:40px;text-align:center;"></p>
-
-</div>
-
-</div>
-
-<footer>
-Desenvolvido por = Léo Cruz - Engenheiro de Software
-</footer>
-
+    <footer>
+        Desenvolvido por = Léo Cruz - Engenheiro de Software
+    </footer>
 </main>
 
 <script>
-
 const SB_URL="https://osofdmgokrxdzsxozsrf.supabase.co";
-const SB_KEY="sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe";
+// Chave fornecida no código original
+const SB_KEY="sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe"; 
 
 const supabaseClient=supabase.createClient(SB_URL,SB_KEY);
 
@@ -227,203 +209,141 @@ let currentUser="";
 let score=0;
 let currentIdx=0;
 
-const questions=[];
-
 const baseQuestions=[
-
-{q:"2 + 2 = ?",a:["3","4","5","22"],c:1},
-
-{q:"False significa?",a:["Verdadeiro","Falso","Erro","Talvez"],c:1},
-
-{q:"Criar pasta no Linux?",a:["rm","mkdir","cd","ls"],c:1},
-
-{q:"Operador de atribuição?",a:["=","==","===","!="],c:0},
-
-{q:"Arquivo texto?",a:[".jpg",".txt",".mp3",".exe"],c:1},
-
-{q:"Onde salvamos arquivos?",a:["CPU","RAM","HD/SSD","Monitor"],c:2},
-
-{q:"Símbolo maior que?",a:[">","<","=","!"],c:0},
-
-{q:"Operador lógico E?",a:["||","&&","!","="],c:1},
-
-{q:"rm no linux?",a:["remove","cria","move","lista"],c:0},
-
-{q:"Lixeira serve para?",a:["salvar","apagar","ver","baixar"],c:1}
-
+    {q:"2 + 2 = ?",a:["3","4","5","22"],c:1},
+    {q:"False significa?",a:["Verdadeiro","Falso","Erro","Talvez"],c:1},
+    {q:"Criar pasta no Linux?",a:["rm","mkdir","cd","ls"],c:1},
+    {q:"Operador de atribuição?",a:["=","==","===","!="],c:0},
+    {q:"Arquivo texto?",a:[".jpg",".txt",".mp3",".exe"],c:1},
+    {q:"Onde salvamos arquivos?",a:["CPU","RAM","HD/SSD","Monitor"],c:2},
+    {q:"Símbolo maior que?",a:[">","<","=","!"],c:0},
+    {q:"Operador lógico E?",a:["||","&&","!","="],c:1},
+    {q:"rm no linux?",a:["remove","cria","move","lista"],c:0},
+    {q:"Lixeira serve para?",a:["salvar","apagar","ver","baixar"],c:1}
 ];
 
+const questions=[];
 for(let i=0;i<60;i++){
-
-let base=baseQuestions[i%baseQuestions.length];
-
-questions.push({
-q:`[Q${i+1}] ${base.q}`,
-options:base.a,
-correct:base.c
-});
-
+    let base=baseQuestions[i%baseQuestions.length];
+    questions.push({
+        q:`[Q${i+1}] ${base.q}`,
+        options:base.a,
+        correct:base.c
+    });
 }
 
-function startQuiz(){
+async function startQuiz(){
+    let name=document.getElementById("username").value;
+    if(name.length<2){
+        alert("Nome muito curto");
+        return;
+    }
+    currentUser=name.toUpperCase();
 
-let name=document.getElementById("username").value;
+    document.getElementById("start-area").style.display="none";
+    document.getElementById("game-area").style.display="block";
 
-if(name.length<2){
-alert("Nome muito curto");
-return;
-}
-
-currentUser=name.toUpperCase();
-
-document.getElementById("start-area").style.display="none";
-document.getElementById("game-area").style.display="block";
-
-renderQuestion();
-
-fetchRanking();
-
-setInterval(fetchRanking,1000);
-
+    renderQuestion();
+    fetchRanking();
+    setInterval(fetchRanking, 2000); // Atualiza o ranking visual a cada 2 segundos
 }
 
 function renderQuestion(){
+    let q=questions[currentIdx];
+    document.getElementById("question-text").innerText=q.q;
+    document.getElementById("counter").innerText=`QUESTÃO ${currentIdx+1} / 60`;
 
-let q=questions[currentIdx];
+    let container=document.getElementById("options-container");
+    container.innerHTML="";
 
-document.getElementById("question-text").innerText=q.q;
+    q.options.forEach((opt,i)=>{
+        let btn=document.createElement("button");
+        btn.className="option-btn";
+        btn.innerText=opt;
+        btn.onclick=()=>handleAnswer(i);
+        container.appendChild(btn);
+    });
 
-document.getElementById("counter").innerText=`QUESTÃO ${currentIdx+1} / 60`;
-
-let container=document.getElementById("options-container");
-
-container.innerHTML="";
-
-q.options.forEach((opt,i)=>{
-
-let btn=document.createElement("button");
-
-btn.className="option-btn";
-
-btn.innerText=opt;
-
-btn.onclick=()=>handleAnswer(i);
-
-container.appendChild(btn);
-
-});
-
-document.getElementById("inner-progress").style.width=
-(currentIdx/questions.length*100)+"%";
-
+    document.getElementById("inner-progress").style.width=(currentIdx/questions.length*100)+"%";
 }
 
-function handleAnswer(choice){
+async function handleAnswer(choice){
+    if(choice===questions[currentIdx].correct){
+        score+=100;
+    }
+    currentIdx++;
 
-if(choice===questions[currentIdx].correct){
-score+=100;
-}
+    // ENVIA PONTUAÇÃO EM TEMPO REAL PARA O BANCO
+    await updateLiveScore();
 
-currentIdx++;
-
-updateLiveScore();
-
-if(currentIdx<questions.length){
-
-renderQuestion();
-
-}else{
-
-finishQuiz();
-
-}
-
+    if(currentIdx<questions.length){
+        renderQuestion();
+    }else{
+        finishQuiz();
+    }
 }
 
 async function updateLiveScore(){
-
-await supabaseClient
-.from("ranking")
-.upsert([
-{
-name:currentUser,
-score:score
-}
-]);
-
-fetchRanking();
-
+    try {
+        await supabaseClient
+            .from("ranking")
+            .upsert([{ name: currentUser, score: score }], { onConflict: 'name' });
+    } catch (e) {
+        console.error("Erro ao atualizar placar:", e);
+    }
 }
 
 async function finishQuiz(){
-
-document.getElementById("game-area").style.display="none";
-
-document.getElementById("finish-area").style.display="block";
-
-document.getElementById("final-result").innerText=score+" PTS";
-
-await supabaseClient
-.from("ranking")
-.upsert([{name:currentUser,score:score}]);
-
-fetchRanking();
-
+    document.getElementById("game-area").style.display="none";
+    document.getElementById("finish-area").style.display="block";
+    document.getElementById("final-result").innerText=score+" PTS";
+    
+    await updateLiveScore();
 }
 
 async function fetchRanking(){
+    let {data,error}=await supabaseClient
+        .from("ranking")
+        .select("*")
+        .order("score",{ascending:false})
+        .limit(10);
 
-let {data,error}=await supabaseClient
-.from("ranking")
-.select("*")
-.order("score",{ascending:false})
-.limit(10);
+    if(error) return;
 
-if(error)return;
+    let list=document.getElementById("ranking-list");
+    list.innerHTML="";
 
-let list=document.getElementById("ranking-list");
-
-list.innerHTML="";
-
-data.forEach((p,i)=>{
-
-let div=document.createElement("div");
-
-div.className="rank-box";
-
-div.innerHTML=`<span>#${i+1} ${p.name}</span> <span>${p.score}</span>`;
-
-list.appendChild(div);
-
-});
-
+    data.forEach((p,i)=>{
+        let div=document.createElement("div");
+        // Verifica se o nome no ranking é o do usuário atual para destacar
+        div.className = (p.name === currentUser) ? "rank-box rank-me" : "rank-box";
+        div.innerHTML=`<span>#${i+1} ${p.name}</span> <span>${p.score}</span>`;
+        list.appendChild(div);
+    });
 }
 
 async function resetRanking(){
+    let senha=prompt("Digite a senha administrativa para ZERAR o banco:");
+    if(senha!=="102030"){
+        alert("Senha incorreta");
+        return;
+    }
 
-let senha=prompt("Digite a senha:");
+    let confirmar=confirm("ATENÇÃO: Deseja apagar TODOS os registros do ranking permanentemente?");
+    if(!confirmar) return;
 
-if(senha!=="102030"){
-alert("Senha incorreta");
-return;
+    const { error } = await supabaseClient
+        .from("ranking")
+        .delete()
+        .neq("name", ""); // Deleta todos onde o nome não é vazio
+
+    if(error) {
+        alert("Erro ao zerar banco: " + error.message);
+    } else {
+        alert("Banco de dados zerado com sucesso!");
+        fetchRanking();
+    }
 }
-
-let confirmar=confirm("Deseja apagar TODOS os usuários?");
-
-if(!confirmar)return;
-
-await supabaseClient
-.from("ranking")
-.delete()
-.neq("name","");
-
-alert("Ranking zerado");
-
-fetchRanking();
-
-}
-
 </script>
-
 </body>
 </html>
