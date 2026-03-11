@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Master - EETEPA Xinguara</title>
+    <style>
+        :root { --danger: #ff4757; --success: #2ed573; --bg: #1e272e; --primary: #3498db; }
+        body { 
+            background-color: var(--bg); color: white; font-family: 'Segoe UI', sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; margin: 0; overflow: hidden;
+        }
+        #game-container {
+            position: relative; width: 520px; height: 500px;
+            background: #2c3e50; border: 5px solid #57606f; border-radius: 15px;
+            overflow: hidden; box-shadow: 0 0 30px rgba(0,0,0,0.6);
+        }
+        .word-block {
+            position: absolute; padding: 8px 15px; background: var(--primary);
+            color: white; border-radius: 8px; font-weight: bold; font-size: 1.1rem;
+            white-space: nowrap; box-shadow: 0 4px 0 #2980b9; z-index: 5;
+        }
+        #ground { position: absolute; bottom: 0; width: 100%; height: 12px; background: var(--danger); z-index: 6; }
+        
+        #ui-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.95);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 10; text-align: center; padding: 15px;
+        }
+        
+        .stats-bar { margin-bottom: 10px; font-size: 1.2rem; color: #f1c40f; font-weight: bold; }
+        
+        input, select {
+            padding: 10px; font-size: 1rem; border: none; border-radius: 8px;
+            width: 260px; outline: none; text-align: center; margin: 5px 0;
+        }
+        
+        .ranking-box {
+            width: 98%; max-height: 160px; overflow-y: auto; margin-top: 15px;
+            background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 0.72rem;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: rgba(255,255,255,0.1); padding: 6px; }
+        td { padding: 6px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; }
+
+        button {
+            padding: 12px 30px; background: var(--success); border: none;
+            color: white; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px;
+        }
+        
+        .msg-reprovado { color: #ff4757; font-weight: bold; margin: 10px; font-size: 0.9rem; text-transform: uppercase; }
+        footer { margin-top: 20px; font-size: 0.8rem; color: #bdc3c7; }
+        .highlight { color: #f1c40f; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="stats-bar">🏆 Pontos: <span id="score-board">0</span></div>
+
+    <div id="game-container">
+        <div id="ground"></div>
+        
+        <div id="ui-overlay">
+            <h2 id="ui-title" style="margin:5px 0;">⌨️ LEOMASTER TYPING</h2>
+            
+            <div id="menu-start">
+                <input type="text" id="player-name" placeholder="Nome do Aluno" maxlength="20">
+                <input type="text" id="player-course" placeholder="Curso do Aluno" maxlength="25">
+                <br>
+                <select id="level-select">
+                    <option value="easy">Nível: Iniciante (10 pts)</option>
+                    <option value="medium">Nível: Intermediário (20 pts)</option>
+                    <option value="hard">Nível: Avançado (30 pts)</option>
+                </select>
+                <br>
+                <button onclick="prepareStart()">INICIAR DESAFIO</button>
+            </div>
+
+            <div id="game-over-msg" class="msg-reprovado" style="display:none">
+                QUE PENA, O LEOMASTER NAO APROVOU SUA DIGITAÇAO
+            </div>
+
+            <div class="ranking-box">
+                <strong>TOP 50 RANKING - EETEPA</strong>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pos</th>
+                            <th>Aluno</th>
+                            <th>Curso</th>
+                            <th>Nível</th>
+                            <th>Pts</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ranking-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <input type="text" id="typer" placeholder="Digite aqui..." disabled autocomplete="off">
+
+    <footer>DESENVOLVIDO POR LÉO CRUZ - EETEPA-XINGUARA</footer>
+
+    <script>
+        const wordLibrary = {
+            easy: ['casa', 'bola', 'sol', 'lua', 'pato', 'dado', 'mar', 'rua', 'paz', 'rio', 'som', 'luz'],
+            medium: ['escola', 'teclado', 'codigo', 'estudo', 'logica', 'mouse', 'digital', 'futuro', 'ensino', 'grade'],
+            hard: ['algoritmo', 'tecnologia', 'programacao', 'computador', 'infraestrutura', 'desenvolvimento', 'sistemas']
+        };
+
+        let score = 0, activeWords = [], gameRunning = false, fallSpeed = 0.15, spawnTimer, pointsPerWord = 10;
+
+        const input = document.getElementById('typer');
+        const scoreBoard = document.getElementById('score-board');
+        const uiOverlay = document.getElementById('ui-overlay');
+        const rankingBody = document.getElementById('ranking-body');
+
+        updateRankingUI();
+
+        function prepareStart() {
+            const name = document.getElementById('player-name').value.trim();
+            const course = document.getElementById('player-course').value.trim();
+            if (!name || !course) return alert("Preencha Nome e Curso!");
+            startGame();
+        }
+
+        function startGame() {
+            const level = document.getElementById('level-select').value;
+            
+            // Configuração de Pontos e Velocidade baseada no nível
+            if(level === 'easy') { 
+                fallSpeed = 0.15; 
+                pointsPerWord = 10;
+            } else if(level === 'medium') { 
+                fallSpeed = 0.3; 
+                pointsPerWord = 20;
+            } else { 
+                fallSpeed = 0.5; 
+                pointsPerWord = 30;
+            }
+            
+            score = 0; scoreBoard.innerText = score;
+            activeWords = []; gameRunning = true;
+            
+            uiOverlay.style.display = 'none';
+            document.getElementById('game-over-msg').style.display = 'none';
+            input.disabled = false; input.value = ''; input.focus();
+
+            spawnWord();
+            requestAnimationFrame(update);
+        }
+
+        function spawnWord() {
+            if (!gameRunning) return;
+            const level = document.getElementById('level-select').value;
+            const list = wordLibrary[level];
+            const wordText = list[Math.floor(Math.random() * list.length)];
+            
+            const div = document.createElement('div');
+            div.className = 'word-block';
+            div.innerText = wordText;
+            div.style.top = '0px';
+            div.style.left = Math.random() * (350) + 'px';
+            
+            document.getElementById('game-container').appendChild(div);
+            activeWords.push({ element: div, text: wordText, top: 0 });
+
+            spawnTimer = setTimeout(spawnWord, 3500);
+        }
+
+        function update() {
+            if (!gameRunning) return;
+            for (let i = activeWords.length - 1; i >= 0; i--) {
+                let w = activeWords[i];
+                w.top += fallSpeed;
+                w.element.style.top = w.top + 'px';
+                if (w.top + 35 >= 490) { gameOver(); return; }
+            }
+            requestAnimationFrame(update);
+        }
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const val = input.value.toLowerCase().trim();
+                const idx = activeWords.findIndex(w => w.text.toLowerCase() === val);
+                if (idx !== -1) {
+                    document.getElementById('game-container').removeChild(activeWords[idx].element);
+                    activeWords.splice(idx, 1);
+                    score += pointsPerWord; // PONTUAÇÃO CONFORME O NÍVEL
+                    scoreBoard.innerText = score;
+                }
+                input.value = '';
+            }
+        });
+
+        function gameOver() {
+            gameRunning = false;
+            clearTimeout(spawnTimer);
+            const name = document.getElementById('player-name').value.trim();
+            const course = document.getElementById('player-course').value.trim();
+            const levelKey = document.getElementById('level-select').value;
+            
+            // Tradução do nível para o ranking
+            const levelLabel = levelKey === 'easy' ? 'Iniciante' : levelKey === 'medium' ? 'Interm.' : 'Avançado';
+            
+            saveScore(name, course, levelLabel, score);
+            activeWords.forEach(w => w.element.remove());
+            
+            uiOverlay.style.display = 'flex';
+            document.getElementById('game-over-msg').style.display = 'block';
+            input.disabled = true;
+            updateRankingUI();
+        }
+
+        function saveScore(name, course, level, pts) {
+            let data = JSON.parse(localStorage.getItem('eetepa_rank_v3') || '[]');
+            data.push({ name, course, level, pts });
+            data.sort((a, b) => b.pts - a.pts);
+            localStorage.setItem('eetepa_rank_v3', JSON.stringify(data.slice(0, 50)));
+        }
+
+        function updateRankingUI() {
+            let data = JSON.parse(localStorage.getItem('eetepa_rank_v3') || '[]');
+            rankingBody.innerHTML = data.map((i, idx) => 
+                `<tr>
+                    <td>${idx+1}º</td>
+                    <td>${i.name}</td>
+                    <td>${i.course}</td>
+                    <td>${i.level}</td>
+                    <td class="highlight">${i.pts}</td>
+                </tr>`
+            ).join('');
+        }
+    </script>
+</body>
+</html>
