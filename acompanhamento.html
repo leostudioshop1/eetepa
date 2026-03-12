@@ -1,93 +1,67 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Painel de Atividades</title>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-
-body{
-font-family: Arial;
-background:#f4f4f4;
-padding:30px;
-}
-
-table{
-border-collapse:collapse;
-width:100%;
-background:white;
-}
-
-th,td{
-border:1px solid #ddd;
-padding:10px;
-text-align:center;
-}
-
-th{
-background:#2c3e50;
-color:white;
-}
-
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Atividades</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f4f4; padding: 30px; }
+        table { border-collapse: collapse; width: 100%; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        th { background: #2c3e50; color: white; text-transform: uppercase; font-size: 14px; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        h2 { color: #2c3e50; }
+    </style>
 </head>
-
 <body>
 
-<h2>Painel de Atividades</h2>
+    <h2>Painel de Atividades</h2>
 
-<table>
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Fez atividade</th>
+                <th>Data envio</th>
+            </tr>
+        </thead>
+        <tbody id="tabela">
+            </tbody>
+    </table>
 
-<thead>
-<tr>
-<th>Nome</th>
-<th>Fez atividade</th>
-<th>Data envio</th>
-</tr>
-</thead>
+    <script>
+        // Configuração única e correta do cliente Supabase
+        const supabaseClient = supabase.createClient('https://osofdmgokrxdzsxozsrf.supabase.co', 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe');
 
-<tbody id="tabela"></tbody>
+        async function carregar() {
+            const { data, error } = await supabaseClient
+                .from("atividades")
+                .select("*")
+                .order("data_envio", { ascending: false });
 
-</table>
+            if (error) {
+                console.error("Erro ao buscar dados:", error);
+                return;
+            }
 
-<script>
+            const tabela = document.getElementById("tabela");
+            tabela.innerHTML = ""; // Limpa antes de renderizar
 
+            data.forEach(item => {
+                const dataFormatada = item.data_envio ? new Date(item.data_envio).toLocaleString('pt-BR') : '---';
+                const linha = `
+                    <tr>
+                        <td>${item.nome}</td>
+                        <td>${item.atividade}</td>
+                        <td>${dataFormatada}</td>
+                    </tr>
+                `;
+                tabela.innerHTML += linha;
+            });
+        }
 
-  const _supabase = supabase.createClient('https://osofdmgokrxdzsxozsrf.supabase.co', 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe');
-        const supabase = supabase.createClient(SB_URL, SB_KEY);
-
-
-async function carregar(){
-
-const { data } = await supabase
-.from("atividades")
-.select("*")
-.order("data_envio",{ascending:false})
-
-let tabela = document.getElementById("tabela")
-
-data.forEach(item=>{
-
-let linha = `
-<tr>
-<td>${item.nome}</td>
-<td>${item.atividade}</td>
-<td>${new Date(item.data_envio).toLocaleString()}</td>
-</tr>
-`
-
-tabela.innerHTML += linha
-
-})
-
-}
-
-carregar()
-
-</script>
-
+        carregar();
+    </script>
 </body>
 </html>

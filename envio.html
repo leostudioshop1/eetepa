@@ -1,86 +1,64 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Envio de Atividade</title>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-body{
-font-family: Arial;
-background:#f4f4f4;
-text-align:center;
-padding:40px;
-}
-
-input,select,button{
-padding:10px;
-margin:10px;
-width:250px;
-}
-
-button{
-background:#2ecc71;
-color:white;
-border:none;
-cursor:pointer;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Envio de Atividade</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f4f4; text-align: center; padding: 40px; }
+        .card { background: white; padding: 20px; border-radius: 8px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        input, select, button { padding: 12px; margin: 10px; width: 280px; border: 1px solid #ccc; border-radius: 4px; display: block; }
+        button { background: #2ecc71; color: white; border: none; cursor: pointer; font-weight: bold; width: 306px; }
+        button:hover { background: #27ae60; }
+        #msg { margin-top: 15px; font-weight: bold; }
+    </style>
 </head>
-
 <body>
 
-<h2>Enviar Atividade</h2>
+    <div class="card">
+        <h2>Enviar Atividade</h2>
+        <input type="text" id="nome" placeholder="Nome do aluno">
+        <select id="atividade">
+            <option value="">Fez a atividade?</option>
+            <option value="Sim">Sim</option>
+            <option value="Não">Não</option>
+        </select>
+        <button onclick="enviar()">Enviar</button>
+        <p id="msg"></p>
+    </div>
 
-<input type="text" id="nome" placeholder="Nome do aluno">
+    <script>
+        // Configuração única e correta do cliente Supabase
+        const supabaseClient = supabase.createClient('https://osofdmgokrxdzsxozsrf.supabase.co', 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe');
 
-<select id="atividade">
-<option value="">Fez a atividade?</option>
-<option value="Sim">Sim</option>
-<option value="Não">Não</option>
-</select>
+        async function enviar() {
+            const nome = document.getElementById("nome").value;
+            const atividade = document.getElementById("atividade").value;
+            const msgElement = document.getElementById("msg");
 
-<br>
+            if (nome === "" || atividade === "") {
+                alert("Preencha todos os campos");
+                return;
+            }
 
-<button onclick="enviar()">Enviar</button>
+            msgElement.innerText = "Enviando...";
 
-<p id="msg"></p>
+            const { error } = await supabaseClient
+                .from("atividades")
+                .insert([{ nome: nome, atividade: atividade }]);
 
-<script>
-
-  const _supabase = supabase.createClient('https://osofdmgokrxdzsxozsrf.supabase.co', 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe');
-        const supabase = supabase.createClient(SB_URL, SB_KEY);
-
-
-async function enviar(){
-
-let nome = document.getElementById("nome").value
-let atividade = document.getElementById("atividade").value
-
-if(nome=="" || atividade==""){
-alert("Preencha todos os campos")
-return
-}
-
-const { error } = await supabase
-.from("atividades")
-.insert([
-{
-nome:nome,
-atividade:atividade
-}
-])
-
-if(error){
-document.getElementById("msg").innerText="Erro ao enviar"
-}else{
-document.getElementById("msg").innerText="Atividade enviada!"
-}
-
-}
-
-</script>
-
+            if (error) {
+                console.error(error);
+                msgElement.style.color = "red";
+                msgElement.innerText = "Erro ao enviar: " + error.message;
+            } else {
+                msgElement.style.color = "green";
+                msgElement.innerText = "Atividade enviada com sucesso!";
+                document.getElementById("nome").value = "";
+                document.getElementById("atividade").value = "";
+            }
+        }
+    </script>
 </body>
 </html>
