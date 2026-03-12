@@ -1,67 +1,160 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Atividades</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f4f4; padding: 30px; }
-        table { border-collapse: collapse; width: 100%; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
-        th { background: #2c3e50; color: white; text-transform: uppercase; font-size: 14px; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        h2 { color: #2c3e50; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Atividades - Modo Gamer</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+
+body{
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+background:#121212; /* Fundo escuro */
+color: #e0e0e0; /* Texto claro */
+padding:30px;
+}
+
+h2{
+color: #ff0055; /* Cor de destaque neon */
+text-shadow: 0 0 10px #ff0055, 0 0 20px #ff0055; /* Efeito de brilho neon */
+text-align: center;
+margin-bottom: 30px;
+text-transform: uppercase;
+letter-spacing: 2px;
+}
+
+table{
+border-collapse:separate;
+border-spacing: 0;
+width:100%;
+background:#1e1e1e; /* Fundo da tabela escuro */
+border-radius: 10px;
+overflow: hidden;
+box-shadow: 0 0 15px rgba(255, 0, 85, 0.3); /* Sombra neon suave */
+border: 1px solid #333;
+}
+
+th,td{
+border:none;
+padding:15px;
+text-align:center;
+}
+
+th{
+background:#1a1a1a; /* Cabeçalho ligeiramente mais escuro */
+color:#ff0055; /* Texto do cabeçalho neon */
+text-transform: uppercase;
+font-size: 14px;
+letter-spacing: 1px;
+border-bottom: 2px solid #333;
+}
+
+tr{
+border-bottom: 1px solid #2a2a2a;
+transition: background 0.3s ease; /* Transição suave para o hover */
+}
+
+tr:last-child{
+border-bottom: none;
+}
+
+tr:nth-child(even){
+background-color: #252525; /* Fundo alternado escuro */
+}
+
+tr:hover{
+background-color: #2a2a2a; /* Fundo ao passar o mouse */
+cursor: pointer;
+}
+
+td{
+color: #cccccc; /* Texto das células mais suave */
+}
+
+/* Estilização para Sim/Não para destaque visual */
+td:nth-child(2) {
+font-weight: bold;
+}
+td:nth-child(2):contains('Sim') {
+color: #00ff88; /* Verde neon para Sim */
+}
+td:nth-child(2):contains('Não') {
+color: #ff4444; /* Vermelho neon para Não */
+}
+
+/* Responsividade simples */
+@media (max-width: 600px) {
+body { padding: 10px; }
+h2 { font-size: 1.5em; }
+th, td { padding: 10px; font-size: 12px; }
+}
+
+</style>
+
 </head>
+
 <body>
 
-    <h2>Painel de Atividades</h2>
+<h2>Painel de Atividades</h2>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Fez atividade</th>
-                <th>Data envio</th>
-            </tr>
-        </thead>
-        <tbody id="tabela">
-            </tbody>
-    </table>
+<table>
 
-    <script>
-        // Configuração única e correta do cliente Supabase
-        const supabaseClient = supabase.createClient('https://osofdmgokrxdzsxozsrf.supabase.co', 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe');
+<thead>
+<tr>
+<th>Nome do Aluno</th>
+<th>Fez atividade</th>
+<th>Data de Envio</th>
+</tr>
+</thead>
 
-        async function carregar() {
-            const { data, error } = await supabaseClient
-                .from("atividades")
-                .select("*")
-                .order("data_envio", { ascending: false });
+<tbody id="tabela"></tbody>
 
-            if (error) {
-                console.error("Erro ao buscar dados:", error);
-                return;
-            }
+</table>
 
-            const tabela = document.getElementById("tabela");
-            tabela.innerHTML = ""; // Limpa antes de renderizar
+<script>
 
-            data.forEach(item => {
-                const dataFormatada = item.data_envio ? new Date(item.data_envio).toLocaleString('pt-BR') : '---';
-                const linha = `
-                    <tr>
-                        <td>${item.nome}</td>
-                        <td>${item.atividade}</td>
-                        <td>${dataFormatada}</td>
-                    </tr>
-                `;
-                tabela.innerHTML += linha;
-            });
-        }
+// Configuração do Supabase mantida e corrigida conforme instrução
+const supabaseClient = supabase.createClient('https://osofdmgokrxdzsxozsrf.supabase.co', 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe');
 
-        carregar();
-    </script>
+async function carregar(){
+
+const { data, error } = await supabaseClient
+.from("atividades")
+.select("*")
+.order("data_envio",{ascending:false});
+
+if (error) {
+console.error("Erro ao carregar dados:", error);
+return;
+}
+
+let tabela = document.getElementById("tabela")
+tabela.innerHTML = ""; // Limpa a tabela antes de carregar
+
+data.forEach(item=>{
+
+// Estilização condicional simples para "Sim"/"Não" no JavaScript
+let corAtividade = item.atividade === 'Sim' ? '#00ff88' : (item.atividade === 'Não' ? '#ff4444' : '#cccccc');
+
+let linha = `
+<tr>
+<td>${item.nome}</td>
+<td style="color: ${corAtividade}; font-weight: bold;">${item.atividade}</td>
+<td>${item.data_envio ? new Date(item.data_envio).toLocaleString('pt-BR') : '---'}</td>
+</tr>
+`;
+
+tabela.innerHTML += linha
+
+});
+
+}
+
+carregar()
+
+</script>
+
 </body>
 </html>
