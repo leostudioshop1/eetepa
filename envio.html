@@ -8,8 +8,9 @@
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f4f4; text-align: center; padding: 40px; }
         .card { background: white; padding: 20px; border-radius: 8px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        label { display: block; text-align: left; margin-left: 10px; font-size: 13px; color: #666; margin-top: 10px; }
         input, select, button { padding: 12px; margin: 10px; width: 280px; border: 1px solid #ccc; border-radius: 4px; display: block; }
-        button { background: #2ecc71; color: white; border: none; cursor: pointer; font-weight: bold; width: 306px; }
+        button { background: #2ecc71; color: white; border: none; cursor: pointer; font-weight: bold; width: 306px; margin-top: 20px; }
         button:hover { background: #27ae60; }
         #msg { margin-top: 15px; font-weight: bold; }
     </style>
@@ -18,27 +19,40 @@
 
     <div class="card">
         <h2>Enviar Atividade</h2>
+        
         <input type="text" id="nome" placeholder="Nome do aluno">
+        
         <select id="atividade">
             <option value="">Fez a atividade?</option>
             <option value="Sim">Sim</option>
             <option value="Não">Não</option>
         </select>
-        <button onclick="enviar()">Enviar</button>
+
+        <label for="data_envio">Data e Hora do Envio:</label>
+        <input type="datetime-local" id="data_envio">
+
+        <button onclick="enviar()">Enviar Registro</button>
         <p id="msg"></p>
     </div>
 
     <script>
-        // Configuração única e correta do cliente Supabase
         const supabaseClient = supabase.createClient('https://osofdmgokrxdzsxozsrf.supabase.co', 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe');
+
+        // Define a data/hora atual como padrão ao carregar a página
+        window.onload = () => {
+            const agora = new Date();
+            agora.setMinutes(agora.getMinutes() - agora.getTimezoneOffset());
+            document.getElementById('data_envio').value = agora.toISOString().slice(0, 16);
+        };
 
         async function enviar() {
             const nome = document.getElementById("nome").value;
             const atividade = document.getElementById("atividade").value;
+            const dataManual = document.getElementById("data_envio").value;
             const msgElement = document.getElementById("msg");
 
-            if (nome === "" || atividade === "") {
-                alert("Preencha todos os campos");
+            if (!nome || !atividade || !dataManual) {
+                alert("Preencha todos os campos, incluindo a data.");
                 return;
             }
 
@@ -46,17 +60,19 @@
 
             const { error } = await supabaseClient
                 .from("atividades")
-                .insert([{ nome: nome, atividade: atividade }]);
+                .insert([{ 
+                    nome: nome, 
+                    atividade: atividade,
+                    data_envio: dataManual // Enviando a data manual
+                }]);
 
             if (error) {
-                console.error(error);
                 msgElement.style.color = "red";
-                msgElement.innerText = "Erro ao enviar: " + error.message;
+                msgElement.innerText = "Erro: " + error.message;
             } else {
                 msgElement.style.color = "green";
                 msgElement.innerText = "Atividade enviada com sucesso!";
                 document.getElementById("nome").value = "";
-                document.getElementById("atividade").value = "";
             }
         }
     </script>
