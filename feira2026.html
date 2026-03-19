@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Cronograma</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Orbitron', Arial, sans-serif;
+      color: #ffe81f;
+      background: black;
+      overflow-x: hidden;
+    }
+
+    /* Fundo estrelado */
+    body::before {
+      content: "";
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      background: url('https://www.transparenttextures.com/patterns/stardust.png');
+      opacity: 0.4;
+      z-index: -1;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 32px;
+      margin: 30px 0;
+      text-shadow: 0 0 10px #ffe81f;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .card {
+      background: rgba(0,0,0,0.8);
+      border: 1px solid #ffe81f;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 0 20px rgba(255,232,31,0.3);
+      transition: 0.3s;
+    }
+
+    .card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(255,232,31,0.8);
+    }
+
+    .title {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    .members {
+      font-size: 14px;
+      margin-bottom: 15px;
+      color: #aaa;
+    }
+
+    .countdown {
+      font-size: 22px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-shadow: 0 0 8px #ffe81f;
+    }
+
+   
+    .crawl {
+      position: fixed;
+      bottom: -100%;
+      width: 100%;
+      text-align: center;
+      font-size: 20px;
+      animation: crawl 25s linear infinite;
+      color: #ffe81f;
+      opacity: 0.7;
+    }
+
+    @keyframes crawl {
+      0% { bottom: -100%; transform: perspective(400px) rotateX(20deg); }
+      100% { bottom: 100%; transform: perspective(400px) rotateX(25deg); }
+    }
+  </style>
+</head>
+<body>
+
+<h1>CRONOGRAMA  - DESENVOLVIMENTO SITE AVALIATIVO</h1>
+
+<div class="container">
+
+  <div class="card">
+    <div class="title">1 - Layout</div>
+    <div class="members">gemeas, saf</div>
+    <div class="countdown" id="cd1"></div>
+  </div>
+
+  <div class="card">
+    <div class="title">2 - Design</div>
+    <div class="members">ra, lo, man</div>
+    <div class="countdown" id="cd2"></div>
+  </div>
+
+  <div class="card">
+    <div class="title">3 - Codificação</div>
+    <div class="members">art, jp, mat</div>
+    <div class="countdown" id="cd3"></div>
+  </div>
+
+  <div class="card">
+    <div class="title">4 - Recursos</div>
+    <div class="members">pai, le</div>
+    <div class="countdown" id="cd4"></div>
+  </div>
+
+  <div class="card">
+    <div class="title">5 - Gerência</div>
+    <div class="members">may, dou, raf</div>
+    <div class="countdown" id="cd5"></div>
+  </div>
+
+  <div class="card">
+    <div class="title">6 - Tecnologias e Segurança</div>
+    <div class="members">maria, tai, luiz</div>
+    <div class="countdown" id="cd6"></div>
+  </div>
+
+</div>
+
+<div class="crawl">
+  Uma missão foi iniciada...<br>
+  Equipes trabalham em paralelo...<br>
+  O destino do site avaliativo está em jogo...<br>
+  O tempo está acabando...<br>
+</div>
+
+<script>
+  const startDate = new Date();
+
+  const etapas = [
+    { id: "cd1", offset: 0 },
+    { id: "cd2", offset: 14 },
+    { id: "cd3", offset: 28 },
+    { id: "cd4", offset: 42 },
+    { id: "cd5", offset: 56 },
+    { id: "cd6", offset: 70 }
+  ];
+
+  function atualizarContadores() {
+    const agora = new Date().getTime();
+
+    etapas.forEach(etapa => {
+      const fim = new Date(startDate);
+      fim.setDate(fim.getDate() + etapa.offset + 14);
+
+      const distancia = fim.getTime() - agora;
+
+      const dias = Math.floor(distancia / (1000 * 60 * 60 * 24));
+      const horas = Math.floor((distancia / (1000 * 60 * 60)) % 24);
+      const minutos = Math.floor((distancia / (1000 * 60)) % 60);
+      const segundos = Math.floor((distancia / 1000) % 60);
+
+      const elemento = document.getElementById(etapa.id);
+
+      if (distancia < 0) {
+        elemento.innerHTML = "✅ MISSÃO CONCLUÍDA";
+      } else {
+        elemento.innerHTML = `${dias}d ${horas}h ${minutos}m ${segundos}s`;
+      }
+    });
+  }
+
+  setInterval(atualizarContadores, 1000);
+</script>
+
+</body>
+</html>
