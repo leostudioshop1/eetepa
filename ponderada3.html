@@ -8,18 +8,13 @@
     <style>
         :root {
             --bg-color: #000000;
-            --card-bg: rgba(0, 0, 0, 0.85);
+            --card-bg: rgba(0, 0, 0, 0.9);
             --matrix-green: #00ff41; 
             --matrix-glow: #008f11;
             --matrix-dark: #003300;
             --error-red: #ff0000;
             --error-glow: #8b0000;
             --text-color: #d0ffd0;
-        }
-
-        @font-face {
-            font-family: 'Matrix';
-            src: url('https://fonts.cdnfonts.com/s/14343/matrix.woff') format('woff');
         }
 
         body {
@@ -31,11 +26,10 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            overflow: hidden; /* Para o fundo Matrix */
+            overflow: hidden;
             position: relative;
         }
 
-        /* Canvas para o efeito Matrix */
         #matrix-bg {
             position: absolute;
             top: 0;
@@ -47,48 +41,49 @@
 
         .container {
             background: var(--card-bg);
-            padding: 2.5rem;
+            padding: 2rem;
             border: 1px solid var(--matrix-green);
             box-shadow: 0 0 20px var(--matrix-glow);
-            max-width: 650px;
-            width: 90%;
+            max-width: 600px;
+            width: 85%;
             position: relative;
-            z-index: 2; /* Acima do fundo */
+            z-index: 2;
+            box-sizing: border-box;
         }
 
         .header-top {
             border-bottom: 1px solid var(--matrix-dark);
-            margin-bottom: 20px;
-            padding-bottom: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
             display: flex;
             justify-content: space-between;
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             color: var(--matrix-green);
         }
 
         h1 {
             color: var(--text-color);
-            text-shadow: 0 0 5px var(--matrix-green), 0 0 10px var(--matrix-green);
+            text-shadow: 0 0 5px var(--matrix-green);
             text-transform: uppercase;
-            letter-spacing: 5px;
+            letter-spacing: 3px;
             margin: 0;
-            font-size: 1.6rem;
-            font-family: 'Segoe UI', sans-serif; /* Título mais limpo */
+            font-size: clamp(1.2rem, 5vw, 1.6rem); /* Responsividade no título */
         }
 
         .prof-info {
             color: var(--matrix-green);
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
 
         .mission-box {
-            background: rgba(0, 51, 0, 0.3);
-            padding: 20px;
+            background: rgba(0, 51, 0, 0.4);
+            padding: 15px;
             border: 1px dashed var(--matrix-green);
-            margin-bottom: 30px;
-            line-height: 1.5;
+            margin-bottom: 25px;
+            line-height: 1.4;
+            font-size: 0.95rem;
         }
 
         .points-badge {
@@ -98,31 +93,22 @@
             padding: 2px 10px;
             font-weight: bold;
             margin-top: 10px;
-            box-shadow: 0 0 5px var(--matrix-green);
+            font-size: 0.8rem;
         }
 
         .timer-section {
             text-align: center;
-            margin-bottom: 30px;
-            padding: 15px;
+            margin-bottom: 25px;
+            padding: 10px;
             border: 1px solid var(--matrix-dark);
         }
 
-        .label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--matrix-glow);
-        }
-
-        /* Classes para o Cronômetro */
         #timer {
-            font-size: 3.5rem;
+            font-size: clamp(2rem, 10vw, 3.5rem); /* Ajusta o tamanho conforme a tela */
             font-weight: bold;
             color: var(--matrix-green);
             display: block;
             text-shadow: 0 0 10px var(--matrix-green);
-            transition: color 0.3s ease, text-shadow 0.3s ease;
         }
 
         #timer.active-red {
@@ -136,26 +122,23 @@
             50% { opacity: 0.3; }
         }
 
-        /* Classes para o Botão */
         button {
             width: 100%;
             background: transparent;
             color: var(--matrix-green);
             border: 1px solid var(--matrix-green);
-            padding: 18px;
-            font-size: 1.2rem;
+            padding: 15px;
+            font-size: 1rem;
             font-family: 'Courier New', Courier, monospace;
             font-weight: bold;
             text-transform: uppercase;
             cursor: pointer;
             transition: all 0.3s;
-            position: relative;
         }
 
         button:hover:not(:disabled) {
             background: rgba(0, 255, 65, 0.1);
-            box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
-            color: #fff;
+            box-shadow: 0 0 15px var(--matrix-green);
         }
 
         button:disabled.status-red {
@@ -164,25 +147,30 @@
             background-color: rgba(139, 0, 0, 0.1);
             box-shadow: 0 0 15px var(--error-glow);
             cursor: not-allowed;
-            opacity: 1; /* Garante que a cor apareça bem */
         }
 
         #log {
-            margin-top: 15px;
-            font-size: 0.75rem;
+            margin-top: 12px;
+            font-size: 0.7rem;
             text-align: center;
-            height: 20px;
+            height: 15px;
             color: var(--matrix-glow);
         }
 
-        /* Rodapé solicitado */
         .footer {
-            margin-top: 30px;
-            padding-top: 15px;
+            margin-top: 25px;
+            padding-top: 10px;
             border-top: 1px solid var(--matrix-dark);
             text-align: center;
-            font-size: 0.7rem;
-            color: var(--matrix-dark);
+            font-size: 0.75rem;
+            color: var(--matrix-glow);
+            letter-spacing: 1px;
+        }
+
+        /* Ajustes para telas muito pequenas */
+        @media (max-width: 400px) {
+            .container { padding: 1.2rem; width: 92%; }
+            .header-top { flex-direction: column; gap: 5px; }
         }
     </style>
 </head>
@@ -200,19 +188,19 @@
     <div class="prof-info">PROF. LÉO CRUZ</div>
 
     <div class="mission-box">
-        <span class="label">> PROTOCOLO_DE_AVALIAÇÃO</span><br>
-        Codificar algoritmo em <strong>Delphi (Object Pascal)</strong> para cálculo de <strong>Média Ponderada</strong> entre 3 entradas. Liberar input de valores e pesos ao usuário.
+        <strong>PROTOCOLO_DE_AVALIAÇÃO:</strong><br>
+        Desenvolver um programa em <strong>Delphi</strong> para realizar o cálculo da <strong>Média Ponderada</strong> de 3 números.
         <br>
-        <div class="points-badge">SISTEMA_RECOMPENSA: +2.0</div>
+        <div class="points-badge">RECOMPENSA: 2.0 PONTOS</div>
     </div>
 
     <div class="timer-section">
-        <span class="label">CICLO_RESTANTE:</span>
+        <span style="font-size: 0.7rem; color: #666;">PRAZO FINAL EM:</span>
         <div id="timer">06:00:00:00</div>
     </div>
 
     <button id="btnAceitar">CONFIRMAR RECEBIMENTO DA MISSÃO</button>
-    <div id="log">> AGUARDANDO CONEXÃO...</div>
+    <div id="log">> STATUS: AGUARDANDO COMANDO...</div>
 
     <div class="footer">
         Desenvolvido por Léo Cruz
@@ -220,36 +208,25 @@
 </div>
 
 <script>
-    // --- EFEITO FUNDO MATRIX (CANVAS) ---
+    // --- FUNDO MATRIX ---
     const canvas = document.getElementById('matrix-bg');
     const ctx = canvas.getContext('2d');
-
     canvas.height = window.innerHeight;
     canvas.width = window.innerWidth;
-
-    // Caracteres do Katakana e Latinos
-    const letters = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン01234567789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const matrix = letters.split('');
-
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZアァカサタナハマヤャラワ";
     const fontSize = 16;
-    const columns = canvas.width / fontSize; 
-    const drops = [];
-    for(let x = 0; x < columns; x++) drops[x] = 1; 
+    const columns = canvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
 
     function drawMatrix() {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.fillStyle = '#00ff41'; // var(--matrix-green)
+        ctx.fillStyle = '#00ff41';
         ctx.font = fontSize + 'px arial';
-
         for(let i = 0; i < drops.length; i++) {
-            const text = matrix[Math.floor(Math.random() * matrix.length)];
+            const text = chars[Math.floor(Math.random() * chars.length)];
             ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-            if(drops[i] * fontSize > canvas.height && Math.random() > 0.975)
-                drops[i] = 0;
-
+            if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
             drops[i]++;
         }
     }
@@ -259,84 +236,51 @@
         canvas.width = window.innerWidth;
     });
 
+    // --- SUPABASE ---
+    const _supabase = supabase.createClient('https://osofdmgokrxdzsxozsrf.supabase.co', 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe');
 
-    // --- CONFIGURAÇÕES SUPABASE ---
-    const SUPABASE_URL = 'https://osofdmgokrxdzsxozsrf.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe';
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-
-    // --- LÓGICA DO CRONÔMETRO (6 DIAS FIXOS A CONTAR DE HOJE 26/03) ---
-    const timerDisplay = document.getElementById("timer");
-    const deadline = new Date("2026-04-01T23:59:59").getTime(); // Exemplo fixo para 6 dias
-
+    // --- CRONÔMETRO ---
+    const deadline = new Date("2026-04-01T23:59:59").getTime();
     function updateCountdown() {
         const now = new Date().getTime();
         const diff = deadline - now;
-
         if (diff < 0) {
-            timerDisplay.innerHTML = "00:00:00:00";
-            document.getElementById("btnAceitar").disabled = true;
+            document.getElementById("timer").innerHTML = "00:00:00:00";
             return;
         }
-
         const d = Math.floor(diff / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
         const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
         const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
         const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
-
-        timerDisplay.innerHTML = `${d}:${h}:${m}:${s}`;
+        document.getElementById("timer").innerHTML = `${d}:${h}:${m}:${s}`;
     }
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
 
-    // Só inicia o cronômetro se não tiver acabado
-    if ((deadline - new Date().getTime()) > 0) {
-        setInterval(updateCountdown, 1000);
-        updateCountdown();
-    } else {
-        timerDisplay.innerHTML = "00:00:00:00";
-    }
-
-
-    // --- REGISTRO DE ACESSO E ALTERAÇÃO DE TEMA NO CLIQUE ---
+    // --- CLIQUE DO BOTÃO ---
     const btn = document.getElementById('btnAceitar');
+    const timer = document.getElementById('timer');
     const log = document.getElementById('log');
 
     btn.addEventListener('click', async () => {
-        // 1. Alterações Visuais Imediatas (Pedido)
         btn.disabled = true;
-        btn.classList.add('status-red'); // Botão fica vermelho
+        btn.classList.add('status-red');
         btn.innerText = "MISSÃO REGISTRADA";
+        timer.classList.add('active-red');
+        log.innerText = "> TRANSMITINDO DADOS...";
 
-        timerDisplay.classList.add('active-red'); // Cronômetro fica vermelho e piscando
-        
-        log.style.color = "#fff";
-        log.innerText = "> ESTABELECENDO HANDSHAKE COM SUPABASE...";
-
-        // 2. Transmissão para o Supabase
         try {
-            const { error } = await _supabase
-                .from('registros_atividade')
-                .insert([{
-                    device_info: navigator.userAgent,
-                    acess_time: new Date().toISOString(),
-                    screen_res: `${window.screen.width}x${window.screen.height}`,
-                    plataforma: navigator.platform
-                }]);
-
-            if (error) throw error;
-
-            log.style.color = "var(--matrix-green)";
-            log.innerText = "> CONEXÃO SEGURA. COMECE A CODIFICAR.";
-            
-        } catch (err) {
-            console.error(err);
-            log.style.color = "var(--error-red)";
-            log.innerText = "> FALHA NA GRAVAÇÃO. DADOS LOCAIS ARMAZENADOS.";
-            // Nota: O botão e o timer continuam vermelhos como pedido,
-            // indicando que a ação de 'clicar' foi concluída visualmente.
+            await _supabase.from('registros_atividade').insert([{
+                device_info: navigator.userAgent,
+                acess_time: new Date().toISOString(),
+                screen_res: `${window.screen.width}x${window.screen.height}`,
+                plataforma: navigator.platform
+            }]);
+            log.innerText = "> CONEXÃO SEGURA. BOA SORTE.";
+        } catch (e) {
+            log.innerText = "> ERRO NA TRANSMISSÃO.";
         }
     });
 </script>
-
 </body>
 </html>
