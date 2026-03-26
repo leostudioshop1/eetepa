@@ -38,7 +38,7 @@
         }
 
         body.mission-accepted {
-            background: #0f2b1f; /* Verde musgo dark */
+            background: #0f2b1f;
             background-image: 
                 radial-gradient(circle at 30% 40%, rgba(0, 255, 100, 0.12) 0%, transparent 60%);
         }
@@ -351,18 +351,24 @@
         </div>
     </footer>
 
-    <!-- Formulário oculto para envio automático via mailto -->
-    <form id="hiddenForm" style="display: none;">
-        <input type="hidden" id="subject" value="">
-        <input type="hidden" id="body" value="">
-    </form>
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
     <script>
+        // ==================== CONFIGURAÇÃO SUPABASE ====================
+        // ⚠️ SUBSTITUA ESTAS DUAS LINHAS COM SEUS DADOS DO SUPABASE
+        const SUPABASE_URL = 'https://SEU-PROJETO.supabase.co';           // ← seu URL
+        const SUPABASE_ANON_KEY = 'eyJ...';                               // ← sua anon key (public)
+
+        const supabase = window.supabase.createClient(https://osofdmgokrxdzsxozsrf.supabase.co, sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe);
+
+        // ==================== VARIÁVEIS GLOBAIS ====================
         const deadline = new Date('2026-04-01T23:59:59-03:00').getTime();
         const countdownEl = document.getElementById('countdown');
         const missionBtn = document.getElementById('missionBtn');
         let missionAccepted = false;
 
+        // ==================== COUNTDOWN ====================
         function updateCountdown() {
             const now = new Date().getTime();
             const distance = deadline - now;
@@ -386,6 +392,7 @@
         setInterval(updateCountdown, 1000);
         updateCountdown();
 
+        // ==================== GERA ID ÚNICO DO DISPOSITIVO ====================
         function generateDeviceId() {
             const data = navigator.userAgent + navigator.language + 
                         screen.width + 'x' + screen.height + 
@@ -400,43 +407,47 @@
             return 'DEV-' + Math.abs(hash).toString(36).toUpperCase() + '-' + Date.now().toString(36).slice(-6);
         }
 
-        function sendHiddenEmail(deviceId) {
-            const subject = "Missão 03 Aceita - ID do Dispositivo";
-            const body = `Missão 03 aceita com sucesso!\n\n` +
-                        `ID do Dispositivo: ${deviceId}\n` +
-                        `Data/Hora: ${new Date().toLocaleString('pt-BR')}\n` +
-                        `Turma: Jogos Digitais 2º Ano\n\n` +
-                        `Aluno(a): [Seu Nome Aqui]`;
+        // ==================== ENVIO PARA SUPABASE (OCULTO) ====================
+        async function salvarAceiteNoBanco() {
+            const agora = new Date();
+            const dataAtual = agora.toISOString().split('T')[0];           // YYYY-MM-DD
+            const horaAtual = agora.toTimeString().split(' ')[0];          // HH:MM:SS
+            const deviceId = generateDeviceId();
+            const dispositivo = navigator.userAgent;
+            const nomeDispositivo = navigator.platform + ' - ' + (navigator.vendor || 'Unknown');
 
-            // Cria um link mailto e aciona automaticamente de forma discreta
-            const mailtoLink = `mailto:leostudioshop1@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-            
-            // Cria um elemento <a> oculto e clica nele
-            const link = document.createElement('a');
-            link.href = mailtoLink;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const { error } = await supabase
+                .from('missao_aceites')
+                .insert([{
+                    data: dataAtual,
+                    hora: horaAtual,
+                    dispositivo: dispositivo,
+                    id_dispositivo: deviceId,
+                    nome_dispositivo: nomeDispositivo
+                }]);
+
+            if (error) {
+                console.error('Erro ao salvar no Supabase:', error);
+            } else {
+                console.log('%c✅ Registro salvo no Supabase com sucesso!', 'color:#00ff9d; font-weight:bold');
+            }
         }
 
-        function acceptMission() {
+        // ==================== AÇÃO AO CLICAR NO BOTÃO ====================
+        async function acceptMission() {
             if (missionAccepted) return;
             missionAccepted = true;
 
-            // Muda o fundo da página para verde musgo
+            // 1. Muda fundo para verde musgo
             document.body.classList.add('mission-accepted');
 
-            // Ativa o efeito na contagem regressiva (vermelho + maior)
+            // 2. Ativa efeito vermelho + maior na contagem
             countdownEl.classList.add('countdown-active');
 
-            // Gera ID único
-            const deviceId = generateDeviceId();
+            // 3. Salva no Supabase de forma 100% oculta (sem alert, sem mailto)
+            await salvarAceiteNoBanco();
 
-            // Envia o email de forma automática e oculta
-            sendHiddenEmail(deviceId);
-
-            // Atualiza o botão visualmente
+            // 4. Atualiza visual do botão
             missionBtn.textContent = 'MISSÃO ACEITA — CODIFIQUE AGORA';
             missionBtn.style.background = '#00ff9d';
             missionBtn.style.color = '#0a0a0f';
