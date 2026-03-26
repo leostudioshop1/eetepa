@@ -39,20 +39,22 @@
             z-index: 1;
         }
 
-        /* BANNER FLUTUANTE */
+        /* BANNER FLUTUANTE DINÂMICO */
         #floating-banner {
             position: fixed;
             z-index: 10;
             white-space: nowrap;
-            background: rgba(0, 255, 65, 0.1);
+            background: rgba(0, 255, 65, 0.15);
             color: var(--matrix-green);
-            padding: 8px 15px;
+            padding: 10px 20px;
             border: 1px solid var(--matrix-green);
-            box-shadow: 0 0 10px var(--matrix-glow);
+            box-shadow: 0 0 15px var(--matrix-glow);
             font-weight: bold;
-            font-size: 0.9rem;
-            pointer-events: none; /* Não atrapalha cliques no botão */
+            font-size: 0.85rem;
+            pointer-events: none;
             text-transform: uppercase;
+            border-radius: 4px;
+            transition: color 0.3s;
         }
 
         .container {
@@ -196,7 +198,7 @@
 
 <canvas id="matrix-bg"></canvas>
 
-<div id="floating-banner">Evolua o raciocínio lógico</div>
+<div id="floating-banner">O ESTUDO DE HOJE</div>
 
 <div class="container">
     <div class="header-top">
@@ -252,19 +254,48 @@
     }
     setInterval(drawMatrix, 35);
 
-    // --- LÓGICA DO BANNER PASSEANDO (Screensaver style) ---
+    // --- LÓGICA DO BANNER PASSEANDO E ALTERNANDO FRASES ---
     const banner = document.getElementById('floating-banner');
-    let posX = Math.random() * (window.innerWidth - 200);
+    const frases = [
+        "O estudo de hoje",
+        "É a vitória de amanhã",
+        "Quanto mais você estuda",
+        "mais sorte você tem",
+        "Estudar não é castigo",
+        "É o caminho para conquistar seus sonhos",
+        "O esforço de agora",
+        "vai se transformar em orgulho depois",
+        "Não desista quando ficar difícil",
+        "É exatamente aí que o crescimento acontece"
+    ];
+    
+    let fraseIndex = 0;
+    let posX = Math.random() * (window.innerWidth - 250);
     let posY = Math.random() * (window.innerHeight - 50);
-    let velX = 1.5;
-    let velY = 1.5;
+    let velX = 1.8;
+    let velY = 1.8;
+
+    function alternarFrase() {
+        fraseIndex = (fraseIndex + 1) % frases.length;
+        banner.innerText = frases[fraseIndex];
+    }
 
     function moveBanner() {
         posX += velX;
         posY += velY;
 
-        if (posX + banner.offsetWidth >= window.innerWidth || posX <= 0) velX *= -1;
-        if (posY + banner.offsetHeight >= window.innerHeight || posY <= 0) velY *= -1;
+        let bateu = false;
+
+        if (posX + banner.offsetWidth >= window.innerWidth || posX <= 0) {
+            velX *= -1;
+            bateu = true;
+        }
+        if (posY + banner.offsetHeight >= window.innerHeight || posY <= 0) {
+            velY *= -1;
+            bateu = true;
+        }
+
+        if (bateu) alternarFrase();
 
         banner.style.left = posX + 'px';
         banner.style.top = posY + 'px';
