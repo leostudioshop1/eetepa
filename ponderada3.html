@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MISSÃO 06 • MÉDIA PONDERADA | Jogos Digitais 2º Ano</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+        :root {
+            --bg: #0a0a0f;
+            --surface: #111118;
+            --surface2: #1a1a24;
+            --accent: #00d4ff;
+            --accent2: #00ff9d;
+            --accent3: #ff2e63;
+            --text: #e0e0ff;
+            --text-secondary: #a0a0cc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+            transition: background 0.8s ease;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(0, 255, 157, 0.06) 0%, transparent 50%);
+        }
+
+        body.mission-accepted {
+            background: #0f2b1f; /* Verde musgo dark tecnológico */
+            background-image: 
+                radial-gradient(circle at 30% 40%, rgba(0, 255, 100, 0.12) 0%, transparent 60%);
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        header {
+            background: rgba(17, 17, 24, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            padding: 18px 5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.85rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            color: var(--accent);
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .logo span {
+            color: var(--accent2);
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: rgba(255, 46, 99, 0.15);
+            color: var(--accent3);
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid rgba(255, 46, 99, 0.3);
+            white-space: nowrap;
+        }
+
+        main {
+            max-width: 1080px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #1a1a24, #111118);
+            padding: 40px 5%;
+            text-align: center;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2.2rem, 6vw, 3.2rem);
+            font-weight: 700;
+            letter-spacing: -2px;
+            background: linear-gradient(90deg, #00d4ff, #00ff9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            font-size: clamp(1.1rem, 3vw, 1.35rem);
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .countdown {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+
+        .time-box {
+            background: var(--surface2);
+            border-radius: 16px;
+            padding: 18px 24px;
+            min-width: 120px;
+            text-align: center;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .time-number {
+            font-size: clamp(2.4rem, 7vw, 3.8rem);
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--accent);
+            line-height: 1;
+            transition: all 0.4s ease;
+        }
+
+        .time-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 8px;
+        }
+
+        .content {
+            padding: 50px 5%;
+        }
+
+        .section {
+            margin-bottom: 50px;
+        }
+
+        h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            color: var(--accent2);
+            margin-bottom: 20px;
+        }
+
+        .formula {
+            background: #1a1a24;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 16px;
+            padding: 28px;
+            text-align: center;
+            font-size: clamp(1.3rem, 4vw, 1.65rem);
+            font-weight: 600;
+            color: #fff;
+            margin: 30px 0;
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.15);
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        li {
+            padding: 14px 0;
+            padding-left: 35px;
+            position: relative;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        li:before {
+            content: '▹';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-size: 1.4rem;
+        }
+
+        .btn-mission {
+            display: block;
+            margin: 40px auto;
+            padding: 18px 60px;
+            background: transparent;
+            color: white;
+            border: 3px solid var(--accent);
+            border-radius: 50px;
+            font-size: clamp(1.1rem, 3.5vw, 1.25rem);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            max-width: 100%;
+        }
+
+        .btn-mission:hover {
+            background: var(--accent);
+            color: #0a0a0f;
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.6);
+            transform: translateY(-3px);
+        }
+
+        footer {
+            text-align: center;
+            padding: 50px 20px 30px;
+            color: #555;
+            font-size: 0.95rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            line-height: 1.8;
+        }
+
+        .developer {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .countdown-active .time-number {
+            color: #ff2e63 !important;
+            font-size: calc(clamp(2.4rem, 7vw, 3.8rem) * 1.2) !important;
+        }
+
+        @media (max-width: 600px) {
+            .countdown { gap: 15px; }
+            .time-box { min-width: 100px; padding: 15px 18px; }
+            .content { padding: 40px 5%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">JOGOS<span>DIGITAIS</span></div>
+        <div class="header-info">
+            <div class="badge">2º ANO • 2026</div>
+            <div style="color: #ff2e63; font-weight: 600;">MISSÃO 06</div>
+        </div>
+    </header>
+
+    <main>
+        <div class="card">
+            <div class="card-header">
+                <h1>MÉDIA PONDERADA</h1>
+                <p class="subtitle">Desenvolva o sistema em Delphi antes que o tempo acabe</p>
+                
+                <div class="countdown" id="countdown">
+                    <div class="time-box">
+                        <div class="time-number" id="days">06</div>
+                        <div class="time-label">Dias</div>
+                    </div>
+                    <div class="time-box">
+                        <div class="time-number" id="hours">23</div>
+                        <div class="time-label">Horas</div>
+                    </div>
+                    <div class="time-box">
+                        <div class="time-number" id="minutes">59</div>
+                        <div class="time-label">Minutos</div>
+                    </div>
+                    <div class="time-box">
+                        <div class="time-number" id="seconds">59</div>
+                        <div class="time-label">Segundos</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="section">
+                    <h2>Objetivo da Missão</h2>
+                    <p>Criar um programa em <strong>Delphi</strong> que calcule a <strong>média ponderada</strong> de três números com pesos diferentes.</p>
+                    
+                    <div class="formula">
+                        <strong>Média Ponderada = (N₁ × P₁ + N₂ × P₂ + N₃ × P₃) / (P₁ + P₂ + P₃)</strong>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Requisitos da Atividade</h2>
+                    <ul>
+                        <li>Interface gráfica com campos para os 3 números</li>
+                        <li>Campos para os 3 pesos correspondentes</li>
+                        <li>Botão para realizar o cálculo</li>
+                        <li>Exibição clara do resultado da média ponderada</li>
+                    </ul>
+                </div>
+
+                <div style="text-align: center; margin: 30px 0 10px 0; color: var(--accent2); font-weight: 600;">
+                    Esta atividade valerá <strong>2 pontos</strong> na avaliação.
+                </div>
+
+                <center>
+                    <button class="btn-mission" id="missionBtn">
+                        ACEITAR MISSÃO E INICIAR DESENVOLVIMENTO
+                    </button>
+                </center>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        Turma de Jogos Digitais • 2º Ano • Prazo final: 01 de Abril de 2026 • 23:59<br>
+        <span style="color: var(--accent3);">O timer está correndo. Não perca a missão.</span>
+        <div class="developer">
+            Desenvolvido por - Léo Cruz - Engenheiro de Software
+        </div>
+    </footer>
+
+    <script>
+        const deadline = new Date('2026-04-01T23:59:59-03:00').getTime();
+        const countdownEl = document.getElementById('countdown');
+        const missionBtn = document.getElementById('missionBtn');
+        let missionAccepted = false;
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = deadline - now;
+
+            if (distance < 0) {
+                countdownEl.innerHTML = `<div style="color:#ff2e63; font-size:2.2rem; text-align:center; width:100%;">MISSÃO EXPIRADA — GAME OVER</div>`;
+                return;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById('days').textContent = String(days).padStart(2, '0');
+            document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+            document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+            document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+        }
+
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        // Gera um ID único simples do dispositivo (fingerprint)
+        function generateDeviceId() {
+            const data = navigator.userAgent + 
+                        navigator.language + 
+                        screen.width + 'x' + screen.height + 
+                        navigator.hardwareConcurrency + 
+                        Date.now();
+            
+            let hash = 0;
+            for (let i = 0; i < data.length; i++) {
+                const char = data.charCodeAt(i);
+                hash = (hash << 5) - hash + char;
+                hash = hash & hash;
+            }
+            return 'DEV-' + Math.abs(hash).toString(36).toUpperCase() + '-' + Date.now().toString(36).slice(-6);
+        }
+
+        // Função ao aceitar a missão
+        function acceptMission() {
+            if (missionAccepted) return;
+            missionAccepted = true;
+
+            // 1. Muda o fundo para verde musgo
+            document.body.classList.add('mission-accepted');
+
+            // 2. Ativa efeito na contagem regressiva (vermelho + maior)
+            countdownEl.classList.add('countdown-active');
+
+            // 3. Gera ID único
+            const deviceId = generateDeviceId();
+
+            // 4. Tenta enviar por mailto (única forma client-side pura)
+            const subject = encodeURIComponent("Missão 06 Aceita - ID do Dispositivo");
+            const body = encodeURIComponent(
+                `Missão aceita com sucesso!\n\n` +
+                `ID do Dispositivo: ${deviceId}\n` +
+                `Data/Hora: ${new Date().toLocaleString('pt-BR')}\n` +
+                `Turma: Jogos Digitais 2º Ano\n\n` +
+                `Aluno(a): [Seu Nome Aqui]`
+            );
+
+            const mailtoLink = `mailto:leostudioshop1@gmail.com?subject=${subject}&body=${body}`;
+            
+            // Abre o cliente de e-mail do usuário
+            window.location.href = mailtoLink;
+
+            // Atualiza botão
+            missionBtn.textContent = 'MISSÃO ACEITA — CODIFIQUE AGORA';
+            missionBtn.style.background = '#00ff9d';
+            missionBtn.style.color = '#0a0a0f';
+            missionBtn.style.borderColor = '#00ff9d';
+
+            alert('Missão aceita!\n\n' +
+                  'Fundo ativado em modo crítico (verde musgo).\n' +
+                  'Um ID único do seu dispositivo foi gerado.\n\n' +
+                  'O cliente de e-mail será aberto para você confirmar o envio para leostudioshop1@gmail.com\n\n' +
+                  'ID gerado: ' + deviceId);
+        }
+
+        missionBtn.addEventListener('click', acceptMission);
+    </script>
+</body>
+</html>
