@@ -31,15 +31,9 @@
         }
 
         #matrix-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
         }
 
-        /* BANNER FLUTUANTE DINÂMICO */
         #floating-banner {
             position: fixed;
             z-index: 10;
@@ -54,7 +48,9 @@
             pointer-events: none;
             text-transform: uppercase;
             border-radius: 4px;
-            transition: color 0.3s;
+            left: 0;
+            top: 0;
+            will-change: transform;
         }
 
         .container {
@@ -171,11 +167,7 @@
         }
 
         #log {
-            margin-top: 12px;
-            font-size: 0.7rem;
-            text-align: center;
-            height: 15px;
-            color: var(--matrix-glow);
+            margin-top: 12px; font-size: 0.7rem; text-align: center; color: var(--matrix-glow); height: 15px;
         }
 
         .footer {
@@ -185,7 +177,6 @@
             text-align: center;
             font-size: 0.75rem;
             color: var(--matrix-glow);
-            letter-spacing: 1px;
         }
 
         @media (max-width: 400px) {
@@ -230,15 +221,15 @@
 </div>
 
 <script>
-    // --- FUNDO MATRIX ---
+    // --- MATRIX BACKGROUND ---
     const canvas = document.getElementById('matrix-bg');
     const ctx = canvas.getContext('2d');
     canvas.height = window.innerHeight;
     canvas.width = window.innerWidth;
     const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZアァカサタナハマヤャラワ";
     const fontSize = 16;
-    const columns = canvas.width / fontSize;
-    const drops = Array(Math.floor(columns)).fill(1);
+    let columns = canvas.width / fontSize;
+    let drops = Array(Math.floor(columns)).fill(1);
 
     function drawMatrix() {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
@@ -254,51 +245,47 @@
     }
     setInterval(drawMatrix, 35);
 
-    // --- LÓGICA DO BANNER PASSEANDO E ALTERNANDO FRASES ---
+    // --- LÓGICA DO BANNER ANTI-TRAVAMENTO ---
     const banner = document.getElementById('floating-banner');
     const frases = [
-        "O estudo de hoje",
-        "É a vitória de amanhã",
-        "Quanto mais você estuda",
-        "mais sorte você tem",
-        "Estudar não é castigo",
-        "É o caminho para conquistar seus sonhos",
-        "O esforço de agora",
-        "vai se transformar em orgulho depois",
-        "Não desista quando ficar difícil",
-        "É exatamente aí que o crescimento acontece"
+        "O estudo de hoje", "É a vitória de amanhã", "Quanto mais você estuda",
+        "mais sorte você tem", "Estudar não é castigo", "É o caminho para conquistar seus sonhos",
+        "O esforço de agora", "vai se transformar em orgulho depois",
+        "Não desista quando ficar difícil", "É exatamente aí que o crescimento acontece"
     ];
     
     let fraseIndex = 0;
-    let posX = Math.random() * (window.innerWidth - 250);
-    let posY = Math.random() * (window.innerHeight - 50);
-    let velX = 1.8;
-    let velY = 1.8;
-
-    function alternarFrase() {
-        fraseIndex = (fraseIndex + 1) % frases.length;
-        banner.innerText = frases[fraseIndex];
-    }
+    let posX = 50;
+    let posY = 50;
+    let velX = 0.8; 
+    let velY = 0.8;
 
     function moveBanner() {
+        const winW = window.innerWidth;
+        const winH = window.innerHeight;
+        const banW = banner.offsetWidth;
+        const banH = banner.offsetHeight;
+
         posX += velX;
         posY += velY;
 
-        let bateu = false;
-
-        if (posX + banner.offsetWidth >= window.innerWidth || posX <= 0) {
+        // Detecção de colisão com bordas + troca de frase
+        if (posX + banW >= winW || posX <= 0) {
             velX *= -1;
-            bateu = true;
+            fraseIndex = (fraseIndex + 1) % frases.length;
+            banner.innerText = frases[fraseIndex];
+            // Ajuste de segurança para não prender na borda
+            posX = posX <= 0 ? 1 : winW - banW - 1;
         }
-        if (posY + banner.offsetHeight >= window.innerHeight || posY <= 0) {
+        if (posY + banH >= winH || posY <= 0) {
             velY *= -1;
-            bateu = true;
+            fraseIndex = (fraseIndex + 1) % frases.length;
+            banner.innerText = frases[fraseIndex];
+            // Ajuste de segurança para não prender na borda
+            posY = posY <= 0 ? 1 : winH - banH - 1;
         }
 
-        if (bateu) alternarFrase();
-
-        banner.style.left = posX + 'px';
-        banner.style.top = posY + 'px';
+        banner.style.transform = `translate(${posX}px, ${posY}px)`;
         requestAnimationFrame(moveBanner);
     }
     moveBanner();
@@ -306,20 +293,21 @@
     window.addEventListener('resize', () => {
         canvas.height = window.innerHeight;
         canvas.width = window.innerWidth;
+        columns = canvas.width / fontSize;
+        drops = Array(Math.floor(columns)).fill(1);
+        // Teletransporta para o centro se ficar fora da tela no resize
+        if (posX > window.innerWidth) posX = 20;
+        if (posY > window.innerHeight) posY = 20;
     });
 
-    // --- SUPABASE CONFIG ---
+    // --- RESTANTE DA LÓGICA (SUPABASE / TIMER) ---
     const _supabase = supabase.createClient('https://osofdmgokrxdzsxozsrf.supabase.co', 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe');
-
-    // --- CRONÔMETRO (Prazo 01/04/2026) ---
     const deadline = new Date("2026-04-01T23:59:59").getTime();
+
     function updateCountdown() {
         const now = new Date().getTime();
         const diff = deadline - now;
-        if (diff < 0) {
-            document.getElementById("timer").innerHTML = "00:00:00:00";
-            return;
-        }
+        if (diff < 0) { document.getElementById("timer").innerHTML = "00:00:00:00"; return; }
         const d = Math.floor(diff / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
         const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
         const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
@@ -329,42 +317,30 @@
     setInterval(updateCountdown, 1000);
     updateCountdown();
 
-    // --- LÓGICA DE ACESSO ÚNICO ---
     const btn = document.getElementById('btnAceitar');
     const timer = document.getElementById('timer');
     const log = document.getElementById('log');
 
     if (localStorage.getItem('missao_registrada_leo_cruz') === 'true') {
-        btn.disabled = true;
-        btn.classList.add('status-red');
-        btn.innerText = "MISSÃO JÁ REGISTRADA";
-        timer.classList.add('active-red');
-        log.innerText = "> CONEXÃO SEGURA. STATUS: EM EXECUÇÃO.";
+        btn.disabled = true; btn.classList.add('status-red'); btn.innerText = "MISSÃO JÁ REGISTRADA";
+        timer.classList.add('active-red'); log.innerText = "> CONEXÃO SEGURA. STATUS: EM EXECUÇÃO.";
     }
 
     btn.addEventListener('click', async () => {
-        btn.disabled = true;
-        btn.classList.add('status-red');
-        btn.innerText = "MISSÃO REGISTRADA";
-        timer.classList.add('active-red');
-        log.innerText = "> TRANSMITINDO DADOS...";
-
+        btn.disabled = true; btn.classList.add('status-red'); btn.innerText = "MISSÃO REGISTRADA";
+        timer.classList.add('active-red'); log.innerText = "> TRANSMITINDO DADOS...";
         try {
-            const { error } = await _supabase.from('registros_atividade').insert([{
+            await _supabase.from('registros_atividade').insert([{
                 device_info: navigator.userAgent,
                 acess_time: new Date().toISOString(),
                 screen_res: `${window.screen.width}x${window.screen.height}`,
                 plataforma: navigator.platform
             }]);
-
-            if (error) throw error;
             localStorage.setItem('missao_registrada_leo_cruz', 'true');
             log.innerText = "> CONEXÃO SEGURA. BOA SORTE.";
         } catch (e) {
             log.innerText = "> ERRO NA TRANSMISSÃO.";
-            btn.disabled = false;
-            btn.classList.remove('status-red');
-            timer.classList.remove('active-red');
+            btn.disabled = false; btn.classList.remove('status-red');
         }
     });
 </script>
