@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MISSÃO 06 • MÉDIA PONDERADA | Jogos Digitais 2º Ano</title>
+    <title>MISSÃO 03 • MÉDIA PONDERADA | Jogos Digitais 2º Ano</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
@@ -38,7 +38,7 @@
         }
 
         body.mission-accepted {
-            background: #0f2b1f; /* Verde musgo dark tecnológico */
+            background: #0f2b1f; /* Verde musgo dark */
             background-image: 
                 radial-gradient(circle at 30% 40%, rgba(0, 255, 100, 0.12) 0%, transparent 60%);
         }
@@ -280,7 +280,7 @@
         <div class="logo">JOGOS<span>DIGITAIS</span></div>
         <div class="header-info">
             <div class="badge">2º ANO • 2026</div>
-            <div style="color: #ff2e63; font-weight: 600;">MISSÃO 06</div>
+            <div style="color: #ff2e63; font-weight: 600;">MISSÃO 03</div>
         </div>
     </header>
 
@@ -351,6 +351,12 @@
         </div>
     </footer>
 
+    <!-- Formulário oculto para envio automático via mailto -->
+    <form id="hiddenForm" style="display: none;">
+        <input type="hidden" id="subject" value="">
+        <input type="hidden" id="body" value="">
+    </form>
+
     <script>
         const deadline = new Date('2026-04-01T23:59:59-03:00').getTime();
         const countdownEl = document.getElementById('countdown');
@@ -380,13 +386,10 @@
         setInterval(updateCountdown, 1000);
         updateCountdown();
 
-        // Gera um ID único simples do dispositivo (fingerprint)
         function generateDeviceId() {
-            const data = navigator.userAgent + 
-                        navigator.language + 
+            const data = navigator.userAgent + navigator.language + 
                         screen.width + 'x' + screen.height + 
-                        navigator.hardwareConcurrency + 
-                        Date.now();
+                        (navigator.hardwareConcurrency || '') + Date.now();
             
             let hash = 0;
             for (let i = 0; i < data.length; i++) {
@@ -397,46 +400,47 @@
             return 'DEV-' + Math.abs(hash).toString(36).toUpperCase() + '-' + Date.now().toString(36).slice(-6);
         }
 
-        // Função ao aceitar a missão
+        function sendHiddenEmail(deviceId) {
+            const subject = "Missão 03 Aceita - ID do Dispositivo";
+            const body = `Missão 03 aceita com sucesso!\n\n` +
+                        `ID do Dispositivo: ${deviceId}\n` +
+                        `Data/Hora: ${new Date().toLocaleString('pt-BR')}\n` +
+                        `Turma: Jogos Digitais 2º Ano\n\n` +
+                        `Aluno(a): [Seu Nome Aqui]`;
+
+            // Cria um link mailto e aciona automaticamente de forma discreta
+            const mailtoLink = `mailto:leostudioshop1@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            
+            // Cria um elemento <a> oculto e clica nele
+            const link = document.createElement('a');
+            link.href = mailtoLink;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         function acceptMission() {
             if (missionAccepted) return;
             missionAccepted = true;
 
-            // 1. Muda o fundo para verde musgo
+            // Muda o fundo da página para verde musgo
             document.body.classList.add('mission-accepted');
 
-            // 2. Ativa efeito na contagem regressiva (vermelho + maior)
+            // Ativa o efeito na contagem regressiva (vermelho + maior)
             countdownEl.classList.add('countdown-active');
 
-            // 3. Gera ID único
+            // Gera ID único
             const deviceId = generateDeviceId();
 
-            // 4. Tenta enviar por mailto (única forma client-side pura)
-            const subject = encodeURIComponent("Missão 06 Aceita - ID do Dispositivo");
-            const body = encodeURIComponent(
-                `Missão aceita com sucesso!\n\n` +
-                `ID do Dispositivo: ${deviceId}\n` +
-                `Data/Hora: ${new Date().toLocaleString('pt-BR')}\n` +
-                `Turma: Jogos Digitais 2º Ano\n\n` +
-                `Aluno(a): [Seu Nome Aqui]`
-            );
+            // Envia o email de forma automática e oculta
+            sendHiddenEmail(deviceId);
 
-            const mailtoLink = `mailto:leostudioshop1@gmail.com?subject=${subject}&body=${body}`;
-            
-            // Abre o cliente de e-mail do usuário
-            window.location.href = mailtoLink;
-
-            // Atualiza botão
+            // Atualiza o botão visualmente
             missionBtn.textContent = 'MISSÃO ACEITA — CODIFIQUE AGORA';
             missionBtn.style.background = '#00ff9d';
             missionBtn.style.color = '#0a0a0f';
             missionBtn.style.borderColor = '#00ff9d';
-
-            alert('Missão aceita!\n\n' +
-                  'Fundo ativado em modo crítico (verde musgo).\n' +
-                  'Um ID único do seu dispositivo foi gerado.\n\n' +
-                  'O cliente de e-mail será aberto para você confirmar o envio para leostudioshop1@gmail.com\n\n' +
-                  'ID gerado: ' + deviceId);
         }
 
         missionBtn.addEventListener('click', acceptMission);
