@@ -49,6 +49,7 @@
             position: relative;
             z-index: 2;
             box-sizing: border-box;
+            text-align: center;
         }
 
         .header-top {
@@ -67,7 +68,7 @@
             text-transform: uppercase;
             letter-spacing: 3px;
             margin: 0;
-            font-size: clamp(1.2rem, 5vw, 1.6rem); /* Responsividade no título */
+            font-size: clamp(1.2rem, 5vw, 1.6rem);
         }
 
         .prof-info {
@@ -84,6 +85,7 @@
             margin-bottom: 25px;
             line-height: 1.4;
             font-size: 0.95rem;
+            text-align: left;
         }
 
         .points-badge {
@@ -104,7 +106,7 @@
         }
 
         #timer {
-            font-size: clamp(2rem, 10vw, 3.5rem); /* Ajusta o tamanho conforme a tela */
+            font-size: clamp(2rem, 10vw, 3.5rem);
             font-weight: bold;
             color: var(--matrix-green);
             display: block;
@@ -147,6 +149,7 @@
             background-color: rgba(139, 0, 0, 0.1);
             box-shadow: 0 0 15px var(--error-glow);
             cursor: not-allowed;
+            opacity: 1;
         }
 
         #log {
@@ -167,7 +170,6 @@
             letter-spacing: 1px;
         }
 
-        /* Ajustes para telas muito pequenas */
         @media (max-width: 400px) {
             .container { padding: 1.2rem; width: 92%; }
             .header-top { flex-direction: column; gap: 5px; }
@@ -236,10 +238,10 @@
         canvas.width = window.innerWidth;
     });
 
-    // --- SUPABASE ---
+    // --- SUPABASE CONFIG ---
     const _supabase = supabase.createClient('https://osofdmgokrxdzsxozsrf.supabase.co', 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe');
 
-    // --- CRONÔMETRO ---
+    // --- CRONÔMETRO (Prazo 01/04/2026) ---
     const deadline = new Date("2026-04-01T23:59:59").getTime();
     function updateCountdown() {
         const now = new Date().getTime();
@@ -257,10 +259,24 @@
     setInterval(updateCountdown, 1000);
     updateCountdown();
 
-    // --- CLIQUE DO BOTÃO ---
+    // --- LÓGICA DE ACESSO ÚNICO E PERSISTÊNCIA ---
     const btn = document.getElementById('btnAceitar');
     const timer = document.getElementById('timer');
     const log = document.getElementById('log');
+
+    // Função para aplicar o estado de "Missão Registrada"
+    function setMissionAccepted() {
+        btn.disabled = true;
+        btn.classList.add('status-red');
+        btn.innerText = "MISSÃO JÁ REGISTRADA";
+        timer.classList.add('active-red');
+        log.innerText = "> CONEXÃO SEGURA. STATUS: EM EXECUÇÃO.";
+    }
+
+    // Verificar se o dispositivo já clicou anteriormente
+    if (localStorage.getItem('missao_registrada_leo_cruz') === 'true') {
+        setMissionAccepted();
+    }
 
     btn.addEventListener('click', async () => {
         btn.disabled = true;
@@ -270,15 +286,26 @@
         log.innerText = "> TRANSMITINDO DADOS...";
 
         try {
-            await _supabase.from('registros_atividade').insert([{
+            const { error } = await _supabase.from('registros_atividade').insert([{
                 device_info: navigator.userAgent,
                 acess_time: new Date().toISOString(),
                 screen_res: `${window.screen.width}x${window.screen.height}`,
                 plataforma: navigator.platform
             }]);
+
+            if (error) throw error;
+
+            // Salva no navegador que a missão foi aceita
+            localStorage.setItem('missao_registrada_leo_cruz', 'true');
             log.innerText = "> CONEXÃO SEGURA. BOA SORTE.";
         } catch (e) {
-            log.innerText = "> ERRO NA TRANSMISSÃO.";
+            console.error(e);
+            log.innerText = "> ERRO NA TRANSMISSÃO. TENTE NOVAMENTE.";
+            // Caso falhe, permite tentar de novo (opcional)
+            btn.disabled = false;
+            btn.classList.remove('status-red');
+            timer.classList.remove('active-red');
+            btn.innerText = "CONFIRMAR RECEBIMENTO DA MISSÃO";
         }
     });
 </script>
