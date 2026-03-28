@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel dos Viajantes • Relatório de Gastos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        :root { font-family: 'Inter', system_ui, sans-serif; }
+        .table-row-caixa { border-left: 5px solid #3b82f6; }
+        .table-row-banco { border-left: 5px solid #10b981; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen">
+    <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-x-3">
+                <div class="w-9 h-9 bg-amber-500 rounded-2xl flex items-center justify-center text-white font-bold text-xl">🏨</div>
+                <h1 class="text-2xl font-semibold tracking-tight">Hotel dos Viajantes</h1>
+            </div>
+            <div class="flex items-center gap-x-8 text-sm font-medium">
+                <a href="index.html" class="flex items-center gap-x-2 hover:text-slate-100">Lançamento</a>
+                <a href="relatorio.html" class="flex items-center gap-x-2 text-amber-400">Relatório</a>
+            </div>
+            <button onclick="atualizarDados()" class="flex items-center gap-x-2 bg-slate-800 hover:bg-slate-700 px-6 h-10 rounded-3xl text-sm">
+                <i class="fa-solid fa-rotate"></i> Atualizar
+            </button>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <h2 class="text-4xl font-semibold tracking-tight mb-2">Relatório de Gastos</h2>
+        <p class="text-slate-400">Visualize e filtre todos os lançamentos</p>
+
+        <!-- Dashboard Resumo -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10" id="dashboard-cards"></div>
+
+        <!-- Filtros -->
+        <div class="bg-slate-900 rounded-3xl p-6 mt-8">
+            <div class="flex flex-wrap gap-4">
+                <input id="search-descricao" type="text" placeholder="Buscar descrição..." 
+                       onkeyup="if(event.key === 'Enter') aplicarFiltros()" 
+                       class="flex-1 bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3 outline-none">
+
+                <select id="filter-categoria" onchange="aplicarFiltros()" class="bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3"></select>
+                <select id="filter-responsavel" onchange="aplicarFiltros()" class="bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3"></select>
+                <select id="filter-origem" onchange="aplicarFiltros()" class="bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3">
+                    <option value="">Todas as origens</option>
+                    <option value="Caixa do Hotel">Caixa do Hotel</option>
+                    <option value="Conta Bancária">Conta Bancária</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Tabela -->
+        <div class="mt-6 bg-slate-900 rounded-3xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-slate-950">
+                        <tr class="text-xs uppercase text-slate-400">
+                            <th class="text-left py-5 px-8">Data/Hora</th>
+                            <th class="text-left py-5 px-8">Descrição</th>
+                            <th class="text-left py-5 px-8">Categoria</th>
+                            <th class="text-right py-5 px-8">Valor</th>
+                            <th class="text-left py-5 px-8">Origem</th>
+                            <th class="text-left py-5 px-8">Pagamento</th>
+                            <th class="text-left py-5 px-8">Responsável</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-gastos" class="divide-y divide-slate-800"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="empty-state" class="hidden text-center py-20 text-slate-400">
+            <i class="fa-solid fa-receipt text-6xl mb-4 opacity-30"></i>
+            <p>Nenhum gasto encontrado.</p>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://osofdmgokrxdzsxozsrf.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe';
+
+        let supabaseClient = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let todosGastos = [];
+
+        async function carregarGastos() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('gastos')
+                    .select('*')
+                    .order('data_hora', { ascending: false });
+
+                if (error) throw error;
+                todosGastos = data || [];
+                popularFiltros();
+                aplicarFiltros();
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao carregar dados do Supabase.');
+            }
+        }
+
+        function popularFiltros() {
+            const cats = [...new Set(todosGastos.map(g => g.categoria))].sort();
+            const resps = [...new Set(todosGastos.map(g => g.responsavel))].sort();
+
+            const selCat = document.getElementById('filter-categoria');
+            selCat.innerHTML = '<option value="">Todas as categorias</option>';
+            cats.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c; opt.textContent = c;
+                selCat.appendChild(opt);
+            });
+
+            const selResp = document.getElementById('filter-responsavel');
+            selResp.innerHTML = '<option value="">Todos os responsáveis</option>';
+            resps.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r; opt.textContent = r;
+                selResp.appendChild(opt);
+            });
+        }
+
+        function aplicarFiltros() {
+            const search = document.getElementById('search-descricao').value.toLowerCase();
+            const cat = document.getElementById('filter-categoria').value;
+            const resp = document.getElementById('filter-responsavel').value;
+            const origem = document.getElementById('filter-origem').value;
+
+            const filtrados = todosGastos.filter(g => {
+                return (!search || g.descricao.toLowerCase().includes(search)) &&
+                       (!cat || g.categoria === cat) &&
+                       (!resp || g.responsavel === resp) &&
+                       (!origem || g.origem === origem);
+            });
+
+            renderizarTabela(filtrados);
+            atualizarDashboard(filtrados);
+        }
+
+        function atualizarDashboard(gastos) {
+            let total = 0, caixa = 0, banco = 0;
+            gastos.forEach(g => {
+                const v = parseFloat(g.valor) || 0;
+                total += v;
+                if (g.origem === 'Caixa do Hotel') caixa += v;
+                else banco += v;
+            });
+
+            document.getElementById('dashboard-cards').innerHTML = `
+                <div class="bg-slate-900 rounded-3xl p-6">
+                    <p class="text-slate-400 text-sm">TOTAL GERAL</p>
+                    <p class="text-4xl font-bold mt-2">${total.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</p>
+                </div>
+                <div class="bg-slate-900 rounded-3xl p-6 border-l-4 border-blue-500">
+                    <p class="text-slate-400 text-sm">CAIXA DO HOTEL</p>
+                    <p class="text-4xl font-bold mt-2 text-blue-400">${caixa.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</p>
+                </div>
+                <div class="bg-slate-900 rounded-3xl p-6 border-l-4 border-emerald-500">
+                    <p class="text-slate-400 text-sm">CONTA BANCÁRIA</p>
+                    <p class="text-4xl font-bold mt-2 text-emerald-400">${banco.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</p>
+                </div>
+            `;
+        }
+
+        function renderizarTabela(gastos) {
+            const tbody = document.getElementById('tabela-gastos');
+            const empty = document.getElementById('empty-state');
+            tbody.innerHTML = '';
+
+            if (gastos.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            gastos.forEach(g => {
+                const valor = parseFloat(g.valor) || 0;
+                const data = new Date(g.data_hora);
+                const dataFmt = data.toLocaleDateString('pt-BR');
+                const horaFmt = data.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+
+                const row = document.createElement('tr');
+                row.className = g.origem === 'Caixa do Hotel' ? 'table-row-caixa hover:bg-slate-800' : 'table-row-banco hover:bg-slate-800';
+                row.innerHTML = `
+                    <td class="px-8 py-5">
+                        <div>${dataFmt}</div>
+                        <div class="text-xs text-slate-400">${horaFmt}</div>
+                    </td>
+                    <td class="px-8 py-5">${g.descricao}</td>
+                    <td class="px-8 py-5">${g.categoria}</td>
+                    <td class="px-8 py-5 text-right font-semibold">R$ ${valor.toFixed(2)}</td>
+                    <td class="px-8 py-5">${g.origem}</td>
+                    <td class="px-8 py-5">${g.forma_pagamento}</td>
+                    <td class="px-8 py-5">${g.responsavel}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function atualizarDados() {
+            await carregarGastos();
+        }
+
+        function initialize() {
+            carregarGastos();
+            console.log('%c📊 Relatório carregado com suas credenciais do Supabase!', 'color:#fbbf24');
+        }
+
+        window.onload = initialize;
+    </script>
+</body>
+</html>
