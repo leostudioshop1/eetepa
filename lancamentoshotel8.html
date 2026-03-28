@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lançamento de Gastos</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+</head>
+
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white min-h-screen">
+
+<div class="max-w-5xl mx-auto p-4 md:p-6">
+
+<!-- HEADER -->
+<div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-2">
+<h1 class="text-2xl md:text-3xl font-bold">💰 Lançamento de Gastos</h1>
+<span class="text-slate-400 text-sm">Sistema Financeiro</span>
+</div>
+
+<!-- DASHBOARD -->
+<div class="grid md:grid-cols-3 gap-4 mb-6">
+
+<div class="bg-slate-800 p-4 rounded-xl shadow">
+<p class="text-slate-400 text-sm">Total do mês</p>
+<p id="totalMensal" class="text-2xl font-bold text-green-400">R$ 0,00</p>
+</div>
+
+<div class="bg-slate-800 p-4 rounded-xl shadow md:col-span-2">
+<p class="text-slate-400 text-sm mb-2">Total por Categoria</p>
+<div id="categorias" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
+</div>
+
+</div>
+
+<!-- FORM -->
+<div class="bg-slate-800 p-5 rounded-xl shadow space-y-4">
+
+<div class="grid md:grid-cols-2 gap-3">
+<input id="descricao" placeholder="Descrição"
+class="w-full p-3 rounded bg-slate-900 border border-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none">
+
+<input id="valor" type="number" step="0.01" placeholder="Valor"
+class="w-full p-3 rounded bg-slate-900 border border-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none">
+</div>
+
+<div class="grid md:grid-cols-2 gap-3">
+<input id="categoria" placeholder="Categoria"
+class="w-full p-3 rounded bg-slate-900 border border-slate-700">
+
+<input id="responsavel" placeholder="Responsável"
+class="w-full p-3 rounded bg-slate-900 border border-slate-700">
+</div>
+
+<div class="grid md:grid-cols-2 gap-3">
+<select id="origem" class="w-full p-3 rounded bg-slate-900 border border-slate-700">
+<option value="">Origem</option>
+<option>Caixa do Hotel</option>
+<option>Conta Bancária</option>
+</select>
+
+<select id="forma" class="w-full p-3 rounded bg-slate-900 border border-slate-700">
+<option value="">Forma de pagamento</option>
+<option>Pix</option>
+<option>Dinheiro</option>
+<option>Cartão de Crédito</option>
+<option>Cartão de Débito</option>
+<option>Transferência</option>
+</select>
+</div>
+
+<button onclick="salvar()"
+class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:opacity-90 p-3 rounded font-bold text-lg shadow-lg transition">
+💾 Registrar Gasto
+</button>
+
+<p id="msg" class="text-center text-sm"></p>
+
+</div>
+
+</div>
+
+<script>
+
+// 🔗 CONEXÃO
+const supabaseClient = supabase.createClient(
+'https://osofdmgokrxdzsxozsrf.supabase.co',
+'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
+);
+
+// 📊 RESUMO
+async function carregarResumo() {
+
+const { data } = await supabaseClient
+.from('gastos')
+.select('*');
+
+let total = 0;
+let categorias = {};
+const agora = new Date();
+
+data.forEach(g => {
+
+const d = new Date(g.data_hora);
+const valor = parseFloat(g.valor) || 0;
+
+if (d.getMonth() === agora.getMonth() &&
+    d.getFullYear() === agora.getFullYear()) {
+
+total += valor;
+
+// categorias
+if (!categorias[g.categoria]) categorias[g.categoria] = 0;
+categorias[g.categoria] += valor;
+}
+});
+
+// total mensal
+document.getElementById("totalMensal").innerText =
+total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+// categorias
+const catDiv = document.getElementById("categorias");
+catDiv.innerHTML = "";
+
+for (let cat in categorias) {
+catDiv.innerHTML += `
+<div class="bg-slate-700 p-2 rounded text-sm flex justify-between">
+<span>${cat}</span>
+<span class="text-yellow-400 font-bold">
+R$ ${categorias[cat].toFixed(2)}
+</span>
+</div>`;
+}
+}
+
+// 💾 SALVAR
+async function salvar() {
+
+const dados = {
+descricao: descricao.value,
+valor: parseFloat(valor.value),
+categoria: categoria.value,
+responsavel: responsavel.value,
+origem: origem.value,
+forma_pagamento: forma.value,
+data_hora: new Date().toISOString()
+};
+
+// validação
+if (!dados.descricao || !dados.valor || !dados.categoria ||
+    !dados.responsavel || !dados.origem || !dados.forma_pagamento) {
+
+msg.innerText = "⚠️ Preencha todos os campos!";
+msg.className = "text-red-400 text-center";
+return;
+}
+
+const { error } = await supabaseClient
+.from('gastos')
+.insert([dados]);
+
+if (error) {
+msg.innerText = "❌ Erro ao salvar!";
+msg.className = "text-red-400 text-center";
+return;
+}
+
+// sucesso
+msg.innerText = "✅ Salvo com sucesso!";
+msg.className = "text-green-400 text-center";
+
+// limpar
+document.querySelectorAll("input").forEach(i => i.value = "");
+document.querySelectorAll("select").forEach(s => s.value = "");
+
+// atualizar dashboard
+carregarResumo();
+}
+
+// 🚀 inicial
+carregarResumo();
+
+</script>
+
+</body>
+</html>
