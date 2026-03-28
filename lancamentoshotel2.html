@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel dos Viajantes • Lançamento</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+</head>
+
+<body class="bg-slate-950 text-white min-h-screen flex items-center justify-center">
+
+<div class="w-full max-w-2xl bg-slate-900 p-8 rounded-2xl shadow-2xl">
+
+    <h1 class="text-3xl mb-6 font-bold">Registrar Gasto</h1>
+
+    <form id="form" class="space-y-4">
+
+        <input id="descricao" placeholder="Descrição" required class="w-full p-3 rounded bg-slate-800">
+        <input id="valor" type="number" step="0.01" placeholder="Valor" required class="w-full p-3 rounded bg-slate-800">
+
+        <select id="categoria" class="w-full p-3 rounded bg-slate-800">
+            <option>Alimentação</option>
+            <option>Manutenção</option>
+            <option>Outros</option>
+        </select>
+
+        <input id="responsavel" placeholder="Responsável" required class="w-full p-3 rounded bg-slate-800">
+
+        <select id="origem" class="w-full p-3 rounded bg-slate-800">
+            <option>Caixa do Hotel</option>
+            <option>Conta Bancária</option>
+        </select>
+
+        <select id="forma_pagamento" class="w-full p-3 rounded bg-slate-800">
+            <option>Pix</option>
+            <option>Dinheiro</option>
+            <option>Cartão</option>
+        </select>
+
+        <button class="w-full bg-amber-500 p-4 rounded font-bold">
+            SALVAR
+        </button>
+
+    </form>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://osofdmgokrxdzsxozsrf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe';
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+document.getElementById("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const data = {
+        descricao: descricao.value,
+        valor: parseFloat(valor.value),
+        categoria: categoria.value,
+        responsavel: responsavel.value,
+        origem: origem.value,
+        forma_pagamento: forma_pagamento.value,
+        data_hora: new Date().toISOString()
+    };
+
+    const { error } = await db.from("gastos").insert([data]);
+
+    if (error) {
+        alert("Erro: " + error.message);
+    } else {
+        alert("Salvo com sucesso!");
+        form.reset();
+    }
+});
+</script>
+
+</body>
+</html>

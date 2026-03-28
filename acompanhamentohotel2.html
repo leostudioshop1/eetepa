@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Gastos</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="bg-slate-950 text-white p-6">
+
+<h1 class="text-3xl mb-6 font-bold">Relatório</h1>
+
+<button onclick="carregar()" class="mb-4 bg-blue-500 px-4 py-2 rounded">
+    Atualizar
+</button>
+
+<table class="w-full border border-slate-700">
+    <thead>
+        <tr class="bg-slate-800">
+            <th class="p-2">Data</th>
+            <th class="p-2">Descrição</th>
+            <th class="p-2">Valor</th>
+            <th class="p-2">Categoria</th>
+            <th class="p-2">Responsável</th>
+        </tr>
+    </thead>
+    <tbody id="tabela"></tbody>
+</table>
+
+<script>
+const SUPABASE_URL = 'https://osofdmgokrxdzsxozsrf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe';
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function carregar() {
+    const { data, error } = await db
+        .from("gastos")
+        .select("*")
+        .order("data_hora", { ascending: false });
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    const tabela = document.getElementById("tabela");
+    tabela.innerHTML = "";
+
+    data.forEach(g => {
+        const row = `
+            <tr class="border-t border-slate-700">
+                <td class="p-2">${new Date(g.data_hora).toLocaleString('pt-BR')}</td>
+                <td class="p-2">${g.descricao}</td>
+                <td class="p-2">R$ ${parseFloat(g.valor).toFixed(2)}</td>
+                <td class="p-2">${g.categoria}</td>
+                <td class="p-2">${g.responsavel}</td>
+            </tr>
+        `;
+        tabela.innerHTML += row;
+    });
+}
+
+carregar();
+</script>
+
+</body>
+</html>
