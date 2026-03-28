@@ -1,122 +1,101 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relatório de Gastos • Hotel dos Viajantes</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relatório</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
 </head>
 
-<body class="bg-gradient-to-br from-slate-950 to-slate-900 text-white min-h-screen p-6">
-    <div class="max-w-6xl mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10">
-            <div>
-                <h1 class="text-4xl font-bold tracking-tight">Relatório de Gastos</h1>
-                <p class="text-slate-400">Hotel dos Viajantes • Controle Financeiro</p>
-            </div>
-            <button onclick="carregar()" 
-                    class="mt-4 md:mt-0 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-2xl font-medium transition-all">
-                <i class="fas fa-sync-alt"></i>
-                Atualizar Dados
-            </button>
-        </div>
+<body class="bg-slate-950 text-white p-6">
 
-        <!-- Card do Total Mensal -->
-        <div class="bg-slate-900/80 backdrop-blur-xl border border-slate-700 rounded-3xl p-8 mb-8">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-slate-400 text-sm">Total de gastos no mês atual</p>
-                    <p id="valor-total" class="text-5xl font-bold text-emerald-400 mt-1">R$ 0,00</p>
-                </div>
-                <div class="text-right">
-                    <i class="fas fa-chart-pie text-6xl text-slate-700"></i>
-                </div>
-            </div>
-        </div>
+<div class="max-w-6xl mx-auto">
 
-        <div class="bg-slate-900/80 backdrop-blur-xl rounded-3xl overflow-hidden border border-slate-700">
-            <table class="w-full">
-                <thead>
-                    <tr class="bg-slate-800/80">
-                        <th class="p-5 text-left font-medium text-slate-400">Data / Hora</th>
-                        <th class="p-5 text-left font-medium text-slate-400">Descrição</th>
-                        <th class="p-5 text-left font-medium text-slate-400">Categoria</th>
-                        <th class="p-5 text-left font-medium text-slate-400">Responsável</th>
-                        <th class="p-5 text-right font-medium text-slate-400">Valor</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela" class="divide-y divide-slate-700"></tbody>
-            </table>
-        </div>
-    </div>
+<h1 class="text-3xl font-bold mb-6">📊 Dashboard de Gastos</h1>
 
-    <script>
-        const SUPABASE_URL = 'https://osofdmgokrxdzsxozsrf.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe';
+<!-- CARDS -->
+<div class="grid md:grid-cols-3 gap-4 mb-6">
 
-        const { createClient } = supabase;
-        const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+<div class="bg-slate-900 p-4 rounded">
+<p class="text-slate-400">Total Geral</p>
+<h2 id="total" class="text-2xl font-bold"></h2>
+</div>
 
-        async function carregar() {
-            const { data, error } = await db
-                .from("gastos")
-                .select("*")
-                .order("data_hora", { ascending: false });
+<div class="bg-slate-900 p-4 rounded">
+<p class="text-slate-400">Total Mensal</p>
+<h2 id="mensal" class="text-2xl font-bold text-green-400"></h2>
+</div>
 
-            if (error) {
-                alert("Erro ao carregar dados: " + error.message);
-                return;
-            }
+<div class="bg-slate-900 p-4 rounded">
+<p class="text-slate-400">Caixa / Banco</p>
+<h2 id="origem" class="text-lg"></h2>
+</div>
 
-            const tabela = document.getElementById("tabela");
-            tabela.innerHTML = "";
+</div>
 
-            let totalMensal = 0;
-            const agora = new Date();
-            const anoAtual = agora.getFullYear();
-            const mesAtual = String(agora.getMonth() + 1).padStart(2, '0');
+<button onclick="carregar()" class="bg-blue-500 px-4 py-2 rounded mb-4">
+Atualizar
+</button>
 
-            data.forEach(g => {
-                const dataHora = new Date(g.data_hora);
-                const valor = parseFloat(g.valor || 0);
+<table class="w-full border border-slate-700">
+<thead class="bg-slate-800">
+<tr>
+<th>Data</th>
+<th>Descrição</th>
+<th>Valor</th>
+<th>Origem</th>
+<th>Pagamento</th>
+</tr>
+</thead>
+<tbody id="tabela"></tbody>
+</table>
 
-                // Calcula total apenas do mês atual
-                if (dataHora.getFullYear() === anoAtual && 
-                    String(dataHora.getMonth() + 1).padStart(2, '0') === mesAtual) {
-                    totalMensal += valor;
-                }
+</div>
 
-                const row = `
-                    <tr class="hover:bg-slate-800/50 transition-colors">
-                        <td class="p-5">${dataHora.toLocaleString('pt-BR', { 
-                            day: '2-digit', 
-                            month: '2-digit', 
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })}</td>
-                        <td class="p-5 font-medium">${g.descricao}</td>
-                        <td class="p-5">
-                            <span class="px-4 py-1 bg-slate-700 text-xs rounded-full">${g.categoria}</span>
-                        </td>
-                        <td class="p-5 text-slate-300">${g.responsavel}</td>
-                        <td class="p-5 text-right font-semibold text-emerald-400">
-                            R$ ${valor.toFixed(2).replace('.', ',')}
-                        </td>
-                    </tr>
-                `;
-                tabela.innerHTML += row;
-            });
+<script>
+const supabase = Supabase.createClient(
+'https://osofdmgokrxdzsxozsrf.supabase.co',
+'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
+);
 
-            // Atualiza o total mensal no card
-            document.getElementById("valor-total").textContent = 
-                `R$ ${totalMensal.toFixed(2).replace('.', ',')}`;
-        }
+async function carregar() {
+const { data } = await supabase.from('gastos').select('*').order('data_hora', {ascending:false});
 
-        // Carrega automaticamente ao abrir a página
-        window.onload = carregar;
-    </script>
+let total=0, mensal=0, caixa=0, banco=0;
+const agora = new Date();
+
+tabela.innerHTML="";
+
+data.forEach(g=>{
+const v=parseFloat(g.valor)||0;
+const d=new Date(g.data_hora);
+
+total+=v;
+
+if (d.getMonth()===agora.getMonth()) mensal+=v;
+if (g.origem==="Caixa do Hotel") caixa+=v;
+if (g.origem==="Conta Bancária") banco+=v;
+
+tabela.innerHTML+=`
+<tr>
+<td>${d.toLocaleString()}</td>
+<td>${g.descricao}</td>
+<td>R$ ${v.toFixed(2)}</td>
+<td>${g.origem}</td>
+<td>${g.forma_pagamento}</td>
+</tr>`;
+});
+
+total.innerText = "R$ "+total.toFixed(2);
+mensal.innerText = "R$ "+mensal.toFixed(2);
+origem.innerText = "Caixa: R$ "+caixa.toFixed(2)+" | Banco: R$ "+banco.toFixed(2);
+}
+
+carregar();
+</script>
+
 </body>
 </html>
