@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relatório de Gastos</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+</head>
+
+<body class="bg-slate-950 text-white p-6">
+
+<h1 class="text-3xl font-bold mb-4">Relatório de Gastos</h1>
+
+<button onclick="carregar()" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded mb-4">
+Atualizar
+</button>
+
+<div class="mb-4 space-y-1">
+<p id="total"></p>
+<p id="caixa"></p>
+<p id="banco"></p>
+</div>
+
+<div class="overflow-x-auto">
+<table class="w-full border border-slate-700">
+<thead class="bg-slate-800">
+<tr>
+<th class="p-2">Data</th>
+<th class="p-2">Descrição</th>
+<th class="p-2">Categoria</th>
+<th class="p-2">Valor</th>
+<th class="p-2">Origem</th>
+<th class="p-2">Pagamento</th>
+<th class="p-2">Responsável</th>
+</tr>
+</thead>
+<tbody id="tabela"></tbody>
+</table>
+</div>
+
+<script>
+// ✅ CORREÇÃO PRINCIPAL AQUI
+const supabaseClient = supabase.createClient(
+'https://osofdmgokrxdzsxozsrf.supabase.co',
+'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
+);
+
+async function carregar() {
+try {
+
+const { data, error } = await supabaseClient
+.from('gastos')
+.select('*')
+.order('data_hora', { ascending: false });
+
+if (error) {
+console.error("Erro Supabase:", error);
+alert("Erro ao carregar dados: " + error.message);
+return;
+}
+
+if (!data || data.length === 0) {
+document.getElementById("tabela").innerHTML = `
+<tr><td colspan="7" class="text-center p-4">Nenhum dado encontrado</td></tr>`;
+return;
+}
+
+let total = 0, caixa = 0, banco = 0;
+const tabela = document.getElementById("tabela");
+tabela.innerHTML = "";
+
+data.forEach(g => {
+const valor = parseFloat(g.valor) || 0;
+total += valor;
+
+if (g.origem === "Caixa do Hotel") caixa += valor;
+if (g.origem === "Conta Bancária") banco += valor;
+
+// tratamento de data seguro
+let dataFormatada = "—";
+if (g.data_hora) {
+try {
+dataFormatada = new Date(g.data_hora).toLocaleString('pt-BR');
+} catch {}
+}
+
+const linha = `
+<tr class="border-b border-slate-700 hover:bg-slate-800">
+<td class="p-2">${dataFormatada}</td>
+<td class="p-2">${g.descricao || ''}</td>
+<td class="p-2">${g.categoria || ''}</td>
+<td class="p-2">R$ ${valor.toFixed(2)}</td>
+<td class="p-2">${g.origem || ''}</td>
+<td class="p-2">${g.forma_pagamento || ''}</td>
+<td class="p-2">${g.responsavel || ''}</td>
+</tr>
+`;
+
+tabela.innerHTML += linha;
+});
+
+document.getElementById("total").innerText = "Total: R$ " + total.toFixed(2);
+document.getElementById("caixa").innerText = "Caixa: R$ " + caixa.toFixed(2);
+document.getElementById("banco").innerText = "Banco: R$ " + banco.toFixed(2);
+
+} catch (err) {
+console.error("Erro geral:", err);
+alert("Erro inesperado ao carregar dados");
+}
+}
+
+// carregamento automático
+carregar();
+</script>
+
+</body>
+</html>
