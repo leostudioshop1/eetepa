@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Painel Financeiro Mensal</title>
+<title>Acompanhamento de Gastos</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -16,23 +16,17 @@
 
 <div id="relatorio" class="max-w-7xl mx-auto">
 
-<!-- CABEÇALHO -->
-<div class="mb-6 text-center border-b border-slate-800 pb-4">
+<!-- HEADER -->
+<div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
 
+<div>
 <h1 class="text-2xl md:text-3xl font-bold text-indigo-400">
-📊 Painel Financeiro Mensal - HOTEL DOS VIAJANTES
+🏨 Painel financeiro mensal HOTEL DOS VIAJANTES
 </h1>
-
-<p class="text-slate-400 mt-1">
-Controle e análise de despesas por período
-</p>
-
-<p id="periodoPDF" class="text-sm text-slate-500 mt-2"></p>
-
+<p class="text-sm text-slate-400">Desenvolvido por - Léo Cruz</p>
 </div>
 
-<!-- FILTROS -->
-<div class="flex flex-wrap justify-center gap-3 mb-6 no-print">
+<div class="flex flex-wrap gap-2">
 
 <input type="month" id="mesFiltro"
 class="bg-slate-800 border border-slate-700 p-2 rounded">
@@ -44,25 +38,27 @@ class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded shadow">
 
 <button onclick="exportarPDF()"
 class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded shadow">
-📄 Gerar Relatório PDF
+📄 Exportar PDF
 </button>
+
+</div>
 
 </div>
 
 <!-- CARDS -->
 <div class="grid md:grid-cols-3 gap-4 mb-6">
 
-<div class="bg-slate-800 p-4 rounded-xl shadow text-center">
+<div class="bg-slate-800 p-4 rounded-xl shadow">
 <p class="text-slate-400">Total do Mês</p>
 <p id="total" class="text-2xl font-bold text-green-400"></p>
 </div>
 
-<div class="bg-slate-800 p-4 rounded-xl shadow text-center">
+<div class="bg-slate-800 p-4 rounded-xl shadow">
 <p class="text-slate-400">Caixa</p>
 <p id="caixa" class="text-xl font-bold text-blue-400"></p>
 </div>
 
-<div class="bg-slate-800 p-4 rounded-xl shadow text-center">
+<div class="bg-slate-800 p-4 rounded-xl shadow">
 <p class="text-slate-400">Banco</p>
 <p id="banco" class="text-xl font-bold text-purple-400"></p>
 </div>
@@ -71,7 +67,7 @@ class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded shadow">
 
 <!-- CATEGORIAS -->
 <div class="bg-slate-800 p-4 rounded-xl shadow mb-6">
-<h2 class="text-xl font-bold mb-3 text-center">📂 Total por Categoria</h2>
+<h2 class="text-xl font-bold mb-3">📂 Total por Categoria</h2>
 <div id="categorias" class="grid md:grid-cols-3 gap-3"></div>
 </div>
 
@@ -98,26 +94,20 @@ class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded shadow">
 
 </div>
 
-<!-- RODAPÉ -->
-<footer class="mt-10 text-center text-slate-500 text-sm">
-<hr class="border-slate-800 mb-4">
-<p>© 2026 - Desenvolvido por Léo Cruz</p>
-</footer>
-
 <script>
-
 const supabaseClient = supabase.createClient(
 'https://osofdmgokrxdzsxozsrf.supabase.co',
 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
 );
 
-// mês atual
+// pega mês atual por padrão
 function setMesAtual() {
 const hoje = new Date();
-document.getElementById("mesFiltro").value = hoje.toISOString().slice(0,7);
+const mes = hoje.toISOString().slice(0,7);
+document.getElementById("mesFiltro").value = mes;
 }
 
-// intervalo
+// calcula intervalo do mês
 function getIntervaloMes() {
 const mes = document.getElementById("mesFiltro").value;
 
@@ -125,12 +115,15 @@ const inicio = new Date(mes + "-01");
 const fim = new Date(inicio);
 fim.setMonth(fim.getMonth() + 1);
 
-return { inicio: inicio.toISOString(), fim: fim.toISOString(), mes };
+return {
+inicio: inicio.toISOString(),
+fim: fim.toISOString()
+};
 }
 
 async function carregar() {
 
-const { inicio, fim, mes } = getIntervaloMes();
+const { inicio, fim } = getIntervaloMes();
 
 const { data, error } = await supabaseClient
 .from('gastos')
@@ -155,22 +148,24 @@ total += valor;
 if (g.origem === "Caixa do Hotel") caixa += valor;
 if (g.origem === "Conta Bancária") banco += valor;
 
+// categorias
 if (!categorias[g.categoria]) categorias[g.categoria] = 0;
 categorias[g.categoria] += valor;
 
 tabela.innerHTML += `
-<tr class="border-b border-slate-800">
-<td class="p-2">${new Date(g.data_hora).toLocaleDateString()}</td>
+<tr class="border-b border-slate-800 hover:bg-slate-900">
+<td class="p-2">${new Date(g.data_hora).toLocaleString()}</td>
 <td class="p-2">${g.descricao}</td>
 <td class="p-2">${g.categoria}</td>
 <td class="p-2 text-green-400 font-bold">R$ ${valor.toFixed(2)}</td>
 <td class="p-2">${g.origem}</td>
 <td class="p-2">${g.forma_pagamento}</td>
 <td class="p-2">${g.responsavel}</td>
-</tr>`;
+</tr>
+`;
 });
 
-// atualizar cards
+// cards
 document.getElementById("total").innerText =
 total.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
@@ -186,7 +181,7 @@ catDiv.innerHTML = "";
 
 for (let cat in categorias) {
 catDiv.innerHTML += `
-<div class="bg-slate-700 p-3 rounded-lg text-center">
+<div class="bg-slate-700 p-3 rounded-lg">
 <p class="text-slate-300">${cat}</p>
 <p class="text-lg font-bold text-yellow-400">
 R$ ${categorias[cat].toFixed(2)}
@@ -194,27 +189,21 @@ R$ ${categorias[cat].toFixed(2)}
 </div>`;
 }
 
-// período no PDF
-const dataFormatada = new Date(mes + "-01").toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
-document.getElementById("periodoPDF").innerText = "Período: " + dataFormatada;
-
 }
 
-// PDF PROFISSIONAL
+// exportar PDF
 function exportarPDF() {
-
-const elemento = document.getElementById("relatorio");
-const mes = document.getElementById("mesFiltro").value;
+const element = document.getElementById("relatorio");
 
 html2pdf().set({
 margin: 0.5,
-filename: `relatorio_${mes}.pdf`,
+filename: 'relatorio_gastos.pdf',
 html2canvas: { scale: 2 },
 jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-}).from(elemento).save();
-
+}).from(element).save();
 }
 
+// init
 setMesAtual();
 carregar();
 
