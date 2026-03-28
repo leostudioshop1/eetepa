@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lançamento de Gastos</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+</head>
+
+<body class="bg-slate-900 text-white p-6">
+
+<h1 class="text-2xl font-bold mb-4">💰 Lançar Gasto</h1>
+
+<div class="space-y-3">
+
+<input id="descricao" placeholder="Descrição" class="w-full p-2 text-black rounded">
+<input id="valor" type="number" placeholder="Valor" class="w-full p-2 text-black rounded">
+<input id="categoria" placeholder="Categoria" class="w-full p-2 text-black rounded">
+<input id="responsavel" placeholder="Responsável" class="w-full p-2 text-black rounded">
+
+<select id="origem" class="w-full p-2 text-black rounded">
+<option value="">Origem</option>
+<option>Caixa do Hotel</option>
+<option>Conta Bancária</option>
+</select>
+
+<select id="forma" class="w-full p-2 text-black rounded">
+<option value="">Forma de pagamento</option>
+<option>Pix</option>
+<option>Dinheiro</option>
+<option>Cartão</option>
+</select>
+
+<button onclick="salvar()" class="bg-green-500 px-4 py-2 rounded">
+Salvar
+</button>
+
+<p id="msg"></p>
+
+</div>
+
+<script>
+
+// 🔥 USE ESSE PADRÃO (igual seu acompanhamento)
+const supabaseClient = supabase.createClient(
+'https://osofdmgokrxdzsxozsrf.supabase.co',
+'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
+);
+
+async function salvar() {
+
+const dados = {
+descricao: document.getElementById("descricao").value,
+valor: parseFloat(document.getElementById("valor").value),
+categoria: document.getElementById("categoria").value,
+responsavel: document.getElementById("responsavel").value,
+origem: document.getElementById("origem").value,
+forma_pagamento: document.getElementById("forma").value,
+data_hora: new Date().toISOString()
+};
+
+// validação
+if (!dados.descricao || !dados.valor || !dados.categoria ||
+    !dados.responsavel || !dados.origem || !dados.forma_pagamento) {
+
+document.getElementById("msg").innerText = "⚠️ Preencha tudo!";
+return;
+}
+
+// DEBUG (MUITO IMPORTANTE)
+console.log("Enviando:", dados);
+
+const { data, error } = await supabaseClient
+.from('gastos')
+.insert([dados]);
+
+if (error) {
+console.error("ERRO:", error);
+document.getElementById("msg").innerText = "❌ Erro ao salvar!";
+return;
+}
+
+document.getElementById("msg").innerText = "✅ Salvo com sucesso!";
+
+// limpar
+document.querySelectorAll("input").forEach(i => i.value = "");
+document.querySelectorAll("select").forEach(s => s.value = "");
+
+}
+
+</script>
+
+</body>
+</html>
