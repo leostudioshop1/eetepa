@@ -10,16 +10,15 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
+<!-- CONFIG EXTERNA -->
+<script src="config.html"></script>
+
 </head>
 
 <body class="bg-slate-950 text-white min-h-screen p-4">
 
-
-<iframe id="configFrame" src="config.html" style="display:none;"></iframe>
-
 <div id="relatorio" class="max-w-7xl mx-auto">
 
-<!-- HEADER -->
 <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
 
 <div>
@@ -48,7 +47,6 @@ class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded shadow">
 
 </div>
 
-<!-- CARDS -->
 <div class="grid md:grid-cols-3 gap-4 mb-6">
 
 <div class="bg-slate-800 p-4 rounded-xl shadow">
@@ -68,13 +66,11 @@ class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded shadow">
 
 </div>
 
-<!-- CATEGORIAS -->
 <div class="bg-slate-800 p-4 rounded-xl shadow mb-6">
 <h2 class="text-xl font-bold mb-3">📂 Total por Categoria</h2>
 <div id="categorias" class="grid md:grid-cols-3 gap-3"></div>
 </div>
 
-<!-- TABELA -->
 <div class="overflow-x-auto">
 <table class="w-full text-sm border border-slate-700 rounded-xl overflow-hidden">
 
@@ -99,151 +95,126 @@ class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded shadow">
 
 <script>
 
-let supabaseClient;
+// 🔐 Carrega config externa
+if (!window.SUPABASE_CONFIG) {
+  alert("Erro: config.html não carregado!");
+}
 
+const supabaseClient = supabase.createClient(
+  window.SUPABASE_CONFIG.url,
+  window.SUPABASE_CONFIG.key
+);
 
-window.addEventListener("DOMContentLoaded", () => {
-
-    const iframe = document.getElementById("configFrame");
-
-    iframe.addEventListener("load", () => {
-
-        try {
-
-            const config = iframe.contentWindow.getConfig();
-
-            if (!config || !config.url || !config.key) {
-                alert("Erro ao carregar configuração");
-                return;
-            }
-
-            supabaseClient = supabase.createClient(
-                config.url,
-                config.key
-            );
-
-            setMesAtual();
-            carregar();
-
-        } catch (e) {
-            alert("Erro ao inicializar sistema");
-            console.error(e);
-        }
-
-    });
-
-});
-
-// pega mês atual
+// mês atual
 function setMesAtual() {
-const hoje = new Date();
-const mes = hoje.toISOString().slice(0,7);
-document.getElementById("mesFiltro").value = mes;
+  const hoje = new Date();
+  const mes = hoje.toISOString().slice(0,7);
+  document.getElementById("mesFiltro").value = mes;
 }
 
-// intervalo
+// intervalo corrigido
 function getIntervaloMes() {
-const mes = document.getElementById("mesFiltro").value;
+  const mes = document.getElementById("mesFiltro").value;
 
-const inicio = new Date(mes + "-01");
-const fim = new Date(inicio);
-fim.setMonth(fim.getMonth() + 1);
+  const inicio = new Date(mes + "-01T00:00:00");
+  const fim = new Date(inicio);
 
-return {
-inicio: inicio.toISOString(),
-fim: fim.toISOString()
-};
+  fim.setMonth(fim.getMonth() + 1);
+  fim.setSeconds(fim.getSeconds() - 1);
+
+  return {
+    inicio: inicio.toISOString(),
+    fim: fim.toISOString()
+  };
 }
-
 
 async function carregar() {
 
-if (!supabaseClient) {
-    alert("Configuração ainda não carregada");
-    return;
-}
+  const { inicio, fim } = getIntervaloMes();
 
-const { inicio, fim } = getIntervaloMes();
+  const { data, error } = await supabaseClient
+    .from('gastos')
+    .select('*')
+    .gte('data_hora', inicio)
+    .lte('data_hora', fim)
+    .order('data_hora', { ascending: false });
 
-const { data, error } = await supabaseClient
-.from('gastos')
-.select('*')
-.gte('data_hora', inicio)
-.lt('data_hora', fim)
-.order('data_hora', { ascending: false });
-
-if (error) {
+  if (error) {
     alert(error.message);
     return;
-}
+  }
 
-let total = 0, caixa = 0, banco = 0;
-let categorias = {};
+  let total = 0, caixa = 0, banco = 0;
+  let categorias = {};
 
-const tabela = document.getElementById("tabela");
-tabela.innerHTML = "";
+  const tabela = document.getElementById("tabela");
+  tabela.innerHTML = "";
 
-data.forEach(g => {
+  data.forEach(g => {
 
-const valor = parseFloat(g.valor) || 0;
-total += valor;
+    const valor = parseFloat(g.valor) || 0;
+    total += valor;
 
-if (g.origem === "Caixa do Hotel") caixa += valor;
-if (g.origem === "Conta Bancária") banco += valor;
+    if (g.origem === "Caixa do Hotel") caixa += valor;
+    if (g.origem === "Conta Bancária") banco += valor;
 
-if (!categorias[g.categoria]) categorias[g.categoria] = 0;
-categorias[g.categoria] += valor;
+    if (!categorias[g.categoria]) categorias[g.categoria] = 0;
+    categorias[g.categoria] += valor;
 
-tabela.innerHTML += `
-<tr class="border-b border-slate-800 hover:bg-slate-900">
-<td class="p-2">${new Date(g.data_hora).toLocaleString()}</td>
-<td class="p-2">${g.descricao}</td>
-<td class="p-2">${g.categoria}</td>
-<td class="p-2 text-green-400 font-bold">R$ ${valor.toFixed(2)}</td>
-<td class="p-2">${g.origem}</td>
-<td class="p-2">${g.forma_pagamento}</td>
-<td class="p-2">${g.responsavel}</td>
-</tr>
-`;
-});
+    tabela.innerHTML += `
+    <tr class="border-b border-slate-800 hover:bg-slate-900">
+      <td class="p-2">${new Date(g.data_hora).toLocaleString()}</td>
+      <td class="p-2">${g.descricao}</td>
+      <td class="p-2">${g.categoria}</td>
+      <td class="p-2 text-green-400 font-bold">R$ ${valor.toFixed(2)}</td>
+      <td class="p-2">${g.origem}</td>
+      <td class="p-2">${g.forma_pagamento}</td>
+      <td class="p-2">${g.responsavel}</td>
+    </tr>
+    `;
+  });
 
-// cards
-document.getElementById("total").innerText =
-total.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+  document.getElementById("total").innerText =
+    total.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
-document.getElementById("caixa").innerText =
-caixa.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+  document.getElementById("caixa").innerText =
+    caixa.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
-document.getElementById("banco").innerText =
-banco.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+  document.getElementById("banco").innerText =
+    banco.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
-// categorias
-const catDiv = document.getElementById("categorias");
-catDiv.innerHTML = "";
+  const catDiv = document.getElementById("categorias");
+  catDiv.innerHTML = "";
 
-for (let cat in categorias) {
-catDiv.innerHTML += `
-<div class="bg-slate-700 p-3 rounded-lg">
-<p class="text-slate-300">${cat}</p>
-<p class="text-lg font-bold text-yellow-400">
-R$ ${categorias[cat].toFixed(2)}
-</p>
-</div>`;
-}
-
+  for (let cat in categorias) {
+    catDiv.innerHTML += `
+    <div class="bg-slate-700 p-3 rounded-lg">
+      <p class="text-slate-300">${cat}</p>
+      <p class="text-lg font-bold text-yellow-400">
+      R$ ${categorias[cat].toFixed(2)}
+      </p>
+    </div>`;
+  }
 }
 
 // exportar PDF
 function exportarPDF() {
-const element = document.getElementById("relatorio");
+  const element = document.getElementById("relatorio");
 
-html2pdf().set({
-margin: 0.5,
-filename: 'relatorio_gastos.pdf',
-html2canvas: { scale: 2 },
-jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-}).from(element).save();
+  html2pdf().set({
+    margin: 0.5,
+    filename: 'relatorio_gastos.pdf',
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+  }).from(element).save();
 }
+
+// init
+setMesAtual();
+carregar();
+
+// auto atualização
+setInterval(carregar, 30000);
 
 </script>
 
