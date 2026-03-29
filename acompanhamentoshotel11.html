@@ -101,24 +101,38 @@ class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded shadow">
 
 let supabaseClient;
 
-// 🔐 Carregar config do outro HTML
-window.onload = function () {
+// 🔐 Carregar config com segurança
+window.addEventListener("DOMContentLoaded", () => {
 
     const iframe = document.getElementById("configFrame");
 
-    iframe.onload = () => {
+    iframe.addEventListener("load", () => {
 
-        const config = iframe.contentWindow.getConfig();
+        try {
 
-        supabaseClient = supabase.createClient(
-            config.url,
-            config.key
-        );
+            const config = iframe.contentWindow.getConfig();
 
-        setMesAtual();
-        carregar();
-    };
-};
+            if (!config || !config.url || !config.key) {
+                alert("Erro ao carregar configuração");
+                return;
+            }
+
+            supabaseClient = supabase.createClient(
+                config.url,
+                config.key
+            );
+
+            setMesAtual();
+            carregar();
+
+        } catch (e) {
+            alert("Erro ao inicializar sistema");
+            console.error(e);
+        }
+
+    });
+
+});
 
 // pega mês atual
 function setMesAtual() {
@@ -158,7 +172,10 @@ const { data, error } = await supabaseClient
 .lt('data_hora', fim)
 .order('data_hora', { ascending: false });
 
-if (error) return alert(error.message);
+if (error) {
+    alert(error.message);
+    return;
+}
 
 let total = 0, caixa = 0, banco = 0;
 let categorias = {};
