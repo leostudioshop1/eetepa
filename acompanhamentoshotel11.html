@@ -14,7 +14,7 @@
 
 <body class="bg-slate-950 text-white min-h-screen p-4">
 
-<!-- 🔐 iframe oculto para config -->
+
 <iframe id="configFrame" src="config.html" style="display:none;"></iframe>
 
 <div id="relatorio" class="max-w-7xl mx-auto">
@@ -101,7 +101,7 @@ class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded shadow">
 
 let supabaseClient;
 
-// 🔐 Carregar config com segurança
+
 window.addEventListener("DOMContentLoaded", () => {
 
     const iframe = document.getElementById("configFrame");
@@ -155,7 +155,7 @@ fim: fim.toISOString()
 };
 }
 
-// carregar dados
+
 async function carregar() {
 
 if (!supabaseClient) {
