@@ -14,108 +14,54 @@
 
 <body class="bg-slate-950 text-white min-h-screen p-4">
 
+<!-- iframe invisível -->
+<iframe id="configFrame" src="config.html" style="display:none;"></iframe>
+
 <div id="relatorio" class="max-w-7xl mx-auto">
 
-<div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-
-<div>
-<h1 class="text-2xl md:text-3xl font-bold text-indigo-400">
+<h1 class="text-2xl font-bold text-indigo-400 mb-4">
 🏨 Painel financeiro mensal HOTEL DOS VIAJANTES
 </h1>
-<p class="text-sm text-slate-400">Desenvolvido por - Léo Cruz</p>
-</div>
 
-<div class="flex flex-wrap gap-2">
+<input type="month" id="mesFiltro" class="bg-slate-800 p-2 rounded">
 
-<input type="month" id="mesFiltro"
-class="bg-slate-800 border border-slate-700 p-2 rounded">
-
-<button onclick="carregar()"
-class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded shadow">
-🔍 Filtrar
+<button onclick="carregar()" class="bg-indigo-600 px-4 py-2 rounded">
+Carregar
 </button>
 
-<button onclick="exportarPDF()"
-class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded shadow">
-📄 Exportar PDF
-</button>
-
-</div>
-
-</div>
-
-<div class="grid md:grid-cols-3 gap-4 mb-6">
-
-<div class="bg-slate-800 p-4 rounded-xl shadow">
-<p class="text-slate-400">Total do Mês</p>
-<p id="total" class="text-2xl font-bold text-green-400"></p>
-</div>
-
-<div class="bg-slate-800 p-4 rounded-xl shadow">
-<p class="text-slate-400">Caixa</p>
-<p id="caixa" class="text-xl font-bold text-blue-400"></p>
-</div>
-
-<div class="bg-slate-800 p-4 rounded-xl shadow">
-<p class="text-slate-400">Banco</p>
-<p id="banco" class="text-xl font-bold text-purple-400"></p>
-</div>
-
-</div>
-
-<div class="bg-slate-800 p-4 rounded-xl shadow mb-6">
-<h2 class="text-xl font-bold mb-3">📂 Total por Categoria</h2>
-<div id="categorias" class="grid md:grid-cols-3 gap-3"></div>
-</div>
-
-<div class="overflow-x-auto">
-<table class="w-full text-sm border border-slate-700 rounded-xl overflow-hidden">
-
-<thead class="bg-slate-800 text-slate-300">
-<tr>
-<th class="p-2">Data</th>
-<th class="p-2">Descrição</th>
-<th class="p-2">Categoria</th>
-<th class="p-2">Valor</th>
-<th class="p-2">Origem</th>
-<th class="p-2">Pagamento</th>
-<th class="p-2">Responsável</th>
-</tr>
-</thead>
-
+<table class="w-full mt-4">
 <tbody id="tabela"></tbody>
-
 </table>
-</div>
 
 </div>
 
 <script>
 
-// 🔐 Função para decodificar
-function decode(str) {
-    return atob(str.split('').reverse().join(''));
-}
+let supabaseClient;
 
-// 🔒 Dados ofuscados (URL e KEY)
-const urlEnc = "==wYv9GdzVmcv02bj5SZsBXbhhXZ".split('').reverse().join('');
-const keyEnc = "==gXe6YhX_V_w9MTlBZNmMCyK9e_hcboTK_elbahsilbup_sb".split('').reverse().join('');
+// pega config do outro HTML
+window.onload = function () {
 
-// 🔓 Decodificando
-const SUPABASE_URL = decode(urlEnc);
-const SUPABASE_KEY = decode(keyEnc);
+    const iframe = document.getElementById("configFrame");
 
-// 🚀 Cliente Supabase
-const supabaseClient = supabase.createClient(
-SUPABASE_URL,
-SUPABASE_KEY
-);
+    iframe.onload = () => {
 
-// funções originais
+        const config = iframe.contentWindow.getConfig();
+
+        supabaseClient = supabase.createClient(
+            config.url,
+            config.key
+        );
+
+        setMesAtual();
+        carregar();
+    };
+};
+
+// restante do código
 function setMesAtual() {
 const hoje = new Date();
-const mes = hoje.toISOString().slice(0,7);
-document.getElementById("mesFiltro").value = mes;
+document.getElementById("mesFiltro").value = hoje.toISOString().slice(0,7);
 }
 
 function getIntervaloMes() {
@@ -139,78 +85,22 @@ const { data, error } = await supabaseClient
 .from('gastos')
 .select('*')
 .gte('data_hora', inicio)
-.lt('data_hora', fim)
-.order('data_hora', { ascending: false });
+.lt('data_hora', fim);
 
 if (error) return alert(error.message);
-
-let total = 0, caixa = 0, banco = 0;
-let categorias = {};
 
 const tabela = document.getElementById("tabela");
 tabela.innerHTML = "";
 
 data.forEach(g => {
-
-const valor = parseFloat(g.valor) || 0;
-total += valor;
-
-if (g.origem === "Caixa do Hotel") caixa += valor;
-if (g.origem === "Conta Bancária") banco += valor;
-
-if (!categorias[g.categoria]) categorias[g.categoria] = 0;
-categorias[g.categoria] += valor;
-
 tabela.innerHTML += `
-<tr class="border-b border-slate-800 hover:bg-slate-900">
-<td class="p-2">${new Date(g.data_hora).toLocaleString()}</td>
-<td class="p-2">${g.descricao}</td>
-<td class="p-2">${g.categoria}</td>
-<td class="p-2 text-green-400 font-bold">R$ ${valor.toFixed(2)}</td>
-<td class="p-2">${g.origem}</td>
-<td class="p-2">${g.forma_pagamento}</td>
-<td class="p-2">${g.responsavel}</td>
-</tr>
-`;
+<tr>
+<td>${g.descricao}</td>
+<td>R$ ${g.valor}</td>
+</tr>`;
 });
 
-document.getElementById("total").innerText =
-total.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-
-document.getElementById("caixa").innerText =
-caixa.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-
-document.getElementById("banco").innerText =
-banco.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-
-const catDiv = document.getElementById("categorias");
-catDiv.innerHTML = "";
-
-for (let cat in categorias) {
-catDiv.innerHTML += `
-<div class="bg-slate-700 p-3 rounded-lg">
-<p class="text-slate-300">${cat}</p>
-<p class="text-lg font-bold text-yellow-400">
-R$ ${categorias[cat].toFixed(2)}
-</p>
-</div>`;
 }
-
-}
-
-function exportarPDF() {
-const element = document.getElementById("relatorio");
-
-html2pdf().set({
-margin: 0.5,
-filename: 'relatorio_gastos.pdf',
-html2canvas: { scale: 2 },
-jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-}).from(element).save();
-}
-
-setMesAtual();
-carregar();
 
 </script>
 
