@@ -10,7 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-<!-- CONFIG EXTERNA -->
+
 <script src="config.js"></script>
 
 </head>
@@ -95,9 +95,9 @@ class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded shadow">
 
 <script>
 
-// 🔐 Carrega config externa
+
 if (!window.SUPABASE_CONFIG) {
-  alert("Erro: config.js não carregado!");
+  alert("Erro: java não carregado!");
 }
 
 const supabaseClient = supabase.createClient(
