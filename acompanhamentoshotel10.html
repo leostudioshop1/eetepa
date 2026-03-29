@@ -14,6 +14,9 @@
 
 <body class="bg-slate-950 text-white min-h-screen p-4">
 
+
+<iframe id="configFrame" src="config.html" style="display:none;"></iframe>
+
 <div id="relatorio" class="max-w-7xl mx-auto">
 
 <!-- HEADER -->
@@ -95,19 +98,50 @@ class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded shadow">
 </div>
 
 <script>
-const supabaseClient = supabase.createClient(
-'https://osofdmgokrxdzsxozsrf.supabase.co',
-'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
-);
 
-// pega mês atual por padrão
+let supabaseClient;
+
+
+window.addEventListener("DOMContentLoaded", () => {
+
+    const iframe = document.getElementById("configFrame");
+
+    iframe.addEventListener("load", () => {
+
+        try {
+
+            const config = iframe.contentWindow.getConfig();
+
+            if (!config || !config.url || !config.key) {
+                alert("Erro ao carregar configuração");
+                return;
+            }
+
+            supabaseClient = supabase.createClient(
+                config.url,
+                config.key
+            );
+
+            setMesAtual();
+            carregar();
+
+        } catch (e) {
+            alert("Erro ao inicializar sistema");
+            console.error(e);
+        }
+
+    });
+
+});
+
+// pega mês atual
 function setMesAtual() {
 const hoje = new Date();
 const mes = hoje.toISOString().slice(0,7);
 document.getElementById("mesFiltro").value = mes;
 }
 
-// calcula intervalo do mês
+// intervalo
 function getIntervaloMes() {
 const mes = document.getElementById("mesFiltro").value;
 
@@ -121,7 +155,13 @@ fim: fim.toISOString()
 };
 }
 
+
 async function carregar() {
+
+if (!supabaseClient) {
+    alert("Configuração ainda não carregada");
+    return;
+}
 
 const { inicio, fim } = getIntervaloMes();
 
@@ -132,7 +172,10 @@ const { data, error } = await supabaseClient
 .lt('data_hora', fim)
 .order('data_hora', { ascending: false });
 
-if (error) return alert(error.message);
+if (error) {
+    alert(error.message);
+    return;
+}
 
 let total = 0, caixa = 0, banco = 0;
 let categorias = {};
@@ -148,7 +191,6 @@ total += valor;
 if (g.origem === "Caixa do Hotel") caixa += valor;
 if (g.origem === "Conta Bancária") banco += valor;
 
-// categorias
 if (!categorias[g.categoria]) categorias[g.categoria] = 0;
 categorias[g.categoria] += valor;
 
@@ -202,10 +244,6 @@ html2canvas: { scale: 2 },
 jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
 }).from(element).save();
 }
-
-// init
-setMesAtual();
-carregar();
 
 </script>
 
