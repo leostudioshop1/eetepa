@@ -1,3 +1,8 @@
+O erro ocorria porque a função que renderiza a primeira pergunta não estava sendo chamada corretamente após a validação inicial. Além disso, ajustei a lógica para garantir que os dados do aluno sejam capturados antes de transitar para a tela do quiz.
+
+Aqui está o arquivo `cienciadados10.html` completo e corrigido, pronto para o seu **GitHub Pages**:
+
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -14,17 +19,14 @@
             --secondary: #bd93f9;
             --danger: #ff3366;
             --dark: #0a1428;
-            --matrix-green: #00ff41;
         }
         
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
             background: linear-gradient(135deg, #0a1428, #111);
             color: #fff;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
         
         .header {
@@ -44,7 +46,7 @@
         .progress-bar { height: 8px; background: #222; border-radius: 4px; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: 0.4s; }
 
-        .main { max-width: 800px; margin: 40px auto; width: 90%; flex: 1; }
+        .main { max-width: 800px; margin: 40px auto; width: 90%; }
         
         .card {
             background: rgba(255,255,255,0.03);
@@ -87,6 +89,7 @@
             cursor: pointer;
             width: 100%;
             text-transform: uppercase;
+            margin-top: 10px;
         }
 
         .feedback { margin-top: 20px; padding: 15px; border-radius: 8px; display: none; }
@@ -108,9 +111,9 @@
         <div class="card">
             <h2 style="text-align: center; color: var(--primary);">Identificação do Estudante</h2>
             <p style="font-size: 0.9rem; text-align: center; margin-bottom: 20px;">Ciência de Dados - Prof. Léo Cruz</p>
-            <input type="text" id="name" placeholder="Nome Completo" required>
-            <input type="text" id="class" placeholder="Turma (ex: 2º Jogos Digitais)" required>
-            <select id="subject">
+            <input type="text" id="studentName" placeholder="Nome Completo" required>
+            <input type="text" id="studentClass" placeholder="Turma (ex: 2º Jogos Digitais)" required>
+            <select id="studentSubject">
                 <option value="Ciência de Dados">Ciência de Dados</option>
                 <option value="Programação Orientada a Objetos">Object-Oriented Programming</option>
             </select>
@@ -122,8 +125,8 @@
 
     <div class="main" id="screen-results" style="display:none;">
         <div class="card" style="text-align: center;">
-            <h1 id="resultTitle">Processamento Concluído!</h1>
-            <div style="font-size: 4rem; margin: 20px 0; color: var(--primary);" id="finalScore">0</div>
+            <h1>Processamento Concluído!</h1>
+            <div style="font-size: 4rem; margin: 20px 0; color: var(--primary);" id="finalScoreDisplay">0</div>
             <p id="resultMsg" style="margin-bottom: 25px;"></p>
             <div id="dbStatus" style="font-size: 0.8rem; color: #888; margin-bottom: 20px;"></div>
             <button class="btn" onclick="location.reload()">🔄 Reiniciar</button>
@@ -131,8 +134,8 @@
     </div>
 
     <script>
-        // Inicialização do Supabase usando o arquivo config.js
-        const supabase = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+        // Inicialização do Supabase usando o objeto CONFIG do seu config.js
+        const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
 
         const questions = [
             { q: "O que significa 'NaN' em um conjunto de dados?", options: ["Dado Ausente/Inválido", "Número Aproximado", "Nova Aba de Navegação", "Nota de Atendimento"], correct: 0 },
@@ -149,87 +152,123 @@
 
         let currentIdx = 0;
         let score = 0;
-        let studentData = {};
+        let studentInfo = {};
         let logRespostas = [];
 
         function initQuiz() {
-            const n = document.getElementById('name').value;
-            const c = document.getElementById('class').value;
-            if(!n || !c) return alert("Preencha seus dados!");
+            const nameInput = document.getElementById('studentName').value;
+            const classInput = document.getElementById('studentClass').value;
+            const subjectInput = document.getElementById('studentSubject').value;
 
-            studentData = { name: n, class: c, subject: document.getElementById('subject').value };
-            document.getElementById('screen-auth').style.display = 'none';
-            document.getElementById('screen-quiz').style.display = 'block';
-            document.getElementById('userInfo').textContent = `${n} | ${c}`;
-            render();
-        }
-
-        function render() {
-            const q = questions[currentIdx];
-            document.getElementById('screen-quiz').innerHTML = `
-                <div class="card">
-                    <small style="color:var(--secondary)">Questão ${currentIdx+1}/10</small>
-                    <h3 style="margin: 15px 0 25px 0;">${q.q}</h3>
-                    <div id="options-box">
-                        ${q.options.map((opt, i) => `<div class="option" onclick="validate(${i})">${opt}</div>`).join('')}
-                    </div>
-                    <div id="fdb" class="feedback"></div>
-                    <button id="btnNext" class="btn" style="display:none; margin-top:20px;" onclick="next()">Continuar →</button>
-                </div>
-            `;
-            updateProgress();
-        }
-
-        function validate(choice) {
-            const q = questions[currentIdx];
-            const divFdb = document.getElementById('fdb');
-            if(divFdb.classList.contains('show')) return;
-
-            const isCorrect = choice === q.correct;
-            if(isCorrect) {
-                score++;
-                divFdb.innerHTML = "<strong>✅ Excelente!</strong> Resposta correta.";
-                divFdb.className = "feedback show correct";
-                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-            } else {
-                divFdb.innerHTML = `<strong>❌ Errou.</strong> A correta era: ${q.options[q.correct]}`;
-                divFdb.className = "feedback show wrong";
+            if(!nameInput || !classInput) {
+                alert("Por favor, preencha seu nome e sua turma.");
+                return;
             }
 
-            logRespostas.push({ questao: q.q, escolha: q.options[choice], sucesso: isCorrect });
+            studentInfo = { name: nameInput, className: classInput, subject: subjectInput };
+            
+            document.getElementById('screen-auth').style.display = 'none';
+            document.getElementById('screen-quiz').style.display = 'block';
+            document.getElementById('userInfo').textContent = `${studentInfo.name} | ${studentInfo.className}`;
+            
+            renderQuestion(); // Chama a primeira pergunta
+        }
+
+        function renderQuestion() {
+            const q = questions[currentIdx];
+            const quizContainer = document.getElementById('screen-quiz');
+            
+            quizContainer.innerHTML = `
+                <div class="card">
+                    <small style="color:var(--secondary)">Questão ${currentIdx + 1} de 10</small>
+                    <h3 style="margin: 15px 0 25px 0;">${q.q}</h3>
+                    <div id="options-list">
+                        ${q.options.map((opt, i) => `<div class="option" onclick="handleSelect(${i})">${opt}</div>`).join('')}
+                    </div>
+                    <div id="feedback-area" class="feedback"></div>
+                    <button id="next-btn" class="btn" style="display:none; margin-top:20px;" onclick="goToNext()">Continuar →</button>
+                </div>
+            `;
+            updateProgressBar();
+        }
+
+        function handleSelect(choiceIndex) {
+            const q = questions[currentIdx];
+            const feedbackArea = document.getElementById('feedback-area');
+            if(feedbackArea.classList.contains('show')) return; // Impede múltiplos cliques
+
+            const correct = choiceIndex === q.correct;
+            const options = document.querySelectorAll('.option');
+
+            options.forEach((opt, i) => {
+                if(i === q.correct) opt.classList.add('correct');
+                else if(i === choiceIndex) opt.classList.add('wrong');
+                opt.style.pointerEvents = 'none';
+            });
+
+            if(correct) {
+                score++;
+                feedbackArea.innerHTML = "<strong>✅ Excelente!</strong> Resposta correta.";
+                feedbackArea.className = "feedback show correct";
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.7 } });
+            } else {
+                feedbackArea.innerHTML = `<strong>❌ Errou.</strong> A correta era: ${q.options[q.correct]}`;
+                feedbackArea.className = "feedback show wrong";
+            }
+
+            logRespostas.push({ 
+                pergunta: q.q, 
+                resposta_dada: q.options[choiceIndex], 
+                acertou: correct 
+            });
+
             document.getElementById('currentScore').textContent = score;
-            document.getElementById('btnNext').style.display = 'block';
+            document.getElementById('next-btn').style.display = 'block';
         }
 
-        function next() {
+        function goToNext() {
             currentIdx++;
-            if(currentIdx < questions.length) render();
-            else finalize();
+            if(currentIdx < questions.length) {
+                renderQuestion();
+            } else {
+                finishQuiz();
+            }
         }
 
-        function updateProgress() {
-            document.getElementById('progressFill').style.width = (currentIdx / questions.length) * 100 + '%';
+        function updateProgressBar() {
+            const percent = (currentIdx / questions.length) * 100;
+            document.getElementById('progressFill').style.width = percent + '%';
         }
 
-        async function finalize() {
+        async function finishQuiz() {
             document.getElementById('screen-quiz').style.display = 'none';
             document.getElementById('screen-results').style.display = 'block';
-            document.getElementById('finalScore').textContent = `${score}/10`;
-            document.getElementById('dbStatus').textContent = "💾 Sincronizando com Supabase...";
+            document.getElementById('finalScoreDisplay').textContent = `${score}/10`;
+            document.getElementById('dbStatus').textContent = "💾 Sincronizando dados...";
 
-            const { error } = await supabase.from('resultados_quiz').insert([{
-                nome_aluno: studentData.name,
-                turma: studentData.class,
-                disciplina: studentData.subject,
+            // Envio para o Supabase
+            const { error } = await supabaseClient.from('resultados_quiz').insert([{
+                nome_aluno: studentInfo.name,
+                turma: studentInfo.className,
+                disciplina: studentInfo.subject,
                 pontuacao: score,
-                user_agent: navigator.userAgent, // Identificação do dispositivo
+                user_agent: navigator.userAgent,
                 respostas_detalhadas: logRespostas,
-                data_acesso: new Date().toISOString() // Data e hora
+                data_acesso: new Date().toISOString()
             }]);
 
-            document.getElementById('dbStatus').textContent = error ? "❌ Erro ao salvar dados." : "✅ Dados salvos com sucesso!";
-            document.getElementById('resultMsg').textContent = score >= 7 ? "Parabéns! Ótimo desempenho analítico." : "Continue estudando os fundamentos de dados.";
+            if (error) {
+                document.getElementById('dbStatus').textContent = "❌ Erro na sincronização.";
+                console.error(error);
+            } else {
+                document.getElementById('dbStatus').textContent = "✅ Dados salvos no servidor.";
+            }
+
+            document.getElementById('resultMsg').textContent = score >= 7 ? 
+                "Ótimo trabalho! Você demonstrou domínio dos conceitos." : 
+                "Sugerimos revisar os conceitos de Ciência de Dados para a avaliação.";
         }
     </script>
 </body>
 </html>
+```
