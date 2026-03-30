@@ -16,9 +16,10 @@
             color: #fff;
             min-height: 100vh;
             overflow-x: hidden;
+            transition: background 0.8s ease;
         }
         body.error-mode { background: linear-gradient(135deg, #4a0f1f, #8b1a2f); }
-
+        
         .header {
             position: fixed; top: 0; left: 0; right: 0;
             background: rgba(10,20,40,0.95); backdrop-filter: blur(12px);
@@ -26,40 +27,41 @@
             display: flex; align-items: center; justify-content: space-between;
             border-bottom: 3px solid var(--primary);
         }
-        .logo { font-size: 1.75rem; font-weight: 900; display: flex; align-items: center; gap: 12px; }
-        
+        .logo { font-size: 1.8rem; font-weight: 900; display: flex; align-items: center; gap: 12px; }
         .progress-container { flex: 1; max-width: 500px; margin: 0 30px; }
         .progress { height: 12px; background: #112233; border-radius: 9999px; overflow: hidden; }
         .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), #00ccaa); width: 0%; transition: width 0.6s ease; }
-        
         .score { font-size: 1.4rem; font-weight: 700; }
+        
         .main { max-width: 920px; margin: 90px auto 40px; padding: 0 20px; }
         
         .card {
             background: rgba(255,255,255,0.1); backdrop-filter: blur(16px);
             border-radius: 24px; padding: 40px 35px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            text-align: center;
         }
-
-        .question-number { color: var(--primary); font-weight: 700; margin-bottom: 12px; }
-        .question-text { font-size: 1.52rem; line-height: 1.45; margin-bottom: 30px; font-weight: 600; }
+        
+        .question-number { color: var(--primary); font-weight: 700; margin-bottom: 10px; }
+        .question-text { font-size: 1.55rem; line-height: 1.45; margin-bottom: 30px; font-weight: 600; }
         
         .options { display: grid; gap: 14px; }
         .option {
             background: rgba(255,255,255,0.08); border: 3px solid transparent;
-            border-radius: 16px; padding: 20px; font-size: 1.18rem;
+            border-radius: 16px; padding: 20px; font-size: 1.2rem;
             cursor: pointer; transition: all 0.3s;
         }
         .option:hover { transform: translateY(-4px); }
         .option.correct { border-color: #00ff88; background: rgba(0,255,136,0.2); }
         .option.wrong { border-color: var(--danger); background: rgba(255,51,102,0.2); }
-
-        .feedback { margin-top: 25px; padding: 25px; border-radius: 16px; display: none; }
-        .feedback.show { display: block; }
+        
+        .feedback {
+            margin-top: 25px; padding: 25px; border-radius: 16px;
+            display: none; gap: 20px; align-items: flex-start;
+        }
+        .feedback.show { display: flex; }
         .feedback.correct { background: rgba(0,255,136,0.15); border: 2px solid #00ff88; }
         .feedback.wrong { background: rgba(255,51,102,0.15); border: 2px solid var(--danger); }
-
+        
         .tears { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; display: none; }
         .tear {
             position: absolute; width: 6px; height: 25px;
@@ -67,157 +69,238 @@
             border-radius: 50%; animation: fall linear forwards;
         }
         @keyframes fall { to { transform: translateY(120vh); opacity: 0; } }
-
-        .next-btn, .retry-btn, .start-btn {
+        
+        .next-btn, .retry-btn {
             margin-top: 25px; padding: 16px 40px; font-size: 1.25rem;
             font-weight: 700; border: none; border-radius: 9999px; cursor: pointer; width: 100%;
         }
         .next-btn { background: var(--primary); color: #0a1428; }
         .retry-btn { background: #ff3366; color: white; }
-        .start-btn { background: #00ffcc; color: #0a1428; font-size: 1.4rem; }
-
+        
         .results { text-align: center; }
-        .big-score { font-size: 6.2rem; font-weight: 900; background: linear-gradient(90deg, #00ffcc, #ff00aa); -webkit-background-clip: text; color: transparent; }
-
-        /* Motivational screen */
-        #motivationScreen {
-            display: none;
-            text-align: center;
-            padding: 40px 20px;
-        }
-        .motivational-text {
-            font-size: 1.65rem;
-            min-height: 120px;
-            font-weight: 600;
-            color: #00ffcc;
-            transition: all 0.8s ease;
-        }
-        .student-name {
-            color: #ffd700;
-            font-size: 2rem;
-            margin: 20px 0;
-        }
+        .big-score { font-size: 6.5rem; font-weight: 900; background: linear-gradient(90deg, #00ffcc, #ff00aa); -webkit-background-clip: text; color: transparent; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="logo">📊 Cientistas de Dados Nota 10</div>
+        <div class="logo">📊 Cientistas de Dados Nota 10 <span style="font-size:1.3rem;">💾 Informática</span></div>
         <div class="progress-container">
             <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
         </div>
         <div class="score">⭐ <span id="scoreDisplay">0</span>/20</div>
     </div>
 
-    <!-- Tela de Nome -->
-    <div class="main" id="nameScreen">
-        <div class="card">
-            <h1 style="margin-bottom:30px;">Bem-vindo ao Quiz!</h1>
-            <p style="font-size:1.4rem; margin-bottom:25px;">Digite seu nome para começar:</p>
-            <input type="text" id="studentName" placeholder="Seu nome completo" 
-                   style="width:100%; padding:18px; font-size:1.3rem; border-radius:16px; border:2px solid #00ffcc; background:rgba(255,255,255,0.1); color:white; text-align:center;">
-            <button onclick="startQuiz()" class="start-btn">COMEÇAR O QUIZ</button>
-        </div>
-    </div>
+    <div class="main" id="quizContainer"></div>
 
-    <div class="main" id="quizContainer" style="display:none;"></div>
-
-    <!-- Tela de Resultados -->
     <div id="resultsScreen" class="main" style="display:none;">
         <div class="card results">
-            <h1 id="congratsTitle">🎉 Parabéns!</h1>
+            <h1>🎉 Parabéns, futuro Cientista de Dados!</h1>
             <div class="big-score" id="finalScore">20</div>
-            <p id="finalMessage" style="font-size:1.7rem; margin:20px 0;"></p>
-            <button onclick="showMotivationScreen()" class="next-btn">Ver Mensagens Motivacionais →</button>
-        </div>
-    </div>
-
-    <!-- Tela de Motivação -->
-    <div id="motivationScreen" class="main">
-        <div class="card">
-            <h2 style="margin-bottom:30px; color:#ffd700;">Continue brilhando, <span id="motivName"></span>!</h2>
-            <div class="motivational-text" id="motivText"></div>
-            <button onclick="restartQuiz()" class="next-btn" style="margin-top:40px;">🔄 Refazer o Quiz</button>
+            <p id="finalMessage" style="font-size:1.6rem; margin:25px 0;"></p>
+            <button onclick="restartQuiz()" class="next-btn">🔄 Refazer o Quiz</button>
         </div>
     </div>
 
     <div id="tearsContainer" class="tears"></div>
 
     <script>
-        // ====================== SUPABASE ======================
-        const supabaseUrl = 'https://osofdmgokrxdzsxozsrf.supabase.co';
-        const supabaseKey = 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe';
-        const { createClient } = supabase;
-        const supa = createClient(supabaseUrl, supabaseKey);
-
+        // ====================== SUPABASE (carregado do config.js) ======================
+        let supa;
         let sessionId = 'quiz_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
         let currentQuestion = 0;
         let score = 0;
-        let studentName = "";
 
-        // 20 Frases motivacionais curtas
-        const motivationalPhrases = [
-            "Estudar todo dia te deixa cada vez mais forte!",
-            "Você é capaz de aprender qualquer coisa!",
-            "Pequenos esforços diários geram grandes resultados.",
-            "O conhecimento é o maior tesouro que você pode ter.",
-            "Continue praticando, você está no caminho certo!",
-            "Cientistas de dados mudam o mundo com conhecimento.",
-            "Quanto mais você estuda, mais fácil fica.",
-            "Não desista! Cada tentativa te deixa melhor.",
-            "Seu futuro brilhante começa com o que você faz hoje.",
-            "Você tem potencial para ser incrível!",
-            "Aprender é como treinar músculo: quanto mais, mais forte fica.",
-            "Tenha orgulho do seu esforço!",
-            "O segredo é persistir mesmo quando fica difícil.",
-            "Você está construindo um futuro incrível.",
-            "Estudar com foco é investir em você mesmo.",
-            "Cada questão que você acerta é uma vitória!",
-            "O conhecimento nunca é demais.",
-            "Seja curioso! Pergunte, pesquise e aprenda sempre.",
-            "Você pode chegar onde quiser com dedicação.",
-            "Parabéns por terminar! Agora continue estudando em casa!"
-        ];
+        async function initSupabase() {
+            try {
+                // Carrega as configurações do arquivo config.js
+                const configModule = await import('./config.js');
+                const config = configModule.default || configModule;
 
-        let phraseIndex = 0;
-        let phraseInterval = null;
+                const supabaseUrl = config.url || config.SUPABASE_URL;
+                const supabaseKey = config.key || config.SUPABASE_KEY;
 
-        // ====================== PERGUNTAS (as 20 que já estavam) ======================
-        const questions = [ /* Cole aqui as 20 perguntas do código anterior */ 
-            // (Para não repetir o array gigante, use exatamente o mesmo array de questions da versão anterior que eu te enviei)
-            // Se precisar, posso mandar só o array separado. Por enquanto assumirei que você colará o array completo aqui.
+                if (!supabaseUrl || !supabaseKey) {
+                    throw new Error("Configurações do Supabase não encontradas");
+                }
+
+                const { createClient } = supabase;
+                supa = createClient(supabaseUrl, supabaseKey);
+                
+                console.log("✅ Supabase inicializado com sucesso via config.js");
+            } catch (error) {
+                console.error("❌ Erro ao carregar config.js:", error);
+                console.warn("⚠️ Usando configuração embutida como fallback (não recomendado)");
+                
+                // Fallback (caso o config.js não carregue)
+                const supabaseUrl = 'https://osofdmgokrxdzsxozsrf.supabase.co';
+                const supabaseKey = 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe';
+                const { createClient } = supabase;
+                supa = createClient(supabaseUrl, supabaseKey);
+            }
+        }
+
+        // ====================== 20 PERGUNTAS ======================
+        const questions = [
+            {
+                id: 1, type: "mcq",
+                question: "Você vai montar um computador para editar vídeos. Quer algo rápido, silencioso, que não quebre fácil e gaste pouca energia. Qual é a melhor opção de armazenamento?",
+                options: [{ text: "HD antigo (com disco que gira)", value: "A" }, { text: "SSD SATA", value: "B" }, { text: "Pendrive simples", value: "C" }, { text: "Disquete", value: "D" }, { text: "Qualquer HD", value: "E" }],
+                correct: "B",
+                explanation: "O SSD é rápido, não faz barulho, não tem partes que se mexem (por isso aguenta quedas) e gasta menos energia."
+            },
+            {
+                id: 2, type: "mcq",
+                question: "Um notebook tem duas opções: 1 TB girando a 5400 RPM ou 512 GB bem mais rápido. O de 512 GB provavelmente é:",
+                options: [{ text: "HD tradicional", value: "A" }, { text: "Pendrive", value: "B" }, { text: "HD antigo", value: "C" }, { text: "SSD", value: "D" }, { text: "Fita magnética", value: "E" }],
+                correct: "D",
+                explanation: "O SSD é muito mais rápido que o HD porque não tem peças mecânicas girando."
+            },
+            {
+                id: 3, type: "mcq",
+                question: "Como o computador organiza pastas, arquivos e permissões no disco chamamos de:",
+                options: [{ text: "Sistema de arquivos", value: "A" }, { text: "Big Data", value: "B" }, { text: "Velocidade da internet", value: "C" }, { text: "Programa de navegação", value: "D" }, { text: "Memória RAM", value: "E" }],
+                correct: "A",
+                explanation: "Exemplos: NTFS, exFAT. É como o 'índice' que ajuda a encontrar os arquivos facilmente."
+            },
+            {
+                id: 4, type: "mcq",
+                question: "Um arquivo de 4,7 GB tem quantos MB? (1 GB = 1024 MB)",
+                options: [{ text: "4.000 MB", value: "A" }, { text: "4.812 MB", value: "B" }, { text: "1.024 MB", value: "C" }, { text: "480 MB", value: "D" }, { text: "4 MB", value: "E" }],
+                correct: "B",
+                explanation: "4,7 × 1024 = 4.812 MB. Usamos 1024 porque o computador trabalha com potência de 2."
+            },
+            {
+                id: 5, type: "mcq",
+                question: "Um HD de 2 TB formatado tem aproximadamente quantos MB?",
+                options: [{ text: "300 MB", value: "A" }, { text: "48.000 MB", value: "B" }, { text: "2.097.152 MB", value: "C" }, { text: "224 milhões de MB", value: "D" }, { text: "9.024 MB", value: "E" }],
+                correct: "C",
+                explanation: "2 × 1024 × 1024 = 2.097.152 MB."
+            },
+            {
+                id: 6, type: "mcq",
+                question: "Qual é a menor unidade de informação que o computador entende (0 ou 1)?",
+                options: [{ text: "Byte", value: "A" }, { text: "Megabyte", value: "B" }, { text: "Bit", value: "C" }, { text: "Gigabyte", value: "D" }, { text: "Terabyte", value: "E" }],
+                correct: "C",
+                explanation: "O bit é a menor unidade. 8 bits formam 1 byte (como uma letra ou número)."
+            },
+            {
+                id: 7, type: "mcq",
+                question: "Quando temos milhões de informações (vendas, likes, localização) que não cabem em planilhas comuns, chamamos de:",
+                options: [{ text: "Sistema de arquivos", value: "A" }, { text: "Big Data", value: "B" }, { text: "SSD pequeno", value: "C" }, { text: "Bit", value: "D" }, { text: "HD para backup", value: "E" }],
+                correct: "B",
+                explanation: "Big Data é um monte enorme de dados que precisam de ferramentas especiais para analisar."
+            },
+            {
+                id: 8, type: "mcq",
+                question: "Um HD externo antigo usa um cabo largo com 40 pinos. Qual é essa conexão antiga?",
+                options: [{ text: "SATA", value: "A" }, { text: "ATA ou IDE", value: "B" }, { text: "USB 3.0", value: "C" }, { text: "PCIe", value: "D" }, { text: "HDMI", value: "E" }],
+                correct: "B",
+                explanation: "ATA/IDE é a conexão antiga, com cabo largo e muitos pinos."
+            },
+            {
+                id: 9, type: "mcq",
+                question: "Qual é a principal vantagem do SSD em relação ao HD tradicional?",
+                options: [{ text: "É mais barato", value: "A" }, { text: "É muito mais rápido e silencioso", value: "B" }, { text: "Tem mais capacidade sempre", value: "C" }, { text: "Precisa de mais energia", value: "D" }, { text: "É mais pesado", value: "E" }],
+                correct: "B",
+                explanation: "O SSD não tem peças girando, por isso é rápido, silencioso e mais resistente a quedas."
+            },
+            {
+                id: 10, type: "mcq",
+                question: "O que significa a sigla HD?",
+                options: [{ text: "High Definition", value: "A" }, { text: "Hard Disk (Disco Rígido)", value: "B" }, { text: "High Data", value: "C" }, { text: "Hard Drive antigo", value: "D" }, { text: "Hyper Disk", value: "E" }],
+                correct: "B",
+                explanation: "HD = Hard Disk, o disco rígido tradicional que tem um prato que gira."
+            },
+            {
+                id: 11, type: "mcq",
+                question: "Qual unidade de medida é a menor?",
+                options: [{ text: "Byte", value: "A" }, { text: "Kilobyte", value: "B" }, { text: "Bit", value: "C" }, { text: "Megabyte", value: "D" }, { text: "Gigabyte", value: "E" }],
+                correct: "C",
+                explanation: "Bit é a menor unidade (0 ou 1). Depois vem o Byte (8 bits)."
+            },
+            {
+                id: 12, type: "mcq",
+                question: "Quantos bytes tem 1 Kilobyte (KB)?",
+                options: [{ text: "100 bytes", value: "A" }, { text: "1.000 bytes", value: "B" }, { text: "1.024 bytes", value: "C" }, { text: "1.048.576 bytes", value: "D" }, { text: "8 bytes", value: "E" }],
+                correct: "C",
+                explanation: "1 KB = 1.024 bytes. O computador usa base 1024 (potência de 2)."
+            },
+            {
+                id: 13, type: "mcq",
+                question: "Um arquivo de música de 5 MB é aproximadamente:",
+                options: [{ text: "5 milhões de bytes", value: "A" }, { text: "5 mil bytes", value: "B" }, { text: "5 bilhões de bytes", value: "C" }, { text: "5 bits", value: "D" }, { text: "500 bytes", value: "E" }],
+                correct: "A",
+                explanation: "1 MB = 1.048.576 bytes ≈ 1 milhão de bytes."
+            },
+            {
+                id: 14, type: "mcq",
+                question: "Para guardar fotos, vídeos e documentos do dia a dia de uma família, qual armazenamento é mais usado hoje?",
+                options: [{ text: "Disquete", value: "A" }, { text: "SSD ou HD interno", value: "B" }, { text: "Fita cassete", value: "C" }, { text: "Papel impresso", value: "D" }, { text: "Pendrive de 128 KB", value: "E" }],
+                correct: "B",
+                explanation: "Hoje usamos HD ou SSD dentro do computador ou notebook."
+            },
+            {
+                id: 15, type: "mcq",
+                question: "O que é Big Data de forma simples?",
+                options: [{ text: "Um computador muito grande", value: "A" }, { text: "Uma quantidade enorme de dados que precisamos analisar", value: "B" }, { text: "Um tipo de HD", value: "C" }, { text: "Um jogo online", value: "D" }, { text: "Um cabo de internet", value: "E" }],
+                correct: "B",
+                explanation: "Big Data são montes de informações (ex: dados de redes sociais, vendas, sensores) que as empresas usam para tomar decisões."
+            },
+            {
+                id: 16, type: "mcq",
+                question: "Qual é a ordem correta das unidades do menor para o maior?",
+                options: [{ text: "Bit → Byte → KB → MB → GB → TB", value: "A" }, { text: "TB → GB → MB → KB → Byte → Bit", value: "B" }, { text: "Byte → Bit → MB → GB", value: "C" }, { text: "MB → KB → GB → TB", value: "D" }, { text: "Bit → MB → Byte → TB", value: "E" }],
+                correct: "A",
+                explanation: "Bit (menor) → Byte → Kilobyte → Megabyte → Gigabyte → Terabyte."
+            },
+            {
+                id: 17, type: "open",
+                question: "Cite pelo menos 2 vantagens do SSD em comparação com o HD tradicional.",
+                model: "1) Muito mais rápido\n2) Não faz barulho e aguenta quedas melhor\n3) Gasta menos bateria"
+            },
+            {
+                id: 18, type: "open",
+                question: "Explique com suas palavras o que é um 'bit' e o que é um 'byte'.",
+                model: "Bit é a menor unidade (0 ou 1). Byte é formado por 8 bits e representa uma letra ou número."
+            },
+            {
+                id: 19, type: "mcq",
+                question: "Um pendrive de 64 GB consegue armazenar aproximadamente quantos filmes de 4 GB cada?",
+                options: [{ text: "Cerca de 16 filmes", value: "A" }, { text: "Cerca de 4 filmes", value: "B" }, { text: "Mais de 100 filmes", value: "C" }, { text: "Apenas 1 filme", value: "D" }, { text: "64 filmes", value: "E" }],
+                correct: "A",
+                explanation: "64 ÷ 4 = 16 filmes (aproximadamente, sem contar espaço do sistema)."
+            },
+            {
+                id: 20, type: "open",
+                question: "Cite 3 exemplos de coisas que ocupam pouco espaço (KB ou MB) e 1 exemplo que ocupa muito espaço (GB ou TB).",
+                model: "Pouco espaço: foto pequena, texto simples, música curta.\nMuito espaço: filme em alta qualidade, jogo grande, coleção de fotos de anos."
+            }
         ];
 
         // ====================== FUNÇÕES ======================
-        function startQuiz() {
-            studentName = document.getElementById('studentName').value.trim();
-            if (studentName === "") {
-                alert("Por favor, digite seu nome para começar!");
+        async function saveAnswerToSupabase(q, userAnswer, isCorrect) {
+            if (!supa) {
+                console.warn("Supabase não inicializado. Resposta não será salva.");
                 return;
             }
-            document.getElementById('nameScreen').style.display = 'none';
-            document.getElementById('quizContainer').style.display = 'block';
-            renderQuestion();
-        }
-
-        async function saveAnswerToSupabase(q, userAnswer, isCorrect) {
             try {
-                await supa.from('quiz_responses').insert({
+                const { error } = await supa.from('quiz_responses').insert({
                     session_id: sessionId,
                     question_id: q.id,
                     question_text: q.question,
                     user_answer: userAnswer,
                     is_correct: isCorrect,
                     score: isCorrect ? 1 : 0,
-                    user_agent: navigator.userAgent,
-                    aluno_nome: studentName
+                    user_agent: navigator.userAgent
                 });
+                if (!error) console.log(`✅ Questão ${q.id} salva`);
             } catch (err) {
-                console.error('Erro ao salvar:', err);
+                console.error('Erro ao salvar no Supabase:', err);
             }
         }
 
-        function createTears() { /* mesma função anterior */ 
+        function createTears() {
             const container = document.getElementById('tearsContainer');
             container.style.display = 'block';
             container.innerHTML = '';
@@ -251,7 +334,8 @@
                     <button onclick="saveOpenAnswer()" class="next-btn">✅ Confirmar Resposta</button>`;
             }
 
-            html += `</div>
+            html += `
+                </div>
                 <div id="feedbackArea" class="feedback"></div>
                 <button id="retryBtn" class="retry-btn" style="display:none;" onclick="retryQuestion()">🔄 Tentar Novamente</button>
                 <button id="nextBtn" class="next-btn" style="display:none;" onclick="nextQuestion()">Próxima Questão →</button>
@@ -264,9 +348,9 @@
         async function selectAnswer(selected) {
             const q = questions[currentQuestion];
             const isCorrect = selected === q.correct;
+
             await saveAnswerToSupabase(q, selected, isCorrect);
 
-            // ... (mesma lógica visual das versões anteriores - correct/wrong, confetti, etc.)
             const feedbackArea = document.getElementById('feedbackArea');
             const retryBtn = document.getElementById('retryBtn');
             const nextBtn = document.getElementById('nextBtn');
@@ -281,14 +365,14 @@
             if (isCorrect) {
                 score++;
                 document.getElementById('scoreDisplay').textContent = score;
-                feedbackArea.innerHTML = `<strong style="color:#00ff88; font-size:1.3rem;">🎉 Excelente! Acertou!</strong><br><br>${q.explanation}`;
+                feedbackArea.innerHTML = `<strong style="color:#00ff88; font-size:1.3rem;">🎉 Muito bom! Você acertou!</strong><br><br>${q.explanation}`;
                 feedbackArea.classList.add('show', 'correct');
                 confetti({ particleCount: 180, spread: 70, origin: { y: 0.6 } });
                 nextBtn.style.display = 'block';
             } else {
                 document.body.classList.add('error-mode');
                 createTears();
-                feedbackArea.innerHTML = `<strong style="color:#ff3366; font-size:1.3rem;">😢 Errou, mas tudo bem!</strong><br><br><strong>Explicação:</strong><br>${q.explanation}`;
+                feedbackArea.innerHTML = `<strong style="color:#ff3366; font-size:1.3rem;">😢 Que pena... Vamos aprender com o erro.</strong><br><br><strong>Explicação:</strong><br>${q.explanation}`;
                 feedbackArea.classList.add('show', 'wrong');
                 retryBtn.style.display = 'block';
             }
@@ -298,7 +382,7 @@
             const q = questions[currentQuestion];
             const answer = document.getElementById('openAnswer').value.trim() || "(sem resposta)";
             await saveAnswerToSupabase(q, answer, null);
-            alert("✅ Resposta salva!");
+            alert("✅ Resposta salva! Compare com o modelo na aula.");
             nextQuestion();
         }
 
@@ -306,6 +390,7 @@
             document.body.classList.remove('error-mode');
             document.getElementById('tearsContainer').style.display = 'none';
             currentQuestion++;
+            
             if (currentQuestion < questions.length) {
                 renderQuestion();
             } else {
@@ -320,38 +405,14 @@
 
         function showResults() {
             document.getElementById('quizContainer').style.display = 'none';
-            document.getElementById('resultsScreen').style.display = 'block';
+            const results = document.getElementById('resultsScreen');
+            results.style.display = 'block';
             
             document.getElementById('finalScore').textContent = score + "/20";
-            document.getElementById('congratsTitle').innerHTML = `🎉 Parabéns, ${studentName}!`;
-            
-            let message = score >= 18 ? `Você arrasou, ${studentName}!` :
-                         score >= 14 ? `Muito bom, ${studentName}!` :
-                         `Continue estudando, ${studentName}! Você vai melhorar.`;
+            let message = score >= 18 ? "Você é incrível! Nota 10 de verdade!" :
+                         score >= 14 ? "Parabéns! Você foi muito bem. Continue estudando!" :
+                         "Continue praticando! Refaça o quiz para melhorar sua nota.";
             document.getElementById('finalMessage').innerHTML = message;
-        }
-
-        function showMotivationScreen() {
-            document.getElementById('resultsScreen').style.display = 'none';
-            document.getElementById('motivationScreen').style.display = 'block';
-            document.getElementById('motivName').textContent = studentName;
-            
-            phraseIndex = 0;
-            changeMotivationalPhrase();
-            
-            if (phraseInterval) clearInterval(phraseInterval);
-            phraseInterval = setInterval(changeMotivationalPhrase, 4500); // troca a cada 4,5 segundos
-        }
-
-        function changeMotivationalPhrase() {
-            const textEl = document.getElementById('motivText');
-            textEl.style.opacity = 0;
-            
-            setTimeout(() => {
-                textEl.textContent = motivationalPhrases[phraseIndex];
-                textEl.style.opacity = 1;
-                phraseIndex = (phraseIndex + 1) % motivationalPhrases.length;
-            }, 400);
         }
 
         function retryQuestion() {
@@ -361,19 +422,23 @@
         }
 
         function restartQuiz() {
-            if (phraseInterval) clearInterval(phraseInterval);
             currentQuestion = 0;
             score = 0;
             sessionId = 'quiz_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
-            document.getElementById('motivationScreen').style.display = 'none';
+            document.getElementById('quizContainer').style.display = 'block';
             document.getElementById('resultsScreen').style.display = 'none';
-            document.getElementById('nameScreen').style.display = 'block';
-            document.getElementById('studentName').value = "";
+            renderQuestion();
         }
 
-        // Iniciar
-        window.onload = () => {
-            console.log("📊 Cientistas de Dados Nota 10 - Iniciado!");
+        // ====================== INICIALIZAÇÃO ======================
+        window.onload = async () => {
+            console.log("📊 Cientistas de Dados Nota 10 - Quiz carregado!");
+            
+            // Inicializa o Supabase a partir do config.js
+            await initSupabase();
+            
+            // Inicia o quiz
+            renderQuestion();
         };
     </script>
 </body>
