@@ -1,274 +1,147 @@
-O erro ocorria porque a função que renderiza a primeira pergunta não estava sendo chamada corretamente após a validação inicial. Além disso, ajustei a lógica para garantir que os dados do aluno sejam capturados antes de transitar para a tela do quiz.
-
-Aqui está o arquivo `cienciadados10.html` completo e corrigido, pronto para o seu **GitHub Pages**:
-
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📊 Quiz Supremo - Ciência de Dados 2026</title>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js"></script>
-    
-    <style>
-        :root {
-            --primary: #00ffcc;
-            --secondary: #bd93f9;
-            --danger: #ff3366;
-            --dark: #0a1428;
-        }
-        
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            background: linear-gradient(135deg, #0a1428, #111);
-            color: #fff;
-            min-height: 100vh;
-        }
-        
-        .header {
-            background: rgba(10,20,40,0.9);
-            backdrop-filter: blur(10px);
-            padding: 15px 25px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 2px solid var(--primary);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Supremo</title>
 
-        .progress-container { flex: 1; max-width: 400px; margin: 0 20px; }
-        .progress-bar { height: 8px; background: #222; border-radius: 4px; overflow: hidden; }
-        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: 0.4s; }
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="config.js"></script>
 
-        .main { max-width: 800px; margin: 40px auto; width: 90%; }
-        
-        .card {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(0,255,204,0.2);
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        input, select {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            background: #000;
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            border-radius: 5px;
-        }
-
-        .option {
-            background: rgba(255,255,255,0.05);
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-            cursor: pointer;
-            border: 1px solid transparent;
-            transition: 0.2s;
-        }
-        .option:hover { border-color: var(--primary); background: rgba(0,255,204,0.1); }
-        .option.correct { border-color: #00ff88; background: rgba(0,255,136,0.1); }
-        .option.wrong { border-color: var(--danger); background: rgba(255,51,102,0.1); }
-
-        .btn {
-            background: var(--primary);
-            color: #000;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            text-transform: uppercase;
-            margin-top: 10px;
-        }
-
-        .feedback { margin-top: 20px; padding: 15px; border-radius: 8px; display: none; }
-        .show { display: block; }
-    </style>
 </head>
+
 <body>
 
-    <div class="header">
-        <div style="font-weight: 900; color: var(--primary);">🚀 CD-QUIZ 2026</div>
-        <div class="progress-container">
-            <div id="userInfo" style="font-size: 0.7rem; margin-bottom: 4px;">Aguardando login...</div>
-            <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
-        </div>
-        <div>⭐ <span id="currentScore">0</span>/10</div>
-    </div>
+<!-- TELA INICIAL -->
+<div id="startScreen">
+    <h2>Iniciar Quiz</h2>
+    <input type="text" id="nomeAluno" placeholder="Nome do aluno"><br><br>
+    <input type="text" id="turmaAluno" placeholder="Turma"><br><br>
+    <button onclick="startQuiz()">Começar</button>
+</div>
 
-    <div class="main" id="screen-auth">
-        <div class="card">
-            <h2 style="text-align: center; color: var(--primary);">Identificação do Estudante</h2>
-            <p style="font-size: 0.9rem; text-align: center; margin-bottom: 20px;">Ciência de Dados - Prof. Léo Cruz</p>
-            <input type="text" id="studentName" placeholder="Nome Completo" required>
-            <input type="text" id="studentClass" placeholder="Turma (ex: 2º Jogos Digitais)" required>
-            <select id="studentSubject">
-                <option value="Ciência de Dados">Ciência de Dados</option>
-                <option value="Programação Orientada a Objetos">Object-Oriented Programming</option>
-            </select>
-            <button class="btn" onclick="initQuiz()">Iniciar Desafio</button>
-        </div>
-    </div>
+<div id="quizContainer" style="display:none;"></div>
 
-    <div class="main" id="screen-quiz" style="display:none;"></div>
+<script>
 
-    <div class="main" id="screen-results" style="display:none;">
-        <div class="card" style="text-align: center;">
-            <h1>Processamento Concluído!</h1>
-            <div style="font-size: 4rem; margin: 20px 0; color: var(--primary);" id="finalScoreDisplay">0</div>
-            <p id="resultMsg" style="margin-bottom: 25px;"></p>
-            <div id="dbStatus" style="font-size: 0.8rem; color: #888; margin-bottom: 20px;"></div>
-            <button class="btn" onclick="location.reload()">🔄 Reiniciar</button>
-        </div>
-    </div>
+// ================= DADOS =================
+let quizData = {
+    nome: "",
+    turma: "",
+    respostas: [],
+    pontuacao: 0,
+    dispositivo: {}
+};
 
-    <script>
-        // Inicialização do Supabase usando o objeto CONFIG do seu config.js
-        const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+// ================= DISPOSITIVO =================
+function getDeviceInfo() {
+    return {
+        userAgent: navigator.userAgent,
+        plataforma: navigator.platform,
+        idioma: navigator.language,
+        resolucao: `${screen.width}x${screen.height}`
+    };
+}
 
-        const questions = [
-            { q: "O que significa 'NaN' em um conjunto de dados?", options: ["Dado Ausente/Inválido", "Número Aproximado", "Nova Aba de Navegação", "Nota de Atendimento"], correct: 0 },
-            { q: "Qual técnica prediz valores contínuos (ex: preços)?", options: ["Classificação", "Clusterização", "Regressão", "Mineração"], correct: 2 },
-            { q: "Um valor extremamente fora do padrão da amostra é um:", options: ["Inlier", "Outlier", "Median", "Standard"], correct: 1 },
-            { q: "A fase de 'conversar com os dados' para entender padrões é:", options: ["EDA (Análise Exploratória)", "Deploy", "SQL Injection", "Backup"], correct: 0 },
-            { q: "Quais são os 3 Vs básicos do Big Data?", options: ["Valor, Venda, Vista", "Volume, Velocidade, Variedade", "Vetor, Via, Valor", "Voz, Vídeo, Versão"], correct: 1 },
-            { q: "Qual gráfico mostra a relação entre duas variáveis numéricas?", options: ["Pizza", "Barras", "Dispersão (Scatter)", "Linha do tempo"], correct: 2 },
-            { q: "O que é um 'Dataset'?", options: ["Um comando SQL", "Conjunto de dados estruturado", "Hardware de servidor", "Linguagem de script"], correct: 1 },
-            { q: "Dados não estruturados incluem:", options: ["Tabelas SQL", "Planilhas Excel", "Imagens e Vídeos", "Arquivos CSV"], correct: 2 },
-            { q: "O valor que divide a amostra exatamente ao meio é a:", options: ["Média", "Moda", "Mediana", "Variância"], correct: 2 },
-            { q: "Principal objetivo da Ciência de Dados nas empresas:", options: ["Suporte técnico", "Gerar insights e decisões estratégicas", "Digitação", "Instalar Drivers"], correct: 1 }
-        ];
+// ================= INICIAR =================
+function startQuiz() {
+    quizData.nome = document.getElementById("nomeAluno").value;
+    quizData.turma = document.getElementById("turmaAluno").value;
+    quizData.dispositivo = getDeviceInfo();
 
-        let currentIdx = 0;
-        let score = 0;
-        let studentInfo = {};
-        let logRespostas = [];
+    if (!quizData.nome || !quizData.turma) {
+        alert("Preencha nome e turma!");
+        return;
+    }
 
-        function initQuiz() {
-            const nameInput = document.getElementById('studentName').value;
-            const classInput = document.getElementById('studentClass').value;
-            const subjectInput = document.getElementById('studentSubject').value;
+    document.getElementById("startScreen").style.display = "none";
+    document.getElementById("quizContainer").style.display = "block";
 
-            if(!nameInput || !classInput) {
-                alert("Por favor, preencha seu nome e sua turma.");
-                return;
+    renderQuestion();
+}
+
+// ================= PERGUNTAS =================
+const questions = [
+    { id:1, question:"2+2?", options:["3","4","5"], correct:"4" },
+    { id:2, question:"Capital do Brasil?", options:["RJ","Brasília","SP"], correct:"Brasília" }
+];
+
+let currentQuestion = 0;
+
+// ================= RENDER =================
+function renderQuestion() {
+    const q = questions[currentQuestion];
+
+    let html = `<h3>${q.question}</h3>`;
+
+    q.options.forEach(opt => {
+        html += `<button onclick="selectAnswer('${opt}')">${opt}</button><br>`;
+    });
+
+    document.getElementById("quizContainer").innerHTML = html;
+}
+
+// ================= RESPOSTA =================
+function selectAnswer(answer) {
+    const q = questions[currentQuestion];
+
+    quizData.respostas.push({
+        pergunta: q.question,
+        resposta: answer,
+        correta: q.correct
+    });
+
+    if (answer === q.correct) {
+        quizData.pontuacao++;
+    }
+
+    currentQuestion++;
+
+    if (currentQuestion < questions.length) {
+        renderQuestion();
+    } else {
+        finishQuiz();
+    }
+}
+
+// ================= FINAL =================
+async function finishQuiz() {
+
+    await saveToSupabase();
+
+    document.getElementById("quizContainer").innerHTML = `
+        <h2>Finalizado!</h2>
+        <p>Pontuação: ${quizData.pontuacao}</p>
+    `;
+}
+
+// ================= SUPABASE =================
+async function saveToSupabase() {
+    try {
+        const { data, error } = await supabase
+        .from("resultados_quiz")
+        .insert([
+            {
+                nome: quizData.nome,
+                turma: quizData.turma,
+                pontuacao: quizData.pontuacao,
+                respostas: quizData.respostas,
+                dispositivo: quizData.dispositivo
             }
+        ]);
 
-            studentInfo = { name: nameInput, className: classInput, subject: subjectInput };
-            
-            document.getElementById('screen-auth').style.display = 'none';
-            document.getElementById('screen-quiz').style.display = 'block';
-            document.getElementById('userInfo').textContent = `${studentInfo.name} | ${studentInfo.className}`;
-            
-            renderQuestion(); // Chama a primeira pergunta
+        if (error) {
+            console.error("Erro:", error);
+        } else {
+            console.log("Salvo com sucesso!");
         }
 
-        function renderQuestion() {
-            const q = questions[currentIdx];
-            const quizContainer = document.getElementById('screen-quiz');
-            
-            quizContainer.innerHTML = `
-                <div class="card">
-                    <small style="color:var(--secondary)">Questão ${currentIdx + 1} de 10</small>
-                    <h3 style="margin: 15px 0 25px 0;">${q.q}</h3>
-                    <div id="options-list">
-                        ${q.options.map((opt, i) => `<div class="option" onclick="handleSelect(${i})">${opt}</div>`).join('')}
-                    </div>
-                    <div id="feedback-area" class="feedback"></div>
-                    <button id="next-btn" class="btn" style="display:none; margin-top:20px;" onclick="goToNext()">Continuar →</button>
-                </div>
-            `;
-            updateProgressBar();
-        }
+    } catch (err) {
+        console.error("Erro geral:", err);
+    }
+}
 
-        function handleSelect(choiceIndex) {
-            const q = questions[currentIdx];
-            const feedbackArea = document.getElementById('feedback-area');
-            if(feedbackArea.classList.contains('show')) return; // Impede múltiplos cliques
+</script>
 
-            const correct = choiceIndex === q.correct;
-            const options = document.querySelectorAll('.option');
-
-            options.forEach((opt, i) => {
-                if(i === q.correct) opt.classList.add('correct');
-                else if(i === choiceIndex) opt.classList.add('wrong');
-                opt.style.pointerEvents = 'none';
-            });
-
-            if(correct) {
-                score++;
-                feedbackArea.innerHTML = "<strong>✅ Excelente!</strong> Resposta correta.";
-                feedbackArea.className = "feedback show correct";
-                confetti({ particleCount: 100, spread: 70, origin: { y: 0.7 } });
-            } else {
-                feedbackArea.innerHTML = `<strong>❌ Errou.</strong> A correta era: ${q.options[q.correct]}`;
-                feedbackArea.className = "feedback show wrong";
-            }
-
-            logRespostas.push({ 
-                pergunta: q.q, 
-                resposta_dada: q.options[choiceIndex], 
-                acertou: correct 
-            });
-
-            document.getElementById('currentScore').textContent = score;
-            document.getElementById('next-btn').style.display = 'block';
-        }
-
-        function goToNext() {
-            currentIdx++;
-            if(currentIdx < questions.length) {
-                renderQuestion();
-            } else {
-                finishQuiz();
-            }
-        }
-
-        function updateProgressBar() {
-            const percent = (currentIdx / questions.length) * 100;
-            document.getElementById('progressFill').style.width = percent + '%';
-        }
-
-        async function finishQuiz() {
-            document.getElementById('screen-quiz').style.display = 'none';
-            document.getElementById('screen-results').style.display = 'block';
-            document.getElementById('finalScoreDisplay').textContent = `${score}/10`;
-            document.getElementById('dbStatus').textContent = "💾 Sincronizando dados...";
-
-            // Envio para o Supabase
-            const { error } = await supabaseClient.from('resultados_quiz').insert([{
-                nome_aluno: studentInfo.name,
-                turma: studentInfo.className,
-                disciplina: studentInfo.subject,
-                pontuacao: score,
-                user_agent: navigator.userAgent,
-                respostas_detalhadas: logRespostas,
-                data_acesso: new Date().toISOString()
-            }]);
-
-            if (error) {
-                document.getElementById('dbStatus').textContent = "❌ Erro na sincronização.";
-                console.error(error);
-            } else {
-                document.getElementById('dbStatus').textContent = "✅ Dados salvos no servidor.";
-            }
-
-            document.getElementById('resultMsg').textContent = score >= 7 ? 
-                "Ótimo trabalho! Você demonstrou domínio dos conceitos." : 
-                "Sugerimos revisar os conceitos de Ciência de Dados para a avaliação.";
-        }
-    </script>
 </body>
 </html>
-```
