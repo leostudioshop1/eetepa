@@ -99,7 +99,7 @@
         }
         .option:hover { transform: translateY(-8px) scale(1.03); box-shadow: 0 0 25px rgba(0,255,204,0.3); }
         .option.correct { border-color: #00ff88; background: rgba(0,255,136,0.18); animation: correctAnim 0.6s; }
-        .option.wrong { border-color: var(--danger); background: rgba(255,51,102,0.18); animation: wrongAnim 0.4s; }
+        .option.wrong { border-color: var(--danger); background: rgba(255,51,102,0.18); animation: wrongAnim 0.5s; }
 
         @keyframes correctAnim { 0% { transform: scale(0.95); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
         @keyframes wrongAnim { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-12px); } 75% { transform: translateX(12px); } }
@@ -131,18 +131,18 @@
             color: transparent; 
         }
 
-        /* Controle de Música */
         #music-control {
             position: fixed;
             bottom: 20px;
             right: 20px;
             z-index: 200;
-            background: rgba(0,0,0,0.7);
-            padding: 10px 16px;
+            background: rgba(0,0,0,0.8);
+            padding: 10px 18px;
             border-radius: 50px;
             border: 1px solid var(--primary);
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            user-select: none;
         }
     </style>
 </head>
@@ -170,12 +170,12 @@
         </div>
     </div>
 
-    <!-- CONTROLE DE TRILHA SONORA -->
+    <!-- Controle de Música -->
     <div id="music-control" onclick="toggleMusic()">
         🎵 <span id="musicStatus">Trilha tocando</span>
     </div>
 
-    <!-- Sons -->
+    <!-- Sons do Jogo -->
     <audio id="correctSound" preload="auto">
         <source src="https://assets.mixkit.co/sfx/preview/2965/2965.wav" type="audio/wav">
     </audio>
@@ -183,9 +183,9 @@
         <source src="https://assets.mixkit.co/sfx/preview/2952/2952.wav" type="audio/wav">
     </audio>
 
-    <!-- Trilha Sonora de Fundo (Matrix Style) -->
+    <!-- Trilha Sonora de Fundo -->
     <audio id="backgroundMusic" loop preload="auto">
-        <source src="https://assets.mixkit.co/music/preview/296/296.wav" type="audio/wav"> <!-- Trilha cyberpunk -->
+        <source src="https://assets.mixkit.co/music/preview/296/296.wav" type="audio/wav">
     </audio>
 
     <script>
@@ -231,10 +231,28 @@
         }
         moveBanner();
 
-        // ====================== QUIZ ======================
-        const questions = [ /* Todas as 20 perguntas do código anterior */ 
-            // (Mantidas iguais - para não alongar, use as mesmas do código que enviei antes)
-            // Copie o array completo de questions do código anterior aqui
+        // ====================== PERGUNTAS ======================
+        const questions = [
+            { id: 1, type: "mcq", question: "Você vai montar um computador para editar vídeos. Quer algo rápido, silencioso, que não quebre fácil e gaste pouca energia. Qual é a melhor opção de armazenamento?", options: [{ text: "HD antigo (com disco que gira)", value: "A" }, { text: "SSD SATA", value: "B" }, { text: "Pendrive simples", value: "C" }, { text: "Disquete", value: "D" }, { text: "Qualquer HD", value: "E" }], correct: "B", explanation: "O SSD é rápido, não faz barulho, não tem partes que se mexem e gasta menos energia." },
+            { id: 2, type: "mcq", question: "Um notebook tem duas opções: 1 TB girando a 5400 RPM ou 512 GB bem mais rápido. O de 512 GB provavelmente é:", options: [{ text: "HD tradicional", value: "A" }, { text: "Pendrive", value: "B" }, { text: "HD antigo", value: "C" }, { text: "SSD", value: "D" }, { text: "Fita magnética", value: "E" }], correct: "D", explanation: "O SSD é muito mais rápido que o HD porque não tem peças mecânicas girando." },
+            { id: 3, type: "mcq", question: "Como o computador organiza pastas, arquivos e permissões no disco chamamos de:", options: [{ text: "Sistema de arquivos", value: "A" }, { text: "Big Data", value: "B" }, { text: "Velocidade da internet", value: "C" }, { text: "Programa de navegação", value: "D" }, { text: "Memória RAM", value: "E" }], correct: "A", explanation: "Exemplos: NTFS, exFAT. É como o 'índice' que ajuda a encontrar os arquivos facilmente." },
+            { id: 4, type: "mcq", question: "Um arquivo de 4,7 GB tem quantos MB? (1 GB = 1024 MB)", options: [{ text: "4.000 MB", value: "A" }, { text: "4.812 MB", value: "B" }, { text: "1.024 MB", value: "C" }, { text: "480 MB", value: "D" }, { text: "4 MB", value: "E" }], correct: "B", explanation: "4,7 × 1024 = 4.812 MB." },
+            { id: 5, type: "mcq", question: "Um HD de 2 TB formatado tem aproximadamente quantos MB?", options: [{ text: "300 MB", value: "A" }, { text: "48.000 MB", value: "B" }, { text: "2.097.152 MB", value: "C" }, { text: "224 milhões de MB", value: "D" }, { text: "9.024 MB", value: "E" }], correct: "C", explanation: "2 × 1024 × 1024 = 2.097.152 MB." },
+            { id: 6, type: "mcq", question: "Qual é a menor unidade de informação que o computador entende (0 ou 1)?", options: [{ text: "Byte", value: "A" }, { text: "Megabyte", value: "B" }, { text: "Bit", value: "C" }, { text: "Gigabyte", value: "D" }, { text: "Terabyte", value: "E" }], correct: "C", explanation: "O bit é a menor unidade. 8 bits formam 1 byte." },
+            { id: 7, type: "mcq", question: "Quando temos milhões de informações que não cabem em planilhas comuns, chamamos de:", options: [{ text: "Sistema de arquivos", value: "A" }, { text: "Big Data", value: "B" }, { text: "SSD pequeno", value: "C" }, { text: "Bit", value: "D" }, { text: "HD para backup", value: "E" }], correct: "B", explanation: "Big Data é um monte enorme de dados que precisam de ferramentas especiais." },
+            { id: 8, type: "mcq", question: "Um HD externo antigo usa um cabo largo com 40 pinos. Qual é essa conexão antiga?", options: [{ text: "SATA", value: "A" }, { text: "ATA ou IDE", value: "B" }, { text: "USB 3.0", value: "C" }, { text: "PCIe", value: "D" }, { text: "HDMI", value: "E" }], correct: "B", explanation: "ATA/IDE é a conexão antiga com cabo largo." },
+            { id: 9, type: "mcq", question: "Qual é a principal vantagem do SSD em relação ao HD tradicional?", options: [{ text: "É mais barato", value: "A" }, { text: "É muito mais rápido e silencioso", value: "B" }, { text: "Tem mais capacidade sempre", value: "C" }, { text: "Precisa de mais energia", value: "D" }, { text: "É mais pesado", value: "E" }], correct: "B", explanation: "O SSD não tem peças girando, por isso é rápido, silencioso e resistente." },
+            { id: 10, type: "mcq", question: "O que significa a sigla HD?", options: [{ text: "High Definition", value: "A" }, { text: "Hard Disk (Disco Rígido)", value: "B" }, { text: "High Data", value: "C" }, { text: "Hard Drive antigo", value: "D" }, { text: "Hyper Disk", value: "E" }], correct: "B", explanation: "HD = Hard Disk." },
+            { id: 11, type: "mcq", question: "Qual unidade de medida é a menor?", options: [{ text: "Byte", value: "A" }, { text: "Kilobyte", value: "B" }, { text: "Bit", value: "C" }, { text: "Megabyte", value: "D" }, { text: "Gigabyte", value: "E" }], correct: "C", explanation: "Bit é a menor unidade." },
+            { id: 12, type: "mcq", question: "Quantos bytes tem 1 Kilobyte (KB)?", options: [{ text: "100 bytes", value: "A" }, { text: "1.000 bytes", value: "B" }, { text: "1.024 bytes", value: "C" }, { text: "1.048.576 bytes", value: "D" }, { text: "8 bytes", value: "E" }], correct: "C", explanation: "1 KB = 1.024 bytes." },
+            { id: 13, type: "mcq", question: "Um arquivo de música de 5 MB é aproximadamente:", options: [{ text: "5 milhões de bytes", value: "A" }, { text: "5 mil bytes", value: "B" }, { text: "5 bilhões de bytes", value: "C" }, { text: "5 bits", value: "D" }, { text: "500 bytes", value: "E" }], correct: "A", explanation: "1 MB ≈ 1 milhão de bytes." },
+            { id: 14, type: "mcq", question: "Para guardar fotos, vídeos e documentos do dia a dia de uma família, qual armazenamento é mais usado hoje?", options: [{ text: "Disquete", value: "A" }, { text: "SSD ou HD interno", value: "B" }, { text: "Fita cassete", value: "C" }, { text: "Papel impresso", value: "D" }, { text: "Pendrive de 128 KB", value: "E" }], correct: "B", explanation: "Hoje usamos HD ou SSD interno." },
+            { id: 15, type: "mcq", question: "O que é Big Data de forma simples?", options: [{ text: "Um computador muito grande", value: "A" }, { text: "Uma quantidade enorme de dados que precisamos analisar", value: "B" }, { text: "Um tipo de HD", value: "C" }, { text: "Um jogo online", value: "D" }, { text: "Um cabo de internet", value: "E" }], correct: "B", explanation: "Big Data são grandes volumes de dados para análise." },
+            { id: 16, type: "mcq", question: "Qual é a ordem correta das unidades do menor para o maior?", options: [{ text: "Bit → Byte → KB → MB → GB → TB", value: "A" }, { text: "TB → GB → MB → KB → Byte → Bit", value: "B" }, { text: "Byte → Bit → MB → GB", value: "C" }, { text: "MB → KB → GB → TB", value: "D" }, { text: "Bit → MB → Byte → TB", value: "E" }], correct: "A", explanation: "Bit (menor) → Byte → KB → MB → GB → TB." },
+            { id: 17, type: "open", question: "Cite pelo menos 2 vantagens do SSD em comparação com o HD tradicional.", model: "1) Muito mais rápido\n2) Não faz barulho e aguenta quedas melhor\n3) Gasta menos bateria" },
+            { id: 18, type: "open", question: "Explique com suas palavras o que é um 'bit' e o que é um 'byte'.", model: "Bit é a menor unidade (0 ou 1). Byte é formado por 8 bits." },
+            { id: 19, type: "mcq", question: "Um pendrive de 64 GB consegue armazenar aproximadamente quantos filmes de 4 GB cada?", options: [{ text: "Cerca de 16 filmes", value: "A" }, { text: "Cerca de 4 filmes", value: "B" }, { text: "Mais de 100 filmes", value: "C" }, { text: "Apenas 1 filme", value: "D" }, { text: "64 filmes", value: "E" }], correct: "A", explanation: "64 ÷ 4 = 16 filmes." },
+            { id: 20, type: "open", question: "Cite 3 exemplos de coisas que ocupam pouco espaço (KB ou MB) e 1 exemplo que ocupa muito espaço (GB ou TB).", model: "Pouco espaço: foto pequena, texto simples, música curta.\nMuito espaço: filme em alta qualidade, jogo grande." }
         ];
 
         let currentQuestion = 0;
@@ -263,14 +281,36 @@
             }
         }
 
-        // Render Question (mesmo de antes)
         function renderQuestion() {
             const q = questions[currentQuestion];
-            // ... (mesmo código do anterior)
-            // Cole aqui o renderQuestion completo do código anterior
+            let html = `
+                <div class="card">
+                    <div class="question-number">Questão ${currentQuestion + 1} de 20</div>
+                    <div class="question-text">${q.question}</div>
+                    <div class="options">`;
+
+            if (q.type === "mcq") {
+                q.options.forEach((opt, i) => {
+                    html += `<div class="option" onclick="selectAnswer('${opt.value}')"><strong>${String.fromCharCode(65 + i)})</strong> ${opt.text}</div>`;
+                });
+            } else {
+                html += `
+                    <textarea id="openAnswer" rows="6" style="width:100%; background:rgba(255,255,255,0.1); border:2px solid #00ffcc; border-radius:16px; padding:18px; color:white; font-size:1.1rem;" placeholder="Digite sua resposta aqui..."></textarea>
+                    <button onclick="saveOpenAnswer()" class="next-btn">✅ Confirmar Resposta</button>`;
+            }
+
+            html += `
+                </div>
+                <div id="feedbackArea" class="feedback"></div>
+                <button id="retryBtn" class="retry-btn" style="display:none;" onclick="retryQuestion()">🔄 Tentar Novamente</button>
+                <button id="nextBtn" class="next-btn" style="display:none;" onclick="nextQuestion()">Próxima Questão →</button>
+            </div>`;
+
+            document.getElementById('quizContainer').innerHTML = html;
+            updateProgress();
         }
 
-        async function selectAnswer(selected) {
+        function selectAnswer(selected) {
             const q = questions[currentQuestion];
             const isCorrect = selected === q.correct;
 
@@ -282,28 +322,71 @@
             });
 
             const feedback = document.getElementById('feedbackArea');
+            const nextBtn = document.getElementById('nextBtn');
+            const retryBtn = document.getElementById('retryBtn');
 
             if (isCorrect) {
                 score++;
                 document.getElementById('scoreDisplay').textContent = score;
-                feedback.innerHTML = `<strong style="color:#00ff88; font-size:1.4rem;">🎉 Perfeito! Acertou!</strong><br><br>${q.explanation}`;
+                feedback.innerHTML = `<strong style="color:#00ff88; font-size:1.4rem;">🎉 Perfeito! Você acertou!</strong><br><br>${q.explanation}`;
                 feedback.classList.add('show', 'correct');
                 playCorrect();
                 confetti({ particleCount: 250, spread: 80, origin: { y: 0.6 } });
-                document.getElementById('nextBtn').style.display = 'block';
+                nextBtn.style.display = 'block';
             } else {
-                feedback.innerHTML = `<strong style="color:#ff3366; font-size:1.4rem;">😢 Errou... mas agora aprendeu!</strong><br><br><strong>Explicação:</strong><br>${q.explanation}`;
+                feedback.innerHTML = `<strong style="color:#ff3366; font-size:1.4rem;">😢 Que pena... Vamos aprender com o erro!</strong><br><br><strong>Explicação:</strong><br>${q.explanation}`;
                 feedback.classList.add('show', 'wrong');
                 playWrong();
-                document.getElementById('retryBtn').style.display = 'block';
+                retryBtn.style.display = 'block';
             }
         }
 
-        // Restante das funções (nextQuestion, showResults, etc.) iguais ao código anterior
+        function saveOpenAnswer() {
+            alert("✅ Resposta salva! Compare com o modelo na aula.");
+            nextQuestion();
+        }
 
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                renderQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function updateProgress() {
+            const percent = Math.round(((currentQuestion) / questions.length) * 100);
+            document.getElementById('progressBar').style.width = percent + '%';
+        }
+
+        function showResults() {
+            document.getElementById('quizContainer').style.display = 'none';
+            document.getElementById('resultsScreen').style.display = 'block';
+            document.getElementById('finalScore').textContent = score + "/20";
+            
+            let message = score >= 18 ? "Você é incrível! Nota 10 de verdade!" :
+                         score >= 14 ? "Parabéns! Você foi muito bem. Continue assim!" :
+                         "Continue praticando! Refaça o quiz para melhorar sua nota.";
+            document.getElementById('finalMessage').innerHTML = message;
+        }
+
+        function retryQuestion() {
+            renderQuestion();
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            document.getElementById('quizContainer').style.display = 'block';
+            document.getElementById('resultsScreen').style.display = 'none';
+            renderQuestion();
+        }
+
+        // Iniciar
         window.onload = () => {
-            bgMusic.volume = 0.25; // Volume baixo para não atrapalhar
-            bgMusic.play(); // Inicia automaticamente
+            bgMusic.volume = 0.28;
+            bgMusic.play().catch(() => {});
             renderQuestion();
         };
     </script>
