@@ -1,147 +1,407 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quiz Supremo</title>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-<script src="config.js"></script>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 QUIZ SUPREMO - INFORMÁTICA 2026</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <!-- Supabase Client via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root {
+            --primary: #00ffcc;
+            --danger: #ff3366;
+            --accent: #ffcc00;
+        }
+        
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0a1428, #1e3c72);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        body.error-mode {
+            background: linear-gradient(135deg, #4a0f1f, #8b1a2f);
+        }
+        
+        .header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: rgba(10,20,40,0.95);
+            backdrop-filter: blur(12px);
+            z-index: 100;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid var(--primary);
+        }
+        
+        .logo { font-size: 1.8rem; font-weight: 900; display: flex; align-items: center; gap: 12px; }
+        
+        .student-info { font-size: 1.1rem; font-weight: 600; color: var(--primary); }
+        
+        .progress-container { flex: 1; max-width: 500px; margin: 0 25px; }
+        .progress { height: 14px; background: #112233; border-radius: 9999px; overflow: hidden; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), #00ffaa); width: 0%; transition: width 0.6s ease; }
+        
+        .score { font-size: 1.45rem; font-weight: 700; }
+        
+        .main { max-width: 960px; margin: 110px auto 40px; padding: 0 20px; }
+        
+        .card {
+            background: rgba(255,255,255,0.09);
+            backdrop-filter: blur(16px);
+            border-radius: 28px;
+            padding: 45px 40px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.45);
+        }
+        
+        .start-screen, .results { text-align: center; }
+        
+        .question-number { color: var(--primary); font-weight: 700; margin-bottom: 12px; font-size: 1.3rem; }
+        .question-text { font-size: 1.55rem; line-height: 1.45; margin-bottom: 35px; font-weight: 600; }
+        
+        .options { display: grid; gap: 16px; }
+        .option {
+            background: rgba(255,255,255,0.08);
+            border: 3px solid transparent;
+            border-radius: 18px;
+            padding: 22px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .option:hover { transform: translateY(-4px); background: rgba(255,255,255,0.15); }
+        .option.correct { border-color: #00ff88; background: rgba(0,255,136,0.22); }
+        .option.wrong { border-color: var(--danger); background: rgba(255,51,102,0.22); }
+        
+        .feedback {
+            margin-top: 30px;
+            padding: 28px;
+            border-radius: 20px;
+            display: none;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        .feedback.show { display: flex; }
+        .feedback.correct { background: rgba(0,255,136,0.16); border: 3px solid #00ff88; }
+        .feedback.wrong { background: rgba(255,51,102,0.16); border: 3px solid var(--danger); }
+        
+        input { padding: 14px 20px; margin: 12px 0; border-radius: 12px; border: none; font-size: 1.1rem; width: 100%; max-width: 420px; }
+        
+        .start-btn, .next-btn, .retry-btn {
+            padding: 18px 50px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 9999px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 420px;
+        }
+        .start-btn, .next-btn { background: var(--primary); color: #0a1428; }
+        .retry-btn { background: #ff3366; color: white; }
+        
+        .big-score { font-size: 7rem; font-weight: 900; background: linear-gradient(90deg, #00ffcc, #ff00aa); -webkit-background-clip: text; color: transparent; }
+        
+        .tears { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; display: none; }
+        .tear {
+            position: absolute;
+            width: 6px;
+            height: 28px;
+            background: linear-gradient(transparent, #88ddff);
+            opacity: 0.8;
+            border-radius: 50%;
+            animation: fall linear forwards;
+        }
+        @keyframes fall { to { transform: translateY(130vh); opacity: 0; } }
+    </style>
 </head>
-
 <body>
 
-<!-- TELA INICIAL -->
-<div id="startScreen">
-    <h2>Iniciar Quiz</h2>
-    <input type="text" id="nomeAluno" placeholder="Nome do aluno"><br><br>
-    <input type="text" id="turmaAluno" placeholder="Turma"><br><br>
-    <button onclick="startQuiz()">Começar</button>
-</div>
+    <div class="header">
+        <div class="logo">🚀 QUIZ SUPREMO <span style="font-size:1.3rem;">💾 INFORMÁTICA</span></div>
+        <div class="progress-container">
+            <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
+        </div>
+        <div class="score">⭐ <span id="scoreDisplay">0</span>/20</div>
+    </div>
 
-<div id="quizContainer" style="display:none;"></div>
+    <!-- TELA INICIAL -->
+    <div class="main" id="startScreen">
+        <div class="card start-screen">
+            <h1 style="font-size:2.4rem; margin-bottom:20px;">🎮 Quiz Supremo de Informática</h1>
+            <p style="font-size:1.4rem; margin-bottom:30px;">1º Ano do Ensino Médio - Ciência de Dados</p>
+            
+            <input type="text" id="studentName" placeholder="Seu nome completo" />
+            <input type="text" id="studentClass" placeholder="Sua turma (ex: 1º A)" />
+            
+            <button onclick="startQuiz()" class="start-btn">INICIAR O DESAFIO 🚀</button>
+        </div>
+    </div>
 
-<script>
+    <!-- CONTAINER DO QUIZ -->
+    <div class="main" id="quizContainer" style="display:none;"></div>
 
-// ================= DADOS =================
-let quizData = {
-    nome: "",
-    turma: "",
-    respostas: [],
-    pontuacao: 0,
-    dispositivo: {}
-};
+    <!-- TELA DE RESULTADOS -->
+    <div id="resultsScreen" class="main" style="display:none;">
+        <div class="card results">
+            <h1>🏆 Parabéns, <span id="resultName"></span>!</h1>
+            <div class="big-score" id="finalScore">20</div>
+            <p id="finalMessage" style="font-size:1.7rem; margin:25px 0;"></p>
+            <button onclick="restartQuiz()" class="next-btn">🔄 Refazer o Quiz</button>
+        </div>
+    </div>
 
-// ================= DISPOSITIVO =================
-function getDeviceInfo() {
-    return {
-        userAgent: navigator.userAgent,
-        plataforma: navigator.platform,
-        idioma: navigator.language,
-        resolucao: `${screen.width}x${screen.height}`
-    };
-}
+    <div id="tearsContainer" class="tears"></div>
 
-// ================= INICIAR =================
-function startQuiz() {
-    quizData.nome = document.getElementById("nomeAluno").value;
-    quizData.turma = document.getElementById("turmaAluno").value;
-    quizData.dispositivo = getDeviceInfo();
+    <script>
+        // ==================== CONFIGURAÇÃO SUPABASE ====================
+       const _URL = 'https://osofdmgokrxdzsxozsrf.supabase.co';
+  const _KEY = 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe';
+        const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    if (!quizData.nome || !quizData.turma) {
-        alert("Preencha nome e turma!");
-        return;
-    }
-
-    document.getElementById("startScreen").style.display = "none";
-    document.getElementById("quizContainer").style.display = "block";
-
-    renderQuestion();
-}
-
-// ================= PERGUNTAS =================
-const questions = [
-    { id:1, question:"2+2?", options:["3","4","5"], correct:"4" },
-    { id:2, question:"Capital do Brasil?", options:["RJ","Brasília","SP"], correct:"Brasília" }
-];
-
-let currentQuestion = 0;
-
-// ================= RENDER =================
-function renderQuestion() {
-    const q = questions[currentQuestion];
-
-    let html = `<h3>${q.question}</h3>`;
-
-    q.options.forEach(opt => {
-        html += `<button onclick="selectAnswer('${opt}')">${opt}</button><br>`;
-    });
-
-    document.getElementById("quizContainer").innerHTML = html;
-}
-
-// ================= RESPOSTA =================
-function selectAnswer(answer) {
-    const q = questions[currentQuestion];
-
-    quizData.respostas.push({
-        pergunta: q.question,
-        resposta: answer,
-        correta: q.correct
-    });
-
-    if (answer === q.correct) {
-        quizData.pontuacao++;
-    }
-
-    currentQuestion++;
-
-    if (currentQuestion < questions.length) {
-        renderQuestion();
-    } else {
-        finishQuiz();
-    }
-}
-
-// ================= FINAL =================
-async function finishQuiz() {
-
-    await saveToSupabase();
-
-    document.getElementById("quizContainer").innerHTML = `
-        <h2>Finalizado!</h2>
-        <p>Pontuação: ${quizData.pontuacao}</p>
-    `;
-}
-
-// ================= SUPABASE =================
-async function saveToSupabase() {
-    try {
-        const { data, error } = await supabase
-        .from("resultados_quiz")
-        .insert([
+        // ====================== PERGUNTAS (10 ORIGINAIS + 10 SIMPLIFICADAS) ======================
+        const questions = [
+            // === 10 PERGUNTAS ORIGINAIS (exatamente como no seu arquivo) ===
             {
-                nome: quizData.nome,
-                turma: quizData.turma,
-                pontuacao: quizData.pontuacao,
-                respostas: quizData.respostas,
-                dispositivo: quizData.dispositivo
-            }
-        ]);
+                id: 1, type: "mcq",
+                question: "Um técnico precisa montar um PC para edição de vídeos em alta resolução. Precisa de alta velocidade, sem ruído, resistente a quedas e baixo consumo de energia. Qual armazenamento é o mais adequado?",
+                options: [{ text: "HD ATA", value: "A" }, { text: "SSD SATA", value: "B" }, { text: "Pendrive", value: "C" }, { text: "Disquete", value: "D" }, { text: "Qualquer disco rígido", value: "E" }],
+                correct: "B",
+                explanation: "O SSD SATA não possui partes mecânicas, por isso é silencioso, resistente a quedas, consome menos energia e é muito mais rápido em leitura e escrita."
+            },
+            {
+                id: 2, type: "mcq",
+                question: "Um notebook oferece: 1 TB a 5400 RPM ou 512 GB com leitura sequencial muito superior. O segundo disco é provavelmente um:",
+                options: [{ text: "HD ATA tradicional", value: "A" }, { text: "Pendrive moderno", value: "B" }, { text: "HD antigo", value: "C" }, { text: "SSD SATA", value: "D" }, { text: "Unidade de fita", value: "E" }],
+                correct: "D",
+                explanation: "SSDs oferecem velocidades de leitura/escrita muito superiores aos HDs mecânicos. A velocidade não depende de RPM."
+            },
+            {
+                id: 3, type: "mcq",
+                question: "O conjunto de regras que organiza pastas, subpastas, permissões e nomes de arquivos no disco chama-se:",
+                options: [{ text: "Sistema de arquivos", value: "A" }, { text: "Big Data", value: "B" }, { text: "Unidade de medida de velocidade", value: "C" }, { text: "Protocolo de rede", value: "D" }, { text: "Memória RAM", value: "E" }],
+                correct: "A",
+                explanation: "Exemplos: NTFS, exFAT, ext4. É o que permite organizar e acessar os arquivos de forma estruturada."
+            },
+            {
+                id: 4, type: "mcq",
+                question: "Um arquivo de 4,7 GB ocupa quantos MB? (1 GB = 1024 MB)",
+                options: [{ text: "4.000 MB", value: "A" }, { text: "4.812 MB", value: "B" }, { text: "1.024 MB", value: "C" }, { text: "480 MB", value: "D" }, { text: "4 MB", value: "E" }],
+                correct: "B",
+                explanation: "Cálculo correto: 4,7 × 1024 = 4.812 MB. Sempre use base 1024 para armazenamento."
+            },
+            {
+                id: 5, type: "mcq",
+                question: "Um HD de 2 TB formatado tem capacidade aproximada de quantos MB?",
+                options: [{ text: "300 MB", value: "A" }, { text: "48.000 MB", value: "B" }, { text: "2.097.152 MB", value: "C" }, { text: "224.000.000 MB", value: "D" }, { text: "9.024 MB", value: "E" }],
+                correct: "C",
+                explanation: "Cálculo: 2 × 1024 × 1024 = 2.097.152 MB."
+            },
+            {
+                id: 6, type: "mcq",
+                question: "A menor unidade de informação que um computador consegue representar (0 ou 1) chama-se:",
+                options: [{ text: "Byte", value: "A" }, { text: "Megabyte", value: "B" }, { text: "Bit", value: "C" }, { text: "Gigabyte", value: "D" }, { text: "Terabyte", value: "E" }],
+                correct: "C",
+                explanation: "Bit é a menor unidade. 8 bits formam 1 byte."
+            },
+            {
+                id: 7, type: "mcq",
+                question: "Milhões de registros de vendas, likes e geolocalização que não cabem em bancos tradicionais caracterizam:",
+                options: [{ text: "Sistema de arquivos NTFS", value: "A" }, { text: "Big Data", value: "B" }, { text: "SSD SATA de baixa capacidade", value: "C" }, { text: "Unidade de medida bit", value: "D" }, { text: "HD ATA para backup", value: "E" }],
+                correct: "B",
+                explanation: "Big Data envolve grande Volume, Velocidade e Variedade de dados."
+            },
+            {
+                id: 8, type: "mcq",
+                question: "Um HD externo antigo usa cabo largo com 40 pinos. Qual interface ele utiliza?",
+                options: [{ text: "SATA", value: "A" }, { text: "ATA (IDE)", value: "B" }, { text: "USB 3.0", value: "C" }, { text: "PCIe", value: "D" }, { text: "HDMI", value: "E" }],
+                correct: "B",
+                explanation: "ATA/IDE é a interface antiga, com cabo largo e 40 pinos."
+            },
+            {
+                id: 9, type: "open",
+                question: "Explique pelo menos 3 vantagens do SSD em comparação ao HD tradicional (mecânico).",
+                model: "Vantagens do SSD: 1) Muito mais rápido; 2) Sem ruído e sem partes móveis (mais resistente a quedas); 3) Menor consumo de energia."
+            },
+            {
+                id: 10, type: "open",
+                question: "Cite e explique ao menos 3 unidades de medida de dados (do menor para o maior) com um exemplo.",
+                model: "• Bit (0 ou 1)\n• Byte (8 bits)\n• KB, MB, GB, TB\nExemplos: uma foto ≈ 5 MB, um filme ≈ 5 GB, projetos científicos usam TB ou PB."
+            },
 
-        if (error) {
-            console.error("Erro:", error);
-        } else {
-            console.log("Salvo com sucesso!");
+            // === 10 PERGUNTAS NOVAS SIMPLIFICADAS PARA 1º ANO ===
+            { id: 11, type: "mcq", question: "Qual armazenamento é mais rápido para abrir arquivos grandes?", options: [{ text: "HD tradicional", value: "A" }, { text: "SSD", value: "B" }, { text: "Pendrive antigo", value: "C" }], correct: "B", explanation: "O SSD é muito mais rápido que o HD." },
+            { id: 12, type: "mcq", question: "Onde ficam guardados os arquivos mesmo quando o computador está desligado?", options: [{ text: "Memória RAM", value: "A" }, { text: "Armazenamento (HD ou SSD)", value: "B" }, { text: "Processador", value: "C" }], correct: "B", explanation: "O armazenamento guarda os arquivos permanentemente." },
+            { id: 13, type: "mcq", question: "1 GB equivale a quantos MB?", options: [{ text: "100 MB", value: "A" }, { text: "1024 MB", value: "B" }, { text: "10 MB", value: "C" }], correct: "B", explanation: "1 GB = 1024 MB." },
+            { id: 14, type: "mcq", question: "Qual é uma grande vantagem do SSD?", options: [{ text: "É mais barato", value: "A" }, { text: "Não faz barulho e resiste melhor a quedas", value: "B" }, { text: "Guarda menos dados", value: "C" }], correct: "B", explanation: "Por não ter partes mecânicas, ele é silencioso e mais resistente." },
+            { id: 15, type: "mcq", question: "Big Data significa:", options: [{ text: "Um HD muito grande", value: "A" }, { text: "Uma quantidade muito grande de dados", value: "B" }, { text: "Um tipo de pendrive", value: "C" }], correct: "B", explanation: "Big Data é usado quando temos milhões ou bilhões de informações." },
+            { id: 16, type: "mcq", question: "A menor unidade de informação é:", options: [{ text: "Byte", value: "A" }, { text: "Bit", value: "B" }, { text: "Gigabyte", value: "C" }], correct: "B", explanation: "O bit representa 0 ou 1." },
+            { id: 17, type: "open", question: "Escreva uma vantagem do SSD e uma do HD.", model: "SSD: mais rápido e silencioso\nHD: geralmente mais barato e com maior capacidade" },
+            { id: 18, type: "mcq", question: "Para guardar trabalhos da escola usamos:", options: [{ text: "Memória RAM", value: "A" }, { text: "HD ou SSD", value: "B" }, { text: "Teclado", value: "C" }], correct: "B", explanation: "O armazenamento guarda os arquivos permanentemente." },
+            { id: 19, type: "mcq", question: "Qual unidade é a maior?", options: [{ text: "MB", value: "A" }, { text: "GB", value: "B" }, { text: "TB", value: "C" }], correct: "C", explanation: "TB > GB > MB" },
+            { id: 20, type: "mcq", question: "Por que armazenamento é importante em Ciência de Dados?", options: [{ text: "Para guardar e analisar muitos dados", value: "A" }, { text: "Só para jogar", value: "B" }, { text: "Não é importante", value: "C" }], correct: "A", explanation: "Precisamos guardar grandes volumes de dados para trabalhar com eles." }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let studentName = "";
+        let studentClass = "";
+
+        function createTears() {
+            const container = document.getElementById('tearsContainer');
+            container.style.display = 'block';
+            container.innerHTML = '';
+            for (let i = 0; i < 70; i++) {
+                const tear = document.createElement('div');
+                tear.className = 'tear';
+                tear.style.left = Math.random() * 100 + 'vw';
+                tear.style.animationDuration = (Math.random() * 1.8 + 2) + 's';
+                container.appendChild(tear);
+                setTimeout(() => tear.remove(), 6000);
+            }
         }
 
-    } catch (err) {
-        console.error("Erro geral:", err);
-    }
-}
+        async function saveToSupabase() {
+            const { error } = await supabase
+                .from('quiz_results')
+                .insert([{
+                    student_name: studentName,
+                    student_class: studentClass,
+                    score: score,
+                    total_questions: 20
+                }]);
 
-</script>
+            if (error) {
+                console.error('Erro ao salvar no Supabase:', error);
+            } else {
+                console.log('Resultado salvo com sucesso no Supabase!');
+            }
+        }
 
+        function startQuiz() {
+            studentName = document.getElementById('studentName').value.trim() || "Aluno Anônimo";
+            studentClass = document.getElementById('studentClass').value.trim() || "Sem turma";
+
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('quizContainer').style.display = 'block';
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = questions[currentQuestion];
+            let html = `<div class="card"><div class="question-number">Questão ${currentQuestion + 1} de 20</div><div class="question-text">${q.question}</div><div class="options">`;
+
+            if (q.type === "mcq") {
+                q.options.forEach((opt, i) => {
+                    html += `<div class="option" onclick="selectAnswer('${opt.value}')"><strong>${String.fromCharCode(65 + i)})</strong> ${opt.text}</div>`;
+                });
+            } else {
+                html += `<textarea id="openAnswer" rows="6" style="width:100%; background:rgba(255,255,255,0.1); border:3px solid #00ffcc; border-radius:16px; padding:18px; color:white; font-size:1.1rem;" placeholder="Digite sua resposta..."></textarea>
+                         <button onclick="saveOpenAnswer()" class="next-btn">✅ Confirmar Resposta</button>`;
+            }
+
+            html += `</div><div id="feedbackArea" class="feedback"></div>
+                     <button id="retryBtn" class="retry-btn" style="display:none;" onclick="retryQuestion()">🔄 Tentar Novamente</button>
+                     <button id="nextBtn" class="next-btn" style="display:none;" onclick="nextQuestion()">Próxima Questão →</button></div>`;
+
+            document.getElementById('quizContainer').innerHTML = html;
+            updateProgress();
+        }
+
+        function selectAnswer(selected) {
+            const q = questions[currentQuestion];
+            const feedbackArea = document.getElementById('feedbackArea');
+            const retryBtn = document.getElementById('retryBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const options = document.querySelectorAll('.option');
+
+            options.forEach(opt => {
+                opt.style.pointerEvents = 'none';
+                if (opt.textContent.includes(selected)) opt.classList.add(selected === q.correct ? 'correct' : 'wrong');
+                if (opt.textContent.includes(q.correct)) opt.classList.add('correct');
+            });
+
+            if (selected === q.correct) {
+                feedbackArea.innerHTML = `<strong style="color:#00ff88; font-size:1.35rem;">🎉 Excelente! Você acertou!</strong><br><br>${q.explanation}`;
+                feedbackArea.classList.add('show', 'correct');
+                score++;
+                document.getElementById('scoreDisplay').textContent = score;
+                confetti({ particleCount: 180, spread: 70 });
+                nextBtn.style.display = 'block';
+            } else {
+                document.body.classList.add('error-mode');
+                createTears();
+                feedbackArea.innerHTML = `<strong style="color:#ff3366; font-size:1.35rem;">😔 Ops... Você errou.</strong><br><br>${q.explanation}<br><br><em>Tente novamente!</em>`;
+                feedbackArea.classList.add('show', 'wrong');
+                retryBtn.style.display = 'block';
+            }
+        }
+
+        function retryQuestion() {
+            document.body.classList.remove('error-mode');
+            document.getElementById('tearsContainer').style.display = 'none';
+            renderQuestion();
+        }
+
+        function saveOpenAnswer() {
+            alert("✅ Resposta registrada!\nCompare com o modelo na aula.");
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            document.body.classList.remove('error-mode');
+            document.getElementById('tearsContainer').style.display = 'none';
+            currentQuestion++;
+            
+            if (currentQuestion < questions.length) {
+                renderQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function updateProgress() {
+            const percent = Math.round(((currentQuestion) / questions.length) * 100);
+            document.getElementById('progressBar').style.width = percent + '%';
+        }
+
+        async function showResults() {
+            document.getElementById('quizContainer').style.display = 'none';
+            const results = document.getElementById('resultsScreen');
+            results.style.display = 'block';
+            
+            document.getElementById('resultName').textContent = studentName;
+            document.getElementById('finalScore').textContent = score + "/20";
+            
+            let message = score >= 18 ? "Você arrasou! Nota quase 10!" :
+                         score >= 15 ? "Muito bom! Continue assim!" :
+                         score >= 12 ? "Bom trabalho! Revise para melhorar." :
+                         "Continue praticando! Refaça o quiz para tirar 10.";
+            
+            document.getElementById('finalMessage').innerHTML = message;
+
+            // Salva no Supabase automaticamente
+            await saveToSupabase();
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            document.getElementById('quizContainer').style.display = 'block';
+            document.getElementById('resultsScreen').style.display = 'none';
+            document.body.classList.remove('error-mode');
+            renderQuestion();
+        }
+
+        window.onload = () => {};
+    </script>
 </body>
 </html>
