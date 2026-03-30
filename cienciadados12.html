@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Cientistas de Dados Nota 10</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root { --primary: #00ffcc; --danger: #ff3366; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0a1428, #1e3c72);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        body.error-mode { background: linear-gradient(135deg, #4a0f1f, #8b1a2f); }
+
+        .header {
+            position: fixed; top: 0; left: 0; right: 0;
+            background: rgba(10,20,40,0.95); backdrop-filter: blur(12px);
+            z-index: 100; padding: 15px 20px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 3px solid var(--primary);
+        }
+        .logo { font-size: 1.75rem; font-weight: 900; display: flex; align-items: center; gap: 12px; }
+        
+        .progress-container { flex: 1; max-width: 500px; margin: 0 30px; }
+        .progress { height: 12px; background: #112233; border-radius: 9999px; overflow: hidden; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), #00ccaa); width: 0%; transition: width 0.6s ease; }
+        
+        .score { font-size: 1.4rem; font-weight: 700; }
+        .main { max-width: 920px; margin: 90px auto 40px; padding: 0 20px; }
+        
+        .card {
+            background: rgba(255,255,255,0.1); backdrop-filter: blur(16px);
+            border-radius: 24px; padding: 40px 35px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            text-align: center;
+        }
+
+        .question-number { color: var(--primary); font-weight: 700; margin-bottom: 12px; }
+        .question-text { font-size: 1.52rem; line-height: 1.45; margin-bottom: 30px; font-weight: 600; }
+        
+        .options { display: grid; gap: 14px; }
+        .option {
+            background: rgba(255,255,255,0.08); border: 3px solid transparent;
+            border-radius: 16px; padding: 20px; font-size: 1.18rem;
+            cursor: pointer; transition: all 0.3s;
+        }
+        .option:hover { transform: translateY(-4px); }
+        .option.correct { border-color: #00ff88; background: rgba(0,255,136,0.2); }
+        .option.wrong { border-color: var(--danger); background: rgba(255,51,102,0.2); }
+
+        .feedback { margin-top: 25px; padding: 25px; border-radius: 16px; display: none; }
+        .feedback.show { display: block; }
+        .feedback.correct { background: rgba(0,255,136,0.15); border: 2px solid #00ff88; }
+        .feedback.wrong { background: rgba(255,51,102,0.15); border: 2px solid var(--danger); }
+
+        .tears { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; display: none; }
+        .tear {
+            position: absolute; width: 6px; height: 25px;
+            background: linear-gradient(transparent, #88ddff); opacity: 0.75;
+            border-radius: 50%; animation: fall linear forwards;
+        }
+        @keyframes fall { to { transform: translateY(120vh); opacity: 0; } }
+
+        .next-btn, .retry-btn, .start-btn {
+            margin-top: 25px; padding: 16px 40px; font-size: 1.25rem;
+            font-weight: 700; border: none; border-radius: 9999px; cursor: pointer; width: 100%;
+        }
+        .next-btn { background: var(--primary); color: #0a1428; }
+        .retry-btn { background: #ff3366; color: white; }
+        .start-btn { background: #00ffcc; color: #0a1428; font-size: 1.4rem; }
+
+        .results { text-align: center; }
+        .big-score { font-size: 6.2rem; font-weight: 900; background: linear-gradient(90deg, #00ffcc, #ff00aa); -webkit-background-clip: text; color: transparent; }
+
+        /* Motivational screen */
+        #motivationScreen {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .motivational-text {
+            font-size: 1.65rem;
+            min-height: 120px;
+            font-weight: 600;
+            color: #00ffcc;
+            transition: all 0.8s ease;
+        }
+        .student-name {
+            color: #ffd700;
+            font-size: 2rem;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="logo">📊 Cientistas de Dados Nota 10</div>
+        <div class="progress-container">
+            <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
+        </div>
+        <div class="score">⭐ <span id="scoreDisplay">0</span>/20</div>
+    </div>
+
+    <!-- Tela de Nome -->
+    <div class="main" id="nameScreen">
+        <div class="card">
+            <h1 style="margin-bottom:30px;">Bem-vindo ao Quiz!</h1>
+            <p style="font-size:1.4rem; margin-bottom:25px;">Digite seu nome para começar:</p>
+            <input type="text" id="studentName" placeholder="Seu nome completo" 
+                   style="width:100%; padding:18px; font-size:1.3rem; border-radius:16px; border:2px solid #00ffcc; background:rgba(255,255,255,0.1); color:white; text-align:center;">
+            <button onclick="startQuiz()" class="start-btn">COMEÇAR O QUIZ</button>
+        </div>
+    </div>
+
+    <div class="main" id="quizContainer" style="display:none;"></div>
+
+    <!-- Tela de Resultados -->
+    <div id="resultsScreen" class="main" style="display:none;">
+        <div class="card results">
+            <h1 id="congratsTitle">🎉 Parabéns!</h1>
+            <div class="big-score" id="finalScore">20</div>
+            <p id="finalMessage" style="font-size:1.7rem; margin:20px 0;"></p>
+            <button onclick="showMotivationScreen()" class="next-btn">Ver Mensagens Motivacionais →</button>
+        </div>
+    </div>
+
+    <!-- Tela de Motivação -->
+    <div id="motivationScreen" class="main">
+        <div class="card">
+            <h2 style="margin-bottom:30px; color:#ffd700;">Continue brilhando, <span id="motivName"></span>!</h2>
+            <div class="motivational-text" id="motivText"></div>
+            <button onclick="restartQuiz()" class="next-btn" style="margin-top:40px;">🔄 Refazer o Quiz</button>
+        </div>
+    </div>
+
+    <div id="tearsContainer" class="tears"></div>
+
+    <script>
+        // ====================== SUPABASE ======================
+        const supabaseUrl = 'https://osofdmgokrxdzsxozsrf.supabase.co';
+        const supabaseKey = 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe';
+        const { createClient } = supabase;
+        const supa = createClient(supabaseUrl, supabaseKey);
+
+        let sessionId = 'quiz_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
+        let currentQuestion = 0;
+        let score = 0;
+        let studentName = "";
+
+        // 20 Frases motivacionais curtas
+        const motivationalPhrases = [
+            "Estudar todo dia te deixa cada vez mais forte!",
+            "Você é capaz de aprender qualquer coisa!",
+            "Pequenos esforços diários geram grandes resultados.",
+            "O conhecimento é o maior tesouro que você pode ter.",
+            "Continue praticando, você está no caminho certo!",
+            "Cientistas de dados mudam o mundo com conhecimento.",
+            "Quanto mais você estuda, mais fácil fica.",
+            "Não desista! Cada tentativa te deixa melhor.",
+            "Seu futuro brilhante começa com o que você faz hoje.",
+            "Você tem potencial para ser incrível!",
+            "Aprender é como treinar músculo: quanto mais, mais forte fica.",
+            "Tenha orgulho do seu esforço!",
+            "O segredo é persistir mesmo quando fica difícil.",
+            "Você está construindo um futuro incrível.",
+            "Estudar com foco é investir em você mesmo.",
+            "Cada questão que você acerta é uma vitória!",
+            "O conhecimento nunca é demais.",
+            "Seja curioso! Pergunte, pesquise e aprenda sempre.",
+            "Você pode chegar onde quiser com dedicação.",
+            "Parabéns por terminar! Agora continue estudando em casa!"
+        ];
+
+        let phraseIndex = 0;
+        let phraseInterval = null;
+
+        // ====================== PERGUNTAS (as 20 que já estavam) ======================
+        const questions = [ /* Cole aqui as 20 perguntas do código anterior */ 
+            // (Para não repetir o array gigante, use exatamente o mesmo array de questions da versão anterior que eu te enviei)
+            // Se precisar, posso mandar só o array separado. Por enquanto assumirei que você colará o array completo aqui.
+        ];
+
+        // ====================== FUNÇÕES ======================
+        function startQuiz() {
+            studentName = document.getElementById('studentName').value.trim();
+            if (studentName === "") {
+                alert("Por favor, digite seu nome para começar!");
+                return;
+            }
+            document.getElementById('nameScreen').style.display = 'none';
+            document.getElementById('quizContainer').style.display = 'block';
+            renderQuestion();
+        }
+
+        async function saveAnswerToSupabase(q, userAnswer, isCorrect) {
+            try {
+                await supa.from('quiz_responses').insert({
+                    session_id: sessionId,
+                    question_id: q.id,
+                    question_text: q.question,
+                    user_answer: userAnswer,
+                    is_correct: isCorrect,
+                    score: isCorrect ? 1 : 0,
+                    user_agent: navigator.userAgent,
+                    aluno_nome: studentName
+                });
+            } catch (err) {
+                console.error('Erro ao salvar:', err);
+            }
+        }
+
+        function createTears() { /* mesma função anterior */ 
+            const container = document.getElementById('tearsContainer');
+            container.style.display = 'block';
+            container.innerHTML = '';
+            for (let i = 0; i < 70; i++) {
+                const tear = document.createElement('div');
+                tear.className = 'tear';
+                tear.style.left = Math.random() * 100 + 'vw';
+                tear.style.animationDuration = (Math.random() * 1.5 + 1.8) + 's';
+                tear.style.animationDelay = Math.random() * 0.6 + 's';
+                tear.style.height = (Math.random() * 20 + 18) + 'px';
+                container.appendChild(tear);
+                setTimeout(() => tear.remove(), 5000);
+            }
+        }
+
+        function renderQuestion() {
+            const q = questions[currentQuestion];
+            let html = `
+                <div class="card">
+                    <div class="question-number">Questão ${currentQuestion + 1} de 20</div>
+                    <div class="question-text">${q.question}</div>
+                    <div class="options">`;
+
+            if (q.type === "mcq") {
+                q.options.forEach((opt, i) => {
+                    html += `<div class="option" onclick="selectAnswer('${opt.value}')"><strong>${String.fromCharCode(65 + i)})</strong> ${opt.text}</div>`;
+                });
+            } else {
+                html += `
+                    <textarea id="openAnswer" rows="7" style="width:100%; background:rgba(255,255,255,0.1); border:2px solid #00ffcc; border-radius:16px; padding:18px; color:white; font-size:1.1rem;" placeholder="Digite sua resposta aqui..."></textarea>
+                    <button onclick="saveOpenAnswer()" class="next-btn">✅ Confirmar Resposta</button>`;
+            }
+
+            html += `</div>
+                <div id="feedbackArea" class="feedback"></div>
+                <button id="retryBtn" class="retry-btn" style="display:none;" onclick="retryQuestion()">🔄 Tentar Novamente</button>
+                <button id="nextBtn" class="next-btn" style="display:none;" onclick="nextQuestion()">Próxima Questão →</button>
+            </div>`;
+
+            document.getElementById('quizContainer').innerHTML = html;
+            updateProgress();
+        }
+
+        async function selectAnswer(selected) {
+            const q = questions[currentQuestion];
+            const isCorrect = selected === q.correct;
+            await saveAnswerToSupabase(q, selected, isCorrect);
+
+            // ... (mesma lógica visual das versões anteriores - correct/wrong, confetti, etc.)
+            const feedbackArea = document.getElementById('feedbackArea');
+            const retryBtn = document.getElementById('retryBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const options = document.querySelectorAll('.option');
+
+            options.forEach(opt => {
+                opt.style.pointerEvents = 'none';
+                if (opt.textContent.includes(selected)) opt.classList.add(isCorrect ? 'correct' : 'wrong');
+                if (opt.textContent.includes(q.correct)) opt.classList.add('correct');
+            });
+
+            if (isCorrect) {
+                score++;
+                document.getElementById('scoreDisplay').textContent = score;
+                feedbackArea.innerHTML = `<strong style="color:#00ff88; font-size:1.3rem;">🎉 Excelente! Acertou!</strong><br><br>${q.explanation}`;
+                feedbackArea.classList.add('show', 'correct');
+                confetti({ particleCount: 180, spread: 70, origin: { y: 0.6 } });
+                nextBtn.style.display = 'block';
+            } else {
+                document.body.classList.add('error-mode');
+                createTears();
+                feedbackArea.innerHTML = `<strong style="color:#ff3366; font-size:1.3rem;">😢 Errou, mas tudo bem!</strong><br><br><strong>Explicação:</strong><br>${q.explanation}`;
+                feedbackArea.classList.add('show', 'wrong');
+                retryBtn.style.display = 'block';
+            }
+        }
+
+        async function saveOpenAnswer() {
+            const q = questions[currentQuestion];
+            const answer = document.getElementById('openAnswer').value.trim() || "(sem resposta)";
+            await saveAnswerToSupabase(q, answer, null);
+            alert("✅ Resposta salva!");
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            document.body.classList.remove('error-mode');
+            document.getElementById('tearsContainer').style.display = 'none';
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                renderQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function updateProgress() {
+            const percent = Math.round(((currentQuestion) / questions.length) * 100);
+            document.getElementById('progressBar').style.width = percent + '%';
+        }
+
+        function showResults() {
+            document.getElementById('quizContainer').style.display = 'none';
+            document.getElementById('resultsScreen').style.display = 'block';
+            
+            document.getElementById('finalScore').textContent = score + "/20";
+            document.getElementById('congratsTitle').innerHTML = `🎉 Parabéns, ${studentName}!`;
+            
+            let message = score >= 18 ? `Você arrasou, ${studentName}!` :
+                         score >= 14 ? `Muito bom, ${studentName}!` :
+                         `Continue estudando, ${studentName}! Você vai melhorar.`;
+            document.getElementById('finalMessage').innerHTML = message;
+        }
+
+        function showMotivationScreen() {
+            document.getElementById('resultsScreen').style.display = 'none';
+            document.getElementById('motivationScreen').style.display = 'block';
+            document.getElementById('motivName').textContent = studentName;
+            
+            phraseIndex = 0;
+            changeMotivationalPhrase();
+            
+            if (phraseInterval) clearInterval(phraseInterval);
+            phraseInterval = setInterval(changeMotivationalPhrase, 4500); // troca a cada 4,5 segundos
+        }
+
+        function changeMotivationalPhrase() {
+            const textEl = document.getElementById('motivText');
+            textEl.style.opacity = 0;
+            
+            setTimeout(() => {
+                textEl.textContent = motivationalPhrases[phraseIndex];
+                textEl.style.opacity = 1;
+                phraseIndex = (phraseIndex + 1) % motivationalPhrases.length;
+            }, 400);
+        }
+
+        function retryQuestion() {
+            document.body.classList.remove('error-mode');
+            document.getElementById('tearsContainer').style.display = 'none';
+            renderQuestion();
+        }
+
+        function restartQuiz() {
+            if (phraseInterval) clearInterval(phraseInterval);
+            currentQuestion = 0;
+            score = 0;
+            sessionId = 'quiz_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
+            document.getElementById('motivationScreen').style.display = 'none';
+            document.getElementById('resultsScreen').style.display = 'none';
+            document.getElementById('nameScreen').style.display = 'block';
+            document.getElementById('studentName').value = "";
+        }
+
+        // Iniciar
+        window.onload = () => {
+            console.log("📊 Cientistas de Dados Nota 10 - Iniciado!");
+        };
+    </script>
+</body>
+</html>
