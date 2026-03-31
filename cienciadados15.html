@@ -219,7 +219,7 @@
     </div>
 
     <script>
-        // ==================== SUPABASE CONFIG ====================
+        // ==================== SUPABASE ====================
         if (!window.SUPABASE_CONFIG) {
             alert("❌ Erro: Arquivo config.js não encontrado!");
         }
@@ -228,6 +228,40 @@
             window.SUPABASE_CONFIG.url,
             window.SUPABASE_CONFIG.key
         );
+
+        // ==================== MATRIX BACKGROUND ====================
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.height = window.innerHeight;
+            canvas.width = window.innerWidth;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZアァカサタナハマヤャラワ";
+        const fontSize = 16;
+        let columns = canvas.width / fontSize;
+        let drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00ff41';
+            ctx.font = fontSize + 'px monospace';
+            
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 35);
 
         // ==================== BANNER FLUTUANTE ====================
         const banner = document.getElementById('floating-banner');
@@ -447,9 +481,9 @@
 
         // ==================== INICIALIZAÇÃO ====================
         window.onload = () => {
-            console.log("📊 Quiz Cientistas de Dados Nota 10 carregado com sucesso!");
+            console.log("📊 Quiz Cientistas de Dados Nota 10 - Completo com Matrix e Banner!");
             renderQuestion();
-            moveBanner();        // Ativa o banner flutuante
+            moveBanner();
         };
     </script>
 </body>
