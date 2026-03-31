@@ -219,7 +219,7 @@
     </div>
 
     <script>
-        // ==================== SUPABASE ====================
+      
         if (!window.SUPABASE_CONFIG) {
             alert("❌ Erro: Arquivo config.js não encontrado!");
         }
@@ -229,7 +229,7 @@
             window.SUPABASE_CONFIG.key
         );
 
-        // ==================== MATRIX BACKGROUND ====================
+     
         const canvas = document.getElementById('matrix-bg');
         const ctx = canvas.getContext('2d');
 
@@ -263,7 +263,7 @@
         }
         setInterval(drawMatrix, 35);
 
-        // ==================== BANNER FLUTUANTE ====================
+      
         const banner = document.getElementById('floating-banner');
         const frases = [
             "O estudo de hoje", "É a vitória de amanhã", "Quanto mais você estuda",
@@ -302,7 +302,7 @@
             requestAnimationFrame(moveBanner);
         }
 
-        // ==================== QUIZ ====================
+     
         let sessionId = 'quiz_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
         let currentQuestion = 0;
         let score = 0;
@@ -479,7 +479,7 @@
             renderQuestion();
         }
 
-        // ==================== INICIALIZAÇÃO ====================
+      
         window.onload = () => {
             console.log("📊 Quiz Cientistas de Dados Nota 10 - Completo com Matrix e Banner!");
             renderQuestion();
