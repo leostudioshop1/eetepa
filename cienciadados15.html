@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📊 Cientistas de Dados Nota 10</title>
+    <title> Cientistas de Dados Nota 10</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -26,7 +26,7 @@
             position: relative;
         }
 
-        /* MATRIX BACKGROUND */
+      
         #matrix-bg {
             position: fixed;
             top: 0; left: 0;
@@ -35,7 +35,7 @@
             pointer-events: none;
         }
 
-        /* BANNER FLUTUANTE */
+     
         #floating-banner {
             position: fixed;
             z-index: 10;
@@ -224,14 +224,14 @@
 </head>
 <body>
 
-    <!-- Canvas do Matrix -->
+ 
     <canvas id="matrix-bg"></canvas>
 
-    <!-- Banner flutuante -->
+  
     <div id="floating-banner">O ESTUDO DE HOJE</div>
 
     <div class="header">
-        <div class="logo">📊 Cientistas de Dados Nota 10 <span style="font-size:1.3rem;">💾 Informática</span></div>
+        <div class="logo"> Cientistas de Dados Nota 10 <span style="font-size:1.3rem;"> Prof. Léo Cruz</span></div>
         <div class="progress-container">
             <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
         </div>
@@ -245,14 +245,14 @@
             <h1>🎉 Parabéns, futuro Cientista de Dados!</h1>
             <div class="big-score" id="finalScore">20</div>
             <p id="finalMessage" style="font-size:1.6rem; margin:25px 0;"></p>
-            <button onclick="restartQuiz()" class="next-btn">🔄 Refazer o Quiz</button>
+            <button onclick="restartQuiz()" class="next-btn">🔄 Refazer para chegar a média 10 da prova</button>
         </div>
     </div>
 
     <div id="tearsContainer" class="tears"></div>
 
     <script>
-        // ====================== MATRIX BACKGROUND ======================
+       
         const canvas = document.getElementById('matrix-bg');
         const ctx = canvas.getContext('2d');
         
@@ -285,11 +285,11 @@
         }
         setInterval(drawMatrix, 35);
 
-        // ====================== BANNER FLUTUANTE ======================
+       
         const banner = document.getElementById('floating-banner');
         const frases = [
             "O estudo de hoje", "É a vitória de amanhã", "Quanto mais você estuda",
-            "mais sorte você tem", "Estudar não é castigo", "É o caminho para conquistar seus sonhos",
+            "mais sorte você tem", "Estudar não é castigo", "Não esqueça que a média da prova é 10", "É o caminho para conquistar seus sonhos",
             "O esforço de agora", "vai se transformar em orgulho depois",
             "Não desista quando ficar difícil", "É exatamente aí que o crescimento acontece"
         ];
@@ -333,7 +333,7 @@
             if (posY > window.innerHeight) posY = 20;
         });
 
-        // ====================== QUIZ LOGIC ======================
+      
         let supa;
         let sessionId = 'quiz_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
         let currentQuestion = 0;
@@ -481,7 +481,7 @@
             const q = questions[currentQuestion];
             const answer = document.getElementById('openAnswer').value.trim() || "(sem resposta)";
             await saveAnswerToSupabase(q, answer, null);
-            alert("✅ Resposta salva! Compare com o modelo na aula.");
+            alert("✅ Resposta salva! Compare com as anotações da aula. Não esqueça que a média da prova é 10");
             nextQuestion();
         }
 
@@ -529,7 +529,7 @@
             renderQuestion();
         }
 
-        // ====================== INICIALIZAÇÃO ======================
+    
         window.onload = async () => {
             console.log("📊 Cientistas de Dados Nota 10 - Quiz com Matrix carregado!");
             await initSupabase();
