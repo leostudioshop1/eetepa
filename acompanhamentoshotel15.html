@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Livro Caixa</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+</head>
+
+<body class="bg-slate-950 text-white p-4">
+
+<div class="max-w-7xl mx-auto">
+
+<h1 class="text-3xl font-bold mb-6 text-indigo-400">
+📊 Livro Caixa Completo
+</h1>
+
+<input type="month" id="mesFiltro"
+class="bg-slate-800 p-2 rounded mb-4">
+
+<button onclick="carregar()" class="bg-indigo-600 px-4 py-2 rounded mb-6">
+Filtrar
+</button>
+
+<div class="overflow-x-auto">
+<table class="w-full text-sm border border-slate-700">
+
+<thead class="bg-slate-800">
+<tr>
+<th class="p-2">Data</th>
+<th class="p-2">Descrição</th>
+<th class="p-2">Tipo</th>
+<th class="p-2">Valor</th>
+<th class="p-2">Saldo</th>
+<th class="p-2">Origem</th>
+<th class="p-2">Responsável</th>
+</tr>
+</thead>
+
+<tbody id="tabela"></tbody>
+
+</table>
+</div>
+
+</div>
+
+<script>
+
+const supabaseClient = supabase.createClient(
+'https://osofdmgokrxdzsxozsrf.supabase.co',
+'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
+);
+
+function getIntervaloMes() {
+const mes = document.getElementById("mesFiltro").value;
+
+const inicio = new Date(mes + "-01T00:00:00");
+const fim = new Date(inicio);
+fim.setMonth(fim.getMonth() + 1);
+
+return {
+inicio: inicio.toISOString(),
+fim: fim.toISOString()
+};
+}
+
+async function carregar() {
+
+const { inicio, fim } = getIntervaloMes();
+
+const { data, error } = await supabaseClient
+.from('vw_livro_caixa')
+.select('*')
+.gte('data_hora', inicio)
+.lt('data_hora', fim)
+.order('data_hora', { ascending: true });
+
+if (error) {
+alert(error.message);
+return;
+}
+
+const tabela = document.getElementById("tabela");
+tabela.innerHTML = "";
+
+data.forEach(g => {
+
+tabela.innerHTML += `
+<tr class="border-b border-slate-800">
+<td class="p-2">${new Date(g.data_hora).toLocaleString()}</td>
+<td class="p-2">${g.descricao}</td>
+<td class="p-2">${g.tipo}</td>
+
+<td class="p-2 ${g.tipo === 'entrada' ? 'text-green-400' : 'text-red-400'} font-bold">
+${g.tipo === 'entrada' ? '+' : '-'} R$ ${parseFloat(g.valor).toFixed(2)}
+</td>
+
+<td class="p-2 text-blue-400 font-bold">
+R$ ${parseFloat(g.saldo_acumulado).toFixed(2)}
+</td>
+
+<td class="p-2">${g.origem}</td>
+<td class="p-2">${g.responsavel}</td>
+
+</tr>
+`;
+
+});
+
+}
+
+// iniciar com mês atual
+document.getElementById("mesFiltro").value =
+new Date().toISOString().slice(0,7);
+
+carregar();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lançamento - Livro Caixa</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+</head>
+
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white min-h-screen">
+
+<div class="max-w-5xl mx-auto p-4 md:p-6">
+
+<h1 class="text-3xl font-bold mb-6">💰 Livro Caixa - Lançamentos</h1>
+
+<div class="bg-slate-800 p-5 rounded-xl space-y-4">
+
+<!-- TIPO -->
+<select id="tipo" class="w-full p-3 rounded bg-slate-900 border border-slate-700">
+<option value="">Tipo</option>
+<option value="entrada">Entrada (Receita)</option>
+<option value="saida">Saída (Despesa)</option>
+</select>
+
+<input id="descricao" placeholder="Descrição"
+class="w-full p-3 rounded bg-slate-900 border border-slate-700">
+
+<input id="valor" type="number" step="0.01" placeholder="Valor"
+class="w-full p-3 rounded bg-slate-900 border border-slate-700">
+
+<select id="categoria" class="w-full p-3 rounded bg-slate-900 border border-slate-700">
+<option value="">Categoria</option>
+<option>Hospedagem</option>
+<option>Alimentação</option>
+<option>Manutenção</option>
+<option>Funcionários</option>
+<option>Impostos</option>
+<option>Outros</option>
+</select>
+
+<input id="responsavel" placeholder="Responsável"
+class="w-full p-3 rounded bg-slate-900 border border-slate-700">
+
+<select id="origem" class="w-full p-3 rounded bg-slate-900 border border-slate-700">
+<option value="">Origem</option>
+<option>Caixa do Hotel</option>
+<option>Conta Bancária</option>
+</select>
+
+<select id="forma" class="w-full p-3 rounded bg-slate-900 border border-slate-700">
+<option value="">Forma de pagamento</option>
+<option>Pix</option>
+<option>Dinheiro</option>
+<option>Cartão</option>
+<option>Transferência</option>
+</select>
+
+<button onclick="salvar()" class="w-full bg-green-500 p-3 rounded font-bold">
+💾 Salvar Lançamento
+</button>
+
+<p id="msg" class="text-center"></p>
+
+</div>
+
+</div>
+
+<script>
+
+const supabaseClient = supabase.createClient(
+'https://osofdmgokrxdzsxozsrf.supabase.co',
+'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
+);
+
+async function salvar() {
+
+const dados = {
+tipo: tipo.value,
+descricao: descricao.value,
+valor: parseFloat(valor.value),
+categoria: categoria.value,
+responsavel: responsavel.value,
+origem: origem.value,
+forma_pagamento: forma.value,
+data_hora: new Date().toISOString()
+};
+
+if (!dados.tipo || !dados.descricao || !dados.valor ||
+    !dados.categoria || !dados.responsavel ||
+    !dados.origem || !dados.forma_pagamento) {
+
+msg.innerText = "⚠️ Preencha todos os campos!";
+msg.className = "text-red-400";
+return;
+}
+
+const { error } = await supabaseClient
+.from('livro_caixa')
+.insert([dados]);
+
+if (error) {
+msg.innerText = "❌ Erro ao salvar";
+msg.className = "text-red-400";
+return;
+}
+
+msg.innerText = "✅ Salvo com sucesso!";
+msg.className = "text-green-400";
+
+document.querySelectorAll("input").forEach(i => i.value = "");
+document.querySelectorAll("select").forEach(s => s.value = "");
+
+}
+
+</script>
+
+</body>
+</html>
