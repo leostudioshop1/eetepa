@@ -71,6 +71,16 @@
 </div>
 
 <script>
+// Verificação de segurança da config
+if (!window.SUPABASE_CONFIG) {
+    alert("Erro: Configurações do Supabase não encontradas! Verifique o arquivo config.js");
+}
+
+// Cria o cliente Supabase (mesma forma que o arquivo 11.html)
+const supabaseClient = supabase.createClient(
+    window.SUPABASE_CONFIG.url,
+    window.SUPABASE_CONFIG.key
+);
 
 function setMesAtual() {
     const hoje = new Date();
