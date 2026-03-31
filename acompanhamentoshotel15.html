@@ -8,6 +8,9 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<!-- Configuração do Supabase (externo) -->
+<script src="config.js"></script>
 </head>
 
 <body class="bg-slate-950 text-white min-h-screen p-4">
@@ -68,10 +71,6 @@
 </div>
 
 <script>
-const supabaseClient = supabase.createClient(
-    'https://osofdmgokrxdzsxozsrf.supabase.co',
-    'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
-);
 
 function setMesAtual() {
     const hoje = new Date();
@@ -91,12 +90,18 @@ function getIntervaloMes() {
 async function carregar() {
     const { inicio, fim } = getIntervaloMes();
 
-    const { data } = await supabaseClient
+    const { data, error } = await supabaseClient
         .from('gastos')
         .select('*')
         .gte('data_hora', inicio)
         .lte('data_hora', fim)
         .order('data_hora', { ascending: false });
+
+    if (error) {
+        console.error(error);
+        alert("Erro ao carregar dados: " + error.message);
+        return;
+    }
 
     let totalEntradas = 0, totalSaidas = 0, caixa = 0;
 
@@ -109,7 +114,9 @@ async function carregar() {
         if (g.tipo === 'entrada') totalEntradas += valor;
         else totalSaidas += valor;
 
-        if (g.origem === "Caixa do Hotel") caixa += (g.tipo === 'entrada' ? valor : -valor);
+        if (g.origem === "Caixa do Hotel") {
+            caixa += (g.tipo === 'entrada' ? valor : -valor);
+        }
 
         const corTipo = g.tipo === 'entrada' ? 'text-green-400' : 'text-red-400';
         const sinal = g.tipo === 'entrada' ? '+' : '-';
@@ -132,7 +139,9 @@ async function carregar() {
     document.getElementById("entradas").innerText = totalEntradas.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
     document.getElementById("saidas").innerText   = totalSaidas.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
     document.getElementById("saldo").innerText    = saldo.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-    document.getElementById("saldo").className    = saldo >= 0 ? "text-3xl font-bold text-emerald-400" : "text-3xl font-bold text-red-400";
+    document.getElementById("saldo").className    = saldo >= 0 
+        ? "text-3xl font-bold text-emerald-400" 
+        : "text-3xl font-bold text-red-400";
     document.getElementById("caixa").innerText    = caixa.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 }
 
@@ -146,6 +155,7 @@ function exportarPDF() {
     }).from(document.getElementById("relatorio")).save();
 }
 
+// Inicialização
 setMesAtual();
 carregar();
 setInterval(carregar, 30000);
