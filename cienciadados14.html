@@ -149,7 +149,7 @@
     <div id="floating-banner">O ESTUDO DE HOJE</div>
 
     <div class="header">
-        <div class="logo">📊 Cientistas de Dados Nota 10 <span style="font-size:1.25rem;">💾 Informática</span></div>
+        <div class="logo">Cientistas de Dados Nota 10 <span style="font-size:1.25rem;"> Prof. Léo Cruz</span></div>
         <div class="progress-container">
             <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
         </div>
@@ -178,7 +178,7 @@
     </audio>
 
     <script>
-        // Matrix Background
+        // Matrix Background by leomaster
         const canvas = document.getElementById('matrix-bg');
         const ctx = canvas.getContext('2d');
         function resizeCanvas() {
@@ -208,7 +208,7 @@
 
         // Banner flutuante
         const banner = document.getElementById('floating-banner');
-        const frases = ["O estudo de hoje", "É a vitória de amanhã", "Quanto mais você estuda, mais sorte você tem"];
+        const frases = ["O estudo de hoje", "É a vitória de amanhã", "Lembre-se a média é 10", "Quanto mais você estuda, mais sorte você tem"];
         let posX = 100, posY = 100, velX = 1.2, velY = 1.1, fraseIndex = 0;
 
         function moveBanner() {
@@ -314,7 +314,7 @@
         }
 
         function saveOpenAnswer() {
-            alert("✅ Resposta salva! Compare com o modelo na aula.");
+            alert("✅ Resposta salva! Compare com as anotações da aula.");
             nextQuestion();
         }
 
@@ -340,7 +340,7 @@
             
             let message = score >= 18 ? "Você é incrível! Nota 10 de verdade!" :
                          score >= 14 ? "Parabéns! Você foi muito bem!" :
-                         "Continue praticando! Refaça o quiz para melhorar.";
+                         "Continue praticando! Refaça  para melhorar e chegar a média 10 da turma.";
             document.getElementById('finalMessage').innerHTML = message;
         }
 
