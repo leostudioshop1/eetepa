@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- Configuração do Supabase (externo) -->
+    <!-- Configuração do Supabase -->
     <script src="config.js"></script>
 
     <style>
@@ -51,6 +51,7 @@
             pointer-events: none;
             text-transform: uppercase;
             border-radius: 4px;
+            will-change: transform;
         }
 
         .header {
@@ -218,17 +219,56 @@
     </div>
 
     <script>
-        // Verificação de segurança
+        // ==================== SUPABASE CONFIG ====================
         if (!window.SUPABASE_CONFIG) {
             alert("❌ Erro: Arquivo config.js não encontrado!");
         }
 
-        // Conexão com Supabase via config.js
         const supa = supabase.createClient(
             window.SUPABASE_CONFIG.url,
             window.SUPABASE_CONFIG.key
         );
 
+        // ==================== BANNER FLUTUANTE ====================
+        const banner = document.getElementById('floating-banner');
+        const frases = [
+            "O estudo de hoje", "É a vitória de amanhã", "Quanto mais você estuda",
+            "mais sorte você tem", "Estudar não é castigo", "A média da prova é 10",
+            "É o caminho para conquistar seus sonhos", "O esforço de agora",
+            "vai se transformar em orgulho depois", "Não desista quando ficar difícil"
+        ];
+        
+        let fraseIndex = 0;
+        let posX = 80;
+        let posY = 120;
+        let velX = 1.3;
+        let velY = 1.1;
+
+        function moveBanner() {
+            const winW = window.innerWidth;
+            const winH = window.innerHeight;
+            const banW = banner.offsetWidth || 220;
+            const banH = banner.offsetHeight || 45;
+
+            posX += velX;
+            posY += velY;
+
+            if (posX + banW >= winW || posX <= 0) {
+                velX *= -1;
+                fraseIndex = (fraseIndex + 1) % frases.length;
+                banner.innerText = frases[fraseIndex];
+            }
+            if (posY + banH >= winH || posY <= 0) {
+                velY *= -1;
+                fraseIndex = (fraseIndex + 1) % frases.length;
+                banner.innerText = frases[fraseIndex];
+            }
+
+            banner.style.transform = `translate(${posX}px, ${posY}px)`;
+            requestAnimationFrame(moveBanner);
+        }
+
+        // ==================== QUIZ ====================
         let sessionId = 'quiz_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
         let currentQuestion = 0;
         let score = 0;
@@ -268,11 +308,10 @@
                     user_agent: navigator.userAgent
                 });
             } catch (err) {
-                console.error('Erro ao salvar resposta:', err);
+                console.error('Erro ao salvar:', err);
             }
         }
 
-        // Funções do Quiz (mantidas iguais)
         function createTears() {
             const container = document.createElement('div');
             container.style.position = 'fixed';
@@ -288,14 +327,14 @@
                 const tear = document.createElement('div');
                 tear.style.position = 'absolute';
                 tear.style.width = '6px';
-                tear.style.height = (Math.random() * 20 + 18) + 'px';
+                tear.style.height = (Math.random() * 25 + 20) + 'px';
                 tear.style.background = 'linear-gradient(transparent, #88ddff)';
                 tear.style.left = Math.random() * 100 + 'vw';
                 tear.style.opacity = '0.75';
-                tear.style.animation = `fall ${Math.random() * 1.5 + 1.8}s linear forwards`;
-                tear.style.animationDelay = Math.random() * 0.6 + 's';
+                tear.style.animation = `fall ${Math.random() * 1.8 + 2}s linear forwards`;
+                tear.style.animationDelay = Math.random() * 0.8 + 's';
                 container.appendChild(tear);
-                setTimeout(() => tear.remove(), 5000);
+                setTimeout(() => tear.remove(), 6000);
             }
         }
 
@@ -317,8 +356,7 @@
                     <button onclick="saveOpenAnswer()" class="next-btn">✅ Confirmar Resposta</button>`;
             }
 
-            html += `
-                </div>
+            html += `</div>
                 <div id="feedbackArea" class="feedback"></div>
                 <button id="retryBtn" class="retry-btn" style="display:none;" onclick="retryQuestion()">🔄 Tentar Novamente</button>
                 <button id="nextBtn" class="next-btn" style="display:none;" onclick="nextQuestion()">Próxima Questão →</button>
@@ -407,10 +445,11 @@
             renderQuestion();
         }
 
-        // Inicialização
+        // ==================== INICIALIZAÇÃO ====================
         window.onload = () => {
             console.log("📊 Quiz Cientistas de Dados Nota 10 carregado com sucesso!");
             renderQuestion();
+            moveBanner();        // Ativa o banner flutuante
         };
     </script>
 </body>
