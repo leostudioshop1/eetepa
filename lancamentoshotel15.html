@@ -3,119 +3,170 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lançamento - Livro Caixa</title>
+<title>Lançamento - Livro Caixa Hotel</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 </head>
-
 <body class="bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white min-h-screen">
 
 <div class="max-w-5xl mx-auto p-4 md:p-6">
 
-<h1 class="text-3xl font-bold mb-6">💰 Livro Caixa - Lançamentos</h1>
+<h1 class="text-3xl font-bold mb-6 flex items-center gap-3">
+    💰 Livro Caixa - Lançamento
+</h1>
 
-<div class="bg-slate-800 p-5 rounded-xl space-y-4">
+<!-- RESUMO -->
+<div class="grid md:grid-cols-3 gap-4 mb-8">
+    <div class="bg-slate-800 p-5 rounded-2xl shadow">
+        <p class="text-slate-400">Saldo do Mês</p>
+        <p id="saldo" class="text-3xl font-bold text-emerald-400">R$ 0,00</p>
+    </div>
+    <div class="bg-slate-800 p-5 rounded-2xl shadow">
+        <p class="text-slate-400">Total Entradas</p>
+        <p id="totalEntradas" class="text-2xl font-bold text-green-400">R$ 0,00</p>
+    </div>
+    <div class="bg-slate-800 p-5 rounded-2xl shadow">
+        <p class="text-slate-400">Total Saídas</p>
+        <p id="totalSaidas" class="text-2xl font-bold text-red-400">R$ 0,00</p>
+    </div>
+</div>
 
-<!-- TIPO -->
-<select id="tipo" class="w-full p-3 rounded bg-slate-900 border border-slate-700">
-<option value="">Tipo</option>
-<option value="entrada">Entrada (Receita)</option>
-<option value="saida">Saída (Despesa)</option>
-</select>
+<!-- FORMULÁRIO -->
+<div class="bg-slate-800 p-6 rounded-2xl shadow space-y-5">
 
-<input id="descricao" placeholder="Descrição"
-class="w-full p-3 rounded bg-slate-900 border border-slate-700">
+    <div class="grid md:grid-cols-2 gap-4">
+        <input id="descricao" placeholder="Descrição do lançamento" 
+               class="w-full p-4 rounded-xl bg-slate-900 border border-slate-700">
 
-<input id="valor" type="number" step="0.01" placeholder="Valor"
-class="w-full p-3 rounded bg-slate-900 border border-slate-700">
+        <input id="valor" type="number" step="0.01" placeholder="Valor (R$)" 
+               class="w-full p-4 rounded-xl bg-slate-900 border border-slate-700">
+    </div>
 
-<select id="categoria" class="w-full p-3 rounded bg-slate-900 border border-slate-700">
-<option value="">Categoria</option>
-<option>Hospedagem</option>
-<option>Alimentação</option>
-<option>Manutenção</option>
-<option>Funcionários</option>
-<option>Impostos</option>
-<option>Outros</option>
-</select>
+    <div class="grid md:grid-cols-3 gap-4">
+        <select id="tipo" class="w-full p-4 rounded-xl bg-slate-900 border border-slate-700">
+            <option value="">Tipo de Movimentação</option>
+            <option value="entrada">✅ ENTRADA</option>
+            <option value="saida">❌ SAÍDA</option>
+        </select>
 
-<input id="responsavel" placeholder="Responsável"
-class="w-full p-3 rounded bg-slate-900 border border-slate-700">
+        <select id="categoria" class="w-full p-4 rounded-xl bg-slate-900 border border-slate-700">
+            <option value="">Categoria</option>
+            <option>Alimentação</option>
+            <option>Manutenção</option>
+            <option>Limpeza</option>
+            <option>Funcionários</option>
+            <option>Energia</option>
+            <option>Água</option>
+            <option>Internet</option>
+            <option>Compras</option>
+            <option>Impostos</option>
+            <option>Receita de Hóspedes</option>
+            <option>Outros</option>
+        </select>
 
-<select id="origem" class="w-full p-3 rounded bg-slate-900 border border-slate-700">
-<option value="">Origem</option>
-<option>Caixa do Hotel</option>
-<option>Conta Bancária</option>
-</select>
+        <input id="responsavel" placeholder="Responsável" 
+               class="w-full p-4 rounded-xl bg-slate-900 border border-slate-700">
+    </div>
 
-<select id="forma" class="w-full p-3 rounded bg-slate-900 border border-slate-700">
-<option value="">Forma de pagamento</option>
-<option>Pix</option>
-<option>Dinheiro</option>
-<option>Cartão</option>
-<option>Transferência</option>
-</select>
+    <div class="grid md:grid-cols-2 gap-4">
+        <select id="origem" class="w-full p-4 rounded-xl bg-slate-900 border border-slate-700">
+            <option value="">Origem</option>
+            <option>Caixa do Hotel</option>
+            <option>Conta Bancária</option>
+        </select>
 
-<button onclick="salvar()" class="w-full bg-green-500 p-3 rounded font-bold">
-💾 Salvar Lançamento
-</button>
+        <select id="forma" class="w-full p-4 rounded-xl bg-slate-900 border border-slate-700">
+            <option value="">Forma de Pagamento</option>
+            <option>Pix</option>
+            <option>Dinheiro</option>
+            <option>Cartão de Crédito</option>
+            <option>Cartão de Débito</option>
+            <option>Transferência</option>
+        </select>
+    </div>
 
-<p id="msg" class="text-center"></p>
+    <button onclick="salvar()" 
+            class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 p-4 rounded-2xl font-bold text-lg shadow-lg">
+        💾 Registrar Lançamento no Livro Caixa
+    </button>
 
+    <p id="msg" class="text-center text-sm font-medium"></p>
 </div>
 
 </div>
 
 <script>
-
 const supabaseClient = supabase.createClient(
-'https://osofdmgokrxdzsxozsrf.supabase.co',
-'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
+    'https://osofdmgokrxdzsxozsrf.supabase.co',
+    'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
 );
 
+async function carregarResumo() {
+    const { data } = await supabaseClient
+        .from('gastos')
+        .select('tipo, valor')
+        .gte('data_hora', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString());
+
+    let entradas = 0, saidas = 0;
+
+    data.forEach(item => {
+        const v = parseFloat(item.valor) || 0;
+        if (item.tipo === 'entrada') entradas += v;
+        else saidas += v;
+    });
+
+    const saldo = entradas - saidas;
+
+    document.getElementById("totalEntradas").innerText = entradas.toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
+    document.getElementById("totalSaidas").innerText   = saidas.toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
+    document.getElementById("saldo").innerText         = saldo.toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
+    
+    // Cor do saldo
+    document.getElementById("saldo").className = saldo >= 0 
+        ? "text-3xl font-bold text-emerald-400" 
+        : "text-3xl font-bold text-red-400";
+}
+
 async function salvar() {
+    const dados = {
+        descricao: descricao.value,
+        valor: parseFloat(valor.value),
+        tipo: tipo.value,
+        categoria: categoria.value,
+        responsavel: responsavel.value,
+        origem: origem.value,
+        forma_pagamento: forma.value,
+        data_hora: new Date().toISOString()
+    };
 
-const dados = {
-tipo: tipo.value,
-descricao: descricao.value,
-valor: parseFloat(valor.value),
-categoria: categoria.value,
-responsavel: responsavel.value,
-origem: origem.value,
-forma_pagamento: forma.value,
-data_hora: new Date().toISOString()
-};
+    if (!dados.descricao || !dados.valor || !dados.tipo || !dados.categoria || 
+        !dados.responsavel || !dados.origem || !dados.forma_pagamento) {
+        msg.innerText = "⚠️ Preencha todos os campos!";
+        msg.className = "text-red-400";
+        return;
+    }
 
-if (!dados.tipo || !dados.descricao || !dados.valor ||
-    !dados.categoria || !dados.responsavel ||
-    !dados.origem || !dados.forma_pagamento) {
+    const { error } = await supabaseClient.from('gastos').insert([dados]);
 
-msg.innerText = "⚠️ Preencha todos os campos!";
-msg.className = "text-red-400";
-return;
+    if (error) {
+        msg.innerText = "❌ Erro ao salvar: " + error.message;
+        msg.className = "text-red-400";
+        return;
+    }
+
+    msg.innerText = "✅ Lançamento registrado com sucesso!";
+    msg.className = "text-green-400";
+
+    // Limpar formulário
+    document.querySelectorAll("input, select").forEach(el => el.value = "");
+    
+    carregarResumo();
 }
 
-const { error } = await supabaseClient
-.from('livro_caixa')
-.insert([dados]);
-
-if (error) {
-msg.innerText = "❌ Erro ao salvar";
-msg.className = "text-red-400";
-return;
-}
-
-msg.innerText = "✅ Salvo com sucesso!";
-msg.className = "text-green-400";
-
-document.querySelectorAll("input").forEach(i => i.value = "");
-document.querySelectorAll("select").forEach(s => s.value = "");
-
-}
-
+// Inicializar
+carregarResumo();
 </script>
-
 </body>
 </html>

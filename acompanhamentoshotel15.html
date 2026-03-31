@@ -3,123 +3,152 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Livro Caixa</title>
+<title>Livro Caixa - Acompanhamento</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 
-<body class="bg-slate-950 text-white p-4">
+<body class="bg-slate-950 text-white min-h-screen p-4">
 
-<div class="max-w-7xl mx-auto">
+<div id="relatorio" class="max-w-7xl mx-auto">
 
-<h1 class="text-3xl font-bold mb-6 text-indigo-400">
-📊 Livro Caixa Completo
-</h1>
+<div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+    <div>
+        <h1 class="text-3xl font-bold text-indigo-400">📖 Livro Caixa Completo</h1>
+        <p class="text-slate-400">Hotel dos Viajantes - Desenvolvido por Léo Cruz</p>
+    </div>
+    <div class="flex flex-wrap gap-3">
+        <input type="month" id="mesFiltro" class="bg-slate-800 border border-slate-700 p-3 rounded-xl">
+        <button onclick="carregar()" class="bg-indigo-600 hover:bg-indigo-700 px-6 py-3 rounded-xl">🔍 Filtrar</button>
+        <button onclick="exportarPDF()" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-xl">📄 Exportar PDF</button>
+    </div>
+</div>
 
-<input type="month" id="mesFiltro"
-class="bg-slate-800 p-2 rounded mb-4">
+<!-- CARDS -->
+<div class="grid md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-slate-800 p-5 rounded-2xl">
+        <p class="text-slate-400">Saldo do Mês</p>
+        <p id="saldo" class="text-3xl font-bold"></p>
+    </div>
+    <div class="bg-slate-800 p-5 rounded-2xl">
+        <p class="text-slate-400">Total Entradas</p>
+        <p id="entradas" class="text-2xl font-bold text-green-400"></p>
+    </div>
+    <div class="bg-slate-800 p-5 rounded-2xl">
+        <p class="text-slate-400">Total Saídas</p>
+        <p id="saidas" class="text-2xl font-bold text-red-400"></p>
+    </div>
+    <div class="bg-slate-800 p-5 rounded-2xl">
+        <p class="text-slate-400">Saldo em Caixa</p>
+        <p id="caixa" class="text-xl font-bold text-blue-400"></p>
+    </div>
+</div>
 
-<button onclick="carregar()" class="bg-indigo-600 px-4 py-2 rounded mb-6">
-Filtrar
-</button>
-
-<div class="overflow-x-auto">
-<table class="w-full text-sm border border-slate-700">
-
-<thead class="bg-slate-800">
-<tr>
-<th class="p-2">Data</th>
-<th class="p-2">Descrição</th>
-<th class="p-2">Tipo</th>
-<th class="p-2">Valor</th>
-<th class="p-2">Saldo</th>
-<th class="p-2">Origem</th>
-<th class="p-2">Responsável</th>
-</tr>
-</thead>
-
-<tbody id="tabela"></tbody>
-
+<!-- TABELA -->
+<div class="overflow-x-auto bg-slate-900 rounded-2xl p-2">
+<table class="w-full text-sm">
+    <thead class="bg-slate-800">
+        <tr>
+            <th class="p-3 text-left">Data</th>
+            <th class="p-3 text-left">Descrição</th>
+            <th class="p-3">Tipo</th>
+            <th class="p-3 text-right">Valor</th>
+            <th class="p-3">Categoria</th>
+            <th class="p-3">Origem</th>
+            <th class="p-3">Pagamento</th>
+            <th class="p-3">Responsável</th>
+        </tr>
+    </thead>
+    <tbody id="tabela" class="divide-y divide-slate-700"></tbody>
 </table>
 </div>
 
 </div>
 
 <script>
-
 const supabaseClient = supabase.createClient(
-'https://osofdmgokrxdzsxozsrf.supabase.co',
-'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
+    'https://osofdmgokrxdzsxozsrf.supabase.co',
+    'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
 );
 
+function setMesAtual() {
+    const hoje = new Date();
+    document.getElementById("mesFiltro").value = hoje.toISOString().slice(0,7);
+}
+
 function getIntervaloMes() {
-const mes = document.getElementById("mesFiltro").value;
+    const mes = document.getElementById("mesFiltro").value;
+    const inicio = new Date(mes + "-01T00:00:00");
+    const fim = new Date(inicio);
+    fim.setMonth(fim.getMonth() + 1);
+    fim.setSeconds(fim.getSeconds() - 1);
 
-const inicio = new Date(mes + "-01T00:00:00");
-const fim = new Date(inicio);
-fim.setMonth(fim.getMonth() + 1);
-
-return {
-inicio: inicio.toISOString(),
-fim: fim.toISOString()
-};
+    return { inicio: inicio.toISOString(), fim: fim.toISOString() };
 }
 
 async function carregar() {
+    const { inicio, fim } = getIntervaloMes();
 
-const { inicio, fim } = getIntervaloMes();
+    const { data } = await supabaseClient
+        .from('gastos')
+        .select('*')
+        .gte('data_hora', inicio)
+        .lte('data_hora', fim)
+        .order('data_hora', { ascending: false });
 
-const { data, error } = await supabaseClient
-.from('vw_livro_caixa')
-.select('*')
-.gte('data_hora', inicio)
-.lt('data_hora', fim)
-.order('data_hora', { ascending: true });
+    let totalEntradas = 0, totalSaidas = 0, caixa = 0;
 
-if (error) {
-alert(error.message);
-return;
+    const tabela = document.getElementById("tabela");
+    tabela.innerHTML = "";
+
+    data.forEach(g => {
+        const valor = parseFloat(g.valor) || 0;
+        
+        if (g.tipo === 'entrada') totalEntradas += valor;
+        else totalSaidas += valor;
+
+        if (g.origem === "Caixa do Hotel") caixa += (g.tipo === 'entrada' ? valor : -valor);
+
+        const corTipo = g.tipo === 'entrada' ? 'text-green-400' : 'text-red-400';
+        const sinal = g.tipo === 'entrada' ? '+' : '-';
+
+        tabela.innerHTML += `
+        <tr class="hover:bg-slate-800 border-b border-slate-700">
+            <td class="p-3">${new Date(g.data_hora).toLocaleString('pt-BR')}</td>
+            <td class="p-3">${g.descricao}</td>
+            <td class="p-3 text-center"><span class="${corTipo} font-bold">${g.tipo.toUpperCase()}</span></td>
+            <td class="p-3 text-right font-bold ${corTipo}">${sinal} R$ ${valor.toFixed(2)}</td>
+            <td class="p-3">${g.categoria}</td>
+            <td class="p-3">${g.origem}</td>
+            <td class="p-3">${g.forma_pagamento}</td>
+            <td class="p-3">${g.responsavel}</td>
+        </tr>`;
+    });
+
+    const saldo = totalEntradas - totalSaidas;
+
+    document.getElementById("entradas").innerText = totalEntradas.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+    document.getElementById("saidas").innerText   = totalSaidas.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+    document.getElementById("saldo").innerText    = saldo.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+    document.getElementById("saldo").className    = saldo >= 0 ? "text-3xl font-bold text-emerald-400" : "text-3xl font-bold text-red-400";
+    document.getElementById("caixa").innerText    = caixa.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 }
 
-const tabela = document.getElementById("tabela");
-tabela.innerHTML = "";
-
-data.forEach(g => {
-
-tabela.innerHTML += `
-<tr class="border-b border-slate-800">
-<td class="p-2">${new Date(g.data_hora).toLocaleString()}</td>
-<td class="p-2">${g.descricao}</td>
-<td class="p-2">${g.tipo}</td>
-
-<td class="p-2 ${g.tipo === 'entrada' ? 'text-green-400' : 'text-red-400'} font-bold">
-${g.tipo === 'entrada' ? '+' : '-'} R$ ${parseFloat(g.valor).toFixed(2)}
-</td>
-
-<td class="p-2 text-blue-400 font-bold">
-R$ ${parseFloat(g.saldo_acumulado).toFixed(2)}
-</td>
-
-<td class="p-2">${g.origem}</td>
-<td class="p-2">${g.responsavel}</td>
-
-</tr>
-`;
-
-});
-
+// Exportar PDF
+function exportarPDF() {
+    html2pdf().set({
+        margin: 0.5,
+        filename: 'livro_caixa_hotel.pdf',
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    }).from(document.getElementById("relatorio")).save();
 }
 
-// iniciar com mês atual
-document.getElementById("mesFiltro").value =
-new Date().toISOString().slice(0,7);
-
+setMesAtual();
 carregar();
-
+setInterval(carregar, 30000);
 </script>
-
 </body>
 </html>
