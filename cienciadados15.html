@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Cientistas de Dados Nota 10</title>
+    <title>Cientistas de Dados Nota 10</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Configuração do Supabase (externo) -->
+    <script src="config.js"></script>
 
     <style>
         :root { 
@@ -26,7 +29,6 @@
             position: relative;
         }
 
-      
         #matrix-bg {
             position: fixed;
             top: 0; left: 0;
@@ -35,7 +37,6 @@
             pointer-events: none;
         }
 
-     
         #floating-banner {
             position: fixed;
             z-index: 10;
@@ -50,7 +51,6 @@
             pointer-events: none;
             text-transform: uppercase;
             border-radius: 4px;
-            will-change: transform;
         }
 
         .header {
@@ -72,7 +72,6 @@
             display: flex; 
             align-items: center; 
             gap: 12px; 
-            z-index: 101;
         }
 
         .progress-container { 
@@ -95,7 +94,6 @@
         .score { 
             font-size: 1.4rem; 
             font-weight: 700; 
-            z-index: 101;
         }
         
         .main { 
@@ -156,10 +154,8 @@
             padding: 25px; 
             border-radius: 16px;
             display: none; 
-            gap: 20px; 
-            align-items: flex-start;
         }
-        .feedback.show { display: flex; }
+        .feedback.show { display: block; }
         .feedback.correct { 
             background: rgba(0,255,136,0.15); 
             border: 2px solid #00ff88; 
@@ -188,7 +184,6 @@
             color: white; 
         }
         
-        .results { text-align: center; }
         .big-score { 
             font-size: 6.5rem; 
             font-weight: 900; 
@@ -196,42 +191,15 @@
             -webkit-background-clip: text; 
             color: transparent; 
         }
-
-        .tears { 
-            position: fixed; 
-            top: 0; left: 0; 
-            width: 100%; height: 100%; 
-            pointer-events: none; 
-            z-index: 999; 
-            display: none; 
-        }
-        .tear {
-            position: absolute; 
-            width: 6px; 
-            height: 25px;
-            background: linear-gradient(transparent, #88ddff); 
-            opacity: 0.75;
-            border-radius: 50%; 
-            animation: fall linear forwards;
-        }
-        @keyframes fall { 
-            to { 
-                transform: translateY(120vh); 
-                opacity: 0; 
-            } 
-        }
     </style>
 </head>
 <body>
 
- 
     <canvas id="matrix-bg"></canvas>
-
-  
     <div id="floating-banner">O ESTUDO DE HOJE</div>
 
     <div class="header">
-        <div class="logo"> Cientistas de Dados Nota 10 <span style="font-size:1.3rem;"> Prof. Léo Cruz</span></div>
+        <div class="logo">Cientistas de Dados Nota 10 <span style="font-size:1.3rem;"> Prof. Léo Cruz</span></div>
         <div class="progress-container">
             <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
         </div>
@@ -241,123 +209,29 @@
     <div class="main" id="quizContainer"></div>
 
     <div id="resultsScreen" class="main" style="display:none;">
-        <div class="card results">
-            <h1>🎉 Parabéns, futuro Cientista de Dados!</h1>
+        <div class="card">
+            <h1 style="text-align:center; margin-bottom:20px;">🎉 Parabéns, futuro Cientista de Dados!</h1>
             <div class="big-score" id="finalScore">20</div>
-            <p id="finalMessage" style="font-size:1.6rem; margin:25px 0;"></p>
-            <button onclick="restartQuiz()" class="next-btn">🔄 Refazer para chegar a média 10 da prova</button>
+            <p id="finalMessage" style="font-size:1.6rem; text-align:center; margin:25px 0;"></p>
+            <button onclick="restartQuiz()" class="next-btn">🔄 Refazer o Quiz</button>
         </div>
     </div>
 
-    <div id="tearsContainer" class="tears"></div>
-
     <script>
-       
-        const canvas = document.getElementById('matrix-bg');
-        const ctx = canvas.getContext('2d');
-        
-        function resizeCanvas() {
-            canvas.height = window.innerHeight;
-            canvas.width = window.innerWidth;
+        // Verificação de segurança
+        if (!window.SUPABASE_CONFIG) {
+            alert("❌ Erro: Arquivo config.js não encontrado!");
         }
-        resizeCanvas();
 
-        const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZアァカサタナハマヤャラワ";
-        const fontSize = 16;
-        let columns = canvas.width / fontSize;
-        let drops = Array(Math.floor(columns)).fill(1);
+        // Conexão com Supabase via config.js
+        const supa = supabase.createClient(
+            window.SUPABASE_CONFIG.url,
+            window.SUPABASE_CONFIG.key
+        );
 
-        function drawMatrix() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#00ff41';
-            ctx.font = fontSize + 'px monospace';
-            
-            for(let i = 0; i < drops.length; i++) {
-                const text = chars[Math.floor(Math.random() * chars.length)];
-                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                
-                if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
-                }
-                drops[i]++;
-            }
-        }
-        setInterval(drawMatrix, 35);
-
-       
-        const banner = document.getElementById('floating-banner');
-        const frases = [
-            "O estudo de hoje", "É a vitória de amanhã", "Quanto mais você estuda",
-            "mais sorte você tem", "Estudar não é castigo", "Não esqueça que a média da prova é 10", "É o caminho para conquistar seus sonhos",
-            "O esforço de agora", "vai se transformar em orgulho depois",
-            "Não desista quando ficar difícil", "É exatamente aí que o crescimento acontece"
-        ];
-        
-        let fraseIndex = 0;
-        let posX = 50;
-        let posY = 50;
-        let velX = 0.8; 
-        let velY = 0.8;
-
-        function moveBanner() {
-            const winW = window.innerWidth;
-            const winH = window.innerHeight;
-            const banW = banner.offsetWidth;
-            const banH = banner.offsetHeight;
-
-            posX += velX;
-            posY += velY;
-
-            if (posX + banW >= winW || posX <= 0) {
-                velX *= -1;
-                fraseIndex = (fraseIndex + 1) % frases.length;
-                banner.innerText = frases[fraseIndex];
-                posX = posX <= 0 ? 1 : winW - banW - 1;
-            }
-            if (posY + banH >= winH || posY <= 0) {
-                velY *= -1;
-                fraseIndex = (fraseIndex + 1) % frases.length;
-                banner.innerText = frases[fraseIndex];
-                posY = posY <= 0 ? 1 : winH - banH - 1;
-            }
-
-            banner.style.transform = `translate(${posX}px, ${posY}px)`;
-            requestAnimationFrame(moveBanner);
-        }
-        moveBanner();
-
-        window.addEventListener('resize', () => {
-            resizeCanvas();
-            if (posX > window.innerWidth) posX = 20;
-            if (posY > window.innerHeight) posY = 20;
-        });
-
-      
-        let supa;
         let sessionId = 'quiz_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
         let currentQuestion = 0;
         let score = 0;
-
-        async function initSupabase() {
-            try {
-                const configModule = await import('./config.js');
-                const config = configModule.default || configModule;
-                const supabaseUrl = config.url || config.SUPABASE_URL;
-                const supabaseKey = config.key || config.SUPABASE_KEY;
-
-                const { createClient } = supabase;
-                supa = createClient(supabaseUrl, supabaseKey);
-                console.log("✅ Supabase inicializado");
-            } catch (error) {
-                console.warn("Usando fallback do Supabase");
-                const { createClient } = supabase;
-                supa = createClient(
-                    'https://osofdmgokrxdzsxozsrf.supabase.co', 
-                    'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
-                );
-            }
-        }
 
         const questions = [
             { id: 1, type: "mcq", question: "Você vai montar um computador para editar vídeos. Quer algo rápido, silencioso, que não quebre fácil e gaste pouca energia. Qual é a melhor opção de armazenamento?", options: [{ text: "HD antigo (com disco que gira)", value: "A" }, { text: "SSD SATA", value: "B" }, { text: "Pendrive simples", value: "C" }, { text: "Disquete", value: "D" }, { text: "Qualquer HD", value: "E" }], correct: "B", explanation: "O SSD é rápido, não faz barulho, não tem partes que se mexem e gasta menos energia." },
@@ -383,7 +257,6 @@
         ];
 
         async function saveAnswerToSupabase(q, userAnswer, isCorrect) {
-            if (!supa) return;
             try {
                 await supa.from('quiz_responses').insert({
                     session_id: sessionId,
@@ -395,21 +268,32 @@
                     user_agent: navigator.userAgent
                 });
             } catch (err) {
-                console.error('Erro ao salvar:', err);
+                console.error('Erro ao salvar resposta:', err);
             }
         }
 
+        // Funções do Quiz (mantidas iguais)
         function createTears() {
-            const container = document.getElementById('tearsContainer');
-            container.style.display = 'block';
-            container.innerHTML = '';
+            const container = document.createElement('div');
+            container.style.position = 'fixed';
+            container.style.top = '0';
+            container.style.left = '0';
+            container.style.width = '100%';
+            container.style.height = '100%';
+            container.style.pointerEvents = 'none';
+            container.style.zIndex = '999';
+            document.body.appendChild(container);
+
             for (let i = 0; i < 70; i++) {
                 const tear = document.createElement('div');
-                tear.className = 'tear';
-                tear.style.left = Math.random() * 100 + 'vw';
-                tear.style.animationDuration = (Math.random() * 1.5 + 1.8) + 's';
-                tear.style.animationDelay = Math.random() * 0.6 + 's';
+                tear.style.position = 'absolute';
+                tear.style.width = '6px';
                 tear.style.height = (Math.random() * 20 + 18) + 'px';
+                tear.style.background = 'linear-gradient(transparent, #88ddff)';
+                tear.style.left = Math.random() * 100 + 'vw';
+                tear.style.opacity = '0.75';
+                tear.style.animation = `fall ${Math.random() * 1.5 + 1.8}s linear forwards`;
+                tear.style.animationDelay = Math.random() * 0.6 + 's';
                 container.appendChild(tear);
                 setTimeout(() => tear.remove(), 5000);
             }
@@ -469,7 +353,6 @@
                 confetti({ particleCount: 180, spread: 70, origin: { y: 0.6 } });
                 nextBtn.style.display = 'block';
             } else {
-                document.body.classList.add('error-mode');
                 createTears();
                 feedbackArea.innerHTML = `<strong style="color:#ff3366; font-size:1.3rem;">😢 Que pena... Vamos aprender com o erro.</strong><br><br><strong>Explicação:</strong><br>${q.explanation}`;
                 feedbackArea.classList.add('show', 'wrong');
@@ -481,15 +364,12 @@
             const q = questions[currentQuestion];
             const answer = document.getElementById('openAnswer').value.trim() || "(sem resposta)";
             await saveAnswerToSupabase(q, answer, null);
-            alert("✅ Resposta salva! Compare com as anotações da aula. Não esqueça que a média da prova é 10");
+            alert("✅ Resposta salva! Compare com as anotações da aula.");
             nextQuestion();
         }
 
         function nextQuestion() {
-            document.body.classList.remove('error-mode');
-            document.getElementById('tearsContainer').style.display = 'none';
             currentQuestion++;
-            
             if (currentQuestion < questions.length) {
                 renderQuestion();
             } else {
@@ -515,8 +395,6 @@
         }
 
         function retryQuestion() {
-            document.body.classList.remove('error-mode');
-            document.getElementById('tearsContainer').style.display = 'none';
             renderQuestion();
         }
 
@@ -529,10 +407,9 @@
             renderQuestion();
         }
 
-    
-        window.onload = async () => {
-            console.log("📊 Cientistas de Dados Nota 10 - Quiz com Matrix carregado!");
-            await initSupabase();
+        // Inicialização
+        window.onload = () => {
+            console.log("📊 Quiz Cientistas de Dados Nota 10 carregado com sucesso!");
             renderQuestion();
         };
     </script>
