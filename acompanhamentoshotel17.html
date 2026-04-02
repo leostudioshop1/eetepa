@@ -1,140 +1,301 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard PRO • Livro Caixa</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEMA TITANIUM • Hotel dos Viajantes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="config.js"></script>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
-
-<style>
-body { font-family: Inter, sans-serif; }
-.card { transition: .3s; }
-.card:hover { transform: translateY(-4px); }
-</style>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
+       
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #020617;
+            background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
+        }
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .neo-card {
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .neo-card:hover {
+            transform: translateY(-8px) scale(1.01);
+            border-color: #6366f1;
+        }
+    </style>
 </head>
+<body class="text-slate-200 min-h-screen">
+<div id="app" class="max-w-[1600px] mx-auto p-4 lg:p-8">
 
-<body class="bg-slate-950 text-white p-6">
+    <header class="flex flex-col md:flex-row justify-between items-center gap-6 mb-10 bg-slate-900/40 p-6 rounded-[2rem] border border-white/5 backdrop-blur-md">
+        <div class="flex items-center gap-5">
+            <div class="relative">
+                <div class="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-indigo-500/20">🏨</div>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-white">Hotel dos Viajantes</h1>
+                <div class="flex items-center gap-2 text-slate-400 text-sm">
+                    <span class="text-indigo-400 font-mono">Control Center v3.1</span>
+                    <span>•</span>
+                    <span id="displayDate"></span>
+                </div>
+            </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+            <input type="month" id="mesFiltro" onchange="carregarDados()" class="bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-indigo-500">
+            
+            <button onclick="carregarDados()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-semibold transition-all">
+                Atualizar
+            </button>
+            <button onclick="exportarPDF()" class="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all">📄</button>
+        </div>
+    </header>
 
-<div class="max-w-7xl mx-auto">
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <div class="neo-card glass p-7 rounded-[2rem]">
+            <p class="text-slate-400 text-sm font-medium mb-1">SALDO MENSAL</p>
+            <h3 id="kpi-saldo" class="text-3xl font-bold text-white">R$ 0,00</h3>
+        </div>
+        <div class="neo-card glass p-7 rounded-[2rem]">
+            <p class="text-emerald-400 text-sm font-medium mb-1">ENTRADAS</p>
+            <h3 id="kpi-entradas" class="text-3xl font-bold text-white">R$ 0,00</h3>
+        </div>
+        <div class="neo-card glass p-7 rounded-[2rem]">
+            <p class="text-rose-400 text-sm font-medium mb-1">SAÍDAS</p>
+            <h3 id="kpi-saidas" class="text-3xl font-bold text-white">R$ 0,00</h3>
+        </div>
+        <div class="neo-card glass p-7 rounded-[2rem] border border-indigo-500/30">
+            <p class="text-indigo-300 text-sm font-medium mb-1">CAIXA HOTEL</p>
+            <h3 id="kpi-caixa" class="text-3xl font-bold text-white">R$ 0,00</h3>
+        </div>
+    </div>
 
-<h1 class="text-3xl font-bold mb-6">📊 Dashboard Financeiro PRO</h1>
+    <!-- Gráficos -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+        <div class="lg:col-span-2 glass rounded-[2.5rem] p-8">
+            <h3 class="text-xl font-bold mb-6">Fluxo de Caixa Diário</h3>
+            <div class="h-[380px]"><canvas id="mainChart"></canvas></div>
+        </div>
+        <div class="glass rounded-[2.5rem] p-8">
+            <h3 class="text-xl font-bold mb-6">Despesas por Categoria</h3>
+            <div class="h-[380px]"><canvas id="pieChart"></canvas></div>
+        </div>
+    </div>
 
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-  <div class="card bg-slate-900 p-4 rounded-xl">
-    <p>Saldo</p>
-    <h2 id="saldo" class="text-2xl">R$ 0</h2>
-  </div>
-  <div class="card bg-slate-900 p-4 rounded-xl">
-    <p>Entradas</p>
-    <h2 id="entradas">R$ 0</h2>
-  </div>
-  <div class="card bg-slate-900 p-4 rounded-xl">
-    <p>Saídas</p>
-    <h2 id="saidas">R$ 0</h2>
-  </div>
-  <div class="card bg-slate-900 p-4 rounded-xl">
-    <p>Registros</p>
-    <h2 id="total">0</h2>
-  </div>
-</div>
-
-<div class="grid md:grid-cols-2 gap-6">
-  <canvas id="chartLine"></canvas>
-  <canvas id="chartPie"></canvas>
-</div>
-
+    <!-- Tabela -->
+    <div class="glass rounded-[2.5rem] overflow-hidden">
+        <div class="p-8 border-b border-white/5 flex justify-between items-center">
+            <h3 class="text-xl font-bold">Transações Detalhadas</h3>
+            <input type="text" id="tableSearch" placeholder="Buscar..." 
+                   oninput="filtrarTabela()" 
+                   class="bg-slate-900/50 border border-white/10 rounded-2xl px-6 py-3 w-80 focus:outline-none focus:border-indigo-500">
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-white/5 text-xs uppercase tracking-widest">
+                    <tr>
+                        <th class="px-8 py-5 text-left">Data</th>
+                        <th class="px-8 py-5 text-left">Descrição</th>
+                        <th class="px-8 py-5 text-left">Categoria</th>
+                        <th class="px-8 py-5 text-right">Valor</th>
+                        <th class="px-8 py-5 text-left">Responsável</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody" class="divide-y divide-white/5"></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script>
+// ====================== SUPABASE CONFIG ======================
+if (!window.SUPABASE_CONFIG) {
+    alert("❌ Erro: Arquivo config.js não encontrado ou mal configurado!");
+    console.error("SUPABASE_CONFIG não definido");
+}
+
 const supabaseClient = supabase.createClient(
-  window.SUPABASE_CONFIG.url,
-  window.SUPABASE_CONFIG.key
+    window.SUPABASE_CONFIG.url,
+    window.SUPABASE_CONFIG.key
 );
 
-let chartLine, chartPie;
-let cache = [];
-let updating = false;
+let rawData = [];
+let charts = { main: null, pie: null };
 
-function format(v){
- return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})
+// ====================== FUNÇÕES ======================
+function fmtCur(val) {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 }
 
-async function carregar(){
- if(updating) return;
- updating = true;
-
- const { data } = await supabaseClient.from('gastos').select('*');
- cache = data || [];
-
- render();
- updating = false;
+function getIntervaloMes(mesStr) {
+    const [ano, mes] = mesStr.split('-').map(Number);
+    const inicio = new Date(ano, mes-1, 1).toISOString();
+    
+    const ultimoDia = new Date(ano, mes, 0).getDate();
+    const fim = new Date(ano, mes-1, ultimoDia, 23, 59, 59).toISOString();
+    
+    return { inicio, fim };
 }
 
-function render(){
- let entradas=0,saidas=0;
+async function carregarDados() {
+    const mes = document.getElementById('mesFiltro').value;
+    if (!mes) return;
 
- cache.forEach(i=>{
-  const v=parseFloat(i.valor)||0;
-  i.tipo==='entrada'?entradas+=v:saidas+=v;
- });
+    const { inicio, fim } = getIntervaloMes(mes);
 
- document.getElementById('saldo').innerText=format(entradas-saidas);
- document.getElementById('entradas').innerText=format(entradas);
- document.getElementById('saidas').innerText=format(saidas);
- document.getElementById('total').innerText=cache.length;
+    try {
+        console.log(`🔍 Buscando dados de ${inicio} até ${fim}`);
 
- renderCharts();
+        const { data, error } = await supabaseClient
+            .from('gastos')
+            .select('*')
+            .gte('data_hora', inicio)
+            .lte('data_hora', fim)
+            .order('data_hora', { ascending: true });
+
+        if (error) {
+            console.error("Supabase Error:", error);
+            alert("Erro ao buscar dados: " + error.message);
+            return;
+        }
+
+        console.log(`✅ ${data?.length || 0} registros carregados`);
+        rawData = data || [];
+        processarInterface(rawData);
+
+    } catch (err) {
+        console.error("Erro geral:", err);
+        alert("Falha na comunicação com o banco de dados.");
+    }
 }
 
-function renderCharts(){
- if(chartLine) chartLine.destroy();
- if(chartPie) chartPie.destroy();
-
- const dias={};
- cache.forEach(i=>{
-  const d=i.data_hora?.slice(0,10);
-  if(!dias[d]) dias[d]=0;
-  dias[d]+=parseFloat(i.valor)||0;
- });
-
- const labels=Object.keys(dias);
- const valores=Object.values(dias);
-
- chartLine=new Chart(document.getElementById('chartLine'),{
-  type:'line',
-  data:{labels,datasets:[{data:valores}]},
-  options:{animation:false}
- });
-
- const categorias={};
- cache.forEach(i=>{
-  const c=i.categoria||'Outros';
-  categorias[c]=(categorias[c]||0)+Math.abs(i.valor);
- });
-
- chartPie=new Chart(document.getElementById('chartPie'),{
-  type:'doughnut',
-  data:{labels:Object.keys(categorias),datasets:[{data:Object.values(categorias)}]},
-  options:{animation:false}
- });
+function processarInterface(data) {
+    renderKPIs(data);
+    renderTable(data);
+    
+    // Delay pequeno para garantir renderização do canvas
+    setTimeout(() => updateCharts(data), 150);
 }
 
-// realtime seguro
-supabaseClient.channel('db-changes')
-.on('postgres_changes',{event:'*',schema:'public',table:'gastos'},()=>{
- carregar();
-}).subscribe();
+function renderKPIs(data) {
+    let entradas = 0, saidas = 0, caixa = 0;
 
-setInterval(()=>{
- if(!document.hidden) carregar();
-},30000);
+    data.forEach(item => {
+        const v = parseFloat(item.valor) || 0;
+        if (item.tipo === 'entrada') {
+            entradas += v;
+            if (item.origem === "Caixa do Hotel") caixa += v;
+        } else {
+            saidas += v;
+            if (item.origem === "Caixa do Hotel") caixa -= v;
+        }
+    });
 
-carregar();
+    document.getElementById('kpi-saldo').textContent = fmtCur(entradas - saidas);
+    document.getElementById('kpi-entradas').textContent = fmtCur(entradas);
+    document.getElementById('kpi-saidas').textContent = fmtCur(saidas);
+    document.getElementById('kpi-caixa').textContent = fmtCur(caixa);
+}
+
+function renderTable(data) {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = data.map(item => `
+        <tr class="hover:bg-white/5 transition-colors">
+            <td class="px-8 py-5">${new Date(item.data_hora).toLocaleString('pt-BR')}</td>
+            <td class="px-8 py-5">${item.descricao}</td>
+            <td class="px-8 py-5">${item.categoria || '—'}</td>
+            <td class="px-8 py-5 text-right font-bold ${item.tipo === 'entrada' ? 'text-emerald-400' : 'text-rose-400'}">
+                ${item.tipo === 'entrada' ? '+' : '-'} ${fmtCur(item.valor)}
+            </td>
+            <td class="px-8 py-5">${item.responsavel || '—'}</td>
+        </tr>
+    `).join('');
+}
+
+function updateCharts(data) {
+    // Destruir gráficos antigos
+    if (charts.main) { charts.main.destroy(); charts.main = null; }
+    if (charts.pie)  { charts.pie.destroy();  charts.pie = null; }
+
+    // Daily Chart
+    const daily = {};
+    const categories = {};
+
+    data.forEach(item => {
+        const dia = new Date(item.data_hora).getDate();
+        const v = parseFloat(item.valor) || 0;
+        
+        if (!daily[dia]) daily[dia] = { e: 0, s: 0 };
+        if (item.tipo === 'entrada') daily[dia].e += v;
+        else daily[dia].s += v;
+
+        if (item.tipo === 'saida') {
+            const cat = item.categoria || 'Outros';
+            categories[cat] = (categories[cat] || 0) + v;
+        }
+    });
+
+    // Main Chart (Line)
+    charts.main = new Chart(document.getElementById('mainChart'), {
+        type: 'line',
+        data: {
+            labels: Object.keys(daily),
+            datasets: [
+                { label: 'Entradas', data: Object.values(daily).map(d => d.e), borderColor: '#10b981', tension: 0.4, fill: true },
+                { label: 'Saídas',   data: Object.values(daily).map(d => d.s), borderColor: '#f43f5e', tension: 0.4, fill: true }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // Pie Chart
+    charts.pie = new Chart(document.getElementById('pieChart'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(categories),
+            datasets: [{
+                data: Object.values(categories),
+                backgroundColor: ['#6366f1','#a855f7','#ec4899','#f43f5e','#eab308','#22c55e']
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '75%' }
+    });
+}
+
+function filtrarTabela() {
+    const termo = document.getElementById('tableSearch').value.toLowerCase();
+    const filtrados = rawData.filter(item =>
+        item.descricao?.toLowerCase().includes(termo) ||
+        item.categoria?.toLowerCase().includes(termo) ||
+        item.responsavel?.toLowerCase().includes(termo)
+    );
+    renderTable(filtrados);
+}
+
+function exportarPDF() {
+    html2pdf().from(document.getElementById('app')).save('relatorio_hotel.pdf');
+}
+
+// ====================== INIT ======================
+function init() {
+    const hoje = new Date();
+    document.getElementById('mesFiltro').value = hoje.toISOString().slice(0,7);
+    document.getElementById('displayDate').textContent = hoje.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+    
+    carregarDados();
+}
+
+window.onload = init;
 </script>
-
 </body>
 </html>
