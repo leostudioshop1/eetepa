@@ -1,444 +1,140 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA TITANIUM • Hotel dos Viajantes</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard PRO • Livro Caixa</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="config.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
 
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
-        
-        :root {
-            --bg-main: #020617;
-            --accent: #6366f1;
-        }
-
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-main);
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
-            background-attachment: fixed;
-        }
-
-        .glass {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .neo-card {
-            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-        }
-
-        .neo-card:hover {
-            transform: translateY(-8px) scale(1.01);
-            border-color: var(--accent);
-            box-shadow: 0 20px 40px -20px rgba(99, 102, 241, 0.5);
-        }
-
-        /* Corrigindo o loop de scrollbar em tabelas */
-        .custom-scroll::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
-        }
-
-        .loading-shimmer {
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-        }
-
-        @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-        }
-
-        /* Animação do status Realtime */
-        .pulse-ring {
-            position: relative;
-            width: 8px;
-            height: 8px;
-            background: #10b981;
-            border-radius: 50%;
-        }
-        .pulse-ring::after {
-            content: '';
-            position: absolute;
-            width: 100%; height: 100%;
-            background: #10b981;
-            border-radius: 50%;
-            animation: ring 1.5s infinite;
-        }
-        @keyframes ring {
-            0% { transform: scale(1); opacity: 0.8; }
-            100% { transform: scale(3); opacity: 0; }
-        }
-    </style>
+<style>
+body { font-family: Inter, sans-serif; }
+.card { transition: .3s; }
+.card:hover { transform: translateY(-4px); }
+</style>
 </head>
 
-<body class="text-slate-200 min-h-screen">
+<body class="bg-slate-950 text-white p-6">
 
-<div id="app" class="max-w-[1600px] mx-auto p-4 lg:p-8">
-    
-    <header class="flex flex-col md:flex-row justify-between items-center gap-6 mb-10 bg-slate-900/40 p-6 rounded-[2rem] border border-white/5 backdrop-blur-md">
-        <div class="flex items-center gap-5">
-            <div class="relative">
-                <div class="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-indigo-500/20">🏨</div>
-                <div class="absolute -bottom-1 -right-1 pulse-ring border-2 border-slate-900"></div>
-            </div>
-            <div>
-                <h1 class="text-2xl font-bold tracking-tight text-white">Hotel dos Viajantes</h1>
-                <div class="flex items-center gap-2 text-slate-400 text-sm">
-                    <span class="text-indigo-400 font-mono">Control Center v3.0</span>
-                    <span>•</span>
-                    <span id="displayDate">Abril 2026</span>
-                </div>
-            </div>
-        </div>
+<div class="max-w-7xl mx-auto">
 
-        <div class="flex flex-wrap items-center gap-3">
-            <input type="month" id="mesFiltro" onchange="carregarDados()" 
-                   class="bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-indigo-500 transition-all">
-            
-            <div class="h-8 w-[1px] bg-white/10 mx-2 hidden md:block"></div>
+<h1 class="text-3xl font-bold mb-6">📊 Dashboard Financeiro PRO</h1>
 
-            <button onclick="exportarPDF()" class="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all" title="Exportar PDF">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            </button>
-            
-            <button onclick="toggleFullscreen()" class="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
-            </button>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+  <div class="card bg-slate-900 p-4 rounded-xl">
+    <p>Saldo</p>
+    <h2 id="saldo" class="text-2xl">R$ 0</h2>
+  </div>
+  <div class="card bg-slate-900 p-4 rounded-xl">
+    <p>Entradas</p>
+    <h2 id="entradas">R$ 0</h2>
+  </div>
+  <div class="card bg-slate-900 p-4 rounded-xl">
+    <p>Saídas</p>
+    <h2 id="saidas">R$ 0</h2>
+  </div>
+  <div class="card bg-slate-900 p-4 rounded-xl">
+    <p>Registros</p>
+    <h2 id="total">0</h2>
+  </div>
+</div>
 
-            <button onclick="carregarDados()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-semibold transition-all active:scale-95 shadow-lg shadow-indigo-500/20">
-                <span>Atualizar</span>
-            </button>
-        </div>
-    </header>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <div class="neo-card glass p-7 rounded-[2rem] relative overflow-hidden group">
-            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"></path></svg>
-            </div>
-            <p class="text-slate-400 text-sm font-medium mb-1 uppercase tracking-wider">Saldo Mensal</p>
-            <h3 id="kpi-saldo" class="text-3xl font-bold text-white tracking-tight">R$ 0,00</h3>
-            <div id="trend-saldo" class="mt-4 flex items-center text-xs font-semibold"></div>
-        </div>
-
-        <div class="neo-card glass p-7 rounded-[2rem]">
-            <p class="text-emerald-400/80 text-sm font-medium mb-1 uppercase tracking-wider">Entradas</p>
-            <h3 id="kpi-entradas" class="text-3xl font-bold text-white">R$ 0,00</h3>
-            <div id="trend-entradas" class="mt-4 flex items-center text-xs text-emerald-400 font-semibold"></div>
-        </div>
-
-        <div class="neo-card glass p-7 rounded-[2rem]">
-            <p class="text-rose-400/80 text-sm font-medium mb-1 uppercase tracking-wider">Saídas</p>
-            <h3 id="kpi-saidas" class="text-3xl font-bold text-white">R$ 0,00</h3>
-            <div id="trend-saidas" class="mt-4 flex items-center text-xs text-rose-400 font-semibold"></div>
-        </div>
-
-        <div class="neo-card bg-indigo-600/20 p-7 rounded-[2rem] border border-indigo-500/30">
-            <p class="text-indigo-300 text-sm font-medium mb-1 uppercase tracking-wider">Caixa Hotel</p>
-            <h3 id="kpi-caixa" class="text-3xl font-bold text-white">R$ 0,00</h3>
-            <div class="mt-4 text-xs text-indigo-300/60 font-medium">Fundo de reserva local</div>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-        <div class="lg:col-span-2 glass rounded-[2.5rem] p-8">
-            <div class="flex justify-between items-center mb-8">
-                <h3 class="text-xl font-bold text-white flex items-center gap-2">
-                    Fluxo de Caixa
-                    <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full uppercase">Diário</span>
-                </h3>
-            </div>
-            <div class="h-[350px] w-full relative">
-                <canvas id="mainChart"></canvas>
-            </div>
-        </div>
-
-        <div class="glass rounded-[2.5rem] p-8">
-            <h3 class="text-xl font-bold text-white mb-8">Despesas por Categoria</h3>
-            <div class="h-[350px] w-full relative flex items-center justify-center">
-                <canvas id="pieChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <div class="glass rounded-[2.5rem] overflow-hidden border border-white/5">
-        <div class="p-8 border-b border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-            <h3 class="text-xl font-bold text-white">Transações Detalhadas</h3>
-            <div class="relative w-full md:w-96">
-                <input type="text" id="tableSearch" oninput="filtrarTabela()" placeholder="Buscar transação..." 
-                       class="w-full bg-slate-900/50 border border-white/10 rounded-2xl px-6 py-3 pl-12 focus:outline-none focus:border-indigo-500 transition-all">
-                <svg class="w-5 h-5 absolute left-4 top-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-            </div>
-        </div>
-        
-        <div class="overflow-x-auto custom-scroll">
-            <table class="w-full text-left">
-                <thead>
-                    <tr class="bg-white/5 text-slate-400 text-xs uppercase tracking-widest font-semibold">
-                        <th class="px-8 py-5">Data</th>
-                        <th class="px-8 py-5">Descrição</th>
-                        <th class="px-8 py-5">Categoria</th>
-                        <th class="px-8 py-5 text-right">Valor</th>
-                        <th class="px-8 py-5">Responsável</th>
-                        <th class="px-8 py-5 text-center">Status</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody" class="divide-y divide-white/5">
-                    </tbody>
-            </table>
-        </div>
-    </div>
-
-    <footer class="mt-10 pb-10 text-center">
-        <p class="text-slate-500 text-sm">© 2026 Hotel dos Viajantes • Desenvolvido por <strong>Léo Cruz</strong></p>
-    </footer>
+<div class="grid md:grid-cols-2 gap-6">
+  <canvas id="chartLine"></canvas>
+  <canvas id="chartPie"></canvas>
+</div>
 
 </div>
 
 <script>
-// --- CORE CONFIG ---
-const supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
-let charts = { main: null, pie: null };
-let rawData = [];
-let updateTimeout = null;
+const supabaseClient = supabase.createClient(
+  window.SUPABASE_CONFIG.url,
+  window.SUPABASE_CONFIG.key
+);
 
-// --- INITIALIZATION ---
-function init() {
-    const inputMes = document.getElementById('mesFiltro');
-    const hoje = new Date();
-    inputMes.value = hoje.toISOString().slice(0, 7);
-    
-    carregarDados();
-    setupRealtime();
+let chartLine, chartPie;
+let cache = [];
+let updating = false;
+
+function format(v){
+ return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})
 }
 
-// --- DATA FETCHING (Com proteção contra loops) ---
-async function carregarDados() {
-    // Evita múltiplas chamadas simultâneas
-    if (updateTimeout) clearTimeout(updateTimeout);
-    
-    const mes = document.getElementById('mesFiltro').value;
-    const inicio = `${mes}-01T00:00:00`;
-    const fim = `${mes}-31T23:59:59`;
+async function carregar(){
+ if(updating) return;
+ updating = true;
 
-    try {
-        const { data, error } = await supabaseClient
-            .from('gastos')
-            .select('*')
-            .gte('data_hora', inicio)
-            .lte('data_hora', fim)
-            .order('data_hora', { ascending: true });
+ const { data } = await supabaseClient.from('gastos').select('*');
+ cache = data || [];
 
-        if (error) throw error;
-        
-        rawData = data;
-        processarInterface(data);
-
-    } catch (err) {
-        console.error("Erro na carga:", err);
-    }
+ render();
+ updating = false;
 }
 
-// --- UI ENGINE ---
-function processarInterface(data) {
-    renderKPIs(data);
-    renderTable(data);
-    
-    // Pequeno delay para os gráficos para garantir que o DOM está estável
-    setTimeout(() => {
-        updateCharts(data);
-    }, 100);
+function render(){
+ let entradas=0,saidas=0;
+
+ cache.forEach(i=>{
+  const v=parseFloat(i.valor)||0;
+  i.tipo==='entrada'?entradas+=v:saidas+=v;
+ });
+
+ document.getElementById('saldo').innerText=format(entradas-saidas);
+ document.getElementById('entradas').innerText=format(entradas);
+ document.getElementById('saidas').innerText=format(saidas);
+ document.getElementById('total').innerText=cache.length;
+
+ renderCharts();
 }
 
-function renderKPIs(data) {
-    let entradas = 0, saidas = 0, caixa = 0;
+function renderCharts(){
+ if(chartLine) chartLine.destroy();
+ if(chartPie) chartPie.destroy();
 
-    data.forEach(item => {
-        const v = parseFloat(item.valor) || 0;
-        if (item.tipo === 'entrada') {
-            entradas += v;
-            if(item.origem === 'Caixa do Hotel') caixa += v;
-        } else {
-            saidas += v;
-            if(item.origem === 'Caixa do Hotel') caixa -= v;
-        }
-    });
+ const dias={};
+ cache.forEach(i=>{
+  const d=i.data_hora?.slice(0,10);
+  if(!dias[d]) dias[d]=0;
+  dias[d]+=parseFloat(i.valor)||0;
+ });
 
-    const saldo = entradas - saidas;
+ const labels=Object.keys(dias);
+ const valores=Object.values(dias);
 
-    document.getElementById('kpi-saldo').textContent = fmtCur(saldo);
-    document.getElementById('kpi-entradas').textContent = fmtCur(entradas);
-    document.getElementById('kpi-saidas').textContent = fmtCur(saidas);
-    document.getElementById('kpi-caixa').textContent = fmtCur(caixa);
+ chartLine=new Chart(document.getElementById('chartLine'),{
+  type:'line',
+  data:{labels,datasets:[{data:valores}]},
+  options:{animation:false}
+ });
+
+ const categorias={};
+ cache.forEach(i=>{
+  const c=i.categoria||'Outros';
+  categorias[c]=(categorias[c]||0)+Math.abs(i.valor);
+ });
+
+ chartPie=new Chart(document.getElementById('chartPie'),{
+  type:'doughnut',
+  data:{labels:Object.keys(categorias),datasets:[{data:Object.values(categorias)}]},
+  options:{animation:false}
+ });
 }
 
-function renderTable(data) {
-    const body = document.getElementById('tableBody');
-    body.innerHTML = data.map(item => `
-        <tr class="hover:bg-white/[0.02] transition-colors group">
-            <td class="px-8 py-5 text-sm text-slate-400 font-mono">
-                ${new Date(item.data_hora).toLocaleDateString('pt-BR')}
-            </td>
-            <td class="px-8 py-5">
-                <div class="font-medium text-slate-200">${item.descricao}</div>
-                <div class="text-[10px] text-slate-500 uppercase">${item.origem}</div>
-            </td>
-            <td class="px-8 py-5 text-sm">
-                <span class="bg-slate-800 text-slate-400 px-3 py-1 rounded-lg text-xs">${item.categoria || 'Geral'}</span>
-            </td>
-            <td class="px-8 py-5 text-right font-bold ${item.tipo === 'entrada' ? 'text-emerald-400' : 'text-rose-400'}">
-                ${item.tipo === 'entrada' ? '+' : '-'} ${fmtCur(item.valor)}
-            </td>
-            <td class="px-8 py-5 text-sm text-slate-400">${item.responsavel || '---'}</td>
-            <td class="px-8 py-5 text-center">
-                <div class="w-2 h-2 rounded-full mx-auto ${item.tipo === 'entrada' ? 'bg-emerald-500' : 'bg-rose-500'} shadow-[0_0_8px_rgba(0,0,0,0.5)]"></div>
-            </td>
-        </tr>
-    `).reverse().join('');
-}
+// realtime seguro
+supabaseClient.channel('db-changes')
+.on('postgres_changes',{event:'*',schema:'public',table:'gastos'},()=>{
+ carregar();
+}).subscribe();
 
-// --- CHART ENGINE (CORREÇÃO DO LOOP) ---
-function updateCharts(data) {
-    // 1. Destruir instâncias existentes de forma segura
-    if (charts.main) {
-        charts.main.destroy();
-        charts.main = null;
-    }
-    if (charts.pie) {
-        charts.pie.destroy();
-        charts.pie = null;
-    }
+setInterval(()=>{
+ if(!document.hidden) carregar();
+},30000);
 
-    // 2. Processar Dados
-    const dailyData = {};
-    const categories = {};
-
-    data.forEach(item => {
-        const dia = new Date(item.data_hora).getDate();
-        const v = parseFloat(item.valor) || 0;
-        
-        if (!dailyData[dia]) dailyData[dia] = { e: 0, s: 0 };
-        item.tipo === 'entrada' ? dailyData[dia].e += v : dailyData[dia].s += v;
-
-        if (item.tipo === 'saida') {
-            const cat = item.categoria || 'Outros';
-            categories[cat] = (categories[cat] || 0) + v;
-        }
-    });
-
-    // 3. Renderizar Main Chart
-    const ctxMain = document.getElementById('mainChart');
-    if (ctxMain) {
-        charts.main = new Chart(ctxMain, {
-            type: 'line',
-            data: {
-                labels: Object.keys(dailyData),
-                datasets: [
-                    {
-                        label: 'Entradas',
-                        data: Object.values(dailyData).map(d => d.e),
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    },
-                    {
-                        label: 'Saídas',
-                        data: Object.values(dailyData).map(d => d.s),
-                        borderColor: '#f43f5e',
-                        backgroundColor: 'rgba(244, 63, 94, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { border: { display: false }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                    x: { border: { display: false }, grid: { display: false } }
-                }
-            }
-        });
-    }
-
-    // 4. Renderizar Pie Chart
-    const ctxPie = document.getElementById('pieChart');
-    if (ctxPie) {
-        charts.pie = new Chart(ctxPie, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(categories),
-                datasets: [{
-                    data: Object.values(categories),
-                    backgroundColor: ['#6366f1', '#a855f7', '#ec4899', '#f43f5e', '#eab308', '#22c55e'],
-                    borderWidth: 0,
-                    hoverOffset: 20
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '80%',
-                plugins: {
-                    legend: { position: 'bottom', labels: { color: '#94a3b8', usePointStyle: true, padding: 20 } }
-                }
-            }
-        });
-    }
-}
-
-// --- UTILS ---
-function fmtCur(val) {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-}
-
-function setupRealtime() {
-    supabaseClient
-        .channel('schema-db-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'gastos' }, () => {
-            // Debounce para evitar sobrecarga em inserções em massa
-            clearTimeout(updateTimeout);
-            updateTimeout = setTimeout(carregarDados, 500);
-        })
-        .subscribe();
-}
-
-function toggleFullscreen() {
-    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-    else document.exitFullscreen();
-}
-
-function filtrarTabela() {
-    const termo = document.getElementById('tableSearch').value.toLowerCase();
-    const filtrados = rawData.filter(i => 
-        i.descricao.toLowerCase().includes(termo) || 
-        (i.responsavel && i.responsavel.toLowerCase().includes(termo)) ||
-        (i.categoria && i.categoria.toLowerCase().includes(termo))
-    );
-    renderTable(filtrados);
-}
-
-window.onload = init;
+carregar();
 </script>
+
 </body>
 </html>
