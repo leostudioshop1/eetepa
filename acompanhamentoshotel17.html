@@ -1,301 +1,242 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Livro Caixa • Hotel dos Viajantes</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEMA TITANIUM • Hotel dos Viajantes</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="config.js"></script>
 
-<script src="config.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
+        
+        :root {
+            --bg-main: #020617;
+            --accent: #6366f1;
+        }
 
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
-    
-    body { font-family: 'Inter', system_ui, sans-serif; }
-    .title-font { font-family: 'Space Grotesk', sans-serif; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-main);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
 
-    .card-hover { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-    .card-hover:hover { transform: translateY(-6px); box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); }
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
 
-    .live-dot { animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .neo-card {
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
 
-    .loading { animation: loadingPulse 1.5s infinite; }
-</style>
+        .neo-card:hover {
+            transform: translateY(-8px) scale(1.01);
+            border-color: var(--accent);
+            box-shadow: 0 20px 40px -20px rgba(99, 102, 241, 0.5);
+        }
+
+        /* Corrigindo o loop de scrollbar em tabelas */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .loading-shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Animação do status Realtime */
+        .pulse-ring {
+            position: relative;
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+        }
+        .pulse-ring::after {
+            content: '';
+            position: absolute;
+            width: 100%; height: 100%;
+            background: #10b981;
+            border-radius: 50%;
+            animation: ring 1.5s infinite;
+        }
+        @keyframes ring {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+    </style>
 </head>
 
-<body class="bg-slate-950 text-white min-h-screen p-4 md:p-8">
+<body class="text-slate-200 min-h-screen">
 
-<div id="relatorio" class="max-w-7xl mx-auto">
-
-    <!-- HEADER -->
-    <div class="flex flex-col lg:flex-row justify-between items-center mb-8 gap-6 bg-slate-900/80 backdrop-blur-xl border border-slate-700 rounded-3xl p-6">
-        <div class="flex items-center gap-4">
-            <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-3xl flex items-center justify-center text-4xl shadow-inner">📖</div>
+<div id="app" class="max-w-[1600px] mx-auto p-4 lg:p-8">
+    
+    <header class="flex flex-col md:flex-row justify-between items-center gap-6 mb-10 bg-slate-900/40 p-6 rounded-[2rem] border border-white/5 backdrop-blur-md">
+        <div class="flex items-center gap-5">
+            <div class="relative">
+                <div class="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-indigo-500/20">🏨</div>
+                <div class="absolute -bottom-1 -right-1 pulse-ring border-2 border-slate-900"></div>
+            </div>
             <div>
-                <h1 class="title-font text-4xl font-semibold tracking-tight">Livro Caixa</h1>
-                <p class="text-slate-400 flex items-center gap-2">
-                    Hotel dos Viajantes 
-                    <span class="inline-flex items-center px-3 py-1 text-xs bg-emerald-400/10 text-emerald-400 rounded-3xl">
-                        <span class="live-dot w-2.5 h-2.5 bg-emerald-400 rounded-full"></span> AO VIVO
-                    </span>
-                </p>
+                <h1 class="text-2xl font-bold tracking-tight text-white">Hotel dos Viajantes</h1>
+                <div class="flex items-center gap-2 text-slate-400 text-sm">
+                    <span class="text-indigo-400 font-mono">Control Center v3.0</span>
+                    <span>•</span>
+                    <span id="displayDate">Abril 2026</span>
+                </div>
             </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
-            <input type="month" id="mesFiltro" class="bg-slate-800 border border-slate-700 rounded-2xl px-5 py-3 text-lg font-medium">
+            <input type="month" id="mesFiltro" onchange="carregarDados()" 
+                   class="bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-indigo-500 transition-all">
             
-            <button onclick="carregar()" 
-                    class="bg-indigo-600 hover:bg-indigo-700 px-8 py-3 rounded-2xl font-semibold flex items-center gap-2 transition-all">
-                <span>🔍</span> <span>Atualizar</span>
+            <div class="h-8 w-[1px] bg-white/10 mx-2 hidden md:block"></div>
+
+            <button onclick="exportarPDF()" class="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all" title="Exportar PDF">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             </button>
             
-            <button onclick="exportarPDF()" class="bg-emerald-600 hover:bg-emerald-700 px-6 py-3 rounded-2xl font-semibold">📄 PDF</button>
-            <button onclick="exportarCSV()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-2xl font-semibold">📤 CSV</button>
+            <button onclick="toggleFullscreen()" class="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+            </button>
+
+            <button onclick="carregarDados()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-semibold transition-all active:scale-95 shadow-lg shadow-indigo-500/20">
+                <span>Atualizar</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <div class="neo-card glass p-7 rounded-[2rem] relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"></path></svg>
+            </div>
+            <p class="text-slate-400 text-sm font-medium mb-1 uppercase tracking-wider">Saldo Mensal</p>
+            <h3 id="kpi-saldo" class="text-3xl font-bold text-white tracking-tight">R$ 0,00</h3>
+            <div id="trend-saldo" class="mt-4 flex items-center text-xs font-semibold"></div>
+        </div>
+
+        <div class="neo-card glass p-7 rounded-[2rem]">
+            <p class="text-emerald-400/80 text-sm font-medium mb-1 uppercase tracking-wider">Entradas</p>
+            <h3 id="kpi-entradas" class="text-3xl font-bold text-white">R$ 0,00</h3>
+            <div id="trend-entradas" class="mt-4 flex items-center text-xs text-emerald-400 font-semibold"></div>
+        </div>
+
+        <div class="neo-card glass p-7 rounded-[2rem]">
+            <p class="text-rose-400/80 text-sm font-medium mb-1 uppercase tracking-wider">Saídas</p>
+            <h3 id="kpi-saidas" class="text-3xl font-bold text-white">R$ 0,00</h3>
+            <div id="trend-saidas" class="mt-4 flex items-center text-xs text-rose-400 font-semibold"></div>
+        </div>
+
+        <div class="neo-card bg-indigo-600/20 p-7 rounded-[2rem] border border-indigo-500/30">
+            <p class="text-indigo-300 text-sm font-medium mb-1 uppercase tracking-wider">Caixa Hotel</p>
+            <h3 id="kpi-caixa" class="text-3xl font-bold text-white">R$ 0,00</h3>
+            <div class="mt-4 text-xs text-indigo-300/60 font-medium">Fundo de reserva local</div>
         </div>
     </div>
 
-    <!-- LOADING OVERLAY -->
-    <div id="loadingOverlay" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
-        <div class="text-center">
-            <div class="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p class="mt-6 text-lg font-medium text-white">Carregando dados e gerando gráficos...</p>
-            <p class="text-slate-400 text-sm mt-1">Isso pode levar alguns segundos</p>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+        <div class="lg:col-span-2 glass rounded-[2.5rem] p-8">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    Fluxo de Caixa
+                    <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full uppercase">Diário</span>
+                </h3>
+            </div>
+            <div class="h-[350px] w-full relative">
+                <canvas id="mainChart"></canvas>
+            </div>
+        </div>
+
+        <div class="glass rounded-[2.5rem] p-8">
+            <h3 class="text-xl font-bold text-white mb-8">Despesas por Categoria</h3>
+            <div class="h-[350px] w-full relative flex items-center justify-center">
+                <canvas id="pieChart"></canvas>
+            </div>
         </div>
     </div>
 
-    <!-- CARDS -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div class="card-hover bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-3xl border border-slate-700">
-            <p class="text-slate-400 text-sm font-medium">SALDO DO MÊS</p>
-            <p id="saldo" class="text-4xl font-bold title-font mt-3">R$ 0,00</p>
-        </div>
-        <div class="card-hover bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-3xl border border-slate-700">
-            <p class="text-emerald-400 text-sm font-medium">TOTAL ENTRADAS</p>
-            <p id="entradas" class="text-4xl font-bold title-font mt-3 text-emerald-400">R$ 0,00</p>
-        </div>
-        <div class="card-hover bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-3xl border border-slate-700">
-            <p class="text-red-400 text-sm font-medium">TOTAL SAÍDAS</p>
-            <p id="saidas" class="text-4xl font-bold title-font mt-3 text-red-400">R$ 0,00</p>
-        </div>
-    </div>
-
-    <!-- GRÁFICOS -->
-    <div class="mb-12">
-        <div class="flex items-center justify-between mb-6">
-            <h2 class="text-3xl font-semibold title-font">📊 Análise Visual em Tempo Real</h2>
-            <span onclick="carregar()" class="text-xs bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-3xl cursor-pointer transition-colors">Atualizar gráficos</span>
+    <div class="glass rounded-[2.5rem] overflow-hidden border border-white/5">
+        <div class="p-8 border-b border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
+            <h3 class="text-xl font-bold text-white">Transações Detalhadas</h3>
+            <div class="relative w-full md:w-96">
+                <input type="text" id="tableSearch" oninput="filtrarTabela()" placeholder="Buscar transação..." 
+                       class="w-full bg-slate-900/50 border border-white/10 rounded-2xl px-6 py-3 pl-12 focus:outline-none focus:border-indigo-500 transition-all">
+                <svg class="w-5 h-5 absolute left-4 top-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
         </div>
         
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="bg-slate-900 rounded-3xl p-6 border border-slate-700">
-                <h3 class="font-medium mb-4">Evolução do Saldo Acumulado</h3>
-                <canvas id="evolucaoChart" height="340"></canvas>
-            </div>
-            <div class="bg-slate-900 rounded-3xl p-6 border border-slate-700">
-                <h3 class="font-medium mb-4">Entradas × Saídas por Dia</h3>
-                <canvas id="dailyChart" height="340"></canvas>
-            </div>
-            <div class="bg-slate-900 rounded-3xl p-6 border border-slate-700">
-                <h3 class="font-medium mb-4">Distribuição por Categoria</h3>
-                <canvas id="categoriaChart" height="340"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- TABELA -->
-    <div class="bg-slate-900 rounded-3xl p-6 border border-slate-700">
-        <div class="flex justify-between mb-6">
-            <h2 class="text-2xl font-semibold title-font">Transações do Período</h2>
-            <input id="searchInput" type="text" placeholder="🔎 Buscar descrição ou categoria..." 
-                   class="bg-slate-800 border border-slate-700 rounded-2xl px-6 py-3 w-96 focus:border-indigo-400 outline-none">
-        </div>
-
-        <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-slate-800 sticky top-0 z-10">
-                    <tr>
-                        <th class="p-4 text-left">Data</th>
-                        <th class="p-4 text-left">Descrição</th>
-                        <th class="p-4 text-center">Tipo</th>
-                        <th class="p-4 text-right">Valor</th>
-                        <th class="p-4">Categoria</th>
-                        <th class="p-4">Origem</th>
-                        <th class="p-4">Pagamento</th>
-                        <th class="p-4">Responsável</th>
+        <div class="overflow-x-auto custom-scroll">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="bg-white/5 text-slate-400 text-xs uppercase tracking-widest font-semibold">
+                        <th class="px-8 py-5">Data</th>
+                        <th class="px-8 py-5">Descrição</th>
+                        <th class="px-8 py-5">Categoria</th>
+                        <th class="px-8 py-5 text-right">Valor</th>
+                        <th class="px-8 py-5">Responsável</th>
+                        <th class="px-8 py-5 text-center">Status</th>
                     </tr>
                 </thead>
-                <tbody id="tabela" class="divide-y divide-slate-700"></tbody>
+                <tbody id="tableBody" class="divide-y divide-white/5">
+                    </tbody>
             </table>
         </div>
     </div>
+
+    <footer class="mt-10 pb-10 text-center">
+        <p class="text-slate-500 text-sm">© 2026 Hotel dos Viajantes • Desenvolvido por <strong>Léo Cruz</strong></p>
+    </footer>
+
 </div>
 
 <script>
-// ====================== CONFIG ======================
-const supabaseClient = supabase.createClient(
-    window.SUPABASE_CONFIG.url,
-    window.SUPABASE_CONFIG.key
-);
+// --- CORE CONFIG ---
+const supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
+let charts = { main: null, pie: null };
+let rawData = [];
+let updateTimeout = null;
 
-let allData = [];
-let charts = {};
-let isLoading = false;
-
-// ====================== FUNÇÕES ======================
-function setMesAtual() {
+// --- INITIALIZATION ---
+function init() {
+    const inputMes = document.getElementById('mesFiltro');
     const hoje = new Date();
-    document.getElementById("mesFiltro").value = hoje.toISOString().slice(0,7);
+    inputMes.value = hoje.toISOString().slice(0, 7);
+    
+    carregarDados();
+    setupRealtime();
 }
 
-function getIntervaloMes(mes) {
-    const inicio = new Date(mes + "-01T00:00:00");
-    const fim = new Date(inicio);
-    fim.setMonth(fim.getMonth() + 1);
-    fim.setSeconds(-1);
-    return { inicio: inicio.toISOString(), fim: fim.toISOString() };
-}
-
-// ====================== CARDS ======================
-function renderCards(data) {
-    let entradas = 0, saidas = 0;
-    data.forEach(item => {
-        const v = parseFloat(item.valor) || 0;
-        if (item.tipo === 'entrada') entradas += v;
-        else saidas += v;
-    });
-    const saldo = entradas - saidas;
-
-    document.getElementById("saldo").textContent = saldo.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-    document.getElementById("saldo").className = saldo >= 0 
-        ? "text-4xl font-bold title-font mt-3 text-emerald-400" 
-        : "text-4xl font-bold title-font mt-3 text-red-400";
-
-    document.getElementById("entradas").textContent = entradas.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-    document.getElementById("saidas").textContent   = saidas.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-}
-
-// ====================== GRÁFICOS (100% ESTÁVEIS) ======================
-function destroyCharts() {
-    Object.values(charts).forEach(chart => {
-        if (chart) chart.destroy();
-    });
-    charts = {};
-}
-
-function renderCharts(data) {
-    destroyCharts(); // ← Garante que nunca fique duplicado
-
-    const dailyMap = {};
-    const catMap = {};
-
-    data.forEach(item => {
-        const date = item.data_hora.slice(0, 10);
-        const valor = parseFloat(item.valor) || 0;
-
-        if (!dailyMap[date]) dailyMap[date] = { entrada: 0, saida: 0 };
-        if (item.tipo === 'entrada') dailyMap[date].entrada += valor;
-        else dailyMap[date].saida += valor;
-
-        const cat = item.categoria || "Outros";
-        catMap[cat] = (catMap[cat] || 0) + Math.abs(valor);
-    });
-
-    const dates = Object.keys(dailyMap).sort();
-
-    // Gráfico 1 - Evolução
-    charts.evolucao = new Chart(document.getElementById('evolucaoChart'), {
-        type: 'line',
-        data: {
-            labels: dates.map(d => new Date(d).toLocaleDateString('pt-BR', {day:'2-digit', month:'short'})),
-            datasets: [{
-                label: 'Saldo Acumulado',
-                data: dates.reduce((acc, d) => {
-                    const prev = acc.length ? acc[acc.length-1] : 0;
-                    acc.push(prev + dailyMap[d].entrada - dailyMap[d].saida);
-                    return acc;
-                }, []),
-                borderColor: '#10b981',
-                backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                tension: 0.4,
-                borderWidth: 3,
-                pointRadius: 0,
-                pointHoverRadius: 5
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-    });
-
-    // Gráfico 2 - Barras
-    charts.daily = new Chart(document.getElementById('dailyChart'), {
-        type: 'bar',
-        data: {
-            labels: dates.map(d => new Date(d).toLocaleDateString('pt-BR', {day:'2-digit'})),
-            datasets: [
-                { label: 'Entradas', data: dates.map(d => dailyMap[d].entrada), backgroundColor: '#10b981' },
-                { label: 'Saídas',   data: dates.map(d => dailyMap[d].saida),   backgroundColor: '#ef4444' }
-            ]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-
-    // Gráfico 3 - Donut
-    charts.categoria = new Chart(document.getElementById('categoriaChart'), {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(catMap),
-            datasets: [{
-                data: Object.values(catMap),
-                backgroundColor: ['#10b981', '#22d3ee', '#a78bfa', '#f472b6', '#fb923c', '#eab308', '#ec4899']
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { position: 'bottom' } } }
-    });
-}
-
-// ====================== TABELA ======================
-function renderTable(data) {
-    const tbody = document.getElementById("tabela");
-    tbody.innerHTML = "";
-
-    data.forEach(item => {
-        const valor = parseFloat(item.valor) || 0;
-        const cor = item.tipo === 'entrada' ? 'text-emerald-400' : 'text-red-400';
-        const sinal = item.tipo === 'entrada' ? '+' : '-';
-
-        tbody.innerHTML += `
-        <tr class="hover:bg-slate-800 transition-colors">
-            <td class="p-4 whitespace-nowrap">${new Date(item.data_hora).toLocaleString('pt-BR')}</td>
-            <td class="p-4">${item.descricao}</td>
-            <td class="p-4 text-center"><span class="${cor} font-bold px-3 py-1 rounded-3xl bg-slate-800 text-xs">${item.tipo.toUpperCase()}</span></td>
-            <td class="p-4 text-right font-semibold ${cor}">${sinal} R$ ${valor.toFixed(2)}</td>
-            <td class="p-4">${item.categoria || '—'}</td>
-            <td class="p-4">${item.origem}</td>
-            <td class="p-4">${item.forma_pagamento || '—'}</td>
-            <td class="p-4">${item.responsavel || '—'}</td>
-        </tr>`;
-    });
-}
-
-// ====================== CARREGAR DADOS (COM PROTEÇÃO) ======================
-async function carregar() {
-    if (isLoading) return;
-    isLoading = true;
-    document.getElementById("loadingOverlay").classList.remove("hidden");
-
-    const mes = document.getElementById("mesFiltro").value;
-    if (!mes) {
-        isLoading = false;
-        document.getElementById("loadingOverlay").classList.add("hidden");
-        return;
-    }
-
-    const { inicio, fim } = getIntervaloMes(mes);
+// --- DATA FETCHING (Com proteção contra loops) ---
+async function carregarDados() {
+    // Evita múltiplas chamadas simultâneas
+    if (updateTimeout) clearTimeout(updateTimeout);
+    
+    const mes = document.getElementById('mesFiltro').value;
+    const inicio = `${mes}-01T00:00:00`;
+    const fim = `${mes}-31T23:59:59`;
 
     try {
         const { data, error } = await supabaseClient
@@ -303,66 +244,201 @@ async function carregar() {
             .select('*')
             .gte('data_hora', inicio)
             .lte('data_hora', fim)
-            .order('data_hora', { ascending: false });
+            .order('data_hora', { ascending: true });
 
         if (error) throw error;
-
-        allData = data || [];
-
-        renderCards(allData);
-        renderTable(allData);
-        renderCharts(allData);
+        
+        rawData = data;
+        processarInterface(data);
 
     } catch (err) {
-        console.error(err);
-        alert("Erro ao carregar dados: " + err.message);
-    } finally {
-        isLoading = false;
-        document.getElementById("loadingOverlay").classList.add("hidden");
+        console.error("Erro na carga:", err);
     }
 }
 
-// ====================== EXPORTAÇÃO ======================
-function exportarPDF() {
-    html2pdf().set({
-        margin: 0.8,
-        filename: `livro_caixa_${document.getElementById("mesFiltro").value || 'completo'}.pdf`
-    }).from(document.getElementById("relatorio")).save();
+// --- UI ENGINE ---
+function processarInterface(data) {
+    renderKPIs(data);
+    renderTable(data);
+    
+    // Pequeno delay para os gráficos para garantir que o DOM está estável
+    setTimeout(() => {
+        updateCharts(data);
+    }, 100);
 }
 
-function exportarCSV() {
-    if (!allData.length) return alert("Nenhum dado para exportar");
-    let csv = "Data,Descricao,Tipo,Valor,Categoria,Origem,Pagamento,Responsavel\n";
-    allData.forEach(r => {
-        csv += `"${r.data_hora}","${r.descricao.replace(/"/g,'""')}","${r.tipo}",${r.valor},"${r.categoria || ''}","${r.origem}","${r.forma_pagamento || ''}","${r.responsavel || ''}"\n`;
+function renderKPIs(data) {
+    let entradas = 0, saidas = 0, caixa = 0;
+
+    data.forEach(item => {
+        const v = parseFloat(item.valor) || 0;
+        if (item.tipo === 'entrada') {
+            entradas += v;
+            if(item.origem === 'Caixa do Hotel') caixa += v;
+        } else {
+            saidas += v;
+            if(item.origem === 'Caixa do Hotel') caixa -= v;
+        }
     });
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `livro_caixa_${document.getElementById("mesFiltro").value}.csv`;
-    link.click();
+
+    const saldo = entradas - saidas;
+
+    document.getElementById('kpi-saldo').textContent = fmtCur(saldo);
+    document.getElementById('kpi-entradas').textContent = fmtCur(entradas);
+    document.getElementById('kpi-saidas').textContent = fmtCur(saidas);
+    document.getElementById('kpi-caixa').textContent = fmtCur(caixa);
 }
 
-// ====================== BUSCA ======================
-document.getElementById("searchInput").addEventListener("input", function() {
-    const term = this.value.toLowerCase();
-    const filtered = allData.filter(item => 
-        (item.descricao || "").toLowerCase().includes(term) ||
-        (item.categoria || "").toLowerCase().includes(term)
+function renderTable(data) {
+    const body = document.getElementById('tableBody');
+    body.innerHTML = data.map(item => `
+        <tr class="hover:bg-white/[0.02] transition-colors group">
+            <td class="px-8 py-5 text-sm text-slate-400 font-mono">
+                ${new Date(item.data_hora).toLocaleDateString('pt-BR')}
+            </td>
+            <td class="px-8 py-5">
+                <div class="font-medium text-slate-200">${item.descricao}</div>
+                <div class="text-[10px] text-slate-500 uppercase">${item.origem}</div>
+            </td>
+            <td class="px-8 py-5 text-sm">
+                <span class="bg-slate-800 text-slate-400 px-3 py-1 rounded-lg text-xs">${item.categoria || 'Geral'}</span>
+            </td>
+            <td class="px-8 py-5 text-right font-bold ${item.tipo === 'entrada' ? 'text-emerald-400' : 'text-rose-400'}">
+                ${item.tipo === 'entrada' ? '+' : '-'} ${fmtCur(item.valor)}
+            </td>
+            <td class="px-8 py-5 text-sm text-slate-400">${item.responsavel || '---'}</td>
+            <td class="px-8 py-5 text-center">
+                <div class="w-2 h-2 rounded-full mx-auto ${item.tipo === 'entrada' ? 'bg-emerald-500' : 'bg-rose-500'} shadow-[0_0_8px_rgba(0,0,0,0.5)]"></div>
+            </td>
+        </tr>
+    `).reverse().join('');
+}
+
+// --- CHART ENGINE (CORREÇÃO DO LOOP) ---
+function updateCharts(data) {
+    // 1. Destruir instâncias existentes de forma segura
+    if (charts.main) {
+        charts.main.destroy();
+        charts.main = null;
+    }
+    if (charts.pie) {
+        charts.pie.destroy();
+        charts.pie = null;
+    }
+
+    // 2. Processar Dados
+    const dailyData = {};
+    const categories = {};
+
+    data.forEach(item => {
+        const dia = new Date(item.data_hora).getDate();
+        const v = parseFloat(item.valor) || 0;
+        
+        if (!dailyData[dia]) dailyData[dia] = { e: 0, s: 0 };
+        item.tipo === 'entrada' ? dailyData[dia].e += v : dailyData[dia].s += v;
+
+        if (item.tipo === 'saida') {
+            const cat = item.categoria || 'Outros';
+            categories[cat] = (categories[cat] || 0) + v;
+        }
+    });
+
+    // 3. Renderizar Main Chart
+    const ctxMain = document.getElementById('mainChart');
+    if (ctxMain) {
+        charts.main = new Chart(ctxMain, {
+            type: 'line',
+            data: {
+                labels: Object.keys(dailyData),
+                datasets: [
+                    {
+                        label: 'Entradas',
+                        data: Object.values(dailyData).map(d => d.e),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Saídas',
+                        data: Object.values(dailyData).map(d => d.s),
+                        borderColor: '#f43f5e',
+                        backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { border: { display: false }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    x: { border: { display: false }, grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // 4. Renderizar Pie Chart
+    const ctxPie = document.getElementById('pieChart');
+    if (ctxPie) {
+        charts.pie = new Chart(ctxPie, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(categories),
+                datasets: [{
+                    data: Object.values(categories),
+                    backgroundColor: ['#6366f1', '#a855f7', '#ec4899', '#f43f5e', '#eab308', '#22c55e'],
+                    borderWidth: 0,
+                    hoverOffset: 20
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '80%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#94a3b8', usePointStyle: true, padding: 20 } }
+                }
+            }
+        });
+    }
+}
+
+// --- UTILS ---
+function fmtCur(val) {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+}
+
+function setupRealtime() {
+    supabaseClient
+        .channel('schema-db-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'gastos' }, () => {
+            // Debounce para evitar sobrecarga em inserções em massa
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(carregarDados, 500);
+        })
+        .subscribe();
+}
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+}
+
+function filtrarTabela() {
+    const termo = document.getElementById('tableSearch').value.toLowerCase();
+    const filtrados = rawData.filter(i => 
+        i.descricao.toLowerCase().includes(termo) || 
+        (i.responsavel && i.responsavel.toLowerCase().includes(termo)) ||
+        (i.categoria && i.categoria.toLowerCase().includes(termo))
     );
-    renderTable(filtered);
-});
+    renderTable(filtrados);
+}
 
-// ====================== INICIALIZAÇÃO ======================
-setMesAtual();
-carregar();
-
-// Atualização automática suave (90 segundos)
-setInterval(() => {
-    if (!isLoading) carregar();
-}, 90000);
-
-console.log("%c✅ Dashboard Livro Caixa v3.0 - Gráficos 100% estáveis carregados!", "color:#6366f1; font-weight:bold");
+window.onload = init;
 </script>
 </body>
 </html>
