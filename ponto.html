@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bater Ponto</title>
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -67,84 +69,97 @@
     </div>
 
 <script>
-    let employees = JSON.parse(localStorage.getItem('employees')) || [];
-    let registros = JSON.parse(localStorage.getItem('registrosPonto')) || [];
-    let funcionarioAtual = null;
-    let currentDeviceID = null;
+// ============== CONFIGURAÇÃO SUPABASE (use o config.js) ==============
+const supabaseUrl = 'https://SEU-PROJETO.supabase.co';     // ← Troque pelo seu URL
+const supabaseAnonKey = 'eyJ...';                         // ← Troque pela sua anon key
 
-    // Gerar Device ID único e estável do dispositivo
-    function gerarDeviceID() {
-        const fingerprint = [
-            navigator.userAgent,
-            screen.width,
-            screen.height,
-            screen.colorDepth,
-            navigator.platform,
-            navigator.language
-        ].join('|');
-        
-        let hash = 0;
-        for (let i = 0; i < fingerprint.length; i++) {
-            hash = (hash << 5) - hash + fingerprint.charCodeAt(i);
-            hash = hash & hash;
-        }
-        return Math.abs(hash).toString(36).toUpperCase().substring(0, 14);
+const supabase = Supabase.createClient(supabaseUrl, supabaseAnonKey);
+// =====================================================================
+
+let currentDeviceID = null;
+let funcionarioAtual = null;
+
+function gerarDeviceID() {
+    const fingerprint = [
+        navigator.userAgent,
+        screen.width,
+        screen.height,
+        screen.colorDepth,
+        navigator.platform,
+        navigator.language
+    ].join('|');
+    
+    let hash = 0;
+    for (let i = 0; i < fingerprint.length; i++) {
+        hash = (hash << 5) - hash + fingerprint.charCodeAt(i);
+        hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36).toUpperCase().substring(0, 14);
+}
+
+async function detectarDispositivo() {
+    currentDeviceID = gerarDeviceID();
+    
+    const deviceEl = document.getElementById('deviceInfo');
+    deviceEl.innerHTML = `📱 Device ID: <strong>${currentDeviceID}</strong>`;
+
+    // Busca automática no Supabase pelo Device ID
+    const { data, error } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('device_id', currentDeviceID)
+        .single();
+
+    const nomeEl = document.getElementById('nomeFuncionario');
+    
+    if (data) {
+        funcionarioAtual = data;
+        nomeEl.textContent = data.nome;
+        nomeEl.style.color = "#27ae60";
+    } else {
+        funcionarioAtual = null;
+        nomeEl.textContent = "❌ Dispositivo não cadastrado no Supabase";
+        nomeEl.style.color = "red";
+    }
+}
+
+async function baterPonto(tipo) {
+    if (!funcionarioAtual) {
+        document.getElementById('status').innerHTML = 
+            '<span style="color:red;">❌ Este dispositivo ainda não foi vinculado</span>';
+        return;
     }
 
-    function detectarDispositivo() {
-        currentDeviceID = gerarDeviceID();
-        
-        const deviceEl = document.getElementById('deviceInfo');
-        deviceEl.innerHTML = `📱 Device ID: <strong>${currentDeviceID}</strong>`;
-        
-        // Busca automática pelo funcionário vinculado a este Device ID
-        funcionarioAtual = employees.find(e => e.deviceID === currentDeviceID);
-        
-        const nomeEl = document.getElementById('nomeFuncionario');
-        if (funcionarioAtual) {
-            nomeEl.textContent = funcionarioAtual.nome;
-            nomeEl.style.color = "#27ae60";
-        } else {
-            nomeEl.textContent = "❌ Dispositivo não cadastrado";
-            nomeEl.style.color = "red";
-        }
-    }
+    const agora = new Date();
+    const dataHora = agora.toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+    const dataHoje = agora.toLocaleDateString('pt-BR');
 
-    function baterPonto(tipo) {
-        if (!funcionarioAtual) {
-            document.getElementById('status').innerHTML = 
-                '<span style="color:red;">❌ Este dispositivo ainda não foi vinculado a nenhum funcionário</span>';
-            return;
-        }
-
-        const agora = new Date();
-        const dataHora = agora.toLocaleString('pt-BR', {
-            day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit', second: '2-digit'
-        });
-        const dataHoje = agora.toLocaleDateString('pt-BR');
-
-        registros.push({
-            employeeId: funcionarioAtual.id,
+    const { error } = await supabase
+        .from('registros_ponto')
+        .insert([{
+            employee_id: funcionarioAtual.id,
             nome: funcionarioAtual.nome,
-            dataHora: dataHora,
+            data_hora: dataHora,
             tipo: tipo,
             data: dataHoje,
             dispositivo: 'Mobile',
-            deviceID: currentDeviceID
-        });
+            device_id: currentDeviceID
+        }]);
 
-        localStorage.setItem('registrosPonto', JSON.stringify(registros));
-
-        const statusEl = document.getElementById('status');
+    const statusEl = document.getElementById('status');
+    if (error) {
+        statusEl.innerHTML = `<span style="color:red;">❌ Erro: ${error.message}</span>`;
+    } else {
         statusEl.style.color = '#27ae60';
         statusEl.textContent = `✅ ${tipo} registrada com sucesso!`;
-
         setTimeout(() => statusEl.textContent = '', 4000);
     }
+}
 
-    // Inicialização automática
-    window.onload = detectarDispositivo;
+window.onload = detectarDispositivo;
 </script>
 </body>
 </html>
