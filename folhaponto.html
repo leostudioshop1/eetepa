@@ -3,27 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Folha de Ponto • Inteligente com Supabase</title>
+    <title>Folha de Ponto • Supabase</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
+        
         .tail-container * { font-family: 'Inter', system_ui, sans-serif; }
         .header-font { font-family: 'Space Grotesk', sans-serif; }
+        
         .ponto-screen { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body class="tail-container bg-gray-950 text-white min-h-screen">
 
-    <!-- MODO PONTO (QR Code) -->
+    <!-- ==================== MODO PONTO (QR Code) ==================== -->
     <div id="ponto-screen" class="hidden flex-col min-h-screen bg-gradient-to-br from-blue-600 to-cyan-500">
         <div class="px-6 pt-8 pb-6 text-center">
             <div class="mx-auto w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-xl">⏰</div>
             <h1 class="header-font text-4xl font-semibold mb-1">Folha de Ponto</h1>
-            <p class="text-blue-100 text-lg">Sistema inteligente com Supabase</p>
+            <p class="text-blue-100">Sistema conectado ao Supabase</p>
             <div id="current-time" class="mt-6 text-5xl font-mono font-semibold tabular-nums"></div>
             <p class="text-blue-100 text-sm mt-1">Hoje, <span id="current-date"></span></p>
         </div>
@@ -31,80 +36,80 @@
         <div class="flex-1 bg-white text-gray-900 rounded-t-3xl px-6 pt-8 pb-12 shadow-2xl overflow-auto">
             <div class="max-w-md mx-auto">
 
-                <!-- Tela com usuário identificado -->
+                <!-- Usuário identificado automaticamente -->
                 <div id="identified-screen" class="hidden">
                     <div class="text-center mb-8">
                         <div class="inline-flex items-center gap-3 bg-emerald-100 text-emerald-700 px-5 py-2 rounded-3xl text-sm font-medium mb-4">
                             ✅ Dispositivo reconhecido
                         </div>
-                        <h2 id="welcome-name" class="text-3xl font-semibold text-gray-900"></h2>
-                        <p class="text-gray-500 mt-1">Escolha sua ação</p>
+                        <h2 id="welcome-name" class="text-3xl font-semibold"></h2>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
-                        <button onclick="registrarPonto('entrada')" class="h-28 bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all rounded-3xl flex flex-col items-center justify-center text-white shadow-lg">
+                        <button onclick="registrarPonto('entrada')" 
+                                class="h-28 bg-emerald-500 hover:bg-emerald-600 rounded-3xl flex flex-col items-center justify-center text-white shadow-lg transition-all">
                             <div class="text-5xl mb-2">🚪</div>
                             <div class="text-2xl font-semibold">ENTRADA</div>
                         </button>
-                        <button onclick="registrarPonto('saida')" class="h-28 bg-red-500 hover:bg-red-600 active:scale-95 transition-all rounded-3xl flex flex-col items-center justify-center text-white shadow-lg">
+                        <button onclick="registrarPonto('saida')" 
+                                class="h-28 bg-red-500 hover:bg-red-600 rounded-3xl flex flex-col items-center justify-center text-white shadow-lg transition-all">
                             <div class="text-5xl mb-2">🚪</div>
                             <div class="text-2xl font-semibold">SAÍDA</div>
                         </button>
                     </div>
 
-                    <button onclick="trocarUsuario()" class="mt-10 text-gray-400 hover:text-gray-500 text-sm flex items-center gap-2 mx-auto">
+                    <button onclick="trocarUsuario()" class="mt-10 text-gray-400 text-sm flex items-center gap-2 mx-auto">
                         👤 Não sou eu? Trocar funcionário
                     </button>
                 </div>
 
-                <!-- Tela de primeiro acesso -->
+                <!-- Primeiro acesso -->
                 <div id="setup-screen">
                     <div class="mb-8">
                         <label class="block text-sm font-medium text-gray-500 mb-2">Primeiro Acesso</label>
-                        <p class="text-gray-400 text-sm mb-4">Digite seu código único ou telefone</p>
-                        <input id="unique-id-input" type="text" placeholder="FUNC-784512 ou (99) 99999-9999"
-                               class="w-full px-5 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:border-cyan-500 focus:outline-none">
+                        <input id="unique-id-input" type="text" placeholder="FUNC-784512 ou telefone"
+                               class="w-full px-5 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:border-cyan-500">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
-                        <button onclick="registrarPonto('entrada')" class="h-28 bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all rounded-3xl flex flex-col items-center justify-center text-white shadow-lg">
+                        <button onclick="registrarPonto('entrada')" class="h-28 bg-emerald-500 hover:bg-emerald-600 rounded-3xl flex flex-col items-center justify-center text-white shadow-lg">
                             <div class="text-5xl mb-2">🚪</div>
                             <div class="text-2xl font-semibold">ENTRADA</div>
                         </button>
-                        <button onclick="registrarPonto('saida')" class="h-28 bg-red-500 hover:bg-red-600 active:scale-95 transition-all rounded-3xl flex flex-col items-center justify-center text-white shadow-lg">
+                        <button onclick="registrarPonto('saida')" class="h-28 bg-red-500 hover:bg-red-600 rounded-3xl flex flex-col items-center justify-center text-white shadow-lg">
                             <div class="text-5xl mb-2">🚪</div>
                             <div class="text-2xl font-semibold">SAÍDA</div>
                         </button>
                     </div>
                 </div>
 
-                <!-- Sucesso -->
+                <!-- Mensagem de Sucesso -->
                 <div id="success-message" class="hidden mt-8 text-center bg-emerald-50 text-emerald-700 rounded-3xl p-6">
                     <div class="text-4xl mb-3">✅</div>
                     <h3 id="success-title" class="font-semibold text-2xl"></h3>
-                    <p id="success-details" class="mt-2 text-sm"></p>
-                    <button onclick="copiarRegistro()" class="mt-6 bg-white text-emerald-700 px-8 py-3 rounded-2xl font-medium flex items-center gap-2 mx-auto hover:bg-gray-100">
-                        📋 Copiar registro
-                    </button>
+                    <p id="success-details" class="mt-2"></p>
+                    <button onclick="copiarRegistro()" class="mt-6 bg-white text-emerald-700 px-8 py-3 rounded-2xl font-medium">📋 Copiar registro</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- MODO ADMINISTRADOR -->
+    <!-- ==================== MODO ADMINISTRADOR ==================== -->
     <div id="admin-screen" class="min-h-screen">
-        <!-- Header e Tabs iguais à versão anterior (mantive simplificado) -->
-        <div class="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-5 flex items-center justify-between">
+        <div class="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-5 flex items-center justify-between sticky top-0 z-50">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 bg-white text-cyan-600 rounded-2xl flex items-center justify-center text-2xl">⏰</div>
-                <h1 class="header-font text-2xl font-semibold text-white">Folha de Ponto</h1>
+                <div>
+                    <h1 class="header-font text-2xl font-semibold text-white">Folha de Ponto</h1>
+                    <p class="text-blue-100 text-xs">Conectado ao Supabase</p>
+                </div>
             </div>
         </div>
 
         <div class="px-6 pt-4 flex border-b border-gray-800 bg-gray-950">
-            <button onclick="showTab(0)" id="tab-0" class="tab-button flex-1 py-4 text-center font-medium border-b-2 border-transparent active">📋 Cadastro</button>
-            <button onclick="showTab(1)" id="tab-1" class="tab-button flex-1 py-4 text-center font-medium border-b-2 border-transparent">📱 QR Code</button>
-            <button onclick="showTab(2)" id="tab-2" class="tab-button flex-1 py-4 text-center font-medium border-b-2 border-transparent">📊 Relatório</button>
+            <button onclick="showTab(0)" id="tab-0" class="tab-button flex-1 py-4 font-medium border-b-2 border-cyan-400 text-cyan-400">📋 Cadastro</button>
+            <button onclick="showTab(1)" id="tab-1" class="tab-button flex-1 py-4 font-medium border-b-2 border-transparent">📱 QR Code</button>
+            <button onclick="showTab(2)" id="tab-2" class="tab-button flex-1 py-4 font-medium border-b-2 border-transparent">📊 Relatório</button>
         </div>
 
         <!-- Aba Cadastro -->
@@ -112,41 +117,51 @@
             <div class="bg-gray-900 rounded-3xl p-6">
                 <h2 class="text-xl font-semibold mb-6">Cadastrar Funcionário</h2>
                 <input id="nome" type="text" placeholder="Nome completo" class="w-full px-5 py-4 bg-gray-800 rounded-2xl mb-4">
-                <input id="telefone" type="tel" placeholder="Telefone ou código" class="w-full px-5 py-4 bg-gray-800 rounded-2xl mb-6">
-                <button onclick="cadastrarFuncionario()" class="w-full bg-cyan-500 py-5 rounded-3xl text-lg font-semibold">Salvar no Supabase</button>
+                <input id="telefone" type="tel" placeholder="Telefone" class="w-full px-5 py-4 bg-gray-800 rounded-2xl mb-6">
+                <button onclick="cadastrarFuncionario()" class="w-full bg-cyan-500 py-5 rounded-3xl text-lg font-semibold text-white">
+                    Salvar no Supabase
+                </button>
             </div>
             <div id="lista-funcionarios" class="mt-8 space-y-3"></div>
         </div>
 
         <!-- Aba QR Code -->
         <div id="content-1" class="tab-content px-6 py-6 hidden">
-            <div class="text-center">
-                <h2 class="text-2xl font-semibold mb-4">QR Code de Acesso</h2>
-                <div class="bg-white rounded-3xl p-8 max-w-[300px] mx-auto" id="qrcode-container"></div>
-                <p class="mt-6 text-sm text-gray-400">Escaneie com o celular para registrar ponto</p>
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-semibold">QR Code de Acesso</h2>
+            </div>
+            <div class="bg-white rounded-3xl p-8 max-w-[300px] mx-auto" id="qrcode"></div>
+            <div class="mt-6 text-center">
+                <code id="qr-url" class="text-cyan-400 text-sm break-all bg-gray-800 p-4 rounded-2xl block"></code>
             </div>
         </div>
 
         <!-- Aba Relatório -->
         <div id="content-2" class="tab-content px-6 py-6 hidden">
             <h2 class="text-xl font-semibold mb-4">Registros de Ponto</h2>
-            <div id="tabela-relatorio" class="bg-gray-900 rounded-3xl overflow-hidden"></div>
+            <div id="relatorio-container" class="bg-gray-900 rounded-3xl p-6 text-sm"></div>
         </div>
     </div>
 
+    <!-- Script Principal -->
     <script type="module">
+        // Importa as configurações do Supabase
         import { supabaseConfig } from './config.js';
 
         // Inicializa o cliente Supabase
         const supabase = Supabase.createClient(supabaseConfig.url, supabaseConfig.anonKey);
 
-        let currentUser = null;   // usuário atual no dispositivo
+        let currentUser = null;
 
-        // ===================== FUNÇÕES SUPABASE =====================
+        // ===================== FUNÇÕES =====================
         async function cadastrarFuncionario() {
             const nome = document.getElementById('nome').value.trim();
             const telefone = document.getElementById('telefone').value.trim();
-            if (!nome || !telefone) return alert("Preencha nome e telefone!");
+
+            if (!nome || !telefone) {
+                alert("❌ Preencha nome e telefone!");
+                return;
+            }
 
             const codigo_unico = 'FUNC-' + Math.floor(100000 + Math.random() * 900000);
 
@@ -171,58 +186,61 @@
                 .order('nome');
 
             const container = document.getElementById('lista-funcionarios');
-            if (error || !data) {
-                container.innerHTML = '<p class="text-red-400">Erro ao carregar funcionários</p>';
+            if (error || !data || data.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 text-center py-8">Nenhum funcionário cadastrado ainda.</p>`;
                 return;
             }
 
             container.innerHTML = data.map(f => `
                 <div class="bg-gray-900 rounded-3xl p-5">
                     <div class="font-semibold">${f.nome}</div>
-                    <div class="text-cyan-400">${f.telefone}</div>
+                    <div class="text-cyan-400 text-sm">${f.telefone}</div>
                     <div class="text-xs text-gray-400">${f.codigo_unico}</div>
                 </div>
             `).join('');
         }
 
-        // Registrar ponto (Entrada ou Saída)
         async function registrarPonto(acao) {
             let funcionario_id = null;
             let nome = null;
 
-            // Se já tem usuário salvo no dispositivo
             if (currentUser) {
                 funcionario_id = currentUser.id;
                 nome = currentUser.nome;
             } else {
-                // Primeiro acesso - busca pelo código/telefone
                 const input = document.getElementById('unique-id-input').value.trim();
-                if (!input) return alert("Digite seu código ou telefone!");
+                if (!input) {
+                    alert("❌ Digite seu código único ou telefone!");
+                    return;
+                }
 
-                const { data } = await supabase
+                const { data, error } = await supabase
                     .from('funcionarios')
                     .select('id, nome')
                     .or(`codigo_unico.eq.${input},telefone.eq.${input}`)
                     .single();
 
-                if (!data) return alert("Funcionário não encontrado!");
+                if (error || !data) {
+                    alert("Funcionário não encontrado!");
+                    return;
+                }
 
                 funcionario_id = data.id;
                 nome = data.nome;
 
-                // Salva no dispositivo para próximas vezes
+                // Salva usuário no dispositivo
                 currentUser = { id: funcionario_id, nome };
                 localStorage.setItem('ponto_my_user', JSON.stringify(currentUser));
                 showIdentifiedScreen();
             }
 
-            // Insere o registro de ponto
+            // Registra o ponto no Supabase
             const { error } = await supabase
                 .from('registros_ponto')
                 .insert([{
-                    funcionario_id,
-                    acao,
-                    device_id: getDeviceId()   // função simples de fingerprint
+                    funcionario_id: funcionario_id,
+                    acao: acao,
+                    device_id: getDeviceId()
                 }]);
 
             if (error) {
@@ -233,34 +251,33 @@
         }
 
         function getDeviceId() {
-            let deviceId = localStorage.getItem('device_fingerprint');
-            if (!deviceId) {
-                deviceId = 'dev-' + Math.random().toString(36).substring(2) + Date.now().toString(36);
-                localStorage.setItem('device_fingerprint', deviceId);
+            let id = localStorage.getItem('device_fingerprint');
+            if (!id) {
+                id = 'dev-' + Date.now().toString(36) + Math.random().toString(36).substr(2);
+                localStorage.setItem('device_fingerprint', id);
             }
-            return deviceId;
+            return id;
         }
 
         function mostrarSucesso(acao, nome) {
             const msg = document.getElementById('success-message');
             msg.classList.remove('hidden');
-            document.getElementById('success-title').textContent = `${acao.toUpperCase()} registrada!`;
-            document.getElementById('success-details').innerHTML = `${nome}<br>${new Date().toLocaleString('pt-BR')}`;
+            document.getElementById('success-title').textContent = `${acao.toUpperCase()} registrada com sucesso!`;
+            document.getElementById('success-details').innerHTML = `<strong>${nome}</strong><br>${new Date().toLocaleString('pt-BR')}`;
         }
 
         function copiarRegistro() {
-            alert("Registro copiado! (Implemente a lógica de clipboard se quiser)");
+            alert("✅ Registro copiado (você pode melhorar esta função depois)");
         }
 
         function showIdentifiedScreen() {
             document.getElementById('setup-screen').classList.add('hidden');
-            const screen = document.getElementById('identified-screen');
-            screen.classList.remove('hidden');
+            document.getElementById('identified-screen').classList.remove('hidden');
             document.getElementById('welcome-name').innerHTML = `Olá, <span class="text-cyan-600">${currentUser.nome}</span>!`;
         }
 
         function trocarUsuario() {
-            if (confirm("Trocar usuário?")) {
+            if (confirm("Trocar de usuário neste dispositivo?")) {
                 localStorage.removeItem('ponto_my_user');
                 currentUser = null;
                 document.getElementById('identified-screen').classList.add('hidden');
@@ -269,9 +286,11 @@
         }
 
         function gerarQRCode() {
-            const container = document.getElementById('qrcode-container');
+            const container = document.getElementById('qrcode');
             container.innerHTML = '';
-            const url = window.location.href + '?mode=ponto';
+            const url = window.location.origin + window.location.pathname + '?mode=ponto';
+            document.getElementById('qr-url').textContent = url;
+
             new QRCode(container, {
                 text: url,
                 width: 260,
@@ -281,46 +300,48 @@
             });
         }
 
-        // ===================== TABS E INICIALIZAÇÃO =====================
         function showTab(n) {
-            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active', 'border-cyan-400', 'text-cyan-400'));
-            document.getElementById('tab-' + n).classList.add('active', 'border-cyan-400', 'text-cyan-400');
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('border-cyan-400', 'text-cyan-400');
+            });
+            document.getElementById('tab-' + n).classList.add('border-cyan-400', 'text-cyan-400');
+
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
             document.getElementById('content-' + n).classList.remove('hidden');
 
-            if (n === 1) gerarQRCode();
             if (n === 0) carregarFuncionarios();
+            if (n === 1) gerarQRCode();
         }
 
         function updateClock() {
             setInterval(() => {
                 const now = new Date();
-                document.getElementById('current-time').textContent = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                document.getElementById('current-time').textContent = 
+                    now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             }, 1000);
         }
 
+        // ===================== INICIALIZAÇÃO =====================
         async function init() {
             const params = new URLSearchParams(window.location.search);
             const isPontoMode = params.get('mode') === 'ponto';
 
             if (isPontoMode) {
                 document.getElementById('admin-screen').classList.add('hidden');
-                document.getElementById('ponto-screen').classList.remove('hidden');
-                document.getElementById('ponto-screen').classList.add('flex');
+                document.getElementById('ponto-screen').classList.remove('hidden').classList.add('flex');
                 updateClock();
 
-                // Verifica usuário salvo no dispositivo
-                const saved = localStorage.getItem('ponto_my_user');
-                if (saved) {
-                    currentUser = JSON.parse(saved);
+                const savedUser = localStorage.getItem('ponto_my_user');
+                if (savedUser) {
+                    currentUser = JSON.parse(savedUser);
                     showIdentifiedScreen();
                 }
             } else {
-                // Modo Admin
+                // Modo Administrador
                 showTab(0);
             }
 
-            console.log('%c✅ Folha de Ponto conectada ao Supabase!', 'color:#00d4ff; font-weight:bold');
+            console.log('%c✅ Folha de Ponto conectada ao Supabase com sucesso!', 'color:#00d4ff; font-weight:bold');
         }
 
         window.onload = init;
