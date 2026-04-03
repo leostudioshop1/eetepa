@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bater Ponto</title>
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -19,39 +20,23 @@
         .card {
             background: white;
             color: #333;
-            max-width: 420px;
+            max-width: 460px;
             width: 100%;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             overflow: hidden;
             text-align: center;
         }
-        .header {
-            background: #27ae60;
-            color: white;
-            padding: 25px;
-        }
-        .content {
-            padding: 35px 25px;
-        }
+        .header { background: #27ae60; color: white; padding: 25px; }
+        .content { padding: 35px 25px; }
         h1 { margin: 0 0 10px 0; font-size: 28px; }
-        .device-info {
-            font-size: 14px;
-            color: #27ae60;
-            margin-bottom: 20px;
-        }
-        .nome {
-            font-size: 26px;
-            font-weight: bold;
-            margin: 15px 0 30px 0;
-            color: #27ae60;
-            min-height: 70px;
-        }
+        .device-info { font-size: 14px; color: #27ae60; margin-bottom: 20px; }
+        .nome { font-size: 26px; font-weight: bold; margin: 15px 0 30px 0; color: #27ae60; min-height: 70px; }
         .btn {
             width: 100%;
-            padding: 20px;
-            margin: 12px 0;
-            font-size: 22px;
+            padding: 18px;
+            margin: 10px 0;
+            font-size: 21px;
             font-weight: bold;
             border: none;
             border-radius: 12px;
@@ -59,17 +44,10 @@
         }
         .btn-entrada { background: #27ae60; color: white; }
         .btn-saida   { background: #e74c3c; color: white; }
-        .status {
-            margin-top: 25px;
-            min-height: 30px;
-            font-weight: bold;
-            font-size: 17px;
-        }
-        .info {
-            font-size: 13px;
-            color: #777;
-            margin-top: 30px;
-        }
+        .btn-qr      { background: #3498db; color: white; }
+        .status { margin-top: 25px; min-height: 30px; font-weight: bold; font-size: 17px; }
+        #deviceQR { margin: 15px auto; }
+        .info { font-size: 13px; color: #777; margin-top: 25px; }
     </style>
 </head>
 <body>
@@ -83,96 +61,123 @@
             <p>Funcionário:</p>
             <div class="nome" id="nomeFuncionario">Carregando...</div>
 
+            <button class="btn btn-qr" onclick="mostrarQRDevice()">📱 Mostrar QR Code deste Dispositivo</button>
             <button class="btn btn-entrada" onclick="baterPonto('Entrada')">✅ MARCAR ENTRADA</button>
             <button class="btn btn-saida" onclick="baterPonto('Saída')">⏹️ MARCAR SAÍDA</button>
 
             <div class="status" id="status"></div>
-            <div class="info">Escaneie o QR Code para bater o ponto rapidamente</div>
+            <div class="info">Escaneie o QR Code do funcionário para bater ponto rapidamente</div>
         </div>
     </div>
 
-    <script>
-        let employees = JSON.parse(localStorage.getItem('employees')) || [];
-        let registros = JSON.parse(localStorage.getItem('registrosPonto')) || [];
-        let funcionarioAtual = null;
+    <div id="qrModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; padding:20px; border-radius:15px; text-align:center;">
+            <h3>QR Code deste Dispositivo</h3>
+            <div id="deviceQR"></div>
+            <p><strong>Device ID:</strong> <span id="modalDeviceID"></span></p>
+            <button onclick="fecharModal()" style="margin-top:15px; padding:10px 20px;">Fechar</button>
+        </div>
+    </div>
 
-        // Detecta tipo de dispositivo
-        function detectarDispositivo() {
-            const userAgent = navigator.userAgent || '';
-            const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) ||
-                            (navigator.userAgentData && navigator.userAgentData.mobile);
-            
-            const deviceEl = document.getElementById('deviceInfo');
-            deviceEl.textContent = isMobile ? '📱 Dispositivo: Celular / Tablet' : '💻 Dispositivo: Computador';
-            deviceEl.style.color = isMobile ? '#27ae60' : '#e67e22';
-            
-            return isMobile;
+<script>
+    let employees = JSON.parse(localStorage.getItem('employees')) || [];
+    let registros = JSON.parse(localStorage.getItem('registrosPonto')) || [];
+    let funcionarioAtual = null;
+    let currentDeviceID = null;
+
+    // Gerar Device ID único
+    function gerarDeviceID() {
+        let fingerprint = navigator.userAgent + screen.width + screen.height + screen.colorDepth + navigator.platform;
+        let hash = 0;
+        for (let i = 0; i < fingerprint.length; i++) {
+            hash = (hash << 5) - hash + fingerprint.charCodeAt(i);
+            hash = hash & hash;
+        }
+        return Math.abs(hash).toString(36).toUpperCase().substring(0, 12);
+    }
+
+    function detectarDispositivo() {
+        currentDeviceID = gerarDeviceID();
+        const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+        
+        const deviceEl = document.getElementById('deviceInfo');
+        deviceEl.textContent = isMobile ? `📱 Device ID: ${currentDeviceID}` : `💻 Device ID: ${currentDeviceID}`;
+        deviceEl.style.color = isMobile ? '#27ae60' : '#e67e22';
+    }
+
+    function getFuncionario() {
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+        if (id) {
+            return employees.find(e => e.id === id);
+        }
+        return null;
+    }
+
+    function mostrarQRDevice() {
+        const qrContainer = document.getElementById('deviceQR');
+        qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(currentDeviceID)}" width="280">`;
+        document.getElementById('modalDeviceID').textContent = currentDeviceID;
+        document.getElementById('qrModal').style.display = 'flex';
+    }
+
+    function fecharModal() {
+        document.getElementById('qrModal').style.display = 'none';
+    }
+
+    function baterPonto(tipo) {
+        if (!funcionarioAtual) {
+            document.getElementById('status').innerHTML = '<span style="color:red;">❌ Funcionário não identificado</span>';
+            return;
         }
 
-        function getFuncionario() {
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
-            
-            if (id) {
-                const func = employees.find(e => e.id === id);
-                if (func) {
-                    localStorage.setItem('lastEmployeeId', id);
-                    return func;
-                }
-            }
-            
-            // Fallback: último funcionário usado
-            const lastId = localStorage.getItem('lastEmployeeId');
-            if (lastId) return employees.find(e => e.id === lastId);
-            return null;
+        // Verificação de dispositivo
+        if (funcionarioAtual.deviceID && funcionarioAtual.deviceID !== currentDeviceID) {
+            document.getElementById('status').innerHTML = 
+                '<span style="color:red;">❌ Este dispositivo não está autorizado para este funcionário</span>';
+            return;
         }
 
-        function baterPonto(tipo) {
-            if (!funcionarioAtual) {
-                document.getElementById('status').innerHTML = 
-                    '<span style="color:red;">❌ Funcionário não identificado</span>';
-                return;
-            }
+        const agora = new Date();
+        const dataHora = agora.toLocaleString('pt-BR', { 
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', second: '2-digit' 
+        });
+        const dataHoje = agora.toLocaleDateString('pt-BR');
 
-            const agora = new Date();
-            const dataHora = agora.toLocaleString('pt-BR', {
-                day: '2-digit', month: '2-digit', year: 'numeric',
-                hour: '2-digit', minute: '2-digit', second: '2-digit'
-            });
-            const dataHoje = agora.toLocaleDateString('pt-BR');
+        registros.push({
+            employeeId: funcionarioAtual.id,
+            nome: funcionarioAtual.nome,
+            dataHora: dataHora,
+            tipo: tipo,
+            data: dataHoje,
+            dispositivo: /Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop',
+            deviceID: currentDeviceID
+        });
 
-            registros.push({
-                employeeId: funcionarioAtual.id,
-                nome: funcionarioAtual.nome,
-                dataHora: dataHora,
-                tipo: tipo,
-                data: dataHoje,
-                dispositivo: detectarDispositivo() ? 'Mobile' : 'Desktop'
-            });
+        localStorage.setItem('registrosPonto', JSON.stringify(registros));
 
-            localStorage.setItem('registrosPonto', JSON.stringify(registros));
+        const statusEl = document.getElementById('status');
+        statusEl.style.color = '#27ae60';
+        statusEl.textContent = `✅ ${tipo} registrada com sucesso!`;
 
-            const statusEl = document.getElementById('status');
-            statusEl.style.color = '#27ae60';
-            statusEl.textContent = `✅ ${tipo} registrada com sucesso!`;
+        setTimeout(() => statusEl.textContent = '', 4000);
+    }
 
-            setTimeout(() => statusEl.textContent = '', 4000);
+    // Inicialização
+    window.onload = function() {
+        detectarDispositivo();
+
+        funcionarioAtual = getFuncionario();
+        const nomeEl = document.getElementById('nomeFuncionario');
+
+        if (funcionarioAtual) {
+            nomeEl.textContent = funcionarioAtual.nome;
+        } else {
+            nomeEl.textContent = "Funcionário não encontrado";
+            nomeEl.style.color = "red";
         }
-
-        // Inicialização
-        window.onload = function() {
-            detectarDispositivo();   // Mostra se é celular ou computador
-
-            funcionarioAtual = getFuncionario();
-            const nomeEl = document.getElementById('nomeFuncionario');
-
-            if (funcionarioAtual) {
-                nomeEl.textContent = funcionarioAtual.nome;
-            } else {
-                nomeEl.textContent = "Funcionário não encontrado";
-                nomeEl.style.color = "red";
-            }
-        };
-    </script>
+    };
+</script>
 </body>
 </html>
