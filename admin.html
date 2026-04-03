@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Controle de Ponto</title>
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
         .container { max-width: 1100px; margin: 0 auto; }
@@ -17,185 +18,140 @@
         .btn-primary { background: #27ae60; color: white; }
         .btn-success { background: #2ecc71; color: white; }
         .btn-danger { background: #e74c3c; color: white; }
-        input, select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; width: 100%; margin-bottom: 10px; }
+        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; width: 100%; margin-bottom: 10px; }
         #reader { width: 100%; max-width: 400px; margin: 15px auto; border: 2px solid #27ae60; border-radius: 12px; }
         .device-id { font-size: 0.95em; color: #333; background: #f8f9fa; padding: 10px; border-radius: 6px; word-break: break-all; font-family: monospace; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🛠️ Painel Administrativo - Controle de Ponto</h1>
+    <h1>🛠️ Painel Administrativo - Controle de Ponto (Supabase)</h1>
 
-    <!-- Cadastro de Funcionário -->
     <div class="card">
         <h2>Cadastrar Funcionário</h2>
-        
         <input type="text" id="nomeFunc" placeholder="Nome completo do funcionário">
-        <input type="text" id="deviceIDManual" placeholder="Cole aqui o Device ID (que aparece no ponto.html)">
+        <input type="text" id="deviceIDManual" placeholder="Cole o Device ID (do ponto.html)">
         
         <button class="btn btn-success" onclick="iniciarScanner()">📷 Escanear QR Code do Dispositivo</button>
         <div id="reader"></div>
         
         <div id="deviceInfo" style="margin: 15px 0; font-weight: bold;"></div>
         
-        <button class="btn btn-primary" onclick="cadastrarFuncionario()" id="btnCadastrar">Cadastrar Funcionário</button>
+        <button class="btn btn-primary" onclick="cadastrarFuncionario()" id="btnCadastrar">Cadastrar no Supabase</button>
     </div>
 
-    <!-- Lista de Funcionários -->
     <div class="card">
         <h2>Funcionários Cadastrados</h2>
         <table id="tabelaFuncionarios">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Device ID</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
+            <thead><tr><th>Nome</th><th>Device ID</th><th>Cadastrado em</th><th>Ações</th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
 
-    <!-- Histórico -->
     <div class="card">
         <h2>📋 Histórico de Pontos</h2>
         <input type="text" id="filtroNome" placeholder="Filtrar por nome..." onkeyup="filtrarHistorico()">
         <table id="tabelaHistorico">
-            <thead>
-                <tr>
-                    <th>Data/Hora</th>
-                    <th>Funcionário</th>
-                    <th>Tipo</th>
-                    <th>Dispositivo</th>
-                </tr>
-            </thead>
+            <thead><tr><th>Data/Hora</th><th>Funcionário</th><th>Tipo</th><th>Dispositivo</th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
 </div>
 
 <script>
-    let employees = JSON.parse(localStorage.getItem('employees')) || [];
-    let registros = JSON.parse(localStorage.getItem('registrosPonto')) || [];
-    let deviceIDAtual = null;
-    let html5QrCode = null;
+// ============== CONFIGURAÇÃO SUPABASE (use o config.js) ==============
+const supabaseUrl = 'https://SEU-PROJETO.supabase.co';     // ← Troque
+const supabaseAnonKey = 'eyJ...';                         // ← Troque
 
-    function iniciarScanner() {
-        document.getElementById('reader').innerHTML = '';
-        html5QrCode = new Html5Qrcode("reader");
-        
-        html5QrCode.start(
-            { facingMode: "environment" },
-            { fps: 15, qrbox: { width: 250, height: 250 } },
-            (decodedText) => {
-                deviceIDAtual = decodedText.trim();
-                document.getElementById('deviceIDManual').value = deviceIDAtual;
-                document.getElementById('deviceInfo').innerHTML = `✅ Device ID capturado: <span class="device-id">${deviceIDAtual}</span>`;
-                html5QrCode.stop();
-            }
-        ).catch(err => console.error(err));
-    }
+const supabase = Supabase.createClient(supabaseUrl, supabaseAnonKey);
+// =====================================================================
 
-    function cadastrarFuncionario() {
-        const nome = document.getElementById('nomeFunc').value.trim();
-        const deviceID = document.getElementById('deviceIDManual').value.trim();
+let html5QrCode = null;
 
-        if (!nome) return alert("❌ Digite o nome do funcionário!");
-        if (!deviceID) return alert("❌ Insira o Device ID!");
-
-        // Verifica se já existe funcionário com este deviceID
-        if (employees.some(e => e.deviceID === deviceID)) {
-            return alert("⚠️ Este Device ID já está vinculado a outro funcionário!");
+async function iniciarScanner() {
+    document.getElementById('reader').innerHTML = '';
+    html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+            document.getElementById('deviceIDManual').value = decodedText.trim();
+            document.getElementById('deviceInfo').innerHTML = `✅ Device ID capturado: <span class="device-id">${decodedText}</span>`;
+            html5QrCode.stop();
         }
+    ).catch(err => console.error(err));
+}
 
-        const novoFunc = {
-            id: 'func_' + Date.now().toString(36),
-            nome: nome,
-            deviceID: deviceID,
-            cadastradoEm: new Date().toLocaleString('pt-BR')
-        };
+async function cadastrarFuncionario() {
+    const nome = document.getElementById('nomeFunc').value.trim();
+    const deviceID = document.getElementById('deviceIDManual').value.trim();
 
-        employees.push(novoFunc);
-        localStorage.setItem('employees', JSON.stringify(employees));
+    if (!nome || !deviceID) return alert("Preencha nome e Device ID!");
 
-        alert(`✅ ${nome} cadastrado com sucesso!\nDevice ID: ${deviceID}`);
+    const { error } = await supabase
+        .from('employees')
+        .insert([{ id: 'func_' + Date.now().toString(36), nome, device_id: deviceID }]);
 
-        // Limpar campos
+    if (error) {
+        if (error.message.includes('unique')) alert("Este Device ID já está cadastrado!");
+        else alert("Erro: " + error.message);
+    } else {
+        alert(`✅ ${nome} cadastrado com sucesso no Supabase!`);
         document.getElementById('nomeFunc').value = '';
         document.getElementById('deviceIDManual').value = '';
         document.getElementById('deviceInfo').innerHTML = '';
-
         carregarFuncionarios();
     }
+}
 
-    function carregarFuncionarios() {
-        const tbody = document.querySelector('#tabelaFuncionarios tbody');
-        tbody.innerHTML = '';
+async function carregarFuncionarios() {
+    const { data } = await supabase.from('employees').select('*').order('cadastrado_em', { ascending: false });
+    const tbody = document.querySelector('#tabelaFuncionarios tbody');
+    tbody.innerHTML = '';
+    data.forEach(func => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${func.nome}</td>
+            <td><span class="device-id">${func.device_id}</span></td>
+            <td>${func.cadastrado_em || '—'}</td>
+            <td><button class="btn btn-danger" onclick="deletarFuncionario('${func.id}')">Excluir</button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
 
-        employees.forEach(func => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${func.nome}</td>
-                <td><span class="device-id">${func.deviceID}</span></td>
-                <td>
-                    <button class="btn btn-danger" onclick="deletarFuncionario('${func.id}')">Excluir</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
+async function deletarFuncionario(id) {
+    if (!confirm("Excluir este funcionário?")) return;
+    await supabase.from('employees').delete().eq('id', id);
+    carregarFuncionarios();
+}
 
-    function deletarFuncionario(id) {
-        if (confirm("Tem certeza que deseja excluir este funcionário?")) {
-            employees = employees.filter(f => f.id !== id);
-            localStorage.setItem('employees', JSON.stringify(employees));
-            carregarFuncionarios();
-        }
-    }
+async function carregarHistorico() {
+    const { data } = await supabase
+        .from('registros_ponto')
+        .select('*')
+        .order('registrado_em', { ascending: false });
 
-    function carregarHistorico() {
-        const tbody = document.querySelector('#tabelaHistorico tbody');
-        tbody.innerHTML = '';
+    const tbody = document.querySelector('#tabelaHistorico tbody');
+    tbody.innerHTML = '';
+    data.forEach(reg => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${reg.data_hora}</td>
+            <td>${reg.nome}</td>
+            <td><strong>${reg.tipo}</strong></td>
+            <td>${reg.dispositivo || '—'}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
 
-        registros.sort((a, b) => new Date(b.dataHora) - new Date(a.dataHora));
+function filtrarHistorico() {
+    carregarHistorico(); // pode melhorar com filtro client-side se quiser
+}
 
-        registros.forEach(reg => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${reg.dataHora}</td>
-                <td>${reg.nome}</td>
-                <td><strong>${reg.tipo}</strong></td>
-                <td>${reg.dispositivo || '—'}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    function filtrarHistorico() {
-        const filtro = document.getElementById('filtroNome').value.toLowerCase();
-        const tbody = document.querySelector('#tabelaHistorico tbody');
-        tbody.innerHTML = '';
-
-        const filtrados = registros.filter(reg => 
-            reg.nome.toLowerCase().includes(filtro)
-        );
-
-        filtrados.forEach(reg => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${reg.dataHora}</td>
-                <td>${reg.nome}</td>
-                <td><strong>${reg.tipo}</strong></td>
-                <td>${reg.dispositivo || '—'}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    window.onload = function() {
-        carregarFuncionarios();
-        carregarHistorico();
-    };
+window.onload = () => {
+    carregarFuncionarios();
+    carregarHistorico();
+};
 </script>
 </body>
 </html>
