@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bater Ponto</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -20,18 +19,34 @@
         .card {
             background: white;
             color: #333;
-            max-width: 460px;
+            max-width: 420px;
             width: 100%;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             overflow: hidden;
             text-align: center;
         }
-        .header { background: #27ae60; color: white; padding: 25px; }
-        .content { padding: 35px 25px; }
+        .header {
+            background: #27ae60;
+            color: white;
+            padding: 25px;
+        }
+        .content {
+            padding: 35px 25px;
+        }
         h1 { margin: 0 0 10px 0; font-size: 28px; }
-        .device-info { font-size: 14px; margin-bottom: 20px; }
-        .nome { font-size: 26px; font-weight: bold; margin: 15px 0 30px 0; color: #27ae60; min-height: 70px; }
+        .device-info {
+            font-size: 14px;
+            color: #27ae60;
+            margin-bottom: 20px;
+        }
+        .nome {
+            font-size: 26px;
+            font-weight: bold;
+            margin: 15px 0 30px 0;
+            color: #27ae60;
+            min-height: 70px;
+        }
         .btn {
             width: 100%;
             padding: 20px;
@@ -41,11 +56,22 @@
             border: none;
             border-radius: 12px;
             cursor: pointer;
+            transition: opacity 0.2s;
         }
+        .btn:active { opacity: 0.8; }
         .btn-entrada { background: #27ae60; color: white; }
         .btn-saida   { background: #e74c3c; color: white; }
-        .status { margin-top: 25px; min-height: 35px; font-weight: bold; font-size: 17px; }
-        .info { font-size: 13px; color: #777; margin-top: 30px; }
+        .status {
+            margin-top: 25px;
+            min-height: 30px;
+            font-weight: bold;
+            font-size: 17px;
+        }
+        .info {
+            font-size: 13px;
+            color: #777;
+            margin-top: 30px;
+        }
     </style>
 </head>
 <body>
@@ -57,103 +83,99 @@
             <div class="device-info" id="deviceInfo">Detectando dispositivo...</div>
             
             <p>Funcionário:</p>
-            <div class="nome" id="nomeFuncionario">Aguardando identificação...</div>
+            <div class="nome" id="nomeFuncionario">Carregando...</div>
 
             <button class="btn btn-entrada" onclick="baterPonto('Entrada')">✅ MARCAR ENTRADA</button>
             <button class="btn btn-saida" onclick="baterPonto('Saída')">⏹️ MARCAR SAÍDA</button>
 
             <div class="status" id="status"></div>
-            <div class="info">Dispositivo vinculado automaticamente</div>
+            <div class="info">Aguarde o redirecionamento após marcar o ponto.</div>
         </div>
     </div>
 
-<script>
-// ==================== CONFIG SUPABASE ====================
-const supabaseClient = supabase.createClient(
-    'https://osofdmgokrxdzsxozsrf.supabase.co',
-    'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
-);
-// =======================================================
+    <script>
+        let employees = JSON.parse(localStorage.getItem('employees')) || [];
+        let registros = JSON.parse(localStorage.getItem('registrosPonto')) || [];
+        let funcionarioAtual = null;
 
-let currentDeviceID = null;
-let funcionarioAtual = null;
+        function detectarDispositivo() {
+            const userAgent = navigator.userAgent || '';
+            const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) ||
+                            (navigator.userAgentData && navigator.userAgentData.mobile);
+            
+            const deviceEl = document.getElementById('deviceInfo');
+            deviceEl.textContent = isMobile ? '📱 Dispositivo: Celular / Tablet' : '💻 Dispositivo: Computador';
+            deviceEl.style.color = isMobile ? '#27ae60' : '#e67e22';
+            
+            return isMobile;
+        }
 
-function gerarDeviceID() {
-    const fingerprint = [
-        navigator.userAgent,
-        screen.width,
-        screen.height,
-        screen.colorDepth,
-        navigator.platform,
-        navigator.language
-    ].join('|');
-    
-    let hash = 0;
-    for (let i = 0; i < fingerprint.length; i++) {
-        hash = (hash << 5) - hash + fingerprint.charCodeAt(i);
-        hash = hash & hash;
-    }
-    return Math.abs(hash).toString(36).toUpperCase().substring(0, 14);
-}
+        function getFuncionario() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            
+            if (id) {
+                const func = employees.find(e => e.id === id);
+                if (func) {
+                    localStorage.setItem('lastEmployeeId', id);
+                    return func;
+                }
+            }
+            
+            const lastId = localStorage.getItem('lastEmployeeId');
+            if (lastId) return employees.find(e => e.id === lastId);
+            return null;
+        }
 
-async function detectarDispositivo() {
-    currentDeviceID = gerarDeviceID();
-    document.getElementById('deviceInfo').innerHTML = `📱 Device ID: <strong>${currentDeviceID}</strong>`;
+        function baterPonto(tipo) {
+            if (!funcionarioAtual) {
+                document.getElementById('status').innerHTML = 
+                    '<span style="color:red;">❌ Funcionário não identificado</span>';
+                return;
+            }
 
-    const { data, error } = await supabaseClient
-        .from('employees')
-        .select('*')
-        .eq('device_id', currentDeviceID)
-        .single();
+            const agora = new Date();
+            const dataHora = agora.toLocaleString('pt-BR', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+            const dataHoje = agora.toLocaleDateString('pt-BR');
 
-    const nomeEl = document.getElementById('nomeFuncionario');
-    if (data) {
-        funcionarioAtual = data;
-        nomeEl.textContent = data.nome;
-        nomeEl.style.color = "#27ae60";
-    } else {
-        funcionarioAtual = null;
-        nomeEl.textContent = "❌ Dispositivo não cadastrado";
-        nomeEl.style.color = "red";
-    }
-}
+            // Salva o registro
+            registros.push({
+                employeeId: funcionarioAtual.id,
+                nome: funcionarioAtual.nome,
+                dataHora: dataHora,
+                tipo: tipo,
+                data: dataHoje,
+                dispositivo: detectarDispositivo() ? 'Mobile' : 'Desktop'
+            });
 
-async function baterPonto(tipo) {
-    if (!funcionarioAtual) {
-        document.getElementById('status').innerHTML = '<span style="color:red;">❌ Dispositivo não vinculado</span>';
-        return;
-    }
+            localStorage.setItem('registrosPonto', JSON.stringify(registros));
 
-    const agora = new Date();
-    const dataHora = agora.toLocaleString('pt-BR', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-    });
-    const dataHoje = agora.toLocaleDateString('pt-BR');
+            // Interface de sucesso
+            const statusEl = document.getElementById('status');
+            statusEl.style.color = '#27ae60';
+            statusEl.textContent = `✅ ${tipo} registrada! Redirecionando...`;
 
-    const { error } = await supabaseClient
-        .from('registros_ponto')
-        .insert([{
-            employee_id: funcionarioAtual.id,
-            nome: funcionarioAtual.nome,
-            data_hora: dataHora,
-            tipo: tipo,
-            data: dataHoje,
-            dispositivo: 'Mobile',
-            device_id: currentDeviceID
-        }]);
+            // Redirecionamento após 2 segundos
+            setTimeout(() => {
+                window.location.href = "https://www.uol.com.br";
+            }, 2000);
+        }
 
-    const statusEl = document.getElementById('status');
-    if (error) {
-        statusEl.innerHTML = `<span style="color:red;">❌ Erro ao registrar</span>`;
-    } else {
-        statusEl.style.color = '#27ae60';
-        statusEl.textContent = `✅ ${tipo} registrada com sucesso!`;
-        setTimeout(() => statusEl.textContent = '', 4000);
-    }
-}
+        window.onload = function() {
+            detectarDispositivo();
+            funcionarioAtual = getFuncionario();
+            const nomeEl = document.getElementById('nomeFuncionario');
 
-window.onload = detectarDispositivo;
-</script>
+            if (funcionarioAtual) {
+                nomeEl.textContent = funcionarioAtual.nome;
+            } else {
+                nomeEl.textContent = "Funcionário não encontrado";
+                nomeEl.style.color = "red";
+            }
+        };
+    </script>
 </body>
 </html>
