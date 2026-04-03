@@ -19,7 +19,7 @@
         .card {
             background: white;
             color: #333;
-            max-width: 420px;
+            max-width: 460px;
             width: 100%;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
@@ -28,98 +28,206 @@
         .header {
             background: #27ae60;
             color: white;
-            padding: 25px;
+            padding: 20px;
             text-align: center;
         }
         .content {
             padding: 30px 25px;
             text-align: center;
         }
-        h1 { margin: 0 0 10px 0; font-size: 28px; }
-        .nome { font-size: 24px; font-weight: bold; margin: 15px 0; color: #27ae60; }
+        h1 { margin: 0 0 8px 0; font-size: 26px; }
+        .subtitle { margin: 0 0 25px 0; color: #ddd; font-size: 15px; }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        .tab {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            border-bottom: 4px solid transparent;
+        }
+        .tab.active {
+            color: #27ae60;
+            border-bottom: 4px solid #27ae60;
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+        input {
+            width: 100%;
+            padding: 14px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+        }
         .btn {
             width: 100%;
             padding: 18px;
-            margin: 12px 0;
+            margin: 10px 0;
             font-size: 20px;
+            font-weight: bold;
             border: none;
             border-radius: 12px;
             cursor: pointer;
-            font-weight: bold;
         }
-        .entrada { background: #27ae60; color: white; }
-        .saida { background: #e74c3c; color: white; }
+        .btn-entrada { background: #27ae60; color: white; }
+        .btn-saida   { background: #e74c3c; color: white; }
+
+        .nome {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px 0 10px 0;
+            color: #27ae60;
+            min-height: 32px;
+        }
         .status {
-            margin-top: 20px;
+            margin: 20px 0;
             min-height: 30px;
             font-weight: bold;
+            font-size: 16px;
         }
-        .info { font-size: 14px; color: #777; margin-top: 25px; }
+        .info {
+            font-size: 13px;
+            color: #777;
+            margin-top: 25px;
+        }
     </style>
 </head>
 <body>
     <div class="card">
         <div class="header">
-            <h1>⏰ Folha de Ponto</h1>
+            <h1>⏰ Bater Ponto</h1>
+            <p class="subtitle">Escolha uma das opções abaixo</p>
         </div>
+
         <div class="content">
-            <p>Funcionário identificado:</p>
-            <div class="nome" id="nomeFuncionario">Carregando...</div>
+            <!-- Abas -->
+            <div class="tabs">
+                <button class="tab active" onclick="mudarAba(0)">📱 QR Code</button>
+                <button class="tab" onclick="mudarAba(1)">🔢 Número do Funcionário</button>
+            </div>
 
-            <button class="btn entrada" onclick="baterPonto('Entrada')">✅ MARCAR ENTRADA</button>
-            <button class="btn saida" onclick="baterPonto('Saída')">⏹️ MARCAR SAÍDA</button>
+            <!-- Aba 1: QR Code -->
+            <div id="abaQR" class="aba">
+                <p><strong>Escaneie seu QR Code pessoal</strong></p>
+                <div class="nome" id="nomeQR">Aguardando leitura do QR Code...</div>
+                <div class="status" id="statusQR"></div>
+            </div>
 
-            <div class="status" id="status"></div>
-            <div class="info">Todos os dados são salvos localmente no navegador</div>
+            <!-- Aba 2: Número do Funcionário -->
+            <div id="abaNumero" class="aba" style="display: none;">
+                <div class="input-group">
+                    <input type="text" id="idFuncionario" placeholder="Digite seu ID (ex: FUNC-ABC123)" 
+                           onkeypress="if(event.key === 'Enter') identificarPorID()">
+                </div>
+                <button class="btn btn-primary" onclick="identificarPorID()" 
+                        style="background:#3498db; color:white; padding:14px;">
+                    Identificar Funcionário
+                </button>
+                <div class="nome" id="nomeNumero"></div>
+                <div class="status" id="statusNumero"></div>
+            </div>
+
+            <!-- Botões de Entrada e Saída (aparecem depois de identificar o funcionário) -->
+            <div id="botoesPonto" style="display: none;">
+                <button class="btn btn-entrada" onclick="baterPonto('Entrada')">✅ MARCAR ENTRADA</button>
+                <button class="btn btn-saida" onclick="baterPonto('Saída')">⏹️ MARCAR SAÍDA</button>
+            </div>
+
+            <div class="info">
+                Todos os registros são salvos automaticamente no navegador
+            </div>
         </div>
     </div>
 
     <script>
         let employees = JSON.parse(localStorage.getItem('employees')) || [];
         let registros = JSON.parse(localStorage.getItem('registrosPonto')) || [];
+        let funcionarioAtual = null;
 
         function salvarRegistros() {
             localStorage.setItem('registrosPonto', JSON.stringify(registros));
         }
 
-        function getFuncionario() {
+        // Mudar entre as abas
+        function mudarAba(aba) {
+            document.querySelectorAll('.tab').forEach((tab, index) => {
+                tab.classList.toggle('active', index === aba);
+            });
+
+            document.getElementById('abaQR').style.display = aba === 0 ? 'block' : 'none';
+            document.getElementById('abaNumero').style.display = aba === 1 ? 'block' : 'none';
+        }
+
+        // Identificar funcionário via QR Code (parâmetro na URL)
+        function identificarPorQR() {
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
             
-            if (id) {
-                const func = employees.find(e => e.id === id);
-                if (func) {
-                    localStorage.setItem('lastEmployeeId', id);
-                    return func;
-                }
+            if (!id) return;
+
+            const func = employees.find(e => e.id === id);
+            if (func) {
+                funcionarioAtual = func;
+                mostrarFuncionarioIdentificado(func, 'statusQR');
             }
+        }
+
+        // Identificar funcionário digitando o ID
+        function identificarPorID() {
+            const input = document.getElementById('idFuncionario').value.trim().toUpperCase();
+            if (!input) return alert("Digite o ID do funcionário");
+
+            const func = employees.find(e => e.id.toUpperCase() === input);
             
-            // Fallback para último usado
-            const lastId = localStorage.getItem('lastEmployeeId');
-            if (lastId) {
-                return employees.find(e => e.id === lastId);
+            if (func) {
+                funcionarioAtual = func;
+                mostrarFuncionarioIdentificado(func, 'statusNumero');
+                document.getElementById('idFuncionario').value = '';
+            } else {
+                document.getElementById('statusNumero').innerHTML = 
+                    '<span style="color:red;">❌ ID não encontrado. Verifique e tente novamente.</span>';
             }
-            return null;
+        }
+
+        function mostrarFuncionarioIdentificado(func, statusId) {
+            document.getElementById('nomeQR').textContent = func.nome;
+            document.getElementById('nomeNumero').textContent = func.nome;
+            
+            document.getElementById('botoesPonto').style.display = 'block';
+            
+            const statusEl = document.getElementById(statusId);
+            statusEl.innerHTML = `✅ Funcionário identificado: <strong>${func.nome}</strong>`;
+            
+            // Salva último funcionário usado
+            localStorage.setItem('lastEmployeeId', func.id);
         }
 
         function baterPonto(tipo) {
-            const func = getFuncionario();
-            if (!func) {
-                document.getElementById('status').innerHTML = 
-                    '<span style="color:red;">❌ Funcionário não identificado</span>';
+            if (!funcionarioAtual) {
+                alert("Funcionário não identificado. Escaneie o QR ou digite o ID.");
                 return;
             }
 
             const agora = new Date();
             const dataHora = agora.toLocaleString('pt-BR', {
-                day:'2-digit', month:'2-digit', year:'numeric',
-                hour:'2-digit', minute:'2-digit', second:'2-digit'
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
             });
             const data = agora.toLocaleDateString('pt-BR');
 
             registros.push({
-                employeeId: func.id,
-                nome: func.nome,
+                employeeId: funcionarioAtual.id,
+                nome: funcionarioAtual.nome,
                 dataHora: dataHora,
                 tipo: tipo,
                 data: data
@@ -127,26 +235,35 @@
 
             salvarRegistros();
 
-            const statusEl = document.getElementById('status');
-            statusEl.style.color = '#27ae60';
-            statusEl.textContent = `✅ ${tipo} registrada com sucesso!`;
+            const statusEls = document.querySelectorAll('.status');
+            statusEls.forEach(el => {
+                el.style.color = '#27ae60';
+                el.textContent = `✅ ${tipo} registrada com sucesso para ${funcionarioAtual.nome}!`;
+            });
 
             setTimeout(() => {
-                statusEl.textContent = '';
-            }, 4000);
+                statusEls.forEach(el => el.textContent = '');
+            }, 4500);
         }
 
         // Inicialização
         window.onload = function() {
-            const func = getFuncionario();
-            const nomeEl = document.getElementById('nomeFuncionario');
+            // Tenta identificar automaticamente via QR Code
+            identificarPorQR();
 
-            if (func) {
-                nomeEl.textContent = func.nome;
-            } else {
-                nomeEl.textContent = "Funcionário não encontrado";
-                nomeEl.style.color = "red";
+            // Se não veio via QR, mas tem último funcionário salvo, avisa
+            if (!funcionarioAtual) {
+                const lastId = localStorage.getItem('lastEmployeeId');
+                if (lastId) {
+                    const func = employees.find(e => e.id === lastId);
+                    if (func) {
+                        document.getElementById('nomeQR').innerHTML = 
+                            `${func.nome}<br><small style="color:#777; font-size:14px;">(Último usado - digite o ID ou escaneie QR)</small>`;
+                    }
+                }
             }
+
+            console.log('%c✅ Página de ponto carregada - QR Code ou ID disponível', 'color:#27ae60');
         };
     </script>
 </body>
