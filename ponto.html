@@ -100,7 +100,7 @@ async function detectarDispositivo() {
     currentDeviceID = gerarDeviceID();
     document.getElementById('deviceInfo').innerHTML = `📱 Device ID: <strong>${currentDeviceID}</strong>`;
 
-    const { data, error } = await supabaseClient
+    const { data } = await supabaseClient
         .from('employees')
         .select('*')
         .eq('device_id', currentDeviceID)
@@ -124,31 +124,24 @@ async function baterPonto(tipo) {
         return;
     }
 
-    // === VERIFICAÇÃO DE PONTO CONSECUTIVO ===
-    const { data: ultimoPonto, error: erroConsulta } = await supabaseClient
+    // Verifica último ponto (impedir consecutivos)
+    const { data: ultimoPonto } = await supabaseClient
         .from('registros_ponto')
-        .select('tipo, data_hora')
+        .select('tipo')
         .eq('employee_id', funcionarioAtual.id)
         .order('registrado_em', { ascending: false })
         .limit(1)
         .single();
 
-    if (erroConsulta && erroConsulta.code !== 'PGRST116') { // PGRST116 = nenhum registro encontrado
-        console.error(erroConsulta);
+    if (ultimoPonto && ultimoPonto.tipo === tipo) {
+        const msg = tipo === 'Entrada' 
+            ? "❌ Você já marcou Entrada. Marque Saída primeiro!" 
+            : "❌ Você já marcou Saída. Marque Entrada primeiro!";
+        document.getElementById('status').innerHTML = `<span style="color:red;">${msg}</span>`;
+        return;
     }
 
-    if (ultimoPonto) {
-        if (ultimoPonto.tipo === tipo) {
-            const msg = tipo === 'Entrada' 
-                ? "❌ Você já marcou Entrada. Marque Saída primeiro!" 
-                : "❌ Você já marcou Saída. Marque Entrada primeiro!";
-            
-            document.getElementById('status').innerHTML = `<span style="color:red;">${msg}</span>`;
-            return;
-        }
-    }
-
-    // === REGISTRA O PONTO ===
+    // Registra o ponto
     const agora = new Date();
     const dataHora = agora.toLocaleString('pt-BR', {
         day: '2-digit', month: '2-digit', year: 'numeric',
@@ -156,25 +149,28 @@ async function baterPonto(tipo) {
     });
     const dataHoje = agora.toLocaleDateString('pt-BR');
 
-    const { error } = await supabaseClient
-        .from('registros_ponto')
-        .insert([{
-            employee_id: funcionarioAtual.id,
-            nome: funcionarioAtual.nome,
-            data_hora: dataHora,
-            tipo: tipo,
-            data: dataHoje,
-            dispositivo: 'Mobile',
-            device_id: currentDeviceID
-        }]);
+    const { error } = await supabaseClient.from('registros_ponto').insert([{
+        employee_id: funcionarioAtual.id,
+        nome: funcionarioAtual.nome,
+        data_hora: dataHora,
+        tipo: tipo,
+        data: dataHoje,
+        dispositivo: 'Mobile',
+        device_id: currentDeviceID
+    }]);
 
     const statusEl = document.getElementById('status');
+    
     if (error) {
         statusEl.innerHTML = `<span style="color:red;">❌ Erro ao registrar</span>`;
     } else {
         statusEl.style.color = '#27ae60';
         statusEl.textContent = `✅ ${tipo} registrada com sucesso!`;
-        setTimeout(() => statusEl.textContent = '', 4000);
+
+        // Redireciona após 2 segundos
+        setTimeout(() => {
+            window.location.href = "https://www.uol.com.br";
+        }, 2000);
     }
 }
 
