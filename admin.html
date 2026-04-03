@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Folha de Ponto</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f9; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #2c3e50; }
+        .form { display: flex; gap: 10px; margin: 20px 0; }
+        input { flex: 1; padding: 14px; font-size: 16px; border: 1px solid #ddd; border-radius: 8px; }
+        .btn { padding: 14px 20px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-primary { background: #3498db; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #34495e; color: white; }
+        .qr-btn { background: #27ae60; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👨‍💼 Admin - Cadastro de Funcionários</h1>
+
+        <div class="form">
+            <input type="text" id="nome" placeholder="Nome completo do funcionário">
+            <button class="btn btn-primary" onclick="cadastrar()">Cadastrar Funcionário</button>
+        </div>
+
+        <table id="tabela">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>ID</th>
+                    <th>QR Code para o Funcionário</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <p style="text-align:center; margin-top:30px;">
+            <a href="ponto.html" target="_blank" style="color:#3498db;">→ Abrir página de ponto (para teste)</a>
+        </p>
+    </div>
+
+    <script>
+        let employees = JSON.parse(localStorage.getItem('employees')) || [];
+
+        function salvar() {
+            localStorage.setItem('employees', JSON.stringify(employees));
+        }
+
+        function gerarId() {
+            return 'FUNC-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+        }
+
+        function cadastrar() {
+            const nome = document.getElementById('nome').value.trim();
+            if (!nome) return alert("Digite o nome do funcionário");
+
+            if (employees.some(e => e.nome.toLowerCase() === nome.toLowerCase())) {
+                return alert("Funcionário já cadastrado!");
+            }
+
+            employees.push({ id: gerarId(), nome: nome });
+            salvar();
+            document.getElementById('nome').value = '';
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.querySelector('#tabela tbody');
+            tbody.innerHTML = '';
+
+            employees.forEach(func => {
+                const baseUrl = window.location.href.replace('admin.html', 'ponto.html');
+                const qrUrl = `${baseUrl}?id=${func.id}`;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${func.nome}</strong></td>
+                    <td><code>${func.id}</code></td>
+                    <td>
+                        <button class="btn qr-btn" onclick="gerarQR('${qrUrl}', '${func.nome}')">
+                            📱 Gerar QR Code
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function gerarQR(url, nome) {
+            const win = window.open('', '_blank');
+            win.document.write(`
+                <h2 style="text-align:center;">QR Code - ${nome}</h2>
+                <div id="qrcode" style="margin:30px auto; width:300px;"></div>
+                <p style="text-align:center;">Escaneie este QR Code para bater o ponto</p>
+                <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>
+                <script>
+                    new QRCode(document.getElementById("qrcode"), {
+                        text: "${url}",
+                        width: 300,
+                        height: 300
+                    });
+                <\/script>
+            `);
+        }
+
+        window.onload = renderTable;
+    </script>
+</body>
+</html>
