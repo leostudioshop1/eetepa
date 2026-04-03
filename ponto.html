@@ -19,61 +19,39 @@
         .card {
             background: white;
             color: #333;
-            max-width: 460px;
+            max-width: 420px;
             width: 100%;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             overflow: hidden;
+            text-align: center;
         }
         .header {
             background: #27ae60;
             color: white;
-            padding: 20px;
-            text-align: center;
+            padding: 25px;
         }
         .content {
-            padding: 30px 25px;
-            text-align: center;
+            padding: 35px 25px;
         }
-        h1 { margin: 0 0 8px 0; font-size: 26px; }
-        .subtitle { margin: 0 0 25px 0; color: #ddd; font-size: 15px; }
-
-        .tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #eee;
-        }
-        .tab {
-            flex: 1;
-            padding: 12px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            background: none;
-            border: none;
-            border-bottom: 4px solid transparent;
-        }
-        .tab.active {
+        h1 { margin: 0 0 10px 0; font-size: 28px; }
+        .device-info {
+            font-size: 14px;
             color: #27ae60;
-            border-bottom: 4px solid #27ae60;
+            margin-bottom: 20px;
         }
-
-        .input-group {
-            margin: 20px 0;
-        }
-        input {
-            width: 100%;
-            padding: 14px;
-            font-size: 18px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            text-align: center;
+        .nome {
+            font-size: 26px;
+            font-weight: bold;
+            margin: 15px 0 30px 0;
+            color: #27ae60;
+            min-height: 70px;
         }
         .btn {
             width: 100%;
-            padding: 18px;
-            margin: 10px 0;
-            font-size: 20px;
+            padding: 20px;
+            margin: 12px 0;
+            font-size: 22px;
             font-weight: bold;
             border: none;
             border-radius: 12px;
@@ -81,24 +59,16 @@
         }
         .btn-entrada { background: #27ae60; color: white; }
         .btn-saida   { background: #e74c3c; color: white; }
-
-        .nome {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 20px 0 10px 0;
-            color: #27ae60;
-            min-height: 32px;
-        }
         .status {
-            margin: 20px 0;
+            margin-top: 25px;
             min-height: 30px;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 17px;
         }
         .info {
             font-size: 13px;
             color: #777;
-            margin-top: 25px;
+            margin-top: 30px;
         }
     </style>
 </head>
@@ -106,46 +76,18 @@
     <div class="card">
         <div class="header">
             <h1>⏰ Bater Ponto</h1>
-            <p class="subtitle">Escolha uma das opções abaixo</p>
         </div>
-
         <div class="content">
-            <!-- Abas -->
-            <div class="tabs">
-                <button class="tab active" onclick="mudarAba(0)">📱 QR Code</button>
-                <button class="tab" onclick="mudarAba(1)">🔢 Número do Funcionário</button>
-            </div>
+            <div class="device-info" id="deviceInfo">Detectando dispositivo...</div>
+            
+            <p>Funcionário:</p>
+            <div class="nome" id="nomeFuncionario">Carregando...</div>
 
-            <!-- Aba 1: QR Code -->
-            <div id="abaQR" class="aba">
-                <p><strong>Escaneie seu QR Code pessoal</strong></p>
-                <div class="nome" id="nomeQR">Aguardando leitura do QR Code...</div>
-                <div class="status" id="statusQR"></div>
-            </div>
+            <button class="btn btn-entrada" onclick="baterPonto('Entrada')">✅ MARCAR ENTRADA</button>
+            <button class="btn btn-saida" onclick="baterPonto('Saída')">⏹️ MARCAR SAÍDA</button>
 
-            <!-- Aba 2: Número do Funcionário -->
-            <div id="abaNumero" class="aba" style="display: none;">
-                <div class="input-group">
-                    <input type="text" id="idFuncionario" placeholder="Digite seu ID (ex: FUNC-ABC123)" 
-                           onkeypress="if(event.key === 'Enter') identificarPorID()">
-                </div>
-                <button class="btn btn-primary" onclick="identificarPorID()" 
-                        style="background:#3498db; color:white; padding:14px;">
-                    Identificar Funcionário
-                </button>
-                <div class="nome" id="nomeNumero"></div>
-                <div class="status" id="statusNumero"></div>
-            </div>
-
-            <!-- Botões de Entrada e Saída (aparecem depois de identificar o funcionário) -->
-            <div id="botoesPonto" style="display: none;">
-                <button class="btn btn-entrada" onclick="baterPonto('Entrada')">✅ MARCAR ENTRADA</button>
-                <button class="btn btn-saida" onclick="baterPonto('Saída')">⏹️ MARCAR SAÍDA</button>
-            </div>
-
-            <div class="info">
-                Todos os registros são salvos automaticamente no navegador
-            </div>
+            <div class="status" id="status"></div>
+            <div class="info">Escaneie o QR Code para bater o ponto rapidamente</div>
         </div>
     </div>
 
@@ -154,67 +96,41 @@
         let registros = JSON.parse(localStorage.getItem('registrosPonto')) || [];
         let funcionarioAtual = null;
 
-        function salvarRegistros() {
-            localStorage.setItem('registrosPonto', JSON.stringify(registros));
+        // Detecta tipo de dispositivo
+        function detectarDispositivo() {
+            const userAgent = navigator.userAgent || '';
+            const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) ||
+                            (navigator.userAgentData && navigator.userAgentData.mobile);
+            
+            const deviceEl = document.getElementById('deviceInfo');
+            deviceEl.textContent = isMobile ? '📱 Dispositivo: Celular / Tablet' : '💻 Dispositivo: Computador';
+            deviceEl.style.color = isMobile ? '#27ae60' : '#e67e22';
+            
+            return isMobile;
         }
 
-        // Mudar entre as abas
-        function mudarAba(aba) {
-            document.querySelectorAll('.tab').forEach((tab, index) => {
-                tab.classList.toggle('active', index === aba);
-            });
-
-            document.getElementById('abaQR').style.display = aba === 0 ? 'block' : 'none';
-            document.getElementById('abaNumero').style.display = aba === 1 ? 'block' : 'none';
-        }
-
-        // Identificar funcionário via QR Code (parâmetro na URL)
-        function identificarPorQR() {
+        function getFuncionario() {
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
             
-            if (!id) return;
-
-            const func = employees.find(e => e.id === id);
-            if (func) {
-                funcionarioAtual = func;
-                mostrarFuncionarioIdentificado(func, 'statusQR');
+            if (id) {
+                const func = employees.find(e => e.id === id);
+                if (func) {
+                    localStorage.setItem('lastEmployeeId', id);
+                    return func;
+                }
             }
-        }
-
-        // Identificar funcionário digitando o ID
-        function identificarPorID() {
-            const input = document.getElementById('idFuncionario').value.trim().toUpperCase();
-            if (!input) return alert("Digite o ID do funcionário");
-
-            const func = employees.find(e => e.id.toUpperCase() === input);
             
-            if (func) {
-                funcionarioAtual = func;
-                mostrarFuncionarioIdentificado(func, 'statusNumero');
-                document.getElementById('idFuncionario').value = '';
-            } else {
-                document.getElementById('statusNumero').innerHTML = 
-                    '<span style="color:red;">❌ ID não encontrado. Verifique e tente novamente.</span>';
-            }
-        }
-
-        function mostrarFuncionarioIdentificado(func, statusId) {
-            document.getElementById('nomeQR').textContent = func.nome;
-            document.getElementById('nomeNumero').textContent = func.nome;
-            
-            document.getElementById('botoesPonto').style.display = 'block';
-            
-            const statusEl = document.getElementById(statusId);
-            statusEl.innerHTML = `✅ Funcionário identificado: <strong>${func.nome}</strong>`;
-            
-            // Salva último funcionário usado
-            localStorage.setItem('lastEmployeeId', func.id);
+            // Fallback: último funcionário usado
+            const lastId = localStorage.getItem('lastEmployeeId');
+            if (lastId) return employees.find(e => e.id === lastId);
+            return null;
         }
 
         function baterPonto(tipo) {
             if (!funcionarioAtual) {
-                alert("Funcionário não identificado. Escaneie o QR ou digite o ID.");
+                document.getElementById('status').innerHTML = 
+                    '<span style="color:red;">❌ Funcionário não identificado</span>';
                 return;
             }
 
@@ -223,47 +139,39 @@
                 day: '2-digit', month: '2-digit', year: 'numeric',
                 hour: '2-digit', minute: '2-digit', second: '2-digit'
             });
-            const data = agora.toLocaleDateString('pt-BR');
+            const dataHoje = agora.toLocaleDateString('pt-BR');
 
             registros.push({
                 employeeId: funcionarioAtual.id,
                 nome: funcionarioAtual.nome,
                 dataHora: dataHora,
                 tipo: tipo,
-                data: data
+                data: dataHoje,
+                dispositivo: detectarDispositivo() ? 'Mobile' : 'Desktop'
             });
 
-            salvarRegistros();
+            localStorage.setItem('registrosPonto', JSON.stringify(registros));
 
-            const statusEls = document.querySelectorAll('.status');
-            statusEls.forEach(el => {
-                el.style.color = '#27ae60';
-                el.textContent = `✅ ${tipo} registrada com sucesso para ${funcionarioAtual.nome}!`;
-            });
+            const statusEl = document.getElementById('status');
+            statusEl.style.color = '#27ae60';
+            statusEl.textContent = `✅ ${tipo} registrada com sucesso!`;
 
-            setTimeout(() => {
-                statusEls.forEach(el => el.textContent = '');
-            }, 4500);
+            setTimeout(() => statusEl.textContent = '', 4000);
         }
 
         // Inicialização
         window.onload = function() {
-            // Tenta identificar automaticamente via QR Code
-            identificarPorQR();
+            detectarDispositivo();   // Mostra se é celular ou computador
 
-            // Se não veio via QR, mas tem último funcionário salvo, avisa
-            if (!funcionarioAtual) {
-                const lastId = localStorage.getItem('lastEmployeeId');
-                if (lastId) {
-                    const func = employees.find(e => e.id === lastId);
-                    if (func) {
-                        document.getElementById('nomeQR').innerHTML = 
-                            `${func.nome}<br><small style="color:#777; font-size:14px;">(Último usado - digite o ID ou escaneie QR)</small>`;
-                    }
-                }
+            funcionarioAtual = getFuncionario();
+            const nomeEl = document.getElementById('nomeFuncionario');
+
+            if (funcionarioAtual) {
+                nomeEl.textContent = funcionarioAtual.nome;
+            } else {
+                nomeEl.textContent = "Funcionário não encontrado";
+                nomeEl.style.color = "red";
             }
-
-            console.log('%c✅ Página de ponto carregada - QR Code ou ID disponível', 'color:#27ae60');
         };
     </script>
 </body>
