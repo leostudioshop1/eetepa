@@ -3,232 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bater Ponto</title>
+    <title>Admin - Folha de Ponto</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #27ae60, #2ecc71);
-            color: white;
+            background: #f4f4f9;
             margin: 0;
             padding: 20px;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
-        .card {
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
             background: white;
-            color: #333;
-            max-width: 460px;
-            width: 100%;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            overflow: hidden;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
         }
-        .header {
-            background: #27ae60;
-            color: white;
-            padding: 20px;
+        h1 {
             text-align: center;
+            color: #2c3e50;
         }
-        .content { padding: 30px 25px; text-align: center; }
-        h1 { margin: 0 0 8px 0; font-size: 26px; }
-        .subtitle { margin: 0 0 25px 0; color: #ddd; font-size: 15px; }
-
-        .tabs {
+        .form {
             display: flex;
-            margin-bottom: 25px;
-            border-bottom: 2px solid #eee;
+            gap: 12px;
+            margin: 25px 0;
         }
-        .tab {
-            flex: 1;
-            padding: 14px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            background: none;
-            border-bottom: 4px solid transparent;
-        }
-        .tab.active {
-            color: #27ae60;
-            border-bottom: 4px solid #27ae60;
-        }
-
         input {
-            width: 100%;
-            padding: 16px;
-            font-size: 18px;
+            flex: 1;
+            padding: 15px;
+            font-size: 17px;
             border: 2px solid #ddd;
             border-radius: 10px;
-            text-align: center;
-            margin-bottom: 15px;
         }
         .btn {
-            width: 100%;
-            padding: 18px;
-            margin: 10px 0;
-            font-size: 20px;
-            font-weight: bold;
+            padding: 15px 25px;
+            font-size: 16px;
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             cursor: pointer;
         }
-        .btn-entrada { background: #27ae60; color: white; }
-        .btn-saida   { background: #e74c3c; color: white; }
         .btn-primary { background: #3498db; color: white; }
+        .btn-success { background: #27ae60; color: white; }
 
-        .nome {
-            font-size: 23px;
-            font-weight: bold;
-            margin: 20px 0;
-            color: #27ae60;
-            min-height: 60px;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
         }
-        .status {
-            margin: 20px 0;
-            min-height: 32px;
+        th, td {
+            padding: 14px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background: #34495e;
+            color: white;
+        }
+        .qr-btn {
+            background: #27ae60;
+            color: white;
+            padding: 10px 16px;
+        }
+        .link {
+            color: #3498db;
+            text-decoration: none;
             font-weight: bold;
         }
-        .info { font-size: 13px; color: #777; margin-top: 30px; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <div class="header">
-            <h1>⏰ Bater Ponto</h1>
-            <p class="subtitle">Escolha como deseja identificar</p>
+    <div class="container">
+        <h1>👨‍💼 Administração - Folha de Ponto</h1>
+        <p style="text-align:center; color:#7f8c8d;">Cadastre funcionários e gere QR Codes</p>
+
+        <div class="form">
+            <input type="text" id="nome" placeholder="Nome completo do funcionário">
+            <button class="btn btn-primary" onclick="cadastrar()">Cadastrar</button>
         </div>
 
-        <div class="content">
-            <div class="tabs">
-                <button class="tab active" onclick="mudarAba(0)">📱 QR Code</button>
-                <button class="tab" onclick="mudarAba(1)">🔢 Número do Funcionário</button>
-            </div>
+        <table id="tabela">
+            <thead>
+                <tr>
+                    <th>Nome do Funcionário</th>
+                    <th>ID Único</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
 
-            <!-- Aba QR Code -->
-            <div id="abaQR" class="aba">
-                <p><strong>Escaneie seu QR Code</strong></p>
-                <div class="nome" id="nomeQR">Aguardando leitura do QR Code...</div>
-                <div class="status" id="statusQR"></div>
-            </div>
-
-            <!-- Aba Número -->
-            <div id="abaNumero" class="aba" style="display: none;">
-                <input type="text" id="idFuncionario" placeholder="Digite seu ID (ex: FUNC-ABC123)" 
-                       onkeypress="if(event.key === 'Enter') identificarPorID()">
-                <button class="btn btn-primary" onclick="identificarPorID()">Identificar Funcionário</button>
-                <div class="nome" id="nomeNumero"></div>
-                <div class="status" id="statusNumero"></div>
-            </div>
-
-            <!-- Botões de ponto -->
-            <div id="botoesPonto" style="display: none;">
-                <button class="btn btn-entrada" onclick="baterPonto('Entrada')">✅ MARCAR ENTRADA</button>
-                <button class="btn btn-saida" onclick="baterPonto('Saída')">⏹️ MARCAR SAÍDA</button>
-            </div>
-
-            <div class="info">
-                Todos os dados ficam salvos automaticamente no navegador
-            </div>
+        <div style="text-align:center; margin-top: 30px;">
+            <a href="ponto.html" target="_blank" class="link">→ Abrir página de bater ponto</a>
         </div>
     </div>
 
     <script>
         let employees = JSON.parse(localStorage.getItem('employees')) || [];
-        let registros = JSON.parse(localStorage.getItem('registrosPonto')) || [];
-        let funcionarioAtual = null;
 
-        function salvarRegistros() {
-            localStorage.setItem('registrosPonto', JSON.stringify(registros));
+        function salvar() {
+            localStorage.setItem('employees', JSON.stringify(employees));
         }
 
-        function mudarAba(aba) {
-            document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === aba));
-            document.getElementById('abaQR').style.display = aba === 0 ? 'block' : 'none';
-            document.getElementById('abaNumero').style.display = aba === 1 ? 'block' : 'none';
+        function gerarId() {
+            return 'FUNC-' + Math.random().toString(36).substring(2, 10).toUpperCase();
         }
 
-        function identificarPorQR() {
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
-            if (!id) return;
+        function cadastrar() {
+            const nome = document.getElementById('nome').value.trim();
+            if (!nome) return alert("Digite o nome do funcionário!");
 
-            const func = employees.find(e => e.id === id);
-            if (func) {
-                funcionarioAtual = func;
-                mostrarFuncionario(func, 'statusQR');
-            }
-        }
-
-        function identificarPorID() {
-            const idDigitado = document.getElementById('idFuncionario').value.trim().toUpperCase();
-            if (!idDigitado) return alert("Digite o ID do funcionário");
-
-            const func = employees.find(e => e.id.toUpperCase() === idDigitado);
-            if (func) {
-                funcionarioAtual = func;
-                mostrarFuncionario(func, 'statusNumero');
-                document.getElementById('idFuncionario').value = '';
-            } else {
-                document.getElementById('statusNumero').innerHTML = 
-                    '<span style="color:red;">❌ ID não encontrado. Verifique novamente.</span>';
-            }
-        }
-
-        function mostrarFuncionario(func, statusId) {
-            document.getElementById('nomeQR').textContent = func.nome;
-            document.getElementById('nomeNumero').textContent = func.nome;
-            document.getElementById('botoesPonto').style.display = 'block';
-
-            document.getElementById(statusId).innerHTML = 
-                `✅ Identificado: <strong>${func.nome}</strong>`;
-        }
-
-        function baterPonto(tipo) {
-            if (!funcionarioAtual) {
-                alert("Por favor, identifique o funcionário primeiro.");
-                return;
+            if (employees.some(e => e.nome.toLowerCase() === nome.toLowerCase())) {
+                return alert("Este funcionário já está cadastrado!");
             }
 
-            const agora = new Date();
-            const dataHora = agora.toLocaleString('pt-BR', {
-                day:'2-digit', month:'2-digit', year:'numeric',
-                hour:'2-digit', minute:'2-digit', second:'2-digit'
-            });
-            const data = agora.toLocaleDateString('pt-BR');
+            employees.push({ id: gerarId(), nome: nome });
+            salvar();
+            document.getElementById('nome').value = '';
+            renderTable();
+        }
 
-            registros.push({
-                employeeId: funcionarioAtual.id,
-                nome: funcionarioAtual.nome,
-                dataHora: dataHora,
-                tipo: tipo,
-                data: data
+        function renderTable() {
+            const tbody = document.querySelector('#tabela tbody');
+            tbody.innerHTML = '';
+
+            employees.forEach(func => {
+                const baseUrl = window.location.href.replace('admin.html', 'ponto.html');
+                const qrUrl = `${baseUrl}?id=${func.id}`;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${func.nome}</strong></td>
+                    <td><code style="background:#f1f1f1; padding:4px 8px; border-radius:4px;">${func.id}</code></td>
+                    <td>
+                        <button class="btn qr-btn" onclick="gerarQR('${qrUrl}', '${func.nome.replace(/'/g, "\\'")}')">
+                            📱 Gerar QR Code
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
             });
 
-            salvarRegistros();
-
-            const statusEls = document.querySelectorAll('.status');
-            statusEls.forEach(el => {
-                el.style.color = '#27ae60';
-                el.textContent = `✅ ${tipo} registrada com sucesso!`;
-            });
-
-            setTimeout(() => statusEls.forEach(el => el.textContent = ''), 5000);
+            if (employees.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#95a5a6; padding:30px;">Nenhum funcionário cadastrado ainda.</td></tr>`;
+            }
         }
 
-        window.onload = function() {
-            identificarPorQR();
+        function gerarQR(url, nome) {
+            const win = window.open('', '_blank', 'width=420,height=520');
+            win.document.write(`
+                <!DOCTYPE html>
+                <html><head><meta charset="UTF-8"><title>QR Code - ${nome}</title>
+                <style>body{font-family:Arial;text-align:center;padding:20px;background:#f9f9f9;}
+                h2{color:#27ae60;}</style>
+                </head><body>
+                <h2>QR Code - ${nome}</h2>
+                <div id="qrcode" style="margin:25px auto;"></div>
+                <p>Escaneie este código para bater o ponto</p>
+                <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>
+                <script>
+                    new QRCode(document.getElementById("qrcode"), {
+                        text: "${url}",
+                        width: 320,
+                        height: 320,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff"
+                    });
+                <\/script>
+                </body></html>
+            `);
+        }
 
-            if (!funcionarioAtual) {
-                const lastId = localStorage.getItem('lastEmployeeId');
-                if (lastId) {
-                    const func = employees.find(e => e.id === lastId);
-                    if (func) document.getElementById('nomeQR').innerHTML = 
-                        `${func.nome}<br><small style="color:#777">(último usado)</small>`;
-                }
-            }
-        };
+        window.onload = renderTable;
     </script>
 </body>
 </html>
