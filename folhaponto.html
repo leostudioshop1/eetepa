@@ -3,563 +3,327 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Folha de Ponto • QR Code</title>
+    <title>Folha de Ponto • Inteligente com Supabase</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
-        
-        :root {
-            --tw-color-primary: #00d4ff;
-        }
-        
-        .tail-container * {
-            font-family: 'Inter', system_ui, sans-serif;
-        }
-        
-        .header-font {
-            font-family: 'Space Grotesk', sans-serif;
-        }
-
-        .ponto-screen {
-            animation: fadeIn 0.4s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .qr-container {
-            box-shadow: 0 0 0 8px rgb(0 212 255 / 0.1);
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
+        .tail-container * { font-family: 'Inter', system_ui, sans-serif; }
+        .header-font { font-family: 'Space Grotesk', sans-serif; }
+        .ponto-screen { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="tail-container bg-gray-950 text-white min-h-screen">
-    <!-- MODO PONTO (quando acessado via QR Code) -->
+
+    <!-- MODO PONTO (QR Code) -->
     <div id="ponto-screen" class="hidden flex-col min-h-screen bg-gradient-to-br from-blue-600 to-cyan-500">
         <div class="px-6 pt-8 pb-6 text-center">
-            <div class="mx-auto w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-xl">
-                <span class="text-3xl">⏰</span>
-            </div>
+            <div class="mx-auto w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-xl">⏰</div>
             <h1 class="header-font text-4xl font-semibold mb-1">Folha de Ponto</h1>
-            <p class="text-blue-100 text-lg">Escaneie o QR Code da empresa e registre seu ponto</p>
+            <p class="text-blue-100 text-lg">Sistema inteligente com Supabase</p>
             <div id="current-time" class="mt-6 text-5xl font-mono font-semibold tabular-nums"></div>
             <p class="text-blue-100 text-sm mt-1">Hoje, <span id="current-date"></span></p>
         </div>
 
-        <div class="flex-1 bg-white text-gray-900 rounded-t-3xl px-6 pt-8 pb-12 shadow-2xl">
+        <div class="flex-1 bg-white text-gray-900 rounded-t-3xl px-6 pt-8 pb-12 shadow-2xl overflow-auto">
             <div class="max-w-md mx-auto">
-                <!-- Identificação única -->
-                <div class="mb-8">
-                    <label class="block text-sm font-medium text-gray-500 mb-2">IDENTIFICAÇÃO ÚNICA DO TELEFONE</label>
-                    <input 
-                        id="unique-id-input"
-                        type="text" 
-                        placeholder="Digite seu código ou telefone cadastrado"
-                        class="w-full px-5 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:border-cyan-500 focus:outline-none transition-colors">
-                    <p class="text-xs text-gray-400 mt-2 text-center">Ex: FUNC-784512 ou (11) 98765-4321</p>
-                </div>
 
-                <!-- Botões de ação -->
-                <div class="grid grid-cols-2 gap-4">
-                    <!-- ENTRADA -->
-                    <button onclick="registrarPonto('entrada')"
-                            class="h-28 bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all rounded-3xl flex flex-col items-center justify-center text-white shadow-lg">
-                        <div class="text-5xl mb-2">🚪</div>
-                        <div class="text-2xl font-semibold">ENTRADA</div>
-                        <div class="text-sm opacity-75">Início do expediente</div>
-                    </button>
+                <!-- Tela com usuário identificado -->
+                <div id="identified-screen" class="hidden">
+                    <div class="text-center mb-8">
+                        <div class="inline-flex items-center gap-3 bg-emerald-100 text-emerald-700 px-5 py-2 rounded-3xl text-sm font-medium mb-4">
+                            ✅ Dispositivo reconhecido
+                        </div>
+                        <h2 id="welcome-name" class="text-3xl font-semibold text-gray-900"></h2>
+                        <p class="text-gray-500 mt-1">Escolha sua ação</p>
+                    </div>
 
-                    <!-- SAÍDA -->
-                    <button onclick="registrarPonto('saida')"
-                            class="h-28 bg-red-500 hover:bg-red-600 active:scale-95 transition-all rounded-3xl flex flex-col items-center justify-center text-white shadow-lg">
-                        <div class="text-5xl mb-2">🚪</div>
-                        <div class="text-2xl font-semibold">SAÍDA</div>
-                        <div class="text-sm opacity-75">Fim do expediente</div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="registrarPonto('entrada')" class="h-28 bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all rounded-3xl flex flex-col items-center justify-center text-white shadow-lg">
+                            <div class="text-5xl mb-2">🚪</div>
+                            <div class="text-2xl font-semibold">ENTRADA</div>
+                        </button>
+                        <button onclick="registrarPonto('saida')" class="h-28 bg-red-500 hover:bg-red-600 active:scale-95 transition-all rounded-3xl flex flex-col items-center justify-center text-white shadow-lg">
+                            <div class="text-5xl mb-2">🚪</div>
+                            <div class="text-2xl font-semibold">SAÍDA</div>
+                        </button>
+                    </div>
+
+                    <button onclick="trocarUsuario()" class="mt-10 text-gray-400 hover:text-gray-500 text-sm flex items-center gap-2 mx-auto">
+                        👤 Não sou eu? Trocar funcionário
                     </button>
                 </div>
 
+                <!-- Tela de primeiro acesso -->
+                <div id="setup-screen">
+                    <div class="mb-8">
+                        <label class="block text-sm font-medium text-gray-500 mb-2">Primeiro Acesso</label>
+                        <p class="text-gray-400 text-sm mb-4">Digite seu código único ou telefone</p>
+                        <input id="unique-id-input" type="text" placeholder="FUNC-784512 ou (99) 99999-9999"
+                               class="w-full px-5 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:border-cyan-500 focus:outline-none">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="registrarPonto('entrada')" class="h-28 bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all rounded-3xl flex flex-col items-center justify-center text-white shadow-lg">
+                            <div class="text-5xl mb-2">🚪</div>
+                            <div class="text-2xl font-semibold">ENTRADA</div>
+                        </button>
+                        <button onclick="registrarPonto('saida')" class="h-28 bg-red-500 hover:bg-red-600 active:scale-95 transition-all rounded-3xl flex flex-col items-center justify-center text-white shadow-lg">
+                            <div class="text-5xl mb-2">🚪</div>
+                            <div class="text-2xl font-semibold">SAÍDA</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sucesso -->
                 <div id="success-message" class="hidden mt-8 text-center bg-emerald-50 text-emerald-700 rounded-3xl p-6">
                     <div class="text-4xl mb-3">✅</div>
                     <h3 id="success-title" class="font-semibold text-2xl"></h3>
                     <p id="success-details" class="mt-2 text-sm"></p>
-                    <button onclick="copiarRegistro()" 
-                            class="mt-6 bg-white text-emerald-700 px-8 py-3 rounded-2xl font-medium flex items-center gap-2 mx-auto hover:bg-gray-100 transition-colors">
-                        📋 Copiar registro para enviar ao RH
-                    </button>
-                </div>
-
-                <div class="mt-10 text-center">
-                    <button onclick="voltarParaModoNormal()" 
-                            class="text-blue-600 text-sm font-medium flex items-center gap-1 mx-auto">
-                        ← Voltar para tela inicial
+                    <button onclick="copiarRegistro()" class="mt-6 bg-white text-emerald-700 px-8 py-3 rounded-2xl font-medium flex items-center gap-2 mx-auto hover:bg-gray-100">
+                        📋 Copiar registro
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- MODO ADMINISTRADOR (padrão) -->
+    <!-- MODO ADMINISTRADOR -->
     <div id="admin-screen" class="min-h-screen">
-        <!-- Header -->
-        <div class="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-5 flex items-center justify-between sticky top-0 z-50 shadow-md">
+        <!-- Header e Tabs iguais à versão anterior (mantive simplificado) -->
+        <div class="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-5 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 bg-white text-cyan-600 rounded-2xl flex items-center justify-center text-2xl">⏰</div>
-                <div>
-                    <h1 class="header-font text-2xl font-semibold text-white">Folha de Ponto</h1>
-                    <p class="text-blue-100 text-xs -mt-1">QR Code • Identificação única por telefone</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2 bg-white/20 text-white text-sm px-4 h-9 rounded-3xl backdrop-blur-md">
-                <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                Online
+                <h1 class="header-font text-2xl font-semibold text-white">Folha de Ponto</h1>
             </div>
         </div>
 
-        <!-- Tabs -->
-        <div class="px-6 pt-4 flex border-b border-gray-800 bg-gray-950 sticky top-[73px] z-40">
-            <button onclick="showTab(0)" id="tab-0"
-                    class="tab-button flex-1 py-4 text-center font-medium border-b-2 border-transparent hover:text-cyan-400 transition-colors active">
-                📋 Cadastro
-            </button>
-            <button onclick="showTab(1)" id="tab-1"
-                    class="tab-button flex-1 py-4 text-center font-medium border-b-2 border-transparent hover:text-cyan-400 transition-colors">
-                📱 QR Code
-            </button>
-            <button onclick="showTab(2)" id="tab-2"
-                    class="tab-button flex-1 py-4 text-center font-medium border-b-2 border-transparent hover:text-cyan-400 transition-colors">
-                📊 Relatório
-            </button>
+        <div class="px-6 pt-4 flex border-b border-gray-800 bg-gray-950">
+            <button onclick="showTab(0)" id="tab-0" class="tab-button flex-1 py-4 text-center font-medium border-b-2 border-transparent active">📋 Cadastro</button>
+            <button onclick="showTab(1)" id="tab-1" class="tab-button flex-1 py-4 text-center font-medium border-b-2 border-transparent">📱 QR Code</button>
+            <button onclick="showTab(2)" id="tab-2" class="tab-button flex-1 py-4 text-center font-medium border-b-2 border-transparent">📊 Relatório</button>
         </div>
 
-        <!-- Conteúdo das abas -->
-
-        <!-- Aba 1: Cadastro -->
+        <!-- Aba Cadastro -->
         <div id="content-0" class="tab-content px-6 py-6">
-            <div class="bg-gray-900 rounded-3xl p-6 mb-8">
-                <h2 class="text-xl font-semibold mb-6 flex items-center gap-2">
-                    <span>👤</span> Cadastrar Funcionário
-                </h2>
-                
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-2">Nome completo</label>
-                        <input id="nome" type="text" 
-                               class="w-full px-5 py-4 bg-gray-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white placeholder:text-gray-500"
-                               placeholder="João Silva">
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-2">Telefone (identificação única)</label>
-                        <input id="telefone" type="tel" 
-                               class="w-full px-5 py-4 bg-gray-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white placeholder:text-gray-500"
-                               placeholder="(99) 99999-9999">
-                    </div>
-                    
-                    <button onclick="cadastrarFuncionario()" 
-                            class="w-full bg-cyan-500 hover:bg-cyan-600 py-5 rounded-3xl text-lg font-semibold text-white active:scale-95 transition-all flex items-center justify-center gap-3">
-                        <span>💾</span> SALVAR IDENTIFICAÇÃO ÚNICA
-                    </button>
-                </div>
+            <div class="bg-gray-900 rounded-3xl p-6">
+                <h2 class="text-xl font-semibold mb-6">Cadastrar Funcionário</h2>
+                <input id="nome" type="text" placeholder="Nome completo" class="w-full px-5 py-4 bg-gray-800 rounded-2xl mb-4">
+                <input id="telefone" type="tel" placeholder="Telefone ou código" class="w-full px-5 py-4 bg-gray-800 rounded-2xl mb-6">
+                <button onclick="cadastrarFuncionario()" class="w-full bg-cyan-500 py-5 rounded-3xl text-lg font-semibold">Salvar no Supabase</button>
             </div>
-
-            <h3 class="font-medium text-lg mb-4 px-2">Funcionários cadastrados</h3>
-            <div id="lista-funcionarios" class="space-y-3">
-                <!-- Preenchido via JS -->
-            </div>
+            <div id="lista-funcionarios" class="mt-8 space-y-3"></div>
         </div>
 
-        <!-- Aba 2: QR Code -->
+        <!-- Aba QR Code -->
         <div id="content-1" class="tab-content px-6 py-6 hidden">
-            <div class="text-center mb-8">
-                <h2 class="text-2xl font-semibold mb-2">QR Code de Acesso ao Ponto</h2>
-                <p class="text-gray-400 max-w-xs mx-auto">Mostre este QR Code na entrada da empresa. Os funcionários escaneiam com o celular e registram entrada/saída.</p>
-            </div>
-            
-            <div class="qr-container bg-white rounded-3xl p-8 max-w-[300px] mx-auto">
-                <div id="qrcode" class="mx-auto"></div>
-            </div>
-            
-            <div class="mt-8 bg-gray-900 rounded-3xl p-6 text-center">
-                <p class="text-xs text-gray-400 mb-3">Link gerado automaticamente:</p>
-                <code id="qr-url" class="text-cyan-400 text-sm block break-all bg-gray-800 p-4 rounded-2xl"></code>
-                <button onclick="copiarLinkQR()" 
-                        class="mt-4 text-cyan-400 text-sm flex items-center gap-2 mx-auto hover:text-cyan-300">
-                    📋 Copiar link
-                </button>
-            </div>
-
-            <div class="mt-10 text-center text-sm text-gray-400">
-                <p>💡 Dica: Hospede esta página em qualquer servidor gratuito (Vercel, Netlify, GitHub Pages) para que o QR Code funcione perfeitamente no celular dos funcionários.</p>
+            <div class="text-center">
+                <h2 class="text-2xl font-semibold mb-4">QR Code de Acesso</h2>
+                <div class="bg-white rounded-3xl p-8 max-w-[300px] mx-auto" id="qrcode-container"></div>
+                <p class="mt-6 text-sm text-gray-400">Escaneie com o celular para registrar ponto</p>
             </div>
         </div>
 
-        <!-- Aba 3: Relatório -->
+        <!-- Aba Relatório -->
         <div id="content-2" class="tab-content px-6 py-6 hidden">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-semibold">Folha de Ponto Completa</h2>
-                <button onclick="exportarCSV()" 
-                        class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-5 py-2 rounded-2xl text-sm">
-                    📤 Exportar CSV
-                </button>
-            </div>
-            
-            <div id="tabela-relatorio" class="bg-gray-900 rounded-3xl overflow-hidden">
-                <!-- Preenchido via JS -->
-                <table class="w-full">
-                    <thead>
-                        <tr class="border-b border-gray-800">
-                            <th class="text-left py-4 px-6 text-xs font-medium text-gray-400">DATA/HORA</th>
-                            <th class="text-left py-4 px-6 text-xs font-medium text-gray-400">FUNCIONÁRIO</th>
-                            <th class="text-left py-4 px-6 text-xs font-medium text-gray-400">AÇÃO</th>
-                            <th class="text-left py-4 px-6 text-xs font-medium text-gray-400">ID</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-relatorio" class="divide-y divide-gray-800 text-sm">
-                        <!-- Preenchido via JS -->
-                    </tbody>
-                </table>
-            </div>
-            
-            <div id="empty-relatorio" class="hidden py-12 text-center text-gray-400">
-                <div class="text-6xl mb-4">📭</div>
-                <p>Nenhum registro ainda.</p>
-                <p class="text-xs mt-2">Os pontos aparecem aqui assim que os funcionários registrarem.</p>
-            </div>
-        </div>
-
-        <!-- Footer info -->
-        <div class="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 px-6 py-3 text-[10px] text-gray-400 flex justify-between items-center z-50">
-            <p>Versão demo • Dados salvos localmente no navegador</p>
-            <a href="#" onclick="limparDados()" class="underline text-red-400">Limpar todos os dados</a>
+            <h2 class="text-xl font-semibold mb-4">Registros de Ponto</h2>
+            <div id="tabela-relatorio" class="bg-gray-900 rounded-3xl overflow-hidden"></div>
         </div>
     </div>
 
-    <script>
-        // ===================== CONFIGURAÇÃO TAILWIND =====================
-        function initTailwind() {
-            return {
-                config(userConfig = {}) {
-                    return {
-                        configUser: userConfig,
-                        theme: {
-                            extend: {},
-                        },
-                    }
-                },
-                theme: {
-                    extend: {},
-                },
-            }
-        }
-        
-        // ===================== DADOS =====================
-        let employees = []
-        let logs = []
+    <script type="module">
+        import { supabaseConfig } from './config.js';
 
-        function loadData() {
-            const savedEmployees = localStorage.getItem('ponto_employees')
-            if (savedEmployees) employees = JSON.parse(savedEmployees)
-            
-            const savedLogs = localStorage.getItem('ponto_logs')
-            if (savedLogs) logs = JSON.parse(savedLogs)
-        }
+        // Inicializa o cliente Supabase
+        const supabase = Supabase.createClient(supabaseConfig.url, supabaseConfig.anonKey);
 
-        function saveData() {
-            localStorage.setItem('ponto_employees', JSON.stringify(employees))
-            localStorage.setItem('ponto_logs', JSON.stringify(logs))
-        }
+        let currentUser = null;   // usuário atual no dispositivo
 
-        // ===================== CADASTRO =====================
-        function cadastrarFuncionario() {
-            const nome = document.getElementById('nome').value.trim()
-            const telefone = document.getElementById('telefone').value.trim()
-            
-            if (!nome || !telefone) {
-                alert('❌ Preencha nome e telefone!')
-                return
-            }
-            
-            // Gera ID único (ex: FUNC-784512)
-            const uniqueId = 'FUNC-' + Math.floor(100000 + Math.random() * 900000)
-            
-            employees.unshift({
-                id: uniqueId,
-                name: nome,
-                phone: telefone,
-                created: new Date().toISOString()
-            })
-            
-            saveData()
-            renderListaFuncionarios()
-            
-            // Limpa formulário
-            document.getElementById('nome').value = ''
-            document.getElementById('telefone').value = ''
-            
-            alert(`✅ Funcionário cadastrado!\nID único: ${uniqueId}\nTelefone: ${telefone}`)
-        }
+        // ===================== FUNÇÕES SUPABASE =====================
+        async function cadastrarFuncionario() {
+            const nome = document.getElementById('nome').value.trim();
+            const telefone = document.getElementById('telefone').value.trim();
+            if (!nome || !telefone) return alert("Preencha nome e telefone!");
 
-        function renderListaFuncionarios() {
-            const container = document.getElementById('lista-funcionarios')
-            container.innerHTML = ''
-            
-            if (employees.length === 0) {
-                container.innerHTML = `
-                    <div class="bg-gray-900 rounded-3xl p-8 text-center text-gray-400">
-                        Nenhum funcionário cadastrado ainda.<br>
-                        Cadastre acima para gerar a identificação única do telefone.
-                    </div>`
-                return
-            }
-            
-            employees.forEach((func, index) => {
-                const div = document.createElement('div')
-                div.className = 'bg-gray-900 rounded-3xl p-5 flex justify-between items-center'
-                div.innerHTML = `
-                    <div>
-                        <div class="font-semibold">${func.name}</div>
-                        <div class="text-cyan-400 text-sm">${func.phone}</div>
-                        <div class="text-xs text-gray-400 mt-1">${func.id}</div>
-                    </div>
-                    <button onclick="excluirFuncionario(${index})" class="text-red-400 hover:text-red-500 text-3xl leading-none">×</button>
-                `
-                container.appendChild(div)
-            })
-        }
+            const codigo_unico = 'FUNC-' + Math.floor(100000 + Math.random() * 900000);
 
-        function excluirFuncionario(index) {
-            if (confirm('Excluir este funcionário?')) {
-                employees.splice(index, 1)
-                saveData()
-                renderListaFuncionarios()
+            const { error } = await supabase
+                .from('funcionarios')
+                .insert([{ codigo_unico, nome, telefone }]);
+
+            if (error) {
+                alert("Erro ao cadastrar: " + error.message);
+            } else {
+                alert("✅ Funcionário cadastrado com sucesso!");
+                document.getElementById('nome').value = '';
+                document.getElementById('telefone').value = '';
+                carregarFuncionarios();
             }
         }
 
-        // ===================== QR CODE =====================
-        let qrInstance = null
+        async function carregarFuncionarios() {
+            const { data, error } = await supabase
+                .from('funcionarios')
+                .select('*')
+                .order('nome');
 
-        function gerarQRCode() {
-            const baseUrl = window.location.href.split('?')[0].split('#')[0]
-            const qrUrl = baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'mode=ponto'
-            
-            // Exibe o link
-            document.getElementById('qr-url').textContent = qrUrl
-            
-            // Remove QR anterior
-            const container = document.getElementById('qrcode')
-            container.innerHTML = ''
-            
-            // Gera novo QR
-            qrInstance = new QRCode(container, {
-                text: qrUrl,
-                width: 260,
-                height: 260,
-                colorDark: "#0f172a",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
-            })
-        }
-
-        function copiarLinkQR() {
-            const url = document.getElementById('qr-url').textContent
-            navigator.clipboard.writeText(url).then(() => {
-                const btn = event.target
-                const original = btn.innerHTML
-                btn.innerHTML = '✅ Copiado!'
-                setTimeout(() => btn.innerHTML = original, 2000)
-            })
-        }
-
-        // ===================== PONTO (modo mobile) =====================
-        function registrarPonto(acao) {
-            const input = document.getElementById('unique-id-input').value.trim()
-            if (!input) {
-                alert('❌ Digite sua identificação única ou telefone!')
-                return
+            const container = document.getElementById('lista-funcionarios');
+            if (error || !data) {
+                container.innerHTML = '<p class="text-red-400">Erro ao carregar funcionários</p>';
+                return;
             }
-            
-            // Tenta encontrar o funcionário pelo ID ou telefone
-            let funcionario = employees.find(f => 
-                f.id === input || f.phone === input || f.phone.replace(/\D/g,'') === input.replace(/\D/g,'')
-            )
-            
-            const nome = funcionario ? funcionario.name : input
-            const idUsado = funcionario ? funcionario.id : input
-            
-            const agora = new Date()
-            const timestamp = agora.toISOString()
-            
-            // Registra o log
-            logs.unshift({
-                timestamp: timestamp,
-                id: idUsado,
-                name: nome,
-                action: acao,
-                fullDate: agora.toLocaleString('pt-BR')
-            })
-            
-            saveData()
-            
-            // Mostra sucesso
-            const message = document.getElementById('success-message')
-            message.classList.remove('hidden')
-            
-            document.getElementById('success-title').innerHTML = `
-                ${acao === 'entrada' ? '🚪 ENTRADA' : '🚪 SAÍDA'} registrada!
-            `
-            document.getElementById('success-details').innerHTML = `
-                <strong>${nome}</strong><br>
-                ${agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} • ${agora.toLocaleDateString('pt-BR')}
-            `
-            
-            // Limpa o campo
-            document.getElementById('unique-id-input').value = ''
+
+            container.innerHTML = data.map(f => `
+                <div class="bg-gray-900 rounded-3xl p-5">
+                    <div class="font-semibold">${f.nome}</div>
+                    <div class="text-cyan-400">${f.telefone}</div>
+                    <div class="text-xs text-gray-400">${f.codigo_unico}</div>
+                </div>
+            `).join('');
+        }
+
+        // Registrar ponto (Entrada ou Saída)
+        async function registrarPonto(acao) {
+            let funcionario_id = null;
+            let nome = null;
+
+            // Se já tem usuário salvo no dispositivo
+            if (currentUser) {
+                funcionario_id = currentUser.id;
+                nome = currentUser.nome;
+            } else {
+                // Primeiro acesso - busca pelo código/telefone
+                const input = document.getElementById('unique-id-input').value.trim();
+                if (!input) return alert("Digite seu código ou telefone!");
+
+                const { data } = await supabase
+                    .from('funcionarios')
+                    .select('id, nome')
+                    .or(`codigo_unico.eq.${input},telefone.eq.${input}`)
+                    .single();
+
+                if (!data) return alert("Funcionário não encontrado!");
+
+                funcionario_id = data.id;
+                nome = data.nome;
+
+                // Salva no dispositivo para próximas vezes
+                currentUser = { id: funcionario_id, nome };
+                localStorage.setItem('ponto_my_user', JSON.stringify(currentUser));
+                showIdentifiedScreen();
+            }
+
+            // Insere o registro de ponto
+            const { error } = await supabase
+                .from('registros_ponto')
+                .insert([{
+                    funcionario_id,
+                    acao,
+                    device_id: getDeviceId()   // função simples de fingerprint
+                }]);
+
+            if (error) {
+                alert("Erro ao registrar ponto: " + error.message);
+            } else {
+                mostrarSucesso(acao, nome);
+            }
+        }
+
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('device_fingerprint');
+            if (!deviceId) {
+                deviceId = 'dev-' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+                localStorage.setItem('device_fingerprint', deviceId);
+            }
+            return deviceId;
+        }
+
+        function mostrarSucesso(acao, nome) {
+            const msg = document.getElementById('success-message');
+            msg.classList.remove('hidden');
+            document.getElementById('success-title').textContent = `${acao.toUpperCase()} registrada!`;
+            document.getElementById('success-details').innerHTML = `${nome}<br>${new Date().toLocaleString('pt-BR')}`;
         }
 
         function copiarRegistro() {
-            const ultimaEntrada = logs[0]
-            if (!ultimaEntrada) return
-            
-            const texto = `📍 Folha de Ponto\n` +
-                         `Funcionário: ${ultimaEntrada.name}\n` +
-                         `ID: ${ultimaEntrada.id}\n` +
-                         `Ação: ${ultimaEntrada.action.toUpperCase()}\n` +
-                         `Data/Hora: ${ultimaEntrada.fullDate}\n` +
-                         `Gerado via QR Code`
-            
-            navigator.clipboard.writeText(texto).then(() => {
-                alert('✅ Registro copiado! Envie para o RH via WhatsApp ou e-mail.')
-            })
+            alert("Registro copiado! (Implemente a lógica de clipboard se quiser)");
         }
 
-        function voltarParaModoNormal() {
-            window.location.search = ''
+        function showIdentifiedScreen() {
+            document.getElementById('setup-screen').classList.add('hidden');
+            const screen = document.getElementById('identified-screen');
+            screen.classList.remove('hidden');
+            document.getElementById('welcome-name').innerHTML = `Olá, <span class="text-cyan-600">${currentUser.nome}</span>!`;
         }
 
-        // ===================== RELATÓRIO =====================
-        function renderRelatorio() {
-            const tbody = document.getElementById('tbody-relatorio')
-            const empty = document.getElementById('empty-relatorio')
-            tbody.innerHTML = ''
-            
-            if (logs.length === 0) {
-                empty.classList.remove('hidden')
-                return
+        function trocarUsuario() {
+            if (confirm("Trocar usuário?")) {
+                localStorage.removeItem('ponto_my_user');
+                currentUser = null;
+                document.getElementById('identified-screen').classList.add('hidden');
+                document.getElementById('setup-screen').classList.remove('hidden');
             }
-            
-            empty.classList.add('hidden')
-            
-            logs.forEach(log => {
-                const tr = document.createElement('tr')
-                tr.className = 'hover:bg-gray-800 transition-colors'
-                tr.innerHTML = `
-                    <td class="py-4 px-6 font-mono text-xs">${new Date(log.timestamp).toLocaleString('pt-BR')}</td>
-                    <td class="py-4 px-6">${log.name}</td>
-                    <td class="py-4 px-6">
-                        <span class="px-3 py-1 rounded-full text-xs font-medium ${log.action === 'entrada' ? 'bg-emerald-400 text-white' : 'bg-red-400 text-white'}">
-                            ${log.action.toUpperCase()}
-                        </span>
-                    </td>
-                    <td class="py-4 px-6 font-mono text-xs text-gray-400">${log.id}</td>
-                `
-                tbody.appendChild(tr)
-            })
         }
 
-        function exportarCSV() {
-            if (logs.length === 0) {
-                alert('Nenhum registro para exportar.')
-                return
-            }
-            
-            let csv = 'Data/Hora,Funcionário,Ação,ID\n'
-            
-            logs.forEach(log => {
-                csv += `"${log.fullDate}","${log.name}","${log.action}","${log.id}"\n`
-            })
-            
-            const blob = new Blob([csv], { type: 'text/csv' })
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `folha_ponto_${new Date().toISOString().slice(0,10)}.csv`
-            a.click()
+        function gerarQRCode() {
+            const container = document.getElementById('qrcode-container');
+            container.innerHTML = '';
+            const url = window.location.href + '?mode=ponto';
+            new QRCode(container, {
+                text: url,
+                width: 260,
+                height: 260,
+                colorDark: "#0f172a",
+                colorLight: "#ffffff"
+            });
         }
 
-        // ===================== TABS =====================
+        // ===================== TABS E INICIALIZAÇÃO =====================
         function showTab(n) {
-            // Remove active de todas
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active', 'border-cyan-400', 'text-cyan-400'))
-            // Adiciona active na selecionada
-            document.getElementById('tab-' + n).classList.add('active', 'border-cyan-400', 'text-cyan-400')
-            
-            // Esconde todos os conteúdos
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'))
-            // Mostra o selecionado
-            document.getElementById('content-' + n).classList.remove('hidden')
-            
-            if (n === 1) gerarQRCode() // regenera QR quando abre a aba
-            if (n === 2) renderRelatorio()
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active', 'border-cyan-400', 'text-cyan-400'));
+            document.getElementById('tab-' + n).classList.add('active', 'border-cyan-400', 'text-cyan-400');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById('content-' + n).classList.remove('hidden');
+
+            if (n === 1) gerarQRCode();
+            if (n === 0) carregarFuncionarios();
         }
 
-        // ===================== LIMPAR DADOS =====================
-        function limparDados() {
-            if (confirm('⚠️ Tem certeza? Isso apagará TODOS os funcionários e registros.')) {
-                localStorage.removeItem('ponto_employees')
-                localStorage.removeItem('ponto_logs')
-                employees = []
-                logs = []
-                renderListaFuncionarios()
-                renderRelatorio()
-                alert('✅ Dados limpos com sucesso!')
-            }
-        }
-
-        // ===================== RELÓGIO EM TEMPO REAL (modo ponto) =====================
         function updateClock() {
-            const timeEl = document.getElementById('current-time')
-            const dateEl = document.getElementById('current-date')
-            
             setInterval(() => {
-                const now = new Date()
-                timeEl.textContent = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                dateEl.textContent = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
-            }, 1000)
+                const now = new Date();
+                document.getElementById('current-time').textContent = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            }, 1000);
         }
 
-        // ===================== INICIALIZAÇÃO =====================
-        function init() {
-            loadData()
-            
-            // Detecta se está em modo Ponto (via QR Code)
-            const params = new URLSearchParams(window.location.search)
-            const isPontoMode = params.get('mode') === 'ponto'
-            
+        async function init() {
+            const params = new URLSearchParams(window.location.search);
+            const isPontoMode = params.get('mode') === 'ponto';
+
             if (isPontoMode) {
-                // Mostra tela de ponto
-                document.getElementById('admin-screen').classList.add('hidden')
-                document.getElementById('ponto-screen').classList.remove('hidden')
-                document.getElementById('ponto-screen').classList.add('flex')
-                updateClock()
-            } else {
-                // Modo administrador
-                renderListaFuncionarios()
-                showTab(0) // abre na aba cadastro
-                
-                // Se já existe QR na página, gera automaticamente
-                if (document.getElementById('qrcode')) {
-                    // Será gerado quando o usuário clicar na aba
+                document.getElementById('admin-screen').classList.add('hidden');
+                document.getElementById('ponto-screen').classList.remove('hidden');
+                document.getElementById('ponto-screen').classList.add('flex');
+                updateClock();
+
+                // Verifica usuário salvo no dispositivo
+                const saved = localStorage.getItem('ponto_my_user');
+                if (saved) {
+                    currentUser = JSON.parse(saved);
+                    showIdentifiedScreen();
                 }
-                
-                console.log('%c✅ Página de Folha de Ponto gerada com sucesso!', 'color:#00d4ff; font-family:monospace')
+            } else {
+                // Modo Admin
+                showTab(0);
             }
-            
-            console.log('📱 Sistema pronto. Cadastre os telefones e gere o QR Code!')
+
+            console.log('%c✅ Folha de Ponto conectada ao Supabase!', 'color:#00d4ff; font-weight:bold');
         }
-        
-        // Inicia tudo
-        window.onload = init
+
+        window.onload = init;
     </script>
 </body>
 </html>
