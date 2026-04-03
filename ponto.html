@@ -41,7 +41,9 @@
             border: none;
             border-radius: 12px;
             cursor: pointer;
+            transition: opacity 0.2s;
         }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-entrada { background: #27ae60; color: white; }
         .btn-saida   { background: #e74c3c; color: white; }
         .status { margin-top: 25px; min-height: 35px; font-weight: bold; font-size: 17px; }
@@ -59,8 +61,8 @@
             <p>Funcionário:</p>
             <div class="nome" id="nomeFuncionario">Aguardando identificação...</div>
 
-            <button class="btn btn-entrada" onclick="baterPonto('Entrada')">✅ MARCAR ENTRADA</button>
-            <button class="btn btn-saida" onclick="baterPonto('Saída')">⏹️ MARCAR SAÍDA</button>
+            <button id="btnEntrada" class="btn btn-entrada" onclick="baterPonto('Entrada')">✅ MARCAR ENTRADA</button>
+            <button id="btnSaida" class="btn btn-saida" onclick="baterPonto('Saída')">⏹️ MARCAR SAÍDA</button>
 
             <div class="status" id="status"></div>
             <div class="info">Dispositivo vinculado automaticamente</div>
@@ -124,32 +126,71 @@ async function baterPonto(tipo) {
         return;
     }
 
-    const agora = new Date();
-    const dataHora = agora.toLocaleString('pt-BR', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-    });
-    const dataHoje = agora.toLocaleDateString('pt-BR');
-
-    const { error } = await supabaseClient
-        .from('registros_ponto')
-        .insert([{
-            employee_id: funcionarioAtual.id,
-            nome: funcionarioAtual.nome,
-            data_hora: dataHora,
-            tipo: tipo,
-            data: dataHoje,
-            dispositivo: 'Mobile',
-            device_id: currentDeviceID
-        }]);
-
     const statusEl = document.getElementById('status');
-    if (error) {
-        statusEl.innerHTML = `<span style="color:red;">❌ Erro ao registrar</span>`;
-    } else {
+    const btnEntrada = document.getElementById('btnEntrada');
+    const btnSaida = document.getElementById('btnSaida');
+
+    // Bloqueia botões durante o processamento
+    btnEntrada.disabled = true;
+    btnSaida.disabled = true;
+    statusEl.style.color = '#333';
+    statusEl.textContent = '⏳ Verificando último registro...';
+
+    try {
+        // 1. Busca o último registro do funcionário no banco
+        const { data: ultimoRegistro, error: searchError } = await supabaseClient
+            .from('registros_ponto')
+            .select('tipo')
+            .eq('employee_id', funcionarioAtual.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (searchError) throw new Error('Erro ao consultar histórico');
+
+        // 2. Validação de duplicidade consecutiva
+        if (ultimoRegistro && ultimoRegistro.tipo === tipo) {
+            statusEl.innerHTML = `<span style="color:orange;">⚠️ Você já registrou uma ${tipo} por último.</span>`;
+            btnEntrada.disabled = false;
+            btnSaida.disabled = false;
+            return;
+        }
+
+        // 3. Preparação dos dados para inserção
+        const agora = new Date();
+        const dataHora = agora.toLocaleString('pt-BR', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+        const dataHoje = agora.toLocaleDateString('pt-BR');
+
+        const { error: insertError } = await supabaseClient
+            .from('registros_ponto')
+            .insert([{
+                employee_id: funcionarioAtual.id,
+                nome: funcionarioAtual.nome,
+                data_hora: dataHora,
+                tipo: tipo,
+                data: dataHoje,
+                dispositivo: 'Mobile',
+                device_id: currentDeviceID
+            }]);
+
+        if (insertError) throw insertError;
+
+        // Sucesso
         statusEl.style.color = '#27ae60';
         statusEl.textContent = `✅ ${tipo} registrada com sucesso!`;
-        setTimeout(() => statusEl.textContent = '', 4000);
+        
+    } catch (err) {
+        statusEl.innerHTML = `<span style="color:red;">❌ Erro: ${err.message}</span>`;
+    } finally {
+        // Reativa botões e limpa status após 4 segundos
+        setTimeout(() => {
+            btnEntrada.disabled = false;
+            btnSaida.disabled = false;
+            if (statusEl.textContent.includes('sucesso')) statusEl.textContent = '';
+        }, 4000);
     }
 }
 
