@@ -41,9 +41,7 @@
             border: none;
             border-radius: 12px;
             cursor: pointer;
-            transition: opacity 0.2s;
         }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-entrada { background: #27ae60; color: white; }
         .btn-saida   { background: #e74c3c; color: white; }
         .status { margin-top: 25px; min-height: 35px; font-weight: bold; font-size: 17px; }
@@ -61,8 +59,8 @@
             <p>Funcionário:</p>
             <div class="nome" id="nomeFuncionario">Aguardando identificação...</div>
 
-            <button id="btnEntrada" class="btn btn-entrada" onclick="baterPonto('Entrada')">✅ MARCAR ENTRADA</button>
-            <button id="btnSaida" class="btn btn-saida" onclick="baterPonto('Saída')">⏹️ MARCAR SAÍDA</button>
+            <button class="btn btn-entrada" onclick="baterPonto('Entrada')">✅ MARCAR ENTRADA</button>
+            <button class="btn btn-saida" onclick="baterPonto('Saída')">⏹️ MARCAR SAÍDA</button>
 
             <div class="status" id="status"></div>
             <div class="info">Dispositivo vinculado automaticamente</div>
@@ -126,71 +124,57 @@ async function baterPonto(tipo) {
         return;
     }
 
-    const statusEl = document.getElementById('status');
-    const btnEntrada = document.getElementById('btnEntrada');
-    const btnSaida = document.getElementById('btnSaida');
+    // === VERIFICAÇÃO DE PONTO CONSECUTIVO ===
+    const { data: ultimoPonto, error: erroConsulta } = await supabaseClient
+        .from('registros_ponto')
+        .select('tipo, data_hora')
+        .eq('employee_id', funcionarioAtual.id)
+        .order('registrado_em', { ascending: false })
+        .limit(1)
+        .single();
 
-    // Bloqueia botões durante o processamento
-    btnEntrada.disabled = true;
-    btnSaida.disabled = true;
-    statusEl.style.color = '#333';
-    statusEl.textContent = '⏳ Verificando último registro...';
+    if (erroConsulta && erroConsulta.code !== 'PGRST116') { // PGRST116 = nenhum registro encontrado
+        console.error(erroConsulta);
+    }
 
-    try {
-        // 1. Busca o último registro do funcionário no banco
-        const { data: ultimoRegistro, error: searchError } = await supabaseClient
-            .from('registros_ponto')
-            .select('tipo')
-            .eq('employee_id', funcionarioAtual.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-        if (searchError) throw new Error('Erro ao consultar histórico');
-
-        // 2. Validação de duplicidade consecutiva
-        if (ultimoRegistro && ultimoRegistro.tipo === tipo) {
-            statusEl.innerHTML = `<span style="color:orange;">⚠️ Você já registrou uma ${tipo} por último.</span>`;
-            btnEntrada.disabled = false;
-            btnSaida.disabled = false;
+    if (ultimoPonto) {
+        if (ultimoPonto.tipo === tipo) {
+            const msg = tipo === 'Entrada' 
+                ? "❌ Você já marcou Entrada. Marque Saída primeiro!" 
+                : "❌ Você já marcou Saída. Marque Entrada primeiro!";
+            
+            document.getElementById('status').innerHTML = `<span style="color:red;">${msg}</span>`;
             return;
         }
+    }
 
-        // 3. Preparação dos dados para inserção
-        const agora = new Date();
-        const dataHora = agora.toLocaleString('pt-BR', {
-            day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit', second: '2-digit'
-        });
-        const dataHoje = agora.toLocaleDateString('pt-BR');
+    // === REGISTRA O PONTO ===
+    const agora = new Date();
+    const dataHora = agora.toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+    const dataHoje = agora.toLocaleDateString('pt-BR');
 
-        const { error: insertError } = await supabaseClient
-            .from('registros_ponto')
-            .insert([{
-                employee_id: funcionarioAtual.id,
-                nome: funcionarioAtual.nome,
-                data_hora: dataHora,
-                tipo: tipo,
-                data: dataHoje,
-                dispositivo: 'Mobile',
-                device_id: currentDeviceID
-            }]);
+    const { error } = await supabaseClient
+        .from('registros_ponto')
+        .insert([{
+            employee_id: funcionarioAtual.id,
+            nome: funcionarioAtual.nome,
+            data_hora: dataHora,
+            tipo: tipo,
+            data: dataHoje,
+            dispositivo: 'Mobile',
+            device_id: currentDeviceID
+        }]);
 
-        if (insertError) throw insertError;
-
-        // Sucesso
+    const statusEl = document.getElementById('status');
+    if (error) {
+        statusEl.innerHTML = `<span style="color:red;">❌ Erro ao registrar</span>`;
+    } else {
         statusEl.style.color = '#27ae60';
         statusEl.textContent = `✅ ${tipo} registrada com sucesso!`;
-        
-    } catch (err) {
-        statusEl.innerHTML = `<span style="color:red;">❌ Erro: ${err.message}</span>`;
-    } finally {
-        // Reativa botões e limpa status após 4 segundos
-        setTimeout(() => {
-            btnEntrada.disabled = false;
-            btnSaida.disabled = false;
-            if (statusEl.textContent.includes('sucesso')) statusEl.textContent = '';
-        }, 4000);
+        setTimeout(() => statusEl.textContent = '', 4000);
     }
 }
 
