@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bater Ponto</title>
-    <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body {
@@ -64,17 +63,17 @@
             <button class="btn btn-saida" onclick="baterPonto('Saída')">⏹️ MARCAR SAÍDA</button>
 
             <div class="status" id="status"></div>
-            <div class="info">Este dispositivo está vinculado automaticamente ao funcionário</div>
+            <div class="info">Dispositivo vinculado automaticamente</div>
         </div>
     </div>
 
 <script>
-// ============== CONFIGURAÇÃO SUPABASE (use o config.js) ==============
-const supabaseUrl = 'https://SEU-PROJETO.supabase.co';     // ← Troque pelo seu URL
-const supabaseAnonKey = 'eyJ...';                         // ← Troque pela sua anon key
-
-const supabase = Supabase.createClient(supabaseUrl, supabaseAnonKey);
-// =====================================================================
+// ==================== CONFIG SUPABASE ====================
+const supabaseClient = supabase.createClient(
+    'https://osofdmgokrxdzsxozsrf.supabase.co',
+    'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
+);
+// =======================================================
 
 let currentDeviceID = null;
 let funcionarioAtual = null;
@@ -99,34 +98,29 @@ function gerarDeviceID() {
 
 async function detectarDispositivo() {
     currentDeviceID = gerarDeviceID();
-    
-    const deviceEl = document.getElementById('deviceInfo');
-    deviceEl.innerHTML = `📱 Device ID: <strong>${currentDeviceID}</strong>`;
+    document.getElementById('deviceInfo').innerHTML = `📱 Device ID: <strong>${currentDeviceID}</strong>`;
 
-    // Busca automática no Supabase pelo Device ID
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('employees')
         .select('*')
         .eq('device_id', currentDeviceID)
         .single();
 
     const nomeEl = document.getElementById('nomeFuncionario');
-    
     if (data) {
         funcionarioAtual = data;
         nomeEl.textContent = data.nome;
         nomeEl.style.color = "#27ae60";
     } else {
         funcionarioAtual = null;
-        nomeEl.textContent = "❌ Dispositivo não cadastrado no Supabase";
+        nomeEl.textContent = "❌ Dispositivo não cadastrado";
         nomeEl.style.color = "red";
     }
 }
 
 async function baterPonto(tipo) {
     if (!funcionarioAtual) {
-        document.getElementById('status').innerHTML = 
-            '<span style="color:red;">❌ Este dispositivo ainda não foi vinculado</span>';
+        document.getElementById('status').innerHTML = '<span style="color:red;">❌ Dispositivo não vinculado</span>';
         return;
     }
 
@@ -137,7 +131,7 @@ async function baterPonto(tipo) {
     });
     const dataHoje = agora.toLocaleDateString('pt-BR');
 
-    const { error } = await supabase
+    const { error } = await supabaseClient
         .from('registros_ponto')
         .insert([{
             employee_id: funcionarioAtual.id,
@@ -151,7 +145,7 @@ async function baterPonto(tipo) {
 
     const statusEl = document.getElementById('status');
     if (error) {
-        statusEl.innerHTML = `<span style="color:red;">❌ Erro: ${error.message}</span>`;
+        statusEl.innerHTML = `<span style="color:red;">❌ Erro ao registrar</span>`;
     } else {
         statusEl.style.color = '#27ae60';
         statusEl.textContent = `✅ ${tipo} registrada com sucesso!`;
