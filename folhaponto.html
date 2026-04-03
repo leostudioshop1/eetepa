@@ -19,81 +19,89 @@
     <!-- MODO PONTO (QR Code) -->
     <div id="ponto-screen" class="hidden flex-col min-h-screen bg-gradient-to-br from-blue-600 to-cyan-500">
         <div class="px-6 pt-8 pb-6 text-center">
-            <div class="mx-auto w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-4">⏰</div>
-            <h1 class="header-font text-4xl font-semibold">Folha de Ponto</h1>
-            <p class="text-blue-100">Conectado ao Supabase</p>
-            <div id="current-time" class="mt-6 text-5xl font-mono font-semibold"></div>
+            <div class="mx-auto w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-xl">⏰</div>
+            <h1 class="header-font text-4xl font-semibold mb-1">Folha de Ponto</h1>
+            <p class="text-blue-100">Sistema com Supabase</p>
+            <div id="current-time" class="mt-6 text-5xl font-mono font-semibold tabular-nums"></div>
         </div>
 
-        <div class="flex-1 bg-white text-gray-900 rounded-t-3xl px-6 pt-8 pb-12">
+        <div class="flex-1 bg-white text-gray-900 rounded-t-3xl px-6 pt-8 pb-12 shadow-2xl">
             <div class="max-w-md mx-auto">
 
-                <div id="identified-screen" class="hidden text-center">
-                    <h2 id="welcome-name" class="text-3xl font-semibold mb-2"></h2>
-                    <p class="text-gray-500 mb-8">Escolha sua ação</p>
+                <!-- Tela identificada -->
+                <div id="identified-screen" class="hidden">
+                    <div class="text-center mb-8">
+                        <h2 id="welcome-name" class="text-3xl font-semibold text-gray-900"></h2>
+                        <p class="text-gray-500 mt-2">Escolha a ação abaixo</p>
+                    </div>
                     <div class="grid grid-cols-2 gap-4">
-                        <button onclick="registrarPonto('entrada')" class="h-28 bg-emerald-500 hover:bg-emerald-600 rounded-3xl text-white flex flex-col items-center justify-center">
-                            <span class="text-5xl mb-2">🚪</span>
-                            <span class="text-2xl font-semibold">ENTRADA</span>
+                        <button onclick="registrarPonto('entrada')" 
+                                class="h-28 bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all rounded-3xl text-white shadow-lg flex flex-col items-center justify-center">
+                            <div class="text-5xl mb-2">🚪</div>
+                            <div class="text-2xl font-semibold">ENTRADA</div>
                         </button>
-                        <button onclick="registrarPonto('saida')" class="h-28 bg-red-500 hover:bg-red-600 rounded-3xl text-white flex flex-col items-center justify-center">
-                            <span class="text-5xl mb-2">🚪</span>
-                            <span class="text-2xl font-semibold">SAÍDA</span>
+                        <button onclick="registrarPonto('saida')" 
+                                class="h-28 bg-red-500 hover:bg-red-600 active:scale-95 transition-all rounded-3xl text-white shadow-lg flex flex-col items-center justify-center">
+                            <div class="text-5xl mb-2">🚪</div>
+                            <div class="text-2xl font-semibold">SAÍDA</div>
                         </button>
                     </div>
                 </div>
 
+                <!-- Tela primeiro acesso -->
                 <div id="setup-screen">
-                    <input id="unique-id-input" type="text" placeholder="Digite seu código (FUNC-XXXXXX) ou telefone"
-                           class="w-full px-5 py-4 border-2 border-gray-300 rounded-2xl mb-6 text-lg">
+                    <div class="mb-6">
+                        <input id="unique-id-input" type="text" placeholder="Digite FUNC-XXXXXX ou telefone"
+                               class="w-full px-5 py-4 text-lg border-2 border-gray-300 rounded-2xl focus:border-cyan-500 focus:outline-none">
+                    </div>
                     <div class="grid grid-cols-2 gap-4">
-                        <button onclick="registrarPonto('entrada')" class="h-28 bg-emerald-500 hover:bg-emerald-600 rounded-3xl text-white flex flex-col items-center justify-center">
-                            <span class="text-5xl mb-2">🚪</span>
-                            <span class="text-2xl font-semibold">ENTRADA</span>
+                        <button onclick="registrarPonto('entrada')" 
+                                class="h-28 bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all rounded-3xl text-white shadow-lg flex flex-col items-center justify-center">
+                            <div class="text-5xl mb-2">🚪</div>
+                            <div class="text-2xl font-semibold">ENTRADA</div>
                         </button>
-                        <button onclick="registrarPonto('saida')" class="h-28 bg-red-500 hover:bg-red-600 rounded-3xl text-white flex flex-col items-center justify-center">
-                            <span class="text-5xl mb-2">🚪</span>
-                            <span class="text-2xl font-semibold">SAÍDA</span>
+                        <button onclick="registrarPonto('saida')" 
+                                class="h-28 bg-red-500 hover:bg-red-600 active:scale-95 transition-all rounded-3xl text-white shadow-lg flex flex-col items-center justify-center">
+                            <div class="text-5xl mb-2">🚪</div>
+                            <div class="text-2xl font-semibold">SAÍDA</div>
                         </button>
                     </div>
                 </div>
 
-                <div id="success-message" class="hidden mt-10 text-center bg-emerald-50 text-emerald-700 rounded-3xl p-8">
-                    <div class="text-5xl mb-4">✅</div>
-                    <h3 id="success-title" class="text-2xl font-semibold"></h3>
-                    <p id="success-details" class="mt-3"></p>
+                <!-- Sucesso -->
+                <div id="success-message" class="hidden mt-8 text-center bg-emerald-50 text-emerald-700 rounded-3xl p-6">
+                    <div class="text-4xl mb-3">✅</div>
+                    <h3 id="success-title" class="font-semibold text-2xl"></h3>
+                    <p id="success-details" class="mt-2 text-sm"></p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- MODO ADMIN -->
+    <!-- MODO ADMINISTRADOR -->
     <div id="admin-screen" class="min-h-screen">
-        <div class="bg-gradient-to-r from-cyan-500 to-blue-600 p-6">
+        <div class="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-6">
             <h1 class="header-font text-3xl font-semibold text-white">Folha de Ponto</h1>
         </div>
 
-        <div class="flex border-b">
+        <div class="flex border-b border-gray-700 bg-gray-900">
             <button onclick="showTab(0)" id="tab-0" class="flex-1 py-4 font-medium border-b-2 border-cyan-400 text-cyan-400">Cadastro</button>
             <button onclick="showTab(1)" id="tab-1" class="flex-1 py-4 font-medium">QR Code</button>
-            <button onclick="showTab(2)" id="tab-2" class="flex-1 py-4 font-medium">Relatório</button>
         </div>
 
+        <!-- Aba Cadastro -->
         <div id="content-0" class="tab-content p-6">
-            <div class="bg-gray-900 rounded-3xl p-6">
-                <input id="nome" placeholder="Nome completo" class="w-full p-4 bg-gray-800 rounded-2xl mb-4">
-                <input id="telefone" placeholder="Telefone" class="w-full p-4 bg-gray-800 rounded-2xl mb-6">
-                <button onclick="cadastrarFuncionario()" class="w-full bg-cyan-500 py-4 rounded-3xl font-semibold">Cadastrar Funcionário</button>
+            <div class="bg-gray-900 rounded-3xl p-6 mb-8">
+                <input id="nome" placeholder="Nome completo" class="w-full px-5 py-4 bg-gray-800 rounded-2xl mb-4">
+                <input id="telefone" placeholder="Telefone" class="w-full px-5 py-4 bg-gray-800 rounded-2xl mb-6">
+                <button onclick="cadastrarFuncionario()" class="w-full bg-cyan-500 py-5 rounded-3xl font-semibold text-lg">Cadastrar no Supabase</button>
             </div>
-            <div id="lista-funcionarios" class="mt-8"></div>
+            <div id="lista-funcionarios" class="space-y-3"></div>
         </div>
 
+        <!-- Aba QR Code -->
         <div id="content-1" class="tab-content p-6 hidden">
             <div id="qrcode" class="bg-white p-8 rounded-3xl mx-auto max-w-[280px]"></div>
-        </div>
-
-        <div id="content-2" class="tab-content p-6 hidden">
-            <div id="relatorio" class="bg-gray-900 rounded-3xl p-6"></div>
         </div>
     </div>
 
@@ -104,74 +112,99 @@
 
         let currentUser = null;
 
+        // ===================== CADASTRO =====================
         async function cadastrarFuncionario() {
             const nome = document.getElementById('nome').value.trim();
             const telefone = document.getElementById('telefone').value.trim();
-            if (!nome || !telefone) return alert("Preencha todos os campos");
+            if (!nome || !telefone) return alert("❌ Preencha nome e telefone!");
 
-            const codigo_unico = "FUNC-" + Math.floor(100000 + Math.random() * 900000);
+            const codigo_unico = 'FUNC-' + Math.floor(100000 + Math.random() * 900000);
 
-            const { error } = await supabase.from('funcionarios').insert([{ codigo_unico, nome, telefone }]);
-            if (error) alert("Erro: " + error.message);
-            else {
-                alert("✅ Cadastrado com sucesso!");
+            const { error } = await supabase
+                .from('funcionarios')
+                .insert([{ codigo_unico, nome, telefone }]);
+
+            if (error) {
+                console.error(error);
+                alert("Erro ao cadastrar: " + error.message);
+            } else {
+                alert("✅ Funcionário cadastrado!");
+                document.getElementById('nome').value = '';
+                document.getElementById('telefone').value = '';
                 carregarFuncionarios();
             }
         }
 
         async function carregarFuncionarios() {
-            const { data } = await supabase.from('funcionarios').select('*').order('nome');
-            const div = document.getElementById('lista-funcionarios');
-            div.innerHTML = data ? data.map(f => `
-                <div class="bg-gray-900 p-5 rounded-3xl mb-3">
-                    <div class="font-semibold">${f.nome}</div>
-                    <div class="text-cyan-400">${f.telefone} • ${f.codigo_unico}</div>
-                </div>
-            `).join('') : '<p class="text-gray-400">Nenhum funcionário cadastrado</p>';
+            const { data, error } = await supabase.from('funcionarios').select('*').order('nome');
+            const container = document.getElementById('lista-funcionarios');
+            if (error) return container.innerHTML = `<p class="text-red-400">Erro ao carregar: ${error.message}</p>`;
+            
+            container.innerHTML = data.length === 0 
+                ? `<p class="text-gray-400">Nenhum funcionário cadastrado ainda.</p>`
+                : data.map(f => `
+                    <div class="bg-gray-900 rounded-3xl p-5">
+                        <div class="font-semibold">${f.nome}</div>
+                        <div class="text-cyan-400">${f.telefone}</div>
+                        <div class="text-xs text-gray-400">${f.codigo_unico}</div>
+                    </div>`).join('');
         }
 
+        // ===================== REGISTRAR PONTO =====================
         async function registrarPonto(acao) {
-            let funcionario_id, nome;
+            console.log(`Tentando registrar ${acao}...`); // Para debug
+
+            let funcionario_id = null;
+            let nome = null;
 
             if (currentUser) {
                 funcionario_id = currentUser.id;
                 nome = currentUser.nome;
             } else {
                 const input = document.getElementById('unique-id-input').value.trim();
-                if (!input) return alert("Digite seu código ou telefone");
+                if (!input) return alert("❌ Digite seu código único ou telefone!");
 
                 const { data, error } = await supabase
                     .from('funcionarios')
                     .select('id, nome')
-                    .or(`codigo_unico.eq.${input},telefone.eq.${input}`)
+                    .or(`codigo_unico.ilike.%${input}%,telefone.ilike.%${input}%`)
                     .single();
 
-                if (error || !data) return alert("Funcionário não encontrado");
+                if (error || !data) return alert("Funcionário não encontrado!");
 
                 funcionario_id = data.id;
                 nome = data.nome;
 
                 currentUser = { id: funcionario_id, nome };
                 localStorage.setItem('ponto_my_user', JSON.stringify(currentUser));
+
+                // Troca de tela
                 document.getElementById('setup-screen').classList.add('hidden');
                 document.getElementById('identified-screen').classList.remove('hidden');
                 document.getElementById('welcome-name').textContent = `Olá, ${nome}!`;
             }
 
-            const { error } = await supabase.from('registros_ponto').insert([{
-                funcionario_id,
-                acao,
-                device_id: localStorage.getItem('device_fingerprint') || 'dev-' + Date.now()
-            }]);
+            // Insere o ponto
+            const { error } = await supabase
+                .from('registros_ponto')
+                .insert([{
+                    funcionario_id,
+                    acao,
+                    device_id: localStorage.getItem('device_fingerprint') || ('dev-' + Date.now())
+                }], { returning: 'minimal' });
 
-            if (error) alert("Erro ao bater ponto: " + error.message);
-            else mostrarSucesso(acao, nome);
+            if (error) {
+                console.error(error);
+                alert("Erro ao registrar ponto:\n" + error.message);
+            } else {
+                mostrarSucesso(acao, nome);
+            }
         }
 
         function mostrarSucesso(acao, nome) {
             const msg = document.getElementById('success-message');
             msg.classList.remove('hidden');
-            document.getElementById('success-title').textContent = `${acao.toUpperCase()} registrada!`;
+            document.getElementById('success-title').textContent = `${acao.toUpperCase()} registrada com sucesso!`;
             document.getElementById('success-details').innerHTML = `${nome}<br>${new Date().toLocaleString('pt-BR')}`;
         }
 
@@ -190,14 +223,16 @@
             if (n === 1) gerarQRCode();
         }
 
-        // Inicialização
+        // ===================== INICIALIZAÇÃO =====================
         window.onload = () => {
-            const isPonto = new URLSearchParams(window.location.search).get('mode') === 'ponto';
+            const params = new URLSearchParams(window.location.search);
+            const isPontoMode = params.get('mode') === 'ponto';
 
-            if (isPonto) {
+            if (isPontoMode) {
                 document.getElementById('admin-screen').classList.add('hidden');
-                document.getElementById('ponto-screen').classList.remove('hidden');
+                document.getElementById('ponto-screen').classList.remove('hidden').classList.add('flex');
 
+                // Verifica se já tem usuário salvo
                 const saved = localStorage.getItem('ponto_my_user');
                 if (saved) {
                     currentUser = JSON.parse(saved);
@@ -208,6 +243,8 @@
             } else {
                 showTab(0);
             }
+
+            console.log('%c✅ Folha de Ponto carregada - clique nos botões deve funcionar agora', 'color:#00d4ff');
         };
     </script>
 </body>
