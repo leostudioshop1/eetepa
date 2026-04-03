@@ -3,353 +3,597 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📊 Cientistas de Dados Nota 10</title>
+    <title>Cientistas de Dados Nota 10</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Configuração do Supabase -->
+    <script src="config.js"></script>
 
     <style>
-        :root { --primary: #00ffcc; --danger: #ff3366; --matrix: #00ff41; }
+        :root { 
+            --primary: #00ffcc; 
+            --danger: #ff3366; 
+            --matrix-green: #00ff41;
+            --matrix-glow: #008f11;
+        }
+        
         * { margin:0; padding:0; box-sizing:border-box; }
+        
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
-            background: #050505;
+            background: #000000;
             color: #fff;
             min-height: 100vh;
             overflow-x: hidden;
+            position: relative;
         }
+
         #matrix-bg {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
             z-index: 1;
-            opacity: 0.12;
             pointer-events: none;
         }
+
         #floating-banner {
             position: fixed;
-            z-index: 20;
+            z-index: 10;
             white-space: nowrap;
-            background: rgba(0,255,65,0.12);
-            color: var(--matrix);
-            padding: 10px 25px;
-            border: 1px solid var(--matrix);
+            background: rgba(0, 255, 65, 0.15);
+            color: var(--matrix-green);
+            padding: 10px 20px;
+            border: 1px solid var(--matrix-green);
+            box-shadow: 0 0 15px var(--matrix-glow);
             font-weight: bold;
-            font-size: 1.05rem;
-            border-radius: 6px;
-            box-shadow: 0 0 15px rgba(0,255,65,0.3);
+            font-size: 0.9rem;
             pointer-events: none;
-            transition: all 0.4s ease;
+            text-transform: uppercase;
+            border-radius: 4px;
+            will-change: transform;
         }
+
         .header {
-            position: fixed; top: 0; left: 0; right: 0;
-            background: rgba(10,15,30,0.95);
-            backdrop-filter: blur(10px);
-            z-index: 100;
+            position: fixed; 
+            top: 0; left: 0; right: 0;
+            background: rgba(10,20,40,0.95); 
+            backdrop-filter: blur(12px);
+            z-index: 100; 
             padding: 15px 20px;
-            display: flex;
-            align-items: center;
+            display: flex; 
+            align-items: center; 
             justify-content: space-between;
             border-bottom: 3px solid var(--primary);
         }
-        .logo { font-size: 1.7rem; font-weight: 900; }
-        .main { max-width: 920px; margin: 90px auto 40px; padding: 0 15px; position: relative; z-index: 2; }
+
+        .logo { 
+            font-size: 1.8rem; 
+            font-weight: 900; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+        }
+
+        .progress-container { 
+            flex: 1; 
+            max-width: 500px; 
+            margin: 0 30px; 
+        }
+        .progress { 
+            height: 12px; 
+            background: #112233; 
+            border-radius: 9999px; 
+            overflow: hidden; 
+        }
+        .progress-bar { 
+            height: 100%; 
+            background: linear-gradient(90deg, var(--primary), #00ccaa); 
+            width: 0%; 
+            transition: width 0.6s ease; 
+        }
+        .score { 
+            font-size: 1.4rem; 
+            font-weight: 700; 
+        }
+        
+        .main { 
+            max-width: 920px; 
+            margin: 90px auto 40px; 
+            padding: 0 20px; 
+            position: relative;
+            z-index: 2;
+        }
+        
         .card {
-            background: rgba(255,255,255,0.09);
-            backdrop-filter: blur(12px);
-            border-radius: 20px;
-            padding: 35px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            background: rgba(255,255,255,0.1); 
+            backdrop-filter: blur(16px);
+            border-radius: 24px; 
+            padding: 40px 35px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
         }
-        .question-number { color: var(--primary); font-weight: bold; margin-bottom: 10px; }
-        .question-text { font-size: 1.45rem; line-height: 1.45; margin-bottom: 30px; }
-        .device-box {
-            background: #112233;
-            border: 3px solid #00ffcc;
-            border-radius: 16px;
-            padding: 25px;
-            text-align: center;
-            font-family: monospace;
-            font-size: 1.7rem;
-            color: #00ffcc;
-            margin: 20px 0;
+        
+        .info-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
         }
-        .options { display: grid; gap: 12px; }
-        .option {
+        
+        .field {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .field label {
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .field input {
             background: rgba(255,255,255,0.1);
-            border: 2px solid transparent;
+            border: 2px solid var(--primary);
             border-radius: 12px;
-            padding: 18px;
+            padding: 14px;
+            color: white;
             font-size: 1.1rem;
-            cursor: pointer;
+        }
+        
+        .field input[readonly] {
+            background: rgba(0,255,204,0.1);
+            border-color: #00ccaa;
+            color: #00ffcc;
+        }
+
+        .question-number { 
+            color: var(--primary); 
+            font-weight: 700; 
+            margin-bottom: 10px; 
+        }
+        .question-text { 
+            font-size: 1.55rem; 
+            line-height: 1.45; 
+            margin-bottom: 30px; 
+            font-weight: 600; 
+        }
+        
+        .options { 
+            display: grid; 
+            gap: 14px; 
+        }
+        .option {
+            background: rgba(255,255,255,0.08); 
+            border: 3px solid transparent;
+            border-radius: 16px; 
+            padding: 20px; 
+            font-size: 1.2rem;
+            cursor: pointer; 
             transition: all 0.3s;
         }
-        .option:hover { transform: translateY(-4px); border-color: var(--primary); }
-        .option.correct { background: rgba(0,255,100,0.25); border-color: #00ff88; animation: correctAnim 0.6s; }
-        .option.wrong   { background: rgba(255,50,80,0.25); border-color: #ff3366; animation: wrongAnim 0.5s; }
-
-        @keyframes correctAnim {
-            0% { transform: scale(0.95); }
-            50% { transform: scale(1.08); }
-            100% { transform: scale(1); }
+        .option:hover { 
+            transform: translateY(-4px); 
         }
-        @keyframes wrongAnim {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-8px); }
-            75% { transform: translateX(8px); }
+        .option.correct { 
+            border-color: #00ff88; 
+            background: rgba(0,255,136,0.2); 
         }
-
-        .next-btn {
-            margin-top: 25px;
-            padding: 16px 40px;
-            font-size: 1.25rem;
-            font-weight: 700;
-            border: none;
-            border-radius: 50px;
-            background: var(--primary);
-            color: #000;
-            width: 100%;
-            cursor: pointer;
-            transition: all 0.3s;
+        .option.wrong { 
+            border-color: var(--danger); 
+            background: rgba(255,51,102,0.2); 
         }
-        .next-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,255,204,0.4); }
-
+        
         .feedback {
-            margin-top: 15px;
-            padding: 15px;
-            border-radius: 12px;
-            font-weight: bold;
-            text-align: center;
-            display: none;
+            margin-top: 25px; 
+            padding: 25px; 
+            border-radius: 16px;
+            display: none; 
         }
-        .feedback.correct { background: rgba(0,255,100,0.2); color: #00ff88; display: block; }
-        .feedback.wrong   { background: rgba(255,50,80,0.2); color: #ff6688; display: block; }
+        .feedback.show { display: block; }
+        .feedback.correct { 
+            background: rgba(0,255,136,0.15); 
+            border: 2px solid #00ff88; 
+        }
+        .feedback.wrong { 
+            background: rgba(255,51,102,0.15); 
+            border: 2px solid var(--danger); 
+        }
+        
+        .next-btn, .retry-btn {
+            margin-top: 25px; 
+            padding: 16px 40px; 
+            font-size: 1.25rem;
+            font-weight: 700; 
+            border: none; 
+            border-radius: 9999px; 
+            cursor: pointer; 
+            width: 100%;
+        }
+        .next-btn { 
+            background: var(--primary); 
+            color: #0a1428; 
+        }
+        .retry-btn { 
+            background: #ff3366; 
+            color: white; 
+        }
+        
+        .big-score { 
+            font-size: 6.5rem; 
+            font-weight: 900; 
+            background: linear-gradient(90deg, #00ffcc, #ff00aa); 
+            -webkit-background-clip: text; 
+            color: transparent; 
+        }
     </style>
 </head>
 <body>
 
-<canvas id="matrix-bg"></canvas>
-<div id="floating-banner">O estudo de hoje</div>
+    <canvas id="matrix-bg"></canvas>
+    <div id="floating-banner">O ESTUDO DE HOJE</div>
 
-<div class="header">
-    <div class="logo">📊 Cientistas de Dados Nota 10</div>
-    <div>⭐ <span id="scoreDisplay">0</span>/22</div>
-</div>
-
-<div class="main" id="quizContainer"></div>
-
-<div id="resultsScreen" class="main" style="display:none;">
-    <div class="card">
-        <h1 style="text-align:center;">🎉 Quiz Finalizado!</h1>
-        <div style="font-size:5rem; text-align:center; font-weight:900; margin:20px 0;" id="finalScore">22</div>
-        <button onclick="restartQuiz()" class="next-btn">🔄 Refazer o Quiz</button>
+    <div class="header">
+        <div class="logo">Cientistas de Dados Nota 10 <span style="font-size:1.3rem;"> Prof. Léo Cruz</span></div>
+        <div class="progress-container">
+            <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
+        </div>
+        <div class="score">⭐ <span id="scoreDisplay">0</span>/20</div>
     </div>
-</div>
 
-<script>
-// ====================== MATRIX ======================
-const canvas = document.getElementById('matrix-bg');
-const ctx = canvas.getContext('2d');
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+    <div class="main" id="quizContainer"></div>
 
-const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZアィゥェォ";
-setInterval(() => {
-    ctx.fillStyle = 'rgba(5,5,5,0.08)';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle = '#00ff41';
-    ctx.font = '14px monospace';
-    // Matrix simplificado (pode melhorar depois se quiser)
-}, 45);
-
-// ====================== BANNER FLUTUANTE CORRIGIDO ======================
-const banner = document.getElementById('floating-banner');
-const frases = [
-    "O estudo de hoje",
-    "É a vitória de amanhã",
-    "Quanto mais você estuda, mais sorte você tem",
-    "Estudar não é castigo",
-    "É o caminho para conquistar seus sonhos"
-];
-
-let fraseIndex = 0;
-let posX = 80, posY = 120;
-let velX = 1.4, velY = 1.1;
-
-function changePhrase() {
-    fraseIndex = (fraseIndex + 1) % frases.length;
-    banner.textContent = frases[fraseIndex];
-}
-
-function moveBanner() {
-    const w = window.innerWidth, h = window.innerHeight;
-    posX += velX;
-    posY += velY;
-
-    if (posX < -50 || posX > w - 280) velX *= -1;
-    if (posY < 20 || posY > h - 80) velY *= -1;
-
-    banner.style.transform = `translate(${posX}px, ${posY}px)`;
-    requestAnimationFrame(moveBanner);
-}
-
-// Troca de frase a cada 5 segundos
-setInterval(changePhrase, 5000);
-moveBanner();   // inicia o movimento
-
-// ====================== DEVICE ID ======================
-let currentDeviceID = null;
-function gerarDeviceID() {
-    const fp = [navigator.userAgent, screen.width, screen.height, screen.colorDepth, navigator.platform, navigator.language].join('|');
-    let hash = 0;
-    for (let i = 0; i < fp.length; i++) {
-        hash = (hash << 5) - hash + fp.charCodeAt(i);
-    }
-    return Math.abs(hash).toString(36).toUpperCase().substring(0,14);
-}
-
-// ====================== SUPABASE ======================
-const supabaseClient = supabase.createClient(
-    'https://osofdmgokrxdzsxozsrf.supabase.co',
-    'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
-);
-
-let sessionId = 'quiz_' + Date.now();
-let currentQuestion = 0;
-let score = 0;
-let userName = "";
-
-// ====================== PERGUNTAS ======================
-const questions = [ /* ... seu array de questions continua igual ... */ 
-    // (mantive exatamente como você enviou, só colei aqui por brevidade)
-    { id: 21, type: "open", question: "Qual é o seu nome completo?", model: null },
-    { id: 22, type: "device", question: "ID do Dispositivo (detectado automaticamente)", model: null },
-    // ... todas as outras 20 perguntas ...
-];
-
-// ====================== FUNÇÕES DO QUIZ ======================
-function renderQuestion() {
-    const q = questions[currentQuestion];
-    let html = `
+    <div id="resultsScreen" class="main" style="display:none;">
         <div class="card">
-            <div class="question-number">Questão ${currentQuestion + 1} de ${questions.length}</div>
-            <div class="question-text">${q.question}</div>
-    `;
+            <h1 style="text-align:center; margin-bottom:20px;">🎉 Parabéns, futuro Cientista de Dados!</h1>
+            <div class="big-score" id="finalScore">20</div>
+            <p id="finalMessage" style="font-size:1.6rem; text-align:center; margin:25px 0;"></p>
+            <button onclick="restartQuiz()" class="next-btn">🔄 Refazer o Quiz</button>
+        </div>
+    </div>
 
-    if (q.type === "device") {
-        html += `<div class="device-box">${currentDeviceID}</div>
-                 <button onclick="confirmDeviceID()" class="next-btn">✅ Confirmar e Continuar</button>`;
-    } 
-    else if (q.type === "open") {
-        html += `
-            <textarea id="openAnswer" rows="6" style="width:100%; padding:15px; background:#112233; color:white; border:2px solid #00ffcc; border-radius:12px;"></textarea>
-            <button onclick="saveOpenAnswer()" class="next-btn">✅ Confirmar e Avançar</button>
-        `;
-    } 
-    else {
-        html += `<div class="options" id="optionsContainer">`;
-        q.options.forEach((opt, i) => {
-            html += `
-                <div class="option" data-value="${opt.value}" onclick="selectAnswer(this)">
-                    ${String.fromCharCode(65+i)}) ${opt.text}
+    <script>
+        if (!window.SUPABASE_CONFIG) {
+            alert("❌ Erro: Arquivo config.js não encontrado!");
+        }
+
+        const supa = supabase.createClient(
+            window.SUPABASE_CONFIG.url,
+            window.SUPABASE_CONFIG.key
+        );
+
+        // ==================== MATRIX BACKGROUND ====================
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.height = window.innerHeight;
+            canvas.width = window.innerWidth;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZアァカサタナハマヤャラワ";
+        const fontSize = 16;
+        let columns = canvas.width / fontSize;
+        let drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00ff41';
+            ctx.font = fontSize + 'px monospace';
+            
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 35);
+
+        // ==================== FLOATING BANNER ====================
+        const banner = document.getElementById('floating-banner');
+        const frases = [
+            "O estudo de hoje", "É a vitória de amanhã", "Quanto mais você estuda",
+            "mais sorte você tem", "Estudar não é castigo", "A média da prova é 10",
+            "É o caminho para conquistar seus sonhos", "O esforço de agora",
+            "vai se transformar em orgulho depois", "Não desista quando ficar difícil"
+        ];
+        
+        let fraseIndex = 0;
+        let posX = 80;
+        let posY = 120;
+        let velX = 1.3;
+        let velY = 1.1;
+
+        function moveBanner() {
+            const winW = window.innerWidth;
+            const winH = window.innerHeight;
+            const banW = banner.offsetWidth || 220;
+            const banH = banner.offsetHeight || 45;
+
+            posX += velX;
+            posY += velY;
+
+            if (posX + banW >= winW || posX <= 0) {
+                velX *= -1;
+                fraseIndex = (fraseIndex + 1) % frases.length;
+                banner.innerText = frases[fraseIndex];
+            }
+            if (posY + banH >= winH || posY <= 0) {
+                velY *= -1;
+                fraseIndex = (fraseIndex + 1) % frases.length;
+                banner.innerText = frases[fraseIndex];
+            }
+
+            banner.style.transform = `translate(${posX}px, ${posY}px)`;
+            requestAnimationFrame(moveBanner);
+        }
+
+        // ==================== DADOS DO ALUNO ====================
+        let alunoNome = "";
+        let deviceId = "";
+
+        function gerarDeviceId() {
+            let id = localStorage.getItem('deviceId');
+            if (!id) {
+                id = 'DEV-' + Date.now().toString(36).toUpperCase() + 
+                     Math.random().toString(36).substring(2, 8).toUpperCase();
+                localStorage.setItem('deviceId', id);
+            }
+            return id;
+        }
+
+        // ==================== QUIZ LOGIC ====================
+        let sessionId = 'quiz_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
+        let currentQuestion = 0;
+        let score = 0;
+
+        const questions = [ /* ... todas as 20 perguntas mantidas exatamente iguais ... */ 
+            { id: 1, type: "mcq", question: "Você vai montar um computador para editar vídeos. Quer algo rápido, silencioso, que não quebre fácil e gaste pouca energia. Qual é a melhor opção de armazenamento?", options: [{ text: "HD antigo (com disco que gira)", value: "A" }, { text: "SSD SATA", value: "B" }, { text: "Pendrive simples", value: "C" }, { text: "Disquete", value: "D" }, { text: "Qualquer HD", value: "E" }], correct: "B", explanation: "O SSD é rápido, não faz barulho, não tem partes que se mexem e gasta menos energia." },
+            { id: 2, type: "mcq", question: "Um notebook tem duas opções: 1 TB girando a 5400 RPM ou 512 GB bem mais rápido. O de 512 GB provavelmente é:", options: [{ text: "HD tradicional", value: "A" }, { text: "Pendrive", value: "B" }, { text: "HD antigo", value: "C" }, { text: "SSD", value: "D" }, { text: "Fita magnética", value: "E" }], correct: "D", explanation: "O SSD é muito mais rápido que o HD porque não tem peças mecânicas girando." },
+            { id: 3, type: "mcq", question: "Como o computador organiza pastas, arquivos e permissões no disco chamamos de:", options: [{ text: "Sistema de arquivos", value: "A" }, { text: "Big Data", value: "B" }, { text: "Velocidade da internet", value: "C" }, { text: "Programa de navegação", value: "D" }, { text: "Memória RAM", value: "E" }], correct: "A", explanation: "Exemplos: NTFS, exFAT. É como o 'índice' que ajuda a encontrar os arquivos facilmente." },
+            { id: 4, type: "mcq", question: "Um arquivo de 4,7 GB tem quantos MB? (1 GB = 1024 MB)", options: [{ text: "4.000 MB", value: "A" }, { text: "4.812 MB", value: "B" }, { text: "1.024 MB", value: "C" }, { text: "480 MB", value: "D" }, { text: "4 MB", value: "E" }], correct: "B", explanation: "4,7 × 1024 = 4.812 MB." },
+            { id: 5, type: "mcq", question: "Um HD de 2 TB formatado tem aproximadamente quantos MB?", options: [{ text: "300 MB", value: "A" }, { text: "48.000 MB", value: "B" }, { text: "2.097.152 MB", value: "C" }, { text: "224 milhões de MB", value: "D" }, { text: "9.024 MB", value: "E" }], correct: "C", explanation: "2 × 1024 × 1024 = 2.097.152 MB." },
+            { id: 6, type: "mcq", question: "Qual é a menor unidade de informação que o computador entende (0 ou 1)?", options: [{ text: "Byte", value: "A" }, { text: "Megabyte", value: "B" }, { text: "Bit", value: "C" }, { text: "Gigabyte", value: "D" }, { text: "Terabyte", value: "E" }], correct: "C", explanation: "O bit é a menor unidade. 8 bits formam 1 byte." },
+            { id: 7, type: "mcq", question: "Quando temos milhões de informações que não cabem em planilhas comuns, chamamos de:", options: [{ text: "Sistema de arquivos", value: "A" }, { text: "Big Data", value: "B" }, { text: "SSD pequeno", value: "C" }, { text: "Bit", value: "D" }, { text: "HD para backup", value: "E" }], correct: "B", explanation: "Big Data é um monte enorme de dados que precisam de ferramentas especiais." },
+            { id: 8, type: "mcq", question: "Um HD externo antigo usa um cabo largo com 40 pinos. Qual é essa conexão antiga?", options: [{ text: "SATA", value: "A" }, { text: "ATA ou IDE", value: "B" }, { text: "USB 3.0", value: "C" }, { text: "PCIe", value: "D" }, { text: "HDMI", value: "E" }], correct: "B", explanation: "ATA/IDE é a conexão antiga com cabo largo." },
+            { id: 9, type: "mcq", question: "Qual é a principal vantagem do SSD em relação ao HD tradicional?", options: [{ text: "É mais barato", value: "A" }, { text: "É muito mais rápido e silencioso", value: "B" }, { text: "Tem mais capacidade sempre", value: "C" }, { text: "Precisa de mais energia", value: "D" }, { text: "É mais pesado", value: "E" }], correct: "B", explanation: "O SSD não tem peças girando, por isso é rápido, silencioso e resistente." },
+            { id: 10, type: "mcq", question: "O que significa a sigla HD?", options: [{ text: "High Definition", value: "A" }, { text: "Hard Disk (Disco Rígido)", value: "B" }, { text: "High Data", value: "C" }, { text: "Hard Drive antigo", value: "D" }, { text: "Hyper Disk", value: "E" }], correct: "B", explanation: "HD = Hard Disk." },
+            { id: 11, type: "mcq", question: "Qual unidade de medida é a menor?", options: [{ text: "Byte", value: "A" }, { text: "Kilobyte", value: "B" }, { text: "Bit", value: "C" }, { text: "Megabyte", value: "D" }, { text: "Gigabyte", value: "E" }], correct: "C", explanation: "Bit é a menor unidade." },
+            { id: 12, type: "mcq", question: "Quantos bytes tem 1 Kilobyte (KB)?", options: [{ text: "100 bytes", value: "A" }, { text: "1.000 bytes", value: "B" }, { text: "1.024 bytes", value: "C" }, { text: "1.048.576 bytes", value: "D" }, { text: "8 bytes", value: "E" }], correct: "C", explanation: "1 KB = 1.024 bytes." },
+            { id: 13, type: "mcq", question: "Um arquivo de música de 5 MB é aproximadamente:", options: [{ text: "5 milhões de bytes", value: "A" }, { text: "5 mil bytes", value: "B" }, { text: "5 bilhões de bytes", value: "C" }, { text: "5 bits", value: "D" }, { text: "500 bytes", value: "E" }], correct: "A", explanation: "1 MB ≈ 1 milhão de bytes." },
+            { id: 14, type: "mcq", question: "Para guardar fotos, vídeos e documentos do dia a dia de uma família, qual armazenamento é mais usado hoje?", options: [{ text: "Disquete", value: "A" }, { text: "SSD ou HD interno", value: "B" }, { text: "Fita cassete", value: "C" }, { text: "Papel impresso", value: "D" }, { text: "Pendrive de 128 KB", value: "E" }], correct: "B", explanation: "Hoje usamos HD ou SSD interno." },
+            { id: 15, type: "mcq", question: "O que é Big Data de forma simples?", options: [{ text: "Um computador muito grande", value: "A" }, { text: "Uma quantidade enorme de dados que precisamos analisar", value: "B" }, { text: "Um tipo de HD", value: "C" }, { text: "Um jogo online", value: "D" }, { text: "Um cabo de internet", value: "E" }], correct: "B", explanation: "Big Data são grandes volumes de dados para análise." },
+            { id: 16, type: "mcq", question: "Qual é a ordem correta das unidades do menor para o maior?", options: [{ text: "Bit → Byte → KB → MB → GB → TB", value: "A" }, { text: "TB → GB → MB → KB → Byte → Bit", value: "B" }, { text: "Byte → Bit → MB → GB", value: "C" }, { text: "MB → KB → GB → TB", value: "D" }, { text: "Bit → MB → Byte → TB", value: "E" }], correct: "A", explanation: "Bit (menor) → Byte → KB → MB → GB → TB." },
+            { id: 17, type: "open", question: "Cite pelo menos 2 vantagens do SSD em comparação com o HD tradicional.", model: "1) Muito mais rápido\n2) Não faz barulho e aguenta quedas melhor\n3) Gasta menos bateria" },
+            { id: 18, type: "open", question: "Explique com suas palavras o que é um 'bit' e o que é um 'byte'.", model: "Bit é a menor unidade (0 ou 1). Byte é formado por 8 bits." },
+            { id: 19, type: "mcq", question: "Um pendrive de 64 GB consegue armazenar aproximadamente quantos filmes de 4 GB cada?", options: [{ text: "Cerca de 16 filmes", value: "A" }, { text: "Cerca de 4 filmes", value: "B" }, { text: "Mais de 100 filmes", value: "C" }, { text: "Apenas 1 filme", value: "D" }, { text: "64 filmes", value: "E" }], correct: "A", explanation: "64 ÷ 4 = 16 filmes." },
+            { id: 20, type: "open", question: "Cite 3 exemplos de coisas que ocupam pouco espaço (KB ou MB) e 1 exemplo que ocupa muito espaço (GB ou TB).", model: "Pouco espaço: foto pequena, texto simples, música curta.\nMuito espaço: filme em alta qualidade, jogo grande." }
+        ];
+
+        async function saveAnswerToSupabase(q, userAnswer, isCorrect) {
+            try {
+                await supa.from('quiz_responses').insert({
+                    session_id: sessionId,
+                    device_id: deviceId,
+                    aluno_nome: alunoNome,
+                    question_id: q.id,
+                    question_text: q.question,
+                    user_answer: userAnswer,
+                    is_correct: isCorrect,
+                    score: isCorrect ? 1 : 0,
+                    user_agent: navigator.userAgent
+                });
+            } catch (err) {
+                console.error('Erro ao salvar:', err);
+            }
+        }
+
+        function createTears() {
+            const container = document.createElement('div');
+            container.style.position = 'fixed';
+            container.style.top = '0';
+            container.style.left = '0';
+            container.style.width = '100%';
+            container.style.height = '100%';
+            container.style.pointerEvents = 'none';
+            container.style.zIndex = '999';
+            document.body.appendChild(container);
+
+            for (let i = 0; i < 70; i++) {
+                const tear = document.createElement('div');
+                tear.style.position = 'absolute';
+                tear.style.width = '6px';
+                tear.style.height = (Math.random() * 25 + 20) + 'px';
+                tear.style.background = 'linear-gradient(transparent, #88ddff)';
+                tear.style.left = Math.random() * 100 + 'vw';
+                tear.style.opacity = '0.75';
+                tear.style.animation = `fall ${Math.random() * 1.8 + 2}s linear forwards`;
+                tear.style.animationDelay = Math.random() * 0.8 + 's';
+                container.appendChild(tear);
+                setTimeout(() => tear.remove(), 6000);
+            }
+        }
+
+        function renderInitialScreen() {
+            const html = `
+                <div class="card">
+                    <h2 style="text-align:center; margin-bottom:30px; color:var(--primary);">Identificação do Aluno</h2>
+                    
+                    <div class="info-fields">
+                        <div class="field">
+                            <label for="alunoNome">Nome completo</label>
+                            <input type="text" id="alunoNome" placeholder="Digite seu nome" />
+                        </div>
+                        <div class="field">
+                            <label for="deviceId">ID do Dispositivo</label>
+                            <input type="text" id="deviceId" value="${deviceId}" readonly />
+                        </div>
+                    </div>
+
+                    <button onclick="iniciarQuiz()" class="next-btn" style="margin-top:20px;">
+                        ✅ Iniciar o Quiz
+                    </button>
                 </div>
             `;
-        });
-        html += `</div>
-                 <div id="feedback" class="feedback"></div>
-                 <button id="nextBtn" onclick="nextQuestion()" class="next-btn" style="display:none;">Próxima Questão →</button>`;
-    }
+            document.getElementById('quizContainer').innerHTML = html;
+        }
 
-    html += `</div>`;
-    document.getElementById('quizContainer').innerHTML = html;
-}
-
-async function selectAnswer(element) {
-    const q = questions[currentQuestion];
-    const selectedValue = element.getAttribute('data-value');
-    const options = document.querySelectorAll('.option');
-    const feedback = document.getElementById('feedback');
-    const nextBtn = document.getElementById('nextBtn');
-
-    options.forEach(opt => opt.style.pointerEvents = 'none');
-
-    const isCorrect = selectedValue === q.correct;
-
-    if (isCorrect) {
-        element.classList.add('correct');
-        feedback.className = 'feedback correct';
-        feedback.textContent = '✅ Resposta correta!';
-        score++;
-        document.getElementById('scoreDisplay').textContent = score;
-        confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
-    } else {
-        element.classList.add('wrong');
-        // destaca a correta
-        options.forEach(opt => {
-            if (opt.getAttribute('data-value') === q.correct) {
-                opt.classList.add('correct');
+        function iniciarQuiz() {
+            const nomeInput = document.getElementById('alunoNome').value.trim();
+            
+            if (!nomeInput) {
+                alert("❗ Por favor, digite seu nome antes de começar.");
+                return;
             }
-        });
-        feedback.className = 'feedback wrong';
-        feedback.textContent = `❌ Errado. A resposta correta era: ${q.correct}) ${q.options.find(o => o.value === q.correct).text}`;
-    }
 
-    await saveAnswerToSupabase(q, selectedValue);
-    nextBtn.style.display = 'block';
-}
+            alunoNome = nomeInput;
+            deviceId = document.getElementById('deviceId').value;
 
-async function saveOpenAnswer() {
-    const answer = document.getElementById('openAnswer').value.trim() || "(sem resposta)";
-    if (questions[currentQuestion].id === 21) userName = answer;
-    await saveAnswerToSupabase(questions[currentQuestion], answer);
-    nextQuestion();
-}
+            // Salva no localStorage para próximas sessões
+            localStorage.setItem('alunoNome', alunoNome);
 
-async function confirmDeviceID() {
-    await saveAnswerToSupabase(questions[currentQuestion], currentDeviceID);
-    nextQuestion();
-}
+            currentQuestion = 0;
+            score = 0;
+            sessionId = 'quiz_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
+            
+            renderQuestion();
+        }
 
-async function saveAnswerToSupabase(q, answer) {
-    try {
-        await supabaseClient.from('quiz_responses').insert({
-            session_id: sessionId,
-            question_id: q.id,
-            user_name: userName,
-            device_id: currentDeviceID,
-            user_answer: answer
-        });
-    } catch(e) { console.log("Erro ao salvar:", e); }
-}
+        function renderQuestion() {
+            const q = questions[currentQuestion];
+            let html = `
+                <div class="card">
+                    <div class="question-number">Questão ${currentQuestion + 1} de 20</div>
+                    <div class="question-text">${q.question}</div>
+                    <div class="options">`;
 
-function nextQuestion() {
-    currentQuestion++;
-    if (currentQuestion < questions.length) {
-        renderQuestion();
-    } else {
-        document.getElementById('quizContainer').style.display = 'none';
-        document.getElementById('resultsScreen').style.display = 'block';
-        document.getElementById('finalScore').textContent = score;
-    }
-}
+            if (q.type === "mcq") {
+                q.options.forEach((opt, i) => {
+                    html += `<div class="option" onclick="selectAnswer('${opt.value}')"><strong>${String.fromCharCode(65 + i)})</strong> ${opt.text}</div>`;
+                });
+            } else {
+                html += `
+                    <textarea id="openAnswer" rows="7" style="width:100%; background:rgba(255,255,255,0.1); border:2px solid #00ffcc; border-radius:16px; padding:18px; color:white; font-size:1.1rem;" placeholder="Digite sua resposta aqui..."></textarea>
+                    <button onclick="saveOpenAnswer()" class="next-btn">✅ Confirmar Resposta</button>`;
+            }
 
-function restartQuiz() {
-    currentQuestion = 0;
-    score = 0;
-    document.getElementById('scoreDisplay').textContent = '0';
-    document.getElementById('quizContainer').style.display = 'block';
-    document.getElementById('resultsScreen').style.display = 'none';
-    renderQuestion();
-}
+            html += `</div>
+                <div id="feedbackArea" class="feedback"></div>
+                <button id="retryBtn" class="retry-btn" style="display:none;" onclick="retryQuestion()">🔄 Tentar Novamente</button>
+                <button id="nextBtn" class="next-btn" style="display:none;" onclick="nextQuestion()">Próxima Questão →</button>
+            </div>`;
 
-// ====================== INICIALIZAÇÃO ======================
-window.onload = async () => {
-    currentDeviceID = gerarDeviceID();
-    renderQuestion();
-};
-</script>
+            document.getElementById('quizContainer').innerHTML = html;
+            updateProgress();
+        }
+
+        async function selectAnswer(selected) {
+            const q = questions[currentQuestion];
+            const isCorrect = selected === q.correct;
+
+            await saveAnswerToSupabase(q, selected, isCorrect);
+
+            const feedbackArea = document.getElementById('feedbackArea');
+            const retryBtn = document.getElementById('retryBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const options = document.querySelectorAll('.option');
+
+            options.forEach(opt => {
+                opt.style.pointerEvents = 'none';
+                if (opt.textContent.includes(selected)) opt.classList.add(isCorrect ? 'correct' : 'wrong');
+                if (opt.textContent.includes(q.correct)) opt.classList.add('correct');
+            });
+
+            if (isCorrect) {
+                score++;
+                document.getElementById('scoreDisplay').textContent = score;
+                feedbackArea.innerHTML = `<strong style="color:#00ff88; font-size:1.3rem;">🎉 Muito bom! Você acertou!</strong><br><br>${q.explanation}`;
+                feedbackArea.classList.add('show', 'correct');
+                confetti({ particleCount: 180, spread: 70, origin: { y: 0.6 } });
+                nextBtn.style.display = 'block';
+            } else {
+                createTears();
+                feedbackArea.innerHTML = `<strong style="color:#ff3366; font-size:1.3rem;">😢 Que pena... Vamos aprender com o erro.</strong><br><br><strong>Explicação:</strong><br>${q.explanation}`;
+                feedbackArea.classList.add('show', 'wrong');
+                retryBtn.style.display = 'block';
+            }
+        }
+
+        async function saveOpenAnswer() {
+            const q = questions[currentQuestion];
+            const answer = document.getElementById('openAnswer').value.trim() || "(sem resposta)";
+            await saveAnswerToSupabase(q, answer, null);
+            alert("✅ Resposta salva! Compare com as anotações da aula.");
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                renderQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function updateProgress() {
+            const percent = Math.round(((currentQuestion) / questions.length) * 100);
+            document.getElementById('progressBar').style.width = percent + '%';
+        }
+
+        function showResults() {
+            document.getElementById('quizContainer').style.display = 'none';
+            const results = document.getElementById('resultsScreen');
+            results.style.display = 'block';
+            
+            document.getElementById('finalScore').textContent = score + "/20";
+            let message = score >= 18 ? "Você é incrível! Nota 10 de verdade!" :
+                         score >= 14 ? "Parabéns! Você foi muito bem. Continue estudando!" :
+                         "Continue praticando! Refaça o quiz para melhorar sua nota.";
+            document.getElementById('finalMessage').innerHTML = message;
+        }
+
+        function retryQuestion() {
+            renderQuestion();
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            sessionId = 'quiz_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11);
+            document.getElementById('quizContainer').style.display = 'block';
+            document.getElementById('resultsScreen').style.display = 'none';
+            renderInitialScreen();
+        }
+
+        // ==================== INICIALIZAÇÃO ====================
+        window.onload = () => {
+            console.log("📊 Quiz Cientistas de Dados Nota 10 - Com Nome e Device ID");
+            
+            deviceId = gerarDeviceId();
+            
+            // Recupera nome salvo (se existir)
+            const nomeSalvo = localStorage.getItem('alunoNome');
+            if (nomeSalvo) alunoNome = nomeSalvo;
+
+            renderInitialScreen();
+            moveBanner();
+        };
+    </script>
+
+    <style>
+        @keyframes fall {
+            to {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+        }
+    </style>
 </body>
 </html>
