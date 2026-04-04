@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CIENCIA DE DADOS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+    body {
+      font-family: 'Press Start 2P', system-ui;
+      background: #000;
+      color: #00ff9d;
+      overflow: hidden;
+    }
+
+    .matrix-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.25; }
+
+    .neon-gta {
+      text-shadow: 0 0 20px #ff00ff, 0 0 40px #00ffff, 0 0 60px #ff0000;
+    }
+
+    .number-ball {
+      width: 92px;
+      height: 92px;
+      background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
+      border: 4px solid #00ff9d;
+      box-shadow: 0 0 30px #00ff9d, 0 0 60px #ff00ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.6rem;
+      color: #00ff9d;
+      border-radius: 16px;
+      transition: all 0.3s;
+    }
+
+    .drawn {
+      background: linear-gradient(145deg, #ff0066, #990033) !important;
+      color: #fff !important;
+      border-color: #ffff00;
+      box-shadow: 0 0 60px #ff00ff;
+    }
+
+    /* Efeito de piscar forte */
+    .flicker {
+      animation: flicker 120ms linear infinite;
+    }
+
+    @keyframes flicker {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.85); }
+    }
+
+    /* Número grande no centro */
+    #bigNumber {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      font-size: 18rem;
+      font-weight: bold;
+      color: #ffff00;
+      text-shadow: 0 0 40px #ff00ff,
+                   0 0 80px #00ffff,
+                   0 0 120px #ff0000;
+      z-index: 100;
+      pointer-events: none;
+      animation: bigPop 0.8s forwards;
+    }
+
+    @keyframes bigPop {
+      0% { transform: translate(-50%, -50%) scale(0.2); }
+      60% { transform: translate(-50%, -50%) scale(1.15); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-6 relative">
+
+  <canvas id="matrix" class="matrix-bg"></canvas>
+  <div class="scanline"></div>
+
+  <div class="text-center mb-8 z-20">
+    <h1 class="text-7xl font-bold tracking-widest neon-gta">CENCIA DE DADOS</h1>
+    <p class="text-3xl text-cyan-400 mt-2">SORTEIO • ALUNOS SORTUDOS NOTA 10</p>
+  </div>
+
+  <div class="max-w-6xl w-full bg-black/80 border-4 border-cyan-400 p-10 rounded-2xl shadow-2xl z-20">
+    <div class="flex justify-between items-center mb-8">
+      <div id="status" class="text-2xl text-yellow-400">PRONTO PARA O SORTEIO...</div>
+      <div id="counter" class="text-4xl font-bold text-red-500">00 / 40</div>
+    </div>
+
+    <div id="numbersGrid" class="grid grid-cols-8 gap-6 justify-center mb-12"></div>
+
+    <div class="flex justify-center gap-6">
+      <button id="drawBtn" class="px-16 py-8 text-5xl font-bold bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-700 hover:to-purple-700 border-4 border-yellow-400 text-white transition-all active:scale-95">
+        <i class="fas fa-bolt mr-4"></i> SORTEAR AGORA
+      </button>
+      <button id="resetBtn" class="px-10 py-8 text-3xl font-bold bg-black border-4 border-yellow-400 hover:bg-zinc-900 transition-all hidden">REINICIAR</button>
+    </div>
+
+    <div id="result" class="mt-12">
+      <div class="text-center text-pink-400 text-4xl mb-6">SORTEADOS</div>
+      <div id="drawnNumbers" class="flex flex-wrap gap-6 justify-center"></div>
+    </div>
+  </div>
+
+  <!-- Número gigante -->
+  <div id="bigNumber">00</div>
+
+  <!-- Sons -->
+  <audio id="whooshSound" src="https://assets.mixkit.co/sfx/preview/2697/2697.wav"></audio>
+  <audio id="sirenSound" src="https://assets.mixkit.co/sfx/preview/2955/2955.wav"></audio>
+  <audio id="winSound" src="https://assets.mixkit.co/sfx/preview/2960/2960.wav"></audio>
+
+  <script>
+    // Matrix Rain
+    const canvas = document.getElementById('matrix');
+    const ctx = canvas.getContext('2d');
+    function resize() { canvas.height = window.innerHeight; canvas.width = window.innerWidth; }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const chars = "01アイウエオ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZネオ";
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+
+    function drawMatrix() {
+      ctx.fillStyle = 'rgba(0,0,0,0.07)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#00ff9d';
+      ctx.font = `${fontSize}px VT323`;
+      for (let i = 0; i < drops.length; i++) {
+        ctx.fillText(chars[Math.floor(Math.random()*chars.length)], i*fontSize, drops[i]*fontSize);
+        if (drops[i]*fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      }
+    }
+    setInterval(drawMatrix, 35);
+
+    // Lógica do jogo
+    let numbers = Array.from({length: 40}, (_, i) => i + 1);
+    let remaining = [...numbers];
+    let drawn = [];
+
+    const grid = document.getElementById('numbersGrid');
+    const drawBtn = document.getElementById('drawBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const status = document.getElementById('status');
+    const counter = document.getElementById('counter');
+    const bigNumber = document.getElementById('bigNumber');
+    const drawnContainer = document.getElementById('drawnNumbers');
+
+    const whooshSound = document.getElementById('whooshSound');
+    const sirenSound = document.getElementById('sirenSound');
+    const winSound = document.getElementById('winSound');
+
+    function createBalls() {
+      grid.innerHTML = '';
+      numbers.forEach(num => {
+        const div = document.createElement('div');
+        div.className = 'number-ball';
+        div.textContent = num < 10 ? '0' + num : num;
+        div.dataset.num = num;
+        grid.appendChild(div);
+      });
+    }
+
+    async function drawNext() {
+      if (remaining.length === 0) return;
+
+      drawBtn.disabled = true;
+      whooshSound.play();
+
+      // 1. Todos os números piscam forte
+      document.querySelectorAll('.number-ball').forEach(ball => {
+        if (!ball.classList.contains('drawn')) ball.classList.add('flicker');
+      });
+
+      // Espera um pouco para dramaticidade
+      await new Promise(r => setTimeout(r, 1200));
+
+      // 2. Remove o piscar
+      document.querySelectorAll('.number-ball').forEach(ball => ball.classList.remove('flicker'));
+
+      // 3. Sorteia o número
+      const randomIndex = Math.floor(Math.random() * remaining.length);
+      const num = remaining.splice(randomIndex, 1)[0];
+      drawn.push(num);
+
+      const numStr = num < 10 ? '0' + num : num;
+
+      // Mostra número gigante
+      bigNumber.textContent = numStr;
+      bigNumber.style.display = 'block';
+
+      // Som de sirene
+      sirenSound.currentTime = 0;
+      sirenSound.play();
+
+      // Marca a bolinha pequena
+      const ball = document.querySelector(`.number-ball[data-num="${num}"]`);
+      if (ball) ball.classList.add('drawn');
+
+      // Adiciona na lista de sorteados
+      const el = document.createElement('div');
+      el.className = 'number-ball drawn text-5xl';
+      el.textContent = numStr;
+      drawnContainer.appendChild(el);
+
+      counter.textContent = `${drawn.length.toString().padStart(2, '0')} / 40`;
+
+      // Esconde o número grande após 1.2s
+      setTimeout(() => {
+        bigNumber.style.display = 'none';
+        drawBtn.disabled = false;
+      }, 1200);
+
+      if (remaining.length === 0) {
+        status.textContent = "SORTEIO FINALIZADO!";
+        drawBtn.classList.add('hidden');
+        resetBtn.classList.remove('hidden');
+        setTimeout(() => winSound.play(), 500);
+      } else {
+        status.textContent = `ÚLTIMO SORTEADO → ${numStr}`;
+      }
+    }
+
+    drawBtn.addEventListener('click', drawNext);
+    resetBtn.addEventListener('click', () => location.reload());
+
+    createBalls();
+  </script>
+</body>
