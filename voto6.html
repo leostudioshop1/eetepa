@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SISTEMA DE VOTAÇÃO 2026</title>
+    <title>SISTEMA DE VOTAÇÃO 2026 • Oficial</title>
     
     <style>
         :root {
-            --marinho: #001220; /* Azul Marinho Profundo */
+            --marinho: #001220;
             --marinho-claro: #00213b;
-            --verde-esmeralda: #00f5a0; /* Verde Vibrante */
+            --verde-esmeralda: #00f5a0;
             --verde-escuro: #00a86b;
             --texto-branco: #ffffff;
             --texto-cinza: #ced4da;
+            --cinza-escuro: #112233;
         }
 
         * { 
@@ -24,149 +25,199 @@
             background-color: var(--marinho);
             color: var(--texto-branco);
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            padding: 20px;
+            padding: 15px;
             min-height: 100vh;
+            line-height: 1.5;
         }
 
         header {
             text-align: center;
-            padding: 30px 0;
-            border-bottom: 3px solid var(--verde-esmeralda);
-            margin-bottom: 40px;
+            padding: 25px 0 20px;
+            border-bottom: 4px solid var(--verde-esmeralda);
+            margin-bottom: 30px;
+            position: relative;
         }
 
         header h1 { 
-            font-size: clamp(2.5rem, 10vw, 3.5rem); 
+            font-size: clamp(2.4rem, 9vw, 3.4rem); 
             color: var(--verde-esmeralda);
-            text-shadow: 0 0 15px rgba(0, 245, 160, 0.4);
-            letter-spacing: -1px;
+            text-shadow: 0 0 20px rgba(0, 245, 160, 0.5);
+            letter-spacing: -1.5px;
+        }
+
+        .subtitle {
+            color: var(--texto-cinza);
+            font-size: 1.1rem;
+            margin-top: 8px;
         }
 
         .container { 
-            max-width: 850px; 
+            max-width: 920px; 
             margin: 0 auto; 
         }
 
-        /* CARD DE VOTAÇÃO */
-        .sessao-voto {
+        /* Abas de navegação */
+        .tabs {
+            display: flex;
+            background: var(--marinho-claro);
+            border-radius: 20px;
+            padding: 6px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 16px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: var(--verde-esmeralda);
+            color: var(--marinho);
+            box-shadow: 0 5px 15px rgba(0, 245, 160, 0.3);
+        }
+
+        /* Cards */
+        .card {
             background: var(--marinho-claro);
             border: 2px solid #003a66;
-            border-radius: 30px;
-            padding: clamp(25px, 6vw, 50px);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border-radius: 28px;
+            padding: 35px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            margin-bottom: 30px;
         }
 
         .titulo-secao {
-            font-size: 2.2rem;
-            margin-bottom: 30px;
+            font-size: 2rem;
+            margin-bottom: 25px;
             color: var(--verde-esmeralda);
-            border-left: 10px solid var(--verde-esmeralda);
-            padding-left: 20px;
+            border-left: 8px solid var(--verde-esmeralda);
+            padding-left: 18px;
         }
-
-        .item-form { margin-bottom: 40px; }
 
         label {
             display: block;
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 15px;
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin: 20px 0 10px;
             color: var(--texto-cinza);
         }
 
-        /* SELECTS GIGANTES */
-        select {
+        select, input {
             width: 100%;
-            padding: 25px;
-            font-size: 2rem; /* Fonte muito grande */
+            padding: 18px 22px;
+            font-size: 1.45rem;
             background: #000a12;
             border: 3px solid #004d85;
-            border-radius: 20px;
+            border-radius: 18px;
             color: white;
-            font-weight: bold;
-            appearance: none; /* Remove seta padrão */
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300f5a0' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 25px center;
-            background-size: 30px;
+            font-weight: 500;
         }
 
-        select:focus {
+        select:focus, input:focus {
             border-color: var(--verde-esmeralda);
+            box-shadow: 0 0 0 4px rgba(0, 245, 160, 0.15);
             outline: none;
-            box-shadow: 0 0 20px rgba(0, 245, 160, 0.2);
         }
 
-        /* BOTÃO CONFIRMAR */
         .btn-confirmar {
             width: 100%;
-            padding: 35px;
-            font-size: 2.5rem;
+            padding: 28px;
+            font-size: 2.1rem;
+            font-weight: 900;
+            text-transform: uppercase;
             background: linear-gradient(135deg, var(--verde-escuro), var(--verde-esmeralda));
             color: var(--marinho);
             border: none;
-            border-radius: 25px;
-            font-weight: 900;
+            border-radius: 20px;
             cursor: pointer;
-            text-transform: uppercase;
-            box-shadow: 0 10px 30px rgba(0, 168, 107, 0.4);
-            margin-top: 20px;
-            transition: all 0.2s;
+            margin-top: 30px;
+            box-shadow: 0 15px 35px rgba(0, 168, 107, 0.4);
+            transition: all 0.25s;
         }
 
-        .btn-confirmar:active { transform: scale(0.97); }
+        .btn-confirmar:active { transform: scale(0.96); }
         .btn-confirmar:disabled {
             background: #223e35;
-            color: #555;
-            box-shadow: none;
+            color: #777;
             cursor: not-allowed;
+            transform: none;
         }
 
-        /* RESULTADOS */
-        .card-resultados {
-            background: #000a12;
-            border-radius: 30px;
-            padding: 40px;
-            margin-top: 50px;
-            border: 2px solid #002d4d;
+        /* Resultados aprimorados */
+        .cand-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 28px;
+            font-size: 1.6rem;
+            font-weight: 700;
         }
 
-        .cand-info {
-            display: flex; 
-            justify-content: space-between; 
-            font-size: 2rem; 
-            font-weight: 800;
-            margin-bottom: 15px;
+        .cand-nome {
+            flex: 1;
+            color: var(--texto-branco);
+        }
+
+        .cand-votos {
+            color: var(--verde-esmeralda);
+            min-width: 90px;
+            text-align: right;
         }
 
         .barra-fundo {
-            height: 45px;
+            height: 52px;
             background: #001a2e;
-            border-radius: 22px;
+            border-radius: 26px;
             overflow: hidden;
-            margin-bottom: 35px;
-            border: 1px solid #003a66;
+            border: 2px solid #003a66;
+            margin: 8px 0 25px;
         }
 
         .barra-progresso {
             height: 100%;
-            background: linear-gradient(90deg, var(--verde-escuro), var(--verde-esmeralda));
-            transition: width 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+            background: linear-gradient(90deg, #00a86b, #00f5a0);
+            transition: width 1.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 0 25px rgba(0, 245, 160, 0.6);
         }
 
         .total-votos {
             text-align: center;
-            font-size: 1.8rem;
+            font-size: 1.75rem;
             color: var(--verde-esmeralda);
-            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 245, 160, 0.1);
+            border-radius: 18px;
             font-weight: bold;
+            margin-top: 15px;
         }
 
-        @media (max-width: 600px) {
-            header h1 { font-size: 2.2rem; }
-            .titulo-secao { font-size: 1.8rem; }
-            select { font-size: 1.6rem; }
-            .btn-confirmar { font-size: 1.8rem; padding: 25px; }
+        /* Status */
+        .status {
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .status.votou {
+            background: rgba(0, 245, 160, 0.2);
+            color: var(--verde-esmeralda);
+            border: 2px solid var(--verde-esmeralda);
+        }
+
+        @media (max-width: 640px) {
+            .card { padding: 25px; }
+            .titulo-secao { font-size: 1.7rem; }
+            select, input { font-size: 1.3rem; padding: 16px; }
+            .btn-confirmar { font-size: 1.7rem; padding: 24px; }
         }
     </style>
 </head>
@@ -174,45 +225,76 @@
 
     <header>
         <h1>ELEIÇÕES 2026</h1>
-        <div id="relogio" style="font-size: 1.5rem; color: var(--texto-cinza); margin-top: 10px;">00:00:00</div>
+        <div class="subtitle">Sistema Oficial de Votação • Tempo Real</div>
+        <div id="relogio" style="font-size: 1.35rem; color: var(--texto-cinza); margin-top: 12px; font-weight: 500;">00:00:00</div>
     </header>
 
     <div class="container">
-        
-        <div class="sessao-voto">
-            <h2 class="titulo-secao">REGISTRAR VOTO</h2>
 
-            <div class="item-form">
-                <label>1. SELECIONE O ESTADO:</label>
+        <!-- Abas de navegação -->
+        <div class="tabs">
+            <div class="tab active" id="tab-votar" onclick="mudarAba(0)">VOTAR</div>
+            <div class="tab" id="tab-resultados" onclick="mudarAba(1)">APURAÇÃO</div>
+            <div class="tab" id="tab-relatorios" onclick="mudarAba(2)">RELATÓRIOS</div>
+        </div>
+
+        <!-- ABA 1: VOTAR -->
+        <div id="aba-votar" class="card">
+            <h2 class="titulo-secao">REGISTRAR SEU VOTO</h2>
+
+            <div style="margin-bottom: 25px;">
+                <label>1. Estado (UF)</label>
                 <select id="estado" onchange="carregarCidades()">
-                    <option value="">Aguardando escolha...</option>
+                    <option value="">Selecione o Estado...</option>
                 </select>
             </div>
 
-            <div class="item-form">
-                <label>2. SELECIONE A CIDADE:</label>
+            <div style="margin-bottom: 25px;">
+                <label>2. Município / Cidade</label>
                 <select id="cidade">
                     <option value="">Escolha o estado primeiro</option>
                 </select>
             </div>
 
-            <div class="item-form">
-                <label>3. SELECIONE O CANDIDATO:</label>
+            <div>
+                <label>3. Candidato</label>
                 <select id="candidato">
                     <option value="0">Candidato A</option>
                     <option value="1">Candidato B</option>
                     <option value="2">Candidato C</option>
-                    <option value="3">VOTO EM BRANCO / NULO</option>
+                    <option value="3">Branco / Nulo</option>
                 </select>
             </div>
 
-            <button id="btnVotar" class="btn-confirmar" onclick="votar()">CONFIRMAR VOTO</button>
+            <div id="status-voto" class="status"></div>
+
+            <button id="btnVotar" class="btn-confirmar" onclick="votar()">
+                CONFIRMAR VOTO
+            </button>
         </div>
 
-        <div class="card-resultados">
-            <h2 class="titulo-secao">APURAÇÃO NACIONAL</h2>
+        <!-- ABA 2: APURAÇÃO -->
+        <div id="aba-resultados" class="card" style="display: none;">
+            <h2 class="titulo-secao">APURAÇÃO NACIONAL EM TEMPO REAL</h2>
             <div id="lista-resultados"></div>
-            <div id="contador-total" class="total-votos">Carregando dados...</div>
+            <div id="contador-total" class="total-votos">Carregando apuração...</div>
+        </div>
+
+        <!-- ABA 3: RELATÓRIOS -->
+        <div id="aba-relatorios" class="card" style="display: none;">
+            <h2 class="titulo-secao">RELATÓRIOS E ESTATÍSTICAS</h2>
+            
+            <div style="margin: 25px 0; padding: 20px; background: rgba(0,10,18,0.6); border-radius: 16px;">
+                <strong>Total de Votos:</strong> <span id="total-geral">0</span><br><br>
+                <strong>Votos Válidos:</strong> <span id="validos">0</span><br>
+                <strong>Brancos/Nulos:</strong> <span id="brancos">0</span><br><br>
+                <strong>Participação por Estado:</strong>
+                <div id="por-estado" style="margin-top: 15px;"></div>
+            </div>
+
+            <button onclick="exportarCSV()" style="width:100%; padding:18px; background:#004d85; color:white; border:none; border-radius:16px; font-size:1.2rem; cursor:pointer;">
+                📊 Exportar Relatório (CSV)
+            </button>
         </div>
 
     </div>
@@ -231,27 +313,52 @@
         function getDeviceUuid() {
             let id = localStorage.getItem('voter_uuid');
             if (!id) {
-                id = crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now();
+                id = crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + Math.random();
                 localStorage.setItem('voter_uuid', id);
             }
             return id;
         }
 
+        // Navegação entre abas
+        function mudarAba(aba) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-votar').classList.toggle('active', aba === 0);
+            document.getElementById('tab-resultados').classList.toggle('active', aba === 1);
+            document.getElementById('tab-relatorios').classList.toggle('active', aba === 2);
+
+            document.getElementById('aba-votar').style.display = aba === 0 ? 'block' : 'none';
+            document.getElementById('aba-resultados').style.display = aba === 1 ? 'block' : 'none';
+            document.getElementById('aba-relatorios').style.display = aba === 2 ? 'block' : 'none';
+        }
+
         async function carregarCidades() {
             const uf = document.getElementById("estado").value;
-            const s = document.getElementById("cidade");
-            if (!uf) return;
-            s.innerHTML = '<option>Carregando cidades...</option>';
-            const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
-            const d = await r.json();
-            s.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+            const selectCidade = document.getElementById("cidade");
+            
+            if (!uf) {
+                selectCidade.innerHTML = '<option value="">Escolha o estado primeiro</option>';
+                return;
+            }
+
+            selectCidade.innerHTML = '<option>Carregando municípios...</option>';
+            
+            try {
+                const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+                const dados = await r.json();
+                selectCidade.innerHTML = dados
+                    .sort((a,b) => a.nome.localeCompare(b.nome))
+                    .map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+            } catch (e) {
+                selectCidade.innerHTML = '<option>Erro ao carregar cidades</option>';
+            }
         }
 
         async function loadVotes() {
-            const { data, error } = await supabaseClient.from('votes').select('*');
+            const { data, error } = await supabaseClient.from('votes').select('*').order('created_at', { ascending: false });
             if (!error) {
                 allVotes = data || [];
-                atualizarInterface();
+                atualizarApuracao();
+                atualizarRelatorios();
             }
         }
 
@@ -261,60 +368,139 @@
             const cand = parseInt(document.getElementById("candidato").value);
 
             if (!uf || !cidade) {
-                alert("AVISO: Escolha o Estado e a Cidade primeiro!");
+                alert("⚠️ Por favor, selecione Estado e Cidade.");
                 return;
             }
 
+            const btn = document.getElementById("btnVotar");
+            btn.disabled = true;
+            btn.innerText = "ENVIANDO...";
+
             const { error } = await supabaseClient.from('votes').insert([{
-                uf, cidade, candidato: cand, device_id: deviceUuid
+                uf, 
+                cidade, 
+                candidato: cand, 
+                device_id: deviceUuid,
+                created_at: new Date().toISOString()
             }]);
 
             if (error) {
-                alert("Erro: " + error.message);
+                alert("Erro ao registrar voto: " + error.message);
+                btn.disabled = false;
+                btn.innerText = "CONFIRMAR VOTO";
             } else {
-                alert("VOTO COMPUTADO COM SUCESSO!");
+                alert("✅ VOTO COMPUTADO COM SUCESSO!\n\nObrigado por participar.");
                 await loadVotes();
+                mostrarStatusVoto();
             }
         }
 
-        function atualizarInterface() {
-            let t = [0, 0, 0, 0];
-            allVotes.forEach(v => t[v.candidato]++);
-            const validos = t[0] + t[1] + t[2];
+        function mostrarStatusVoto() {
+            const statusDiv = document.getElementById("status-voto");
+            statusDiv.className = "status votou";
+            statusDiv.innerHTML = `✅ Você já votou neste dispositivo.<br>Não é possível votar novamente.`;
+        }
+
+        function atualizarApuracao() {
+            let totais = [0, 0, 0, 0];
+            allVotes.forEach(v => totais[v.candidato]++);
+
+            const validos = totais[0] + totais[1] + totais[2];
 
             let html = '';
             nomes.forEach((nome, i) => {
-                const perc = validos ? ((t[i] / validos) * 100).toFixed(1) : 0;
+                const perc = validos ? ((totais[i] / validos) * 100).toFixed(1) : 0;
                 html += `
-                    <div class="item-resultado">
-                        <div class="cand-info"><span>${nome}</span><span>${perc}%</span></div>
-                        <div class="barra-fundo"><div class="barra-progresso" style="width:${perc}%"></div></div>
+                    <div class="cand-item">
+                        <div class="cand-nome">${nome}</div>
+                        <div class="cand-votos">${totais[i]} votos</div>
+                    </div>
+                    <div class="barra-fundo">
+                        <div class="barra-progresso" style="width: ${perc}%"></div>
                     </div>`;
             });
 
             document.getElementById("lista-resultados").innerHTML = html;
-            document.getElementById("contador-total").innerText = "TOTAL DE VOTOS REGISTRADOS: " + allVotes.length;
-
-            // Bloqueio se o dispositivo já votou
-            if(allVotes.some(v => v.device_id === deviceUuid)) {
-                const btn = document.getElementById("btnVotar");
-                btn.disabled = true;
-                btn.innerText = "VOTO JÁ ENVIADO";
-            }
+            document.getElementById("contador-total").innerHTML = 
+                `TOTAL DE VOTOS REGISTRADOS: <strong>${allVotes.length}</strong>`;
         }
 
+        function atualizarRelatorios() {
+            let totais = [0, 0, 0, 0];
+            allVotes.forEach(v => totais[v.candidato]++);
+
+            const validos = totais[0] + totais[1] + totais[2];
+            const brancos = totais[3];
+
+            document.getElementById("total-geral").textContent = allVotes.length;
+            document.getElementById("validos").textContent = validos;
+            document.getElementById("brancos").textContent = brancos;
+
+            // Por estado (simplificado)
+            const porEstado = {};
+            allVotes.forEach(v => {
+                porEstado[v.uf] = (porEstado[v.uf] || 0) + 1;
+            });
+
+            let htmlEstado = '';
+            Object.keys(porEstado).sort().forEach(uf => {
+                htmlEstado += `<div style="display:flex; justify-content:space-between; margin:6px 0;">
+                    <span>${uf}</span><span><strong>${porEstado[uf]}</strong> votos</span>
+                </div>`;
+            });
+            document.getElementById("por-estado").innerHTML = htmlEstado || "<em>Nenhum voto registrado ainda.</em>";
+        }
+
+        function exportarCSV() {
+            if (allVotes.length === 0) {
+                alert("Ainda não há votos para exportar.");
+                return;
+            }
+
+            let csv = "Data,Hora,Estado,Cidade,Candidato\n";
+            
+            allVotes.forEach(v => {
+                const data = new Date(v.created_at || Date.now());
+                const candidatoNome = v.candidato === 3 ? "Branco/Nulo" : nomes[v.candidato];
+                csv += `${data.toLocaleDateString('pt-BR')},${data.toLocaleTimeString('pt-BR')},${v.uf},${v.cidade.replace(/,/g,'')},${candidatoNome}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `apuracao_eleicoes_2026_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+        }
+
+        // Relógio
         setInterval(() => {
-            document.getElementById("relogio").innerText = new Date().toLocaleTimeString('pt-BR');
+            document.getElementById("relogio").innerText = new Date().toLocaleTimeString('pt-BR', { hour12: false });
         }, 1000);
 
+        // Inicialização
         window.onload = () => {
             deviceUuid = getDeviceUuid();
-            const s = document.getElementById("estado");
-            s.innerHTML = '<option value="">Escolha o Estado...</option>' + estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
+
+            // Popular estados
+            const selectEstado = document.getElementById("estado");
+            selectEstado.innerHTML = '<option value="">Selecione o Estado...</option>' + 
+                estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
+
             loadVotes();
-            
-            // Ouvinte em tempo real para novos votos
-            supabaseClient.channel('realtime_votes').on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, loadVotes).subscribe();
+
+            // Real-time updates
+            supabaseClient.channel('realtime_votes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, loadVotes)
+                .subscribe();
+
+            // Verificar se já votou
+            setTimeout(() => {
+                if (allVotes.some(v => v.device_id === deviceUuid)) {
+                    mostrarStatusVoto();
+                    document.getElementById("btnVotar").disabled = true;
+                    document.getElementById("btnVotar").innerText = "VOTO JÁ REGISTRADO";
+                }
+            }, 800);
         };
     </script>
 </body>
