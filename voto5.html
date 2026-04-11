@@ -1,3 +1,8 @@
+Entendido, Léo. Para implementar essa trava de segurança, adicionei uma verificação logo após o carregamento dos dados. O sistema agora varre a lista de votos e, se encontrar o seu `deviceUuid`, desabilita o botão e altera o texto para "VOTO JÁ REGISTRADO".
+
+Aqui está o código completo com essa lógica de bloqueio:
+
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -132,6 +137,16 @@
 
         button:hover { transform: scale(1.02); box-shadow: var(--neon-glow); }
 
+        /* Estilo para botão desativado */
+        button:disabled {
+            background: #222;
+            color: #666;
+            cursor: not-allowed;
+            border: 1px solid #444;
+            box-shadow: none;
+            transform: none;
+        }
+
         .reset-btn { background: #991b1b; color: white; margin-top: 10px; }
 
         .stats { display: flex; gap: 15px; margin-bottom: 20px; }
@@ -169,7 +184,7 @@
                 <option value="2">Candidato C</option>
                 <option value="3">VOTO NULO</option>
             </select>
-            <button onclick="votar()">CONFIRMAR VOTO</button>
+            <button id="btnVotar" onclick="votar()">CONFIRMAR VOTO</button>
             <button class="reset-btn" onclick="zerarVotos()">ZERAR BANCO</button>
         </div>
 
@@ -189,7 +204,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script>
-        // CREDENCIAIS ATUALIZADAS
         const SUPABASE_URL = "https://osofdmgokrxdzsxozsrf.supabase.co";
         const SUPABASE_KEY = "sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -200,11 +214,9 @@
         const nomes = ["Candidato A", "Candidato B", "Candidato C"];
         const estados = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
-        // Função para garantir um UUID válido para o banco de dados
         function getDeviceUuid() {
             let id = localStorage.getItem('voter_uuid');
             if (!id) {
-                // Gera um UUID v4 compatível com a coluna UUID do Supabase
                 id = crypto.randomUUID();
                 localStorage.setItem('voter_uuid', id);
             }
@@ -224,7 +236,6 @@
             const uf = document.getElementById("estado").value;
             const s = document.getElementById("cidade");
             if(!uf) return;
-            s.innerHTML = '<option>Carregando...</option>';
             const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
             const d = await r.json();
             s.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
@@ -232,7 +243,25 @@
 
         async function loadVotes() {
             const { data, error } = await supabaseClient.from('votes').select('*').order('created_at', {ascending: false});
-            if(!error) { allVotes = data; atualizarTela(); }
+            if(!error) { 
+                allVotes = data; 
+                verificarVotoExistente(); // Nova checagem
+                atualizarTela(); 
+            }
+        }
+
+        // Bloqueia o botão se o ID já votou
+        function verificarVotoExistente() {
+            const jaVotou = allVotes.some(voto => voto.device_id === deviceUuid);
+            const btn = document.getElementById("btnVotar");
+            
+            if (jaVotou) {
+                btn.disabled = true;
+                btn.innerText = "VOTO JÁ REGISTRADO";
+            } else {
+                btn.disabled = false;
+                btn.innerText = "CONFIRMAR VOTO";
+            }
         }
 
         async function votar() {
@@ -241,7 +270,6 @@
             const cand = parseInt(document.getElementById("candidato").value);
             if(!uf || !cidade) return alert("Preencha tudo!");
 
-            // Envia o UUID gerado em vez da string fixa "web-user"
             const { error } = await supabaseClient.from('votes').insert([{ 
                 uf, 
                 cidade, 
@@ -250,11 +278,14 @@
             }]);
 
             if(error) alert("Erro: " + error.message);
-            else loadVotes();
+            else {
+                alert("Voto registrado com sucesso!");
+                loadVotes(); 
+            }
         }
 
         async function zerarVotos() {
-            if(!confirm("Limpar base de dados?")) return;
+            if(!confirm("Limpar base de dados? (Isso liberará os votos novamente)")) return;
             await supabaseClient.from('votes').delete().neq('id', 0);
             loadVotes();
         }
@@ -299,10 +330,11 @@
         }
 
         window.onload = () => { 
-            deviceUuid = getDeviceUuid(); // Gera o UUID logo ao carregar a página
+            deviceUuid = getDeviceUuid(); 
             popularEstados(); 
             loadVotes(); 
         };
     </script>
 </body>
 </html>
+```
