@@ -3,405 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Apuração 2026 • TSE</title>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
+    <title>Eleições 2026 • Apuração</title>
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-
         :root {
-            --samsung-blue: #0a84ff;
-            --samsung-green: #00c853;
-            --samsung-dark: #121212;
-            --samsung-card: #1e1e1e;
-            --text-primary: #ffffff;
-            --text-secondary: #aaaaaa;
+            --apple-blue: #007AFF;
+            --apple-gray: #F2F2F7;
+            --apple-text: #1C1C1E;
+            --apple-card: #FFFFFF;
+            --success: #34C759;
+            --danger: #FF3B30;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: var(--samsung-dark);
-            color: var(--text-primary);
-            font-family: 'Roboto', sans-serif;
-            min-height: 100vh;
-            line-height: 1.6;
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
             -webkit-tap-highlight-color: transparent;
         }
 
-        .header {
-            background: linear-gradient(135deg, #1a1a1a, #0a0a0a);
-            padding: 24px 20px;
+        body {
+            background-color: var(--apple-gray);
+            color: var(--apple-text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding-bottom: 40px;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 20px;
             text-align: center;
-            border-bottom: 4px solid var(--samsung-blue);
             position: sticky;
             top: 0;
             z-index: 100;
+            border-bottom: 1px solid #D1D1D6;
         }
 
-        .header h1 {
-            font-size: 1.85rem;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-
-        .relogio {
-            font-size: 1.35rem;
-            color: var(--samsung-green);
-            margin-top: 8px;
-            font-weight: 500;
-        }
+        header h1 { font-size: 1.2rem; font-weight: 600; }
+        .relogio { font-size: 0.9rem; color: #8E8E93; margin-top: 4px; }
 
         .container {
-            max-width: 100%;
-            padding: 20px 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 16px;
         }
 
-        .painel {
-            background: var(--samsung-card);
-            border-radius: 28px;
-            padding: 28px 20px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255,255,255,0.08);
-        }
-
-        h2 {
-            font-size: 1.65rem;
-            font-weight: 600;
-            color: var(--samsung-blue);
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .step {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            background: rgba(10, 132, 255, 0.12);
-            padding: 16px 20px;
+        .card {
+            background: var(--apple-card);
             border-radius: 20px;
-            margin: 20px 0;
-            font-size: 1.35rem;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        h2 { font-size: 1.5rem; margin-bottom: 20px; letter-spacing: -0.5px; }
+
+        .form-group { margin-bottom: 24px; transition: all 0.3s; }
+        
+        label { 
+            display: block; 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            color: #8E8E93; 
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            padding-left: 4px;
+        }
+
+        select {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.1rem;
+            background: #F9F9FB;
+            border: 1px solid #E5E5EA;
+            border-radius: 14px;
+            appearance: none;
+            color: var(--apple-text);
             font-weight: 500;
-        }
-
-        label {
-            display: block;
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: #ddd;
-            margin: 20px 0 10px;
-        }
-
-        select, input {
-            width: 100%;
-            padding: 18px 20px;
-            font-size: 1.35rem;
-            background: #2a2a2a;
-            color: white;
-            border: 2px solid #444;
-            border-radius: 18px;
-        }
-
-        select:focus, input:focus {
-            border-color: var(--samsung-blue);
-            outline: none;
-            box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.2);
-        }
-
-        .search-container {
-            position: relative;
-            margin-bottom: 12px;
-        }
-
-        .search-container i {
-            position: absolute;
-            left: 18px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--samsung-blue);
-            font-size: 1.3rem;
-        }
-
-        button {
-            width: 100%;
-            padding: 22px;
-            font-size: 1.45rem;
-            font-weight: 700;
-            border: none;
-            border-radius: 20px;
-            margin-top: 24px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
         }
 
         .btn-votar {
-            background: linear-gradient(90deg, var(--samsung-green), #00e676);
-            color: #000;
-            font-weight: 700;
-        }
-
-        .btn-votar:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0, 200, 83, 0.4);
-        }
-
-        .btn-reset {
-            background: #3a3a3a;
-            color: #ff8a80;
-            font-size: 1.2rem;
-        }
-
-        button:disabled {
-            background: #333;
-            color: #777;
-            cursor: not-allowed;
-        }
-
-        .tabs {
-            display: flex;
-            background: #2a2a2a;
-            border-radius: 20px;
-            padding: 6px;
-            margin: 20px 0;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 16px;
-            text-align: center;
+            width: 100%;
+            padding: 20px;
+            background: var(--apple-blue);
+            color: white;
+            border: none;
             border-radius: 16px;
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             font-weight: 600;
             cursor: pointer;
+            transition: transform 0.2s;
         }
 
-        .tab.active {
-            background: var(--samsung-blue);
-            color: white;
-        }
+        .btn-votar:active { transform: scale(0.97); background: #0062CC; }
+        .btn-votar:disabled { background: #C7C7CC; cursor: not-allowed; }
 
-        .stats {
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 16px;
-            margin: 24px 0;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
-        .stat-card {
-            background: #2a2a2a;
-            padding: 20px 12px;
-            border-radius: 20px;
+        .stat-item {
+            background: #F9F9FB;
+            padding: 16px;
+            border-radius: 14px;
             text-align: center;
         }
 
-        .stat-card strong {
-            font-size: 2.1rem;
-            color: var(--samsung-green);
-            display: block;
-        }
+        .stat-item strong { font-size: 1.4rem; display: block; }
+        .stat-item span { font-size: 0.75rem; color: #8E8E93; font-weight: 600; }
 
-        .donut-container {
-            width: 200px;
-            height: 200px;
-            margin: 30px auto;
-        }
+        /* Barras de Progresso Apple Style */
+        .cand-row { margin-bottom: 18px; }
+        .cand-info { display: flex; justify-content: space-between; margin-bottom: 6px; font-weight: 500; }
+        .bar-bg { height: 10px; background: #E5E5EA; border-radius: 5px; overflow: hidden; }
+        .bar-fill { height: 100%; background: var(--apple-blue); transition: width 0.8s ease-out; }
 
-        .donut {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: conic-gradient(#00c853 0% var(--p1), #0a84ff var(--p1) var(--p2), #ffdf00 var(--p2) 100%);
-        }
-
-        .donut::after {
-            content: "";
-            position: absolute;
-            inset: 24%;
-            background: var(--samsung-card);
-            border-radius: 50%;
-        }
-
-        .voto-item {
-            padding: 18px;
-            background: #2a2a2a;
-            margin-bottom: 14px;
-            border-radius: 18px;
-            font-size: 1.3rem;
-        }
-
-        /* Otimizações mobile */
-        @media (max-width: 480px) {
-            .painel { padding: 24px 18px; }
-            button { padding: 24px; font-size: 1.5rem; }
-            select, input { font-size: 1.4rem; padding: 20px; }
-            .header h1 { font-size: 1.7rem; }
+        .last-votes { font-size: 0.9rem; color: #3A3A3C; }
+        .vote-card { padding: 12px 0; border-bottom: 1px solid #F2F2F7; }
+        
+        .reset-link { 
+            display: block; 
+            text-align: center; 
+            color: var(--danger); 
+            font-size: 0.8rem; 
+            margin-top: 30px; 
+            text-decoration: none; 
         }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>🗳️ Apuração Eleitoral 2026</h1>
-        <div class="relogio" id="relogio">00:00:00</div>
-    </div>
+    <header>
+        <h1>Apuração Eleitoral 2026</h1>
+        <div id="relogio" class="relogio">00:00:00</div>
+    </header>
 
     <div class="container">
-
-        <!-- Painel de Voto -->
-        <div class="painel">
-            <h2>Registrar Voto</h2>
+        <div class="card">
+            <h2>Votar</h2>
             
-            <div class="step">1. Selecione seu Estado</div>
-            <select id="estado" onchange="carregarCidades()"></select>
-
-            <div class="step">2. Selecione sua Cidade</div>
-            <div class="search-container">
-                <i class="fas fa-search"></i>
-                <input type="text" id="searchCity" placeholder="Buscar cidade..." onkeyup="filterCities()">
+            <div class="form-group" id="step1">
+                <label>Estado</label>
+                <select id="estado" onchange="proximoPasso('cidade', true)"></select>
             </div>
-            <select id="cidade" size="5"></select>
 
-            <div class="step">3. Escolha o Candidato</div>
-            <select id="candidato">
-                <option value="0">Candidato A</option>
-                <option value="1">Candidato B</option>
-                <option value="2">Candidato C</option>
-                <option value="3">VOTO NULO</option>
-            </select>
+            <div class="form-group" id="step2">
+                <label>Cidade</label>
+                <select id="cidade" onchange="proximoPasso('candidato', false)"></select>
+            </div>
 
-            <button id="btnVotar" class="btn-votar" onclick="votar()">
-                <i class="fas fa-check-circle"></i> CONFIRMAR VOTO
-            </button>
+            <div class="form-group" id="step3">
+                <label>Candidato</label>
+                <select id="candidato">
+                    <option value="0">Candidato A</option>
+                    <option value="1">Candidato B</option>
+                    <option value="2">Candidato C</option>
+                    <option value="3">VOTO NULO</option>
+                </select>
+            </div>
 
-            <button class="btn-reset" onclick="zerarVotos()">
-                <i class="fas fa-trash"></i> Zerar Votos (Admin)
-            </button>
+            <button id="btnVotar" class="btn-votar" onclick="votar()">Confirmar Voto</button>
         </div>
 
-        <!-- Painel de Resultados -->
-        <div class="painel">
-            <h2>📊 Resultado em Tempo Real</h2>
-
-            <div class="stats" id="stats-gerais"></div>
-
-            <div class="tabs">
-                <div class="tab active" onclick="mudarFiltro(0)" id="tab0">Geral</div>
-                <div class="tab" onclick="mudarFiltro(1)" id="tab1">Estado</div>
-                <div class="tab" onclick="mudarFiltro(2)" id="tab2">Cidade</div>
-            </div>
-
-            <div class="donut-container">
-                <div class="donut" id="donut" style="--p1:0%; --p2:0%;"></div>
-            </div>
-
+        <div class="card">
+            <h2>Resultados</h2>
+            <div class="stats-grid" id="stats-gerais"></div>
             <div id="resultado"></div>
-
-            <h2 style="margin-top: 35px;">Últimos Votos</h2>
-            <div class="ultimos-votos" id="ultimos-votos"></div>
+            
+            <h3 style="margin-top:24px; font-size:1.1rem;">Últimos Registros</h3>
+            <div id="ultimos-votos" class="last-votes"></div>
         </div>
+
+        <a href="#" class="reset-link" onclick="zerarVotos()">Zerar Banco de Dados</a>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script>
-        // Config Supabase
         const SUPABASE_URL = "https://osofdmgokrxdzsxozsrf.supabase.co";
         const SUPABASE_KEY = "sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let allVotes = [];
-        let filtroAtual = 0;
         let deviceUuid = "";
-        let allCities = [];
         const nomes = ["Candidato A", "Candidato B", "Candidato C"];
         const estados = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
         function getDeviceUuid() {
             let id = localStorage.getItem('voter_uuid');
             if (!id) {
-                id = crypto.randomUUID ? crypto.randomUUID() : 'device-' + Date.now();
+                id = crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now();
                 localStorage.setItem('voter_uuid', id);
             }
             return id;
         }
 
-        function atualizarRelogio() {
-            document.getElementById("relogio").innerText = new Date().toLocaleTimeString('pt-BR', { hour12: false });
-        }
-        setInterval(atualizarRelogio, 1000);
-
-        function popularEstados() {
-            const s = document.getElementById("estado");
-            s.innerHTML = '<option value="">Selecione o Estado</option>';
-            estados.forEach(uf => s.innerHTML += `<option value="${uf}">${uf}</option>`);
+        // UX: Rola para o próximo campo automaticamente
+        function proximoPasso(idAlvo, carregarCid) {
+            if(carregarCid) carregarCidades();
+            setTimeout(() => {
+                document.getElementById(idAlvo).scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
         }
 
         async function carregarCidades() {
             const uf = document.getElementById("estado").value;
-            const selectCidade = document.getElementById("cidade");
-            const searchInput = document.getElementById("searchCity");
-
-            selectCidade.innerHTML = '<option value="">Carregando...</option>';
-            searchInput.value = '';
-
-            if (!uf) {
-                selectCidade.innerHTML = '<option value="">Selecione primeiro o estado</option>';
-                allCities = [];
-                return;
-            }
-
-            try {
-                const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
-                const dados = await r.json();
-                allCities = dados;
-                renderCities(dados);
-            } catch (e) {
-                selectCidade.innerHTML = '<option value="">Erro ao carregar</option>';
-            }
-        }
-
-        function renderCities(cidades) {
-            const select = document.getElementById("cidade");
-            select.innerHTML = cidades.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
-        }
-
-        function filterCities() {
-            const term = document.getElementById("searchCity").value.toLowerCase().trim();
-            if (!allCities.length) return;
-            const filtered = allCities.filter(c => c.nome.toLowerCase().includes(term));
-            renderCities(filtered);
+            const s = document.getElementById("cidade");
+            if (!uf) return;
+            const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+            const d = await r.json();
+            s.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
         }
 
         async function loadVotes() {
             const { data, error } = await supabaseClient.from('votes').select('*').order('created_at', { ascending: false });
             if (!error) {
                 allVotes = data || [];
-                verificarVotoExistente();
+                verificarStatus();
                 atualizarTela();
             }
         }
 
-        function verificarVotoExistente() {
+        function verificarStatus() {
             const jaVotou = allVotes.some(v => v.device_id === deviceUuid);
             const btn = document.getElementById("btnVotar");
             if (jaVotou) {
                 btn.disabled = true;
-                btn.innerHTML = `<i class="fas fa-check-circle"></i> VOTO REGISTRADO`;
-            } else {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-check-circle"></i> CONFIRMAR VOTO`;
+                btn.innerText = "Voto já enviado";
+                btn.style.background = "#8E8E93";
             }
         }
 
@@ -410,89 +243,61 @@
             const cidade = document.getElementById("cidade").value;
             const cand = parseInt(document.getElementById("candidato").value);
 
-            if (!uf || !cidade) {
-                alert("Por favor, selecione Estado e Cidade.");
-                return;
-            }
+            if (!uf || !cidade) return alert("Selecione os campos obrigatórios");
 
             const { error } = await supabaseClient.from('votes').insert([{
                 uf, cidade, candidato: cand, device_id: deviceUuid
             }]);
 
-            if (error) alert("Erro ao registrar voto.");
+            if (error) alert(error.message);
             else {
-                alert("Voto registrado com sucesso!");
+                alert("Voto Confirmado!");
                 await loadVotes();
             }
         }
 
-        async function zerarVotos() {
-            if (!confirm("Zerar todos os votos?")) return;
-            await supabaseClient.from('votes').delete().neq('id', null);
-            await loadVotes();
-        }
-
-        function mudarFiltro(f) {
-            filtroAtual = f;
-            document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === f));
-            atualizarTela();
-        }
-
         function atualizarTela() {
-            const ufSel = document.getElementById("estado").value;
-            const cidSel = document.getElementById("cidade").value;
-            let filtered = allVotes;
-
-            if (filtroAtual === 1 && ufSel) filtered = allVotes.filter(v => v.uf === ufSel);
-            if (filtroAtual === 2 && cidSel) filtered = allVotes.filter(v => v.cidade === cidSel);
-
             let t = [0, 0, 0, 0];
-            filtered.forEach(v => t[v.candidato]++);
-
+            allVotes.forEach(v => t[v.candidato]++);
             const validos = t[0] + t[1] + t[2];
-            const total = validos + t[3];
 
             document.getElementById("stats-gerais").innerHTML = `
-                <div class="stat-card"><strong>${total}</strong><small>Total</small></div>
-                <div class="stat-card"><strong>${validos}</strong><small>Válidos</small></div>
-                <div class="stat-card"><strong>${t[3]}</strong><small>Nulos</small></div>
+                <div class="stat-item"><strong>${validos + t[3]}</strong><span>TOTAL</span></div>
+                <div class="stat-item"><strong>${validos}</strong><span>VÁLIDOS</span></div>
             `;
 
-            if (validos > 0) {
-                const p1 = (t[0] / validos) * 100;
-                const p2 = p1 + (t[1] / validos) * 100;
-                document.getElementById("donut").style.setProperty('--p1', p1 + '%');
-                document.getElementById("donut").style.setProperty('--p2', p2 + '%');
-            }
-
-            let html = nomes.map((nome, i) => {
+            let html = '';
+            nomes.forEach((nome, i) => {
                 const perc = validos ? ((t[i] / validos) * 100).toFixed(1) : 0;
-                return `
-                    <div style="margin:18px 0; padding:18px; background:#2a2a2a; border-radius:18px;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                            <strong>${nome}</strong>
-                            <span>${perc}% (${t[i]})</span>
-                        </div>
-                        <div style="height:14px; background:#333; border-radius:999px;">
-                            <div style="height:100%; width:${perc}%; background: linear-gradient(90deg, #00c853, #0a84ff);"></div>
-                        </div>
+                html += `
+                    <div class="cand-row">
+                        <div class="cand-info"><span>${nome}</span><span>${perc}%</span></div>
+                        <div class="bar-bg"><div class="bar-fill" style="width:${perc}%"></div></div>
                     </div>`;
-            }).join('');
+            });
+            document.getElementById("resultado").innerHTML = html;
 
-            document.getElementById("resultado").innerHTML = html || "<p style='text-align:center; color:#777; padding:30px;'>Nenhum voto registrado.</p>";
-
-            let ult = allVotes.slice(0, 6).map(v => {
-                const tipo = v.candidato === 3 ? 'NULO' : nomes[v.candidato];
-                return `<div class="voto-item">${v.cidade} (${v.uf}) — <strong>${tipo}</strong></div>`;
-            }).join('');
-            document.getElementById("ultimos-votos").innerHTML = ult || "<p style='text-align:center; color:#777; padding:30px;'>Nenhum voto ainda.</p>";
+            document.getElementById("ultimos-votos").innerHTML = allVotes.slice(0, 3).map(v => `
+                <div class="vote-card">${v.cidade} (${v.uf}) — <b>${v.candidato === 3 ? 'Nulo' : nomes[v.candidato]}</b></div>
+            `).join('');
         }
 
-        window.onload = async () => {
+        async function zerarVotos() {
+            if (confirm("Resetar sistema?")) {
+                await supabaseClient.from('votes').delete().neq('id', 0);
+                loadVotes();
+            }
+        }
+
+        setInterval(() => {
+            document.getElementById("relogio").innerText = new Date().toLocaleTimeString('pt-BR');
+        }, 1000);
+
+        window.onload = () => {
             deviceUuid = getDeviceUuid();
-            popularEstados();
-            await loadVotes();
-            setInterval(loadVotes, 8000);
+            const s = document.getElementById("estado");
+            s.innerHTML = '<option value="">UF</option>' + estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
+            loadVotes();
         };
     </script>
 </body>
