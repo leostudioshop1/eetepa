@@ -3,216 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Apuração Eleitoral 2026 • Brasil</title>
+    <title>VOTAÇÃO BRASIL 2026</title>
     
     <style>
         :root {
-            --brazil-green: #004225;
-            --brazil-yellow: #FFDF00;
-            --brazil-blue: #002776;
-            --bg-dark: #020a05;
-            --card-bg: #0a1a0f;
-            --text-main: #ffffff;
-            --text-dim: #a0a0a0;
-            --border-glow: rgba(255, 223, 0, 0.2);
+            --verde-brasil: #004724;
+            --amarelo-brasil: #FFDF00;
+            --azul-brasil: #002776;
+            --branco: #FFFFFF;
+            --bg-escuro: #010803;
         }
 
         * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box;
+            margin: 0; padding: 0; box-sizing: border-box; 
             -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background-color: var(--bg-dark);
-            background-image: radial-gradient(circle at 50% 0%, #004225 0%, #020a05 70%);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            min-height: 100vh;
-            padding: 10px;
+            background-color: var(--bg-escuro);
+            color: var(--branco);
+            font-family: Arial, sans-serif;
+            padding: 15px;
+            line-height: 1.4;
         }
 
         header {
             text-align: center;
-            padding: 40px 15px;
-        }
-
-        header h1 {
-            font-size: clamp(1.8rem, 8vw, 2.8rem);
-            color: var(--brazil-yellow);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
-
-        .relogio {
-            font-size: 1.5rem;
-            color: var(--text-dim);
-            font-weight: 300;
-            margin-top: 5px;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-glow);
-            border-radius: 24px;
-            padding: clamp(20px, 5vw, 40px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-        }
-
-        h2 {
-            font-size: 1.8rem;
+            padding: 20px 0;
+            border-bottom: 4px solid var(--amarelo-brasil);
             margin-bottom: 25px;
-            color: var(--brazil-yellow);
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
 
-        .form-group { margin-bottom: 25px; }
+        header h1 { font-size: 2.2rem; color: var(--amarelo-brasil); }
 
-        label {
+        .instrucao {
+            background: #111;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 8px solid var(--amarelo-brasil);
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        .container { max-width: 600px; margin: 0 auto; }
+
+        /* Estilo dos Grupos de Escolha */
+        .sessao { margin-bottom: 35px; }
+        .titulo-sessao { 
+            font-size: 1.6rem; 
+            margin-bottom: 15px; 
+            color: var(--amarelo-brasil);
+            text-transform: uppercase;
+        }
+
+        /* Transformando Selects em botões grandes para facilitar o toque */
+        .grande-seletor {
+            width: 100%;
+            padding: 25px;
+            font-size: 1.8rem;
+            background: #1a1a1a;
+            border: 3px solid #333;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            margin-bottom: 15px;
             display: block;
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: var(--text-dim);
+            text-align: left;
         }
 
         select {
             width: 100%;
-            padding: 20px;
-            font-size: 1.4rem;
-            background: #000000;
-            border: 2px solid #1a3a25;
-            border-radius: 16px;
-            color: white;
-            font-weight: 500;
-            outline: none;
-            transition: border 0.3s;
-        }
-
-        select:focus { border-color: var(--brazil-yellow); }
-
-        .btn-votar {
-            width: 100%;
             padding: 25px;
-            background: linear-gradient(135deg, #004225, #006b3c);
-            color: var(--brazil-yellow);
-            border: 1px solid var(--brazil-yellow);
-            border-radius: 18px;
-            font-size: 1.6rem;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            transition: all 0.2s;
-        }
-
-        .btn-votar:active { transform: scale(0.98); }
-        .btn-votar:disabled {
-            background: #1a1a1a;
-            color: #444;
-            border-color: #333;
-            cursor: not-allowed;
-        }
-
-        /* Resultados */
-        .stats-summary {
-            display: flex;
-            justify-content: space-around;
-            margin-bottom: 30px;
-            gap: 10px;
-        }
-
-        .stat-box { text-align: center; }
-        .stat-box strong { font-size: 2.5rem; display: block; color: var(--brazil-yellow); }
-        .stat-box span { font-size: 1rem; color: var(--text-dim); font-weight: bold; }
-
-        .cand-row { margin-bottom: 25px; }
-        .cand-info { 
-            display: flex; 
-            justify-content: space-between; 
-            font-size: 1.3rem; 
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .bar-container {
-            height: 20px;
-            background: #000;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid #1a3a25;
-        }
-
-        .bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #FFDF00, #c4a700);
-            transition: width 1s ease-in-out;
-        }
-
-        .vote-item {
-            background: rgba(0,0,0,0.3);
-            padding: 15px;
-            border-radius: 12px;
+            font-size: 1.8rem;
+            border-radius: 20px;
+            background: #fff;
+            color: #000;
+            font-weight: bold;
             margin-bottom: 10px;
-            border-left: 5px solid var(--brazil-yellow);
         }
 
-        @media (max-width: 600px) {
-            header h1 { font-size: 1.6rem; }
-            .card { padding: 20px; }
-            select { font-size: 1.2rem; }
-            .btn-votar { font-size: 1.3rem; padding: 20px; }
+        .btn-confirmar {
+            width: 100%;
+            padding: 35px;
+            font-size: 2.2rem;
+            background: #008000;
+            color: white;
+            border: 5px solid var(--amarelo-brasil);
+            border-radius: 25px;
+            font-weight: 900;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 10px 0 #004d00;
+            margin-top: 20px;
+        }
+
+        .btn-confirmar:active {
+            transform: translateY(5px);
+            box-shadow: 0 5px 0 #004d00;
+        }
+
+        .btn-confirmar:disabled {
+            background: #444;
+            border-color: #666;
+            box-shadow: none;
+            color: #888;
+        }
+
+        /* Resultados Maiores */
+        .resultado-card {
+            background: #fff;
+            color: #000;
+            border-radius: 25px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+
+        .barra-progresso {
+            height: 40px;
+            background: #eee;
+            border-radius: 20px;
+            margin: 15px 0 25px;
+            overflow: hidden;
+            border: 2px solid #ccc;
+        }
+
+        .barra-preenchida {
+            height: 100%;
+            background: #008000;
+            transition: width 1s;
+        }
+
+        .info-cand {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.6rem;
+            font-weight: bold;
+        }
+
+        .voto-registrado {
+            background: #002776;
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.5rem;
+            margin-top: 20px;
+            display: none;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>Apuração Eleitoral 2026</h1>
-        <div id="relogio" class="relogio">00:00:00</div>
+        <h1>VOTAÇÃO 2026</h1>
+        <div id="relogio" style="font-size: 1.2rem; opacity: 0.7;">00:00:00</div>
     </header>
 
     <div class="container">
-        <div class="card">
-            <h2>🇧🇷 REGISTRAR VOTO</h2>
-            <div class="form-group">
-                <label>ESTADO (UF)</label>
-                <select id="estado" onchange="carregarCidades()"></select>
-            </div>
-            <div class="form-group">
-                <label>CIDADE</label>
-                <select id="cidade"></select>
-            </div>
-            <div class="form-group">
-                <label>CANDIDATO</label>
-                <select id="candidato">
-                    <option value="0">Candidato A</option>
-                    <option value="1">Candidato B</option>
-                    <option value="2">Candidato C</option>
-                    <option value="3">VOTO NULO</option>
-                </select>
-            </div>
-            <button id="btnVotar" class="btn-votar" onclick="votar()">CONFIRMAR VOTO</button>
+        <div class="instrucao">
+            Siga os passos abaixo para votar. Toque nas caixas brancas para escolher.
         </div>
 
-        <div class="card">
-            <h2>📊 RESULTADOS</h2>
-            <div class="stats-summary" id="stats-gerais"></div>
-            <div id="resultado"></div>
-            
-            <h3 style="margin: 30px 0 15px; font-size: 1.3rem; color: var(--text-dim);">ÚLTIMOS REGISTROS</h3>
-            <div id="ultimos-votos"></div>
+        <div class="sessao">
+            <p class="titulo-sessao">1. Escolha seu Estado (UF):</p>
+            <select id="estado" onchange="carregarCidades()">
+                <option value="">Clique aqui para escolher...</option>
+            </select>
+        </div>
+
+        <div class="sessao">
+            <p class="titulo-sessao">2. Escolha sua Cidade:</p>
+            <select id="cidade">
+                <option value="">Aguardando Estado...</option>
+            </select>
+        </div>
+
+        <div class="sessao">
+            <p class="titulo-sessao">3. Escolha seu Candidato:</p>
+            <select id="candidato">
+                <option value="0">Candidato A</option>
+                <option value="1">Candidato B</option>
+                <option value="2">Candidato C</option>
+                <option value="3">VOTAR EM BRANCO / NULO</option>
+            </select>
+        </div>
+
+        <button id="btnVotar" class="btn-confirmar" onclick="votar()">CONFIRMAR VOTO</button>
+        <div id="msgSucesso" class="voto-registrado">✅ SEU VOTO FOI GRAVADO!</div>
+
+        <div class="resultado-card">
+            <h2 style="font-size: 2rem; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 20px;">Apuração ao Vivo</h2>
+            <div id="resultado-lista"></div>
+            <div id="total-votos" style="font-size: 1.4rem; font-weight: bold; text-align: center; margin-top: 20px;"></div>
         </div>
     </div>
 
@@ -230,7 +213,7 @@
         function getDeviceUuid() {
             let id = localStorage.getItem('voter_uuid');
             if (!id) {
-                id = crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now();
+                id = crypto.randomUUID ? crypto.randomUUID() : 'user-' + Date.now();
                 localStorage.setItem('voter_uuid', id);
             }
             return id;
@@ -240,29 +223,17 @@
             const uf = document.getElementById("estado").value;
             const s = document.getElementById("cidade");
             if (!uf) return;
-            s.innerHTML = '<option>Carregando...</option>';
-            try {
-                const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
-                const d = await r.json();
-                s.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
-            } catch (e) { s.innerHTML = '<option>Erro ao carregar</option>'; }
+            s.innerHTML = '<option>Carregando cidades...</option>';
+            const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+            const d = await r.json();
+            s.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
         }
 
         async function loadVotes() {
-            const { data, error } = await supabaseClient.from('votes').select('*').order('created_at', { ascending: false });
+            const { data, error } = await supabaseClient.from('votes').select('*');
             if (!error) {
                 allVotes = data || [];
-                verificarStatus();
                 atualizarTela();
-            }
-        }
-
-        function verificarStatus() {
-            const jaVotou = allVotes.some(v => v.device_id === deviceUuid);
-            const btn = document.getElementById("btnVotar");
-            if (jaVotou) {
-                btn.disabled = true;
-                btn.innerText = "VOTO JÁ ENVIADO";
             }
         }
 
@@ -271,46 +242,54 @@
             const cidade = document.getElementById("cidade").value;
             const cand = parseInt(document.getElementById("candidato").value);
 
-            if (!uf || !cidade) return alert("Por favor, selecione UF e Cidade.");
+            if (!uf || !cidade) {
+                alert("ATENÇÃO: Você esqueceu de escolher o Estado ou a Cidade!");
+                return;
+            }
+
+            // Bloqueio simples por localStorage para evitar múltiplos cliques
+            if (localStorage.getItem('ja_votou_2026')) {
+                alert("Você já votou nesta sessão!");
+                return;
+            }
 
             const { error } = await supabaseClient.from('votes').insert([{
                 uf, cidade, candidato: cand, device_id: deviceUuid
             }]);
 
-            if (error) alert("Erro ao votar: " + error.message);
-            else {
-                alert("Voto registrado com sucesso!");
+            if (error) {
+                alert("Erro ao enviar: " + error.message);
+            } else {
+                localStorage.setItem('ja_votou_2026', 'true');
+                document.getElementById("btnVotar").style.display = "none";
+                document.getElementById("msgSucesso").style.display = "block";
                 await loadVotes();
+                alert("VOTO CONFIRMADO COM SUCESSO!");
             }
         }
 
         function atualizarTela() {
             let t = [0, 0, 0, 0];
-            allVotes.forEach(v => { if(t[v.candidato] !== undefined) t[v.candidato]++; });
+            allVotes.forEach(v => t[v.candidato]++);
             const validos = t[0] + t[1] + t[2];
-            const total = validos + t[3];
-
-            document.getElementById("stats-gerais").innerHTML = `
-                <div class="stat-box"><strong>${total}</strong><span>VOTOS</span></div>
-                <div class="stat-box"><strong>${validos}</strong><span>VÁLIDOS</span></div>
-            `;
 
             let html = '';
             nomes.forEach((nome, i) => {
                 const perc = validos ? ((t[i] / validos) * 100).toFixed(1) : 0;
                 html += `
-                    <div class="cand-row">
-                        <div class="cand-info"><span>${nome}</span><span>${perc}%</span></div>
-                        <div class="bar-container"><div class="bar-fill" style="width:${perc}%"></div></div>
+                    <div style="margin-bottom:20px;">
+                        <div class="info-cand"><span>${nome}</span><span>${perc}%</span></div>
+                        <div class="barra-progresso"><div class="barra-preenchida" style="width:${perc}%"></div></div>
                     </div>`;
             });
-            document.getElementById("resultado").innerHTML = html;
-
-            document.getElementById("ultimos-votos").innerHTML = allVotes.slice(0, 3).map(v => `
-                <div class="vote-item">
-                    <b>${v.cidade} (${v.uf})</b> • ${v.candidato === 3 ? 'Nulo' : nomes[v.candidato]}
-                </div>
-            `).join('');
+            document.getElementById("resultado-lista").innerHTML = html;
+            document.getElementById("total-votos").innerText = "Total de Votos no Brasil: " + allVotes.length;
+            
+            // Verifica se o usuário já votou nesta máquina
+            if(allVotes.some(v => v.device_id === deviceUuid) || localStorage.getItem('ja_votou_2026')) {
+                document.getElementById("btnVotar").disabled = true;
+                document.getElementById("btnVotar").innerText = "VOTO JÁ ENVIADO";
+            }
         }
 
         setInterval(() => {
@@ -320,14 +299,11 @@
         window.onload = () => {
             deviceUuid = getDeviceUuid();
             const s = document.getElementById("estado");
-            s.innerHTML = '<option value="">UF</option>' + estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
+            s.innerHTML = '<option value="">Clique para Escolher</option>' + estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
             loadVotes();
             
-            // Realtime update
-            supabaseClient.channel('custom-all-channel')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, (payload) => {
-                loadVotes();
-            }).subscribe();
+            // Atualização em tempo real
+            supabaseClient.channel('votes_realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, loadVotes).subscribe();
         };
     </script>
 </body>
