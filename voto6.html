@@ -3,505 +3,371 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SISTEMA DE VOTAÇÃO 2026 • Oficial</title>
+    <title>SISTEMA DE VOTAÇÃO PRO 2026</title>
     
     <style>
         :root {
-            --marinho: #001220;
-            --marinho-claro: #00213b;
+            --marinho: #050a0f;
+            --marinho-claro: #0d161f;
             --verde-esmeralda: #00f5a0;
             --verde-escuro: #00a86b;
             --texto-branco: #ffffff;
-            --texto-cinza: #ced4da;
-            --cinza-escuro: #112233;
+            --texto-cinza: #a0aec0;
+            --danger: #ff4d4d;
         }
 
-        * { 
-            margin: 0; padding: 0; box-sizing: border-box; 
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             background-color: var(--marinho);
             color: var(--texto-branco);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             padding: 15px;
             min-height: 100vh;
-            line-height: 1.5;
         }
 
         header {
             text-align: center;
-            padding: 25px 0 20px;
-            border-bottom: 4px solid var(--verde-esmeralda);
-            margin-bottom: 30px;
-            position: relative;
+            padding: 20px 0;
+            margin-bottom: 20px;
         }
 
         header h1 { 
-            font-size: clamp(2.4rem, 9vw, 3.4rem); 
+            font-size: 2rem; 
             color: var(--verde-esmeralda);
-            text-shadow: 0 0 20px rgba(0, 245, 160, 0.5);
-            letter-spacing: -1.5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
-        .subtitle {
-            color: var(--texto-cinza);
-            font-size: 1.1rem;
-            margin-top: 8px;
-        }
+        .container { max-width: 900px; margin: 0 auto; }
 
-        .container { 
-            max-width: 920px; 
-            margin: 0 auto; 
-        }
-
-        /* Abas de navegação */
-        .tabs {
+        /* STEPPER (PASSOS) */
+        .stepper {
             display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 0 10px;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--texto-cinza);
+            position: relative;
+        }
+
+        .step.active { color: var(--verde-esmeralda); font-weight: bold; }
+
+        /* CARDS */
+        .card {
             background: var(--marinho-claro);
             border-radius: 20px;
-            padding: 6px;
-            margin-bottom: 30px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #1a2633;
             box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         }
 
-        .tab {
-            flex: 1;
-            padding: 16px;
-            text-align: center;
-            font-weight: 700;
-            font-size: 1.1rem;
-            border-radius: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .tab.active {
-            background: var(--verde-esmeralda);
-            color: var(--marinho);
-            box-shadow: 0 5px 15px rgba(0, 245, 160, 0.3);
-        }
-
-        /* Cards */
-        .card {
-            background: var(--marinho-claro);
-            border: 2px solid #003a66;
-            border-radius: 28px;
-            padding: 35px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-            margin-bottom: 30px;
-        }
-
         .titulo-secao {
-            font-size: 2rem;
-            margin-bottom: 25px;
-            color: var(--verde-esmeralda);
-            border-left: 8px solid var(--verde-esmeralda);
-            padding-left: 18px;
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
+
+        .titulo-secao::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--verde-esmeralda);
+            border-radius: 2px;
+        }
+
+        /* FORMULÁRIO */
+        .grid-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 600px) { .grid-form { grid-template-columns: 1fr; } }
+
+        .item-form { margin-bottom: 20px; }
 
         label {
             display: block;
-            font-size: 1.35rem;
-            font-weight: 600;
-            margin: 20px 0 10px;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
             color: var(--texto-cinza);
         }
 
-        select, input {
+        select {
             width: 100%;
-            padding: 18px 22px;
-            font-size: 1.45rem;
-            background: #000a12;
-            border: 3px solid #004d85;
-            border-radius: 18px;
+            padding: 15px;
+            font-size: 1.1rem;
+            background: #000;
+            border: 2px solid #1e2d3d;
+            border-radius: 12px;
             color: white;
-            font-weight: 500;
+            cursor: pointer;
+            transition: 0.3s;
         }
 
-        select:focus, input:focus {
-            border-color: var(--verde-esmeralda);
-            box-shadow: 0 0 0 4px rgba(0, 245, 160, 0.15);
-            outline: none;
-        }
+        select:focus { border-color: var(--verde-esmeralda); outline: none; }
 
         .btn-confirmar {
             width: 100%;
-            padding: 28px;
-            font-size: 2.1rem;
-            font-weight: 900;
-            text-transform: uppercase;
+            padding: 20px;
+            font-size: 1.3rem;
             background: linear-gradient(135deg, var(--verde-escuro), var(--verde-esmeralda));
             color: var(--marinho);
             border: none;
-            border-radius: 20px;
+            border-radius: 15px;
+            font-weight: 800;
             cursor: pointer;
-            margin-top: 30px;
-            box-shadow: 0 15px 35px rgba(0, 168, 107, 0.4);
-            transition: all 0.25s;
+            transition: 0.3s;
         }
 
-        .btn-confirmar:active { transform: scale(0.96); }
-        .btn-confirmar:disabled {
-            background: #223e35;
-            color: #777;
-            cursor: not-allowed;
-            transform: none;
-        }
+        .btn-confirmar:hover { opacity: 0.9; transform: translateY(-2px); }
+        .btn-confirmar:disabled { background: #2d3748; color: #718096; cursor: not-allowed; transform: none; }
 
-        /* Resultados aprimorados */
-        .cand-item {
+        /* RELATÓRIOS */
+        .filtros-relatorio {
+            margin-bottom: 20px;
             display: flex;
+            gap: 10px;
             align-items: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 15px;
-            margin-bottom: 28px;
-            font-size: 1.6rem;
-            font-weight: 700;
+            margin-bottom: 30px;
         }
 
-        .cand-nome {
-            flex: 1;
-            color: var(--texto-branco);
-        }
-
-        .cand-votos {
-            color: var(--verde-esmeralda);
-            min-width: 90px;
-            text-align: right;
-        }
-
-        .barra-fundo {
-            height: 52px;
-            background: #001a2e;
-            border-radius: 26px;
-            overflow: hidden;
-            border: 2px solid #003a66;
-            margin: 8px 0 25px;
-        }
-
-        .barra-progresso {
-            height: 100%;
-            background: linear-gradient(90deg, #00a86b, #00f5a0);
-            transition: width 1.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 0 25px rgba(0, 245, 160, 0.6);
-        }
-
-        .total-votos {
+        .stat-box {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 12px;
             text-align: center;
-            font-size: 1.75rem;
-            color: var(--verde-esmeralda);
-            padding: 20px;
-            background: rgba(0, 245, 160, 0.1);
-            border-radius: 18px;
-            font-weight: bold;
-            margin-top: 15px;
         }
 
-        /* Status */
-        .status {
-            padding: 12px 20px;
-            border-radius: 50px;
-            font-weight: 600;
-            text-align: center;
-            margin: 15px 0;
-        }
+        .stat-val { font-size: 1.5rem; font-weight: bold; color: var(--verde-esmeralda); }
+        .stat-label { font-size: 0.75rem; color: var(--texto-cinza); text-transform: uppercase; }
 
-        .status.votou {
-            background: rgba(0, 245, 160, 0.2);
-            color: var(--verde-esmeralda);
-            border: 2px solid var(--verde-esmeralda);
-        }
+        /* BARRAS DE PROGRESSO */
+        .resultado-item { margin-bottom: 20px; }
+        .info-bar { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 600; }
+        .progress-bg { height: 12px; background: #1a2633; border-radius: 6px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--verde-esmeralda); transition: width 1s ease; }
 
-        @media (max-width: 640px) {
-            .card { padding: 25px; }
-            .titulo-secao { font-size: 1.7rem; }
-            select, input { font-size: 1.3rem; padding: 16px; }
-            .btn-confirmar { font-size: 1.7rem; padding: 24px; }
-        }
+        #relogio { font-family: monospace; font-size: 1.1rem; color: var(--verde-esmeralda); margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>ELEIÇÕES 2026</h1>
-        <div class="subtitle">Sistema Oficial de Votação • Tempo Real</div>
-        <div id="relogio" style="font-size: 1.35rem; color: var(--texto-cinza); margin-top: 12px; font-weight: 500;">00:00:00</div>
+        <div id="relogio">00:00:00</div>
+        <h1>E-VOTO 2026</h1>
     </header>
 
     <div class="container">
-
-        <!-- Abas de navegação -->
-        <div class="tabs">
-            <div class="tab active" id="tab-votar" onclick="mudarAba(0)">VOTAR</div>
-            <div class="tab" id="tab-resultados" onclick="mudarAba(1)">APURAÇÃO</div>
-            <div class="tab" id="tab-relatorios" onclick="mudarAba(2)">RELATÓRIOS</div>
-        </div>
-
-        <!-- ABA 1: VOTAR -->
-        <div id="aba-votar" class="card">
-            <h2 class="titulo-secao">REGISTRAR SEU VOTO</h2>
-
-            <div style="margin-bottom: 25px;">
-                <label>1. Estado (UF)</label>
-                <select id="estado" onchange="carregarCidades()">
-                    <option value="">Selecione o Estado...</option>
-                </select>
+        
+        <div class="card">
+            <div class="stepper">
+                <div class="step active" id="step1">1. Localização</div>
+                <div class="step" id="step2">2. Escolha</div>
+                <div class="step" id="step3">3. Confirmação</div>
             </div>
 
-            <div style="margin-bottom: 25px;">
-                <label>2. Município / Cidade</label>
-                <select id="cidade">
-                    <option value="">Escolha o estado primeiro</option>
-                </select>
+            <h2 class="titulo-secao">Cédula Digital</h2>
+
+            <div class="grid-form">
+                <div class="item-form">
+                    <label>Estado (UF)</label>
+                    <select id="estado" onchange="carregarCidades(); atualizarStep(1)">
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+                <div class="item-form">
+                    <label>Município</label>
+                    <select id="cidade" onchange="atualizarStep(2)">
+                        <option value="">Selecione o estado</option>
+                    </select>
+                </div>
             </div>
 
-            <div>
-                <label>3. Candidato</label>
-                <select id="candidato">
+            <div class="item-form">
+                <label>Seu Candidato</label>
+                <select id="candidato" onchange="atualizarStep(3)">
+                    <option value="">Selecione uma opção...</option>
                     <option value="0">Candidato A</option>
                     <option value="1">Candidato B</option>
                     <option value="2">Candidato C</option>
-                    <option value="3">Branco / Nulo</option>
+                    <option value="3">VOTO EM BRANCO / NULO</option>
                 </select>
             </div>
 
-            <div id="status-voto" class="status"></div>
-
-            <button id="btnVotar" class="btn-confirmar" onclick="votar()">
-                CONFIRMAR VOTO
-            </button>
+            <button id="btnVotar" class="btn-confirmar" onclick="votar()">CONFIRMAR VOTO</button>
         </div>
 
-        <!-- ABA 2: APURAÇÃO -->
-        <div id="aba-resultados" class="card" style="display: none;">
-            <h2 class="titulo-secao">APURAÇÃO NACIONAL EM TEMPO REAL</h2>
-            <div id="lista-resultados"></div>
-            <div id="contador-total" class="total-votos">Carregando apuração...</div>
-        </div>
-
-        <!-- ABA 3: RELATÓRIOS -->
-        <div id="aba-relatorios" class="card" style="display: none;">
-            <h2 class="titulo-secao">RELATÓRIOS E ESTATÍSTICAS</h2>
+        <div class="card">
+            <h2 class="titulo-secao">Painel de Apuração</h2>
             
-            <div style="margin: 25px 0; padding: 20px; background: rgba(0,10,18,0.6); border-radius: 16px;">
-                <strong>Total de Votos:</strong> <span id="total-geral">0</span><br><br>
-                <strong>Votos Válidos:</strong> <span id="validos">0</span><br>
-                <strong>Brancos/Nulos:</strong> <span id="brancos">0</span><br><br>
-                <strong>Participação por Estado:</strong>
-                <div id="por-estado" style="margin-top: 15px;"></div>
+            <div class="filtros-relatorio">
+                <label style="margin:0">Filtrar por UF:</label>
+                <select id="filtroEstado" style="width: auto; padding: 8px;" onchange="atualizarInterface()">
+                    <option value="BR">Brasil (Geral)</option>
+                </select>
             </div>
 
-            <button onclick="exportarCSV()" style="width:100%; padding:18px; background:#004d85; color:white; border:none; border-radius:16px; font-size:1.2rem; cursor:pointer;">
-                📊 Exportar Relatório (CSV)
-            </button>
-        </div>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div id="total-geral" class="stat-val">0</div>
+                    <div class="stat-label">Total Votos</div>
+                </div>
+                <div class="stat-box">
+                    <div id="total-validos" class="stat-val">0</div>
+                    <div class="stat-label">Votos Válidos</div>
+                </div>
+                <div class="stat-box">
+                    <div id="total-nulos" class="stat-val">0</div>
+                    <div class="stat-label">Brancos/Nulos</div>
+                </div>
+            </div>
 
+            <div id="lista-resultados"></div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script>
+        // Configuração Supabase (Suas chaves originais)
         const SUPABASE_URL = "https://osofdmgokrxdzsxozsrf.supabase.co";
         const SUPABASE_KEY = "sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let allVotes = [];
-        let deviceUuid = "";
-        const nomes = ["Candidato A", "Candidato B", "Candidato C"];
         const estados = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+        const nomesCandidatos = ["Candidato A", "Candidato B", "Candidato C"];
+        let allVotes = [];
+        let deviceUuid = localStorage.getItem('voter_uuid') || crypto.randomUUID();
+        localStorage.setItem('voter_uuid', deviceUuid);
 
-        function getDeviceUuid() {
-            let id = localStorage.getItem('voter_uuid');
-            if (!id) {
-                id = crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + Math.random();
-                localStorage.setItem('voter_uuid', id);
-            }
-            return id;
-        }
+        // Inicialização
+        window.onload = () => {
+            popularSelects();
+            loadVotes();
+            setInterval(atualizarRelogio, 1000);
+            supabaseClient.channel('votos_realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, loadVotes).subscribe();
+        };
 
-        // Navegação entre abas
-        function mudarAba(aba) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-votar').classList.toggle('active', aba === 0);
-            document.getElementById('tab-resultados').classList.toggle('active', aba === 1);
-            document.getElementById('tab-relatorios').classList.toggle('active', aba === 2);
-
-            document.getElementById('aba-votar').style.display = aba === 0 ? 'block' : 'none';
-            document.getElementById('aba-resultados').style.display = aba === 1 ? 'block' : 'none';
-            document.getElementById('aba-relatorios').style.display = aba === 2 ? 'block' : 'none';
+        function popularSelects() {
+            const html = estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
+            document.getElementById("estado").innerHTML += html;
+            document.getElementById("filtroEstado").innerHTML += html;
         }
 
         async function carregarCidades() {
             const uf = document.getElementById("estado").value;
-            const selectCidade = document.getElementById("cidade");
-            
-            if (!uf) {
-                selectCidade.innerHTML = '<option value="">Escolha o estado primeiro</option>';
-                return;
-            }
-
-            selectCidade.innerHTML = '<option>Carregando municípios...</option>';
-            
+            const select = document.getElementById("cidade");
+            if (!uf) return;
+            select.innerHTML = '<option>Carregando...</option>';
             try {
                 const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
-                const dados = await r.json();
-                selectCidade.innerHTML = dados
-                    .sort((a,b) => a.nome.localeCompare(b.nome))
-                    .map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
-            } catch (e) {
-                selectCidade.innerHTML = '<option>Erro ao carregar cidades</option>';
-            }
+                const d = await r.json();
+                select.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+            } catch (e) { select.innerHTML = '<option>Erro ao carregar</option>'; }
+        }
+
+        function atualizarStep(step) {
+            document.querySelectorAll('.step').forEach((s, idx) => {
+                if(idx + 1 <= step) s.classList.add('active');
+            });
         }
 
         async function loadVotes() {
-            const { data, error } = await supabaseClient.from('votes').select('*').order('created_at', { ascending: false });
+            const { data, error } = await supabaseClient.from('votes').select('*');
             if (!error) {
                 allVotes = data || [];
-                atualizarApuracao();
-                atualizarRelatorios();
+                atualizarInterface();
             }
         }
 
         async function votar() {
             const uf = document.getElementById("estado").value;
             const cidade = document.getElementById("cidade").value;
-            const cand = parseInt(document.getElementById("candidato").value);
+            const cand = document.getElementById("candidato").value;
+            const btn = document.getElementById("btnVotar");
 
-            if (!uf || !cidade) {
-                alert("⚠️ Por favor, selecione Estado e Cidade.");
+            if (!uf || !cidade || cand === "") {
+                alert("Por favor, preencha todos os campos antes de confirmar.");
                 return;
             }
 
-            const btn = document.getElementById("btnVotar");
             btn.disabled = true;
-            btn.innerText = "ENVIANDO...";
+            btn.innerText = "COMPUTANDO...";
 
             const { error } = await supabaseClient.from('votes').insert([{
-                uf, 
-                cidade, 
-                candidato: cand, 
-                device_id: deviceUuid,
-                created_at: new Date().toISOString()
+                uf, cidade, candidato: parseInt(cand), device_id: deviceUuid
             }]);
 
             if (error) {
-                alert("Erro ao registrar voto: " + error.message);
+                alert("Erro ao votar: " + error.message);
                 btn.disabled = false;
                 btn.innerText = "CONFIRMAR VOTO";
             } else {
-                alert("✅ VOTO COMPUTADO COM SUCESSO!\n\nObrigado por participar.");
-                await loadVotes();
-                mostrarStatusVoto();
+                alert("✅ VOTO CONFIRMADO COM SUCESSO!");
+                loadVotes();
             }
         }
 
-        function mostrarStatusVoto() {
-            const statusDiv = document.getElementById("status-voto");
-            statusDiv.className = "status votou";
-            statusDiv.innerHTML = `✅ Você já votou neste dispositivo.<br>Não é possível votar novamente.`;
-        }
+        function atualizarInterface() {
+            const filtro = document.getElementById("filtroEstado").value;
+            const votosFiltrados = filtro === "BR" ? allVotes : allVotes.filter(v => v.uf === filtro);
+            
+            let counts = [0, 0, 0, 0]; // A, B, C, Nulo
+            votosFiltrados.forEach(v => counts[v.candidato]++);
 
-        function atualizarApuracao() {
-            let totais = [0, 0, 0, 0];
-            allVotes.forEach(v => totais[v.candidato]++);
+            const total = votosFiltrados.length;
+            const nulos = counts[3];
+            const validos = total - nulos;
 
-            const validos = totais[0] + totais[1] + totais[2];
+            document.getElementById("total-geral").innerText = total;
+            document.getElementById("total-validos").innerText = validos;
+            document.getElementById("total-nulos").innerText = nulos;
 
             let html = '';
-            nomes.forEach((nome, i) => {
-                const perc = validos ? ((totais[i] / validos) * 100).toFixed(1) : 0;
+            nomesCandidatos.forEach((nome, i) => {
+                const perc = validos > 0 ? ((counts[i] / validos) * 100).toFixed(1) : 0;
                 html += `
-                    <div class="cand-item">
-                        <div class="cand-nome">${nome}</div>
-                        <div class="cand-votos">${totais[i]} votos</div>
-                    </div>
-                    <div class="barra-fundo">
-                        <div class="barra-progresso" style="width: ${perc}%"></div>
+                    <div class="resultado-item">
+                        <div class="info-bar">
+                            <span>${nome}</span>
+                            <span>${counts[i]} votos (${perc}%)</span>
+                        </div>
+                        <div class="progress-bg">
+                            <div class="progress-fill" style="width: ${perc}%"></div>
+                        </div>
                     </div>`;
             });
 
             document.getElementById("lista-resultados").innerHTML = html;
-            document.getElementById("contador-total").innerHTML = 
-                `TOTAL DE VOTOS REGISTRADOS: <strong>${allVotes.length}</strong>`;
-        }
 
-        function atualizarRelatorios() {
-            let totais = [0, 0, 0, 0];
-            allVotes.forEach(v => totais[v.candidato]++);
-
-            const validos = totais[0] + totais[1] + totais[2];
-            const brancos = totais[3];
-
-            document.getElementById("total-geral").textContent = allVotes.length;
-            document.getElementById("validos").textContent = validos;
-            document.getElementById("brancos").textContent = brancos;
-
-            // Por estado (simplificado)
-            const porEstado = {};
-            allVotes.forEach(v => {
-                porEstado[v.uf] = (porEstado[v.uf] || 0) + 1;
-            });
-
-            let htmlEstado = '';
-            Object.keys(porEstado).sort().forEach(uf => {
-                htmlEstado += `<div style="display:flex; justify-content:space-between; margin:6px 0;">
-                    <span>${uf}</span><span><strong>${porEstado[uf]}</strong> votos</span>
-                </div>`;
-            });
-            document.getElementById("por-estado").innerHTML = htmlEstado || "<em>Nenhum voto registrado ainda.</em>";
-        }
-
-        function exportarCSV() {
-            if (allVotes.length === 0) {
-                alert("Ainda não há votos para exportar.");
-                return;
+            // Bloqueio de re-votação
+            if(allVotes.some(v => v.device_id === deviceUuid)) {
+                const btn = document.getElementById("btnVotar");
+                btn.disabled = true;
+                btn.innerText = "VOTO JÁ REGISTRADO";
+                document.querySelectorAll('.step').forEach(s => s.classList.add('active'));
             }
-
-            let csv = "Data,Hora,Estado,Cidade,Candidato\n";
-            
-            allVotes.forEach(v => {
-                const data = new Date(v.created_at || Date.now());
-                const candidatoNome = v.candidato === 3 ? "Branco/Nulo" : nomes[v.candidato];
-                csv += `${data.toLocaleDateString('pt-BR')},${data.toLocaleTimeString('pt-BR')},${v.uf},${v.cidade.replace(/,/g,'')},${candidatoNome}\n`;
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `apuracao_eleicoes_2026_${new Date().toISOString().slice(0,10)}.csv`;
-            link.click();
         }
 
-        // Relógio
-        setInterval(() => {
-            document.getElementById("relogio").innerText = new Date().toLocaleTimeString('pt-BR', { hour12: false });
-        }, 1000);
-
-        // Inicialização
-        window.onload = () => {
-            deviceUuid = getDeviceUuid();
-
-            // Popular estados
-            const selectEstado = document.getElementById("estado");
-            selectEstado.innerHTML = '<option value="">Selecione o Estado...</option>' + 
-                estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
-
-            loadVotes();
-
-            // Real-time updates
-            supabaseClient.channel('realtime_votes')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, loadVotes)
-                .subscribe();
-
-            // Verificar se já votou
-            setTimeout(() => {
-                if (allVotes.some(v => v.device_id === deviceUuid)) {
-                    mostrarStatusVoto();
-                    document.getElementById("btnVotar").disabled = true;
-                    document.getElementById("btnVotar").innerText = "VOTO JÁ REGISTRADO";
-                }
-            }, 800);
-        };
+        function atualizarRelogio() {
+            document.getElementById("relogio").innerText = new Date().toLocaleTimeString('pt-BR');
+        }
     </script>
 </body>
 </html>
