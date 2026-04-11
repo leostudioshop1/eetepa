@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apuração Eleitoral 2026 • TSE</title>
+    
+    <!-- Font Awesome para ícones modernos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600&display=swap');
@@ -14,19 +17,16 @@
             --accent: #32CD32;
             --bg: #f8f9f4;
             --card: #ffffff;
+            --text: #222;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             background: var(--bg);
-            color: #222;
+            color: var(--text);
             font-family: 'Open Sans', sans-serif;
-            line-height: 1.6;
+            line-height: 1.7;
             min-height: 100vh;
         }
 
@@ -34,79 +34,95 @@
             background: var(--primary);
             color: white;
             text-align: center;
-            padding: 25px 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 30px 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
         }
 
         .header h1 {
             font-family: 'Roboto', sans-serif;
-            font-size: 2rem;
-            margin-bottom: 8px;
+            font-size: 2.1rem;
+            margin-bottom: 10px;
         }
 
         .relogio {
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             font-weight: 500;
         }
 
         .container {
             max-width: 720px;
             margin: 30px auto;
-            padding: 0 15px;
+            padding: 0 18px;
             display: flex;
             flex-direction: column;
-            gap: 25px;
+            gap: 28px;
         }
 
         .painel {
             background: var(--card);
-            border-radius: 20px;
-            padding: 28px 24px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-            border: 2px solid #e0e0e0;
+            border-radius: 24px;
+            padding: 32px 24px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border: 3px solid #e8f0e0;
         }
 
         h2 {
             font-family: 'Roboto', sans-serif;
             color: var(--primary);
-            font-size: 1.6rem;
-            margin-bottom: 20px;
+            font-size: 1.75rem;
+            margin-bottom: 24px;
             text-align: center;
+        }
+
+        /* Passos numerados */
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 22px 0 10px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
         }
 
         label {
             display: block;
-            font-size: 1.15rem;
+            font-size: 1.25rem;
             font-weight: 600;
             color: #333;
-            margin: 18px 0 8px;
+            margin: 18px 0 10px;
         }
 
         select {
             width: 100%;
-            padding: 16px;
-            font-size: 1.1rem;
-            border: 2px solid #ccc;
-            border-radius: 12px;
+            padding: 18px 16px;
+            font-size: 1.25rem;
+            border: 3px solid #ccc;
+            border-radius: 14px;
             background: white;
             color: #222;
         }
 
         select:focus {
-            border-color: var(--primary);
+            border-color: var(--accent);
             outline: none;
+            box-shadow: 0 0 0 4px rgba(50, 205, 50, 0.2);
         }
 
         button {
             width: 100%;
-            padding: 18px;
-            margin-top: 25px;
-            font-size: 1.25rem;
+            padding: 20px;
+            margin-top: 28px;
+            font-size: 1.35rem;
             font-weight: 700;
             border: none;
-            border-radius: 14px;
+            border-radius: 16px;
             cursor: pointer;
             transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
         }
 
         .btn-votar {
@@ -116,14 +132,14 @@
 
         .btn-votar:hover:not(:disabled) {
             background: #228B22;
-            transform: translateY(-2px);
+            transform: scale(1.03);
         }
 
         .btn-reset {
             background: #c0392b;
             color: white;
-            font-size: 1.1rem;
-            padding: 14px;
+            font-size: 1.15rem;
+            padding: 16px;
         }
 
         button:disabled {
@@ -135,18 +151,18 @@
         .tabs {
             display: flex;
             background: #f1f1f1;
-            border-radius: 12px;
-            padding: 6px;
-            margin: 20px 0;
+            border-radius: 14px;
+            padding: 8px;
+            margin: 25px 0;
         }
 
         .tab {
             flex: 1;
-            padding: 14px;
+            padding: 16px;
             text-align: center;
-            border-radius: 10px;
+            border-radius: 12px;
             font-weight: 600;
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             cursor: pointer;
         }
 
@@ -157,29 +173,29 @@
 
         .stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 25px 0;
         }
 
         .stat-card {
             background: #f8f9f4;
-            padding: 18px 12px;
-            border-radius: 14px;
+            padding: 20px 12px;
+            border-radius: 16px;
             text-align: center;
-            border: 2px solid #e0e8d8;
+            border: 3px solid #e0e8d8;
         }
 
         .stat-card strong {
-            font-size: 1.8rem;
+            font-size: 2rem;
             color: var(--primary);
             display: block;
         }
 
         .donut-container {
-            width: 180px;
-            height: 180px;
-            margin: 25px auto;
+            width: 190px;
+            height: 190px;
+            margin: 30px auto;
             position: relative;
         }
 
@@ -193,66 +209,62 @@
         .donut::after {
             content: "";
             position: absolute;
-            inset: 25%;
+            inset: 24%;
             background: white;
             border-radius: 50%;
         }
 
-        .resultado {
-            margin-top: 20px;
-        }
-
         .candidato-bar {
-            margin: 18px 0;
-            padding: 12px;
+            margin: 20px 0;
+            padding: 16px;
             background: #f8f9f4;
-            border-radius: 12px;
+            border-radius: 16px;
         }
 
         .ultimos-votos {
-            max-height: 300px;
+            max-height: 340px;
             overflow-y: auto;
             margin-top: 15px;
         }
 
         .voto-item {
-            padding: 14px;
+            padding: 18px;
             background: #f8f9f4;
-            margin-bottom: 10px;
-            border-radius: 12px;
-            font-size: 1.05rem;
-            border-left: 6px solid var(--accent);
+            margin-bottom: 12px;
+            border-radius: 16px;
+            font-size: 1.15rem;
+            border-left: 8px solid var(--accent);
         }
 
-        /* Ajustes para idosos */
+        /* Acessibilidade extra */
         @media (max-width: 480px) {
-            .header h1 { font-size: 1.75rem; }
-            button { font-size: 1.3rem; padding: 20px; }
-            label { font-size: 1.2rem; }
-            select { font-size: 1.2rem; padding: 18px; }
+            .header h1 { font-size: 1.85rem; }
+            button { font-size: 1.4rem; padding: 22px; }
+            select { font-size: 1.3rem; padding: 20px; }
+            label { font-size: 1.3rem; }
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>🗳️ Apuração Eleitoral 2026</h1>
+        <h1><i class="fas fa-vote-yea"></i> Apuração Eleitoral 2026</h1>
         <div class="relogio" id="relogio">00:00:00</div>
     </div>
 
     <div class="container">
 
-        <!-- Painel de Voto -->
+        <!-- ==================== PAINEL DE VOTO ==================== -->
         <div class="painel">
-            <h2>Registrar seu Voto</h2>
+            <h2><i class="fas fa-hand-pointer"></i> Registre seu Voto</h2>
             
-            <label>1. Selecione seu Estado (UF)</label>
+            <div class="step"><i class="fas fa-map-marker-alt"></i> 1. Selecione seu Estado</div>
             <select id="estado" onchange="carregarCidades()"></select>
 
-            <label>2. Selecione sua Cidade</label>
+            <div class="step"><i class="fas fa-city"></i> 2. Selecione sua Cidade</div>
             <select id="cidade"></select>
 
-            <label>3. Escolha o Candidato</label>
+            <div class="step"><i class="fas fa-user-tie"></i> 3. Escolha o Candidato</div>
             <select id="candidato">
                 <option value="0">Candidato A</option>
                 <option value="1">Candidato B</option>
@@ -260,20 +272,25 @@
                 <option value="3">VOTO NULO</option>
             </select>
 
-            <button id="btnVotar" class="btn-votar" onclick="votar()">✅ CONFIRMAR VOTO</button>
-            <button class="btn-reset" onclick="zerarVotos()">🔄 Zerar todos os votos (Administrador)</button>
+            <button id="btnVotar" class="btn-votar" onclick="votar()">
+                <i class="fas fa-check-circle"></i> CONFIRMAR VOTO
+            </button>
+            
+            <button class="btn-reset" onclick="zerarVotos()">
+                <i class="fas fa-trash-alt"></i> Zerar todos os votos (Administrador)
+            </button>
         </div>
 
-        <!-- Painel de Resultados -->
+        <!-- ==================== PAINEL DE RESULTADOS ==================== -->
         <div class="painel">
-            <h2>📊 Resultado da Apuração</h2>
+            <h2><i class="fas fa-chart-bar"></i> Resultado da Apuração</h2>
 
             <div class="stats" id="stats-gerais"></div>
 
             <div class="tabs">
-                <div class="tab active" onclick="mudarFiltro(0)" id="tab0">Geral</div>
-                <div class="tab" onclick="mudarFiltro(1)" id="tab1">Por Estado</div>
-                <div class="tab" onclick="mudarFiltro(2)" id="tab2">Por Cidade</div>
+                <div class="tab active" onclick="mudarFiltro(0)" id="tab0"><i class="fas fa-globe"></i> Geral</div>
+                <div class="tab" onclick="mudarFiltro(1)" id="tab1"><i class="fas fa-map"></i> Estado</div>
+                <div class="tab" onclick="mudarFiltro(2)" id="tab2"><i class="fas fa-building"></i> Cidade</div>
             </div>
 
             <div class="donut-container">
@@ -282,7 +299,9 @@
 
             <div class="resultado" id="resultado"></div>
 
-            <h2 style="margin-top:35px; font-size:1.4rem;">🕒 Últimos Votos Registrados</h2>
+            <h2 style="margin-top:35px; font-size:1.55rem;">
+                <i class="fas fa-clock"></i> Últimos Votos
+            </h2>
             <div class="ultimos-votos" id="ultimos-votos"></div>
         </div>
 
@@ -316,14 +335,14 @@
 
         function popularEstados() {
             const s = document.getElementById("estado");
-            s.innerHTML = '<option value="">Selecione o Estado...</option>';
+            s.innerHTML = '<option value="">Escolha o Estado...</option>';
             estados.forEach(uf => s.innerHTML += `<option value="${uf}">${uf}</option>`);
         }
 
         async function carregarCidades() {
             const uf = document.getElementById("estado").value;
             const s = document.getElementById("cidade");
-            s.innerHTML = '<option value="">Carregando...</option>';
+            s.innerHTML = '<option value="">Carregando cidades...</option>';
             if (!uf) {
                 s.innerHTML = '<option value="">Selecione primeiro o estado</option>';
                 return;
@@ -333,7 +352,7 @@
                 const d = await r.json();
                 s.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
             } catch (e) {
-                s.innerHTML = '<option value="">Erro ao carregar cidades</option>';
+                s.innerHTML = '<option value="">Erro ao carregar</option>';
             }
         }
 
@@ -351,10 +370,10 @@
             const btn = document.getElementById("btnVotar");
             if (jaVotou) {
                 btn.disabled = true;
-                btn.innerText = "✅ VOTO JÁ REGISTRADO";
+                btn.innerHTML = `<i class="fas fa-check-circle"></i> VOTO JÁ REGISTRADO`;
             } else {
                 btn.disabled = false;
-                btn.innerText = "✅ CONFIRMAR VOTO";
+                btn.innerHTML = `<i class="fas fa-check-circle"></i> CONFIRMAR VOTO`;
             }
         }
 
@@ -364,7 +383,7 @@
             const cand = parseInt(document.getElementById("candidato").value);
 
             if (!uf || !cidade) {
-                alert("Por favor, selecione Estado e Cidade.");
+                alert("Por favor, selecione o Estado e a Cidade.");
                 return;
             }
 
@@ -372,15 +391,15 @@
                 uf, cidade, candidato: cand, device_id: deviceUuid
             }]);
 
-            if (error) alert("Erro: " + error.message);
+            if (error) alert("Erro ao registrar: " + error.message);
             else {
-                alert("Voto registrado com sucesso! Obrigado.");
+                alert("✅ Voto registrado com sucesso! Obrigado pela participação.");
                 await loadVotes();
             }
         }
 
         async function zerarVotos() {
-            if (!confirm("Deseja realmente zerar todos os votos?")) return;
+            if (!confirm("Deseja realmente apagar todos os votos?")) return;
             await supabaseClient.from('votes').delete().neq('id', null);
             await loadVotes();
         }
@@ -425,23 +444,22 @@
                 const perc = validos ? ((t[i] / validos) * 100).toFixed(1) : 0;
                 html += `
                     <div class="candidato-bar">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-weight:600;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:1.2rem; font-weight:600;">
                             <span>${nome}</span>
                             <span>${perc}% (${t[i]})</span>
                         </div>
-                        <div style="height:14px; background:#e0e0e0; border-radius:999px; overflow:hidden;">
+                        <div style="height:18px; background:#e0e0e0; border-radius:999px; overflow:hidden;">
                             <div style="height:100%; width:${perc}%; background: linear-gradient(to right, #006400, #32CD32);"></div>
                         </div>
                     </div>`;
             });
-            document.getElementById("resultado").innerHTML = html;
+            document.getElementById("resultado").innerHTML = html || "<p style='text-align:center; color:#666; padding:30px;'>Nenhum voto registrado ainda.</p>";
 
-            // Últimos votos
             let ult = allVotes.slice(0, 6).map(v => {
                 const tipo = v.candidato === 3 ? 'NULO' : nomes[v.candidato];
-                return `<div class="voto-item">${v.cidade} - ${v.uf} → <strong>${tipo}</strong></div>`;
+                return `<div class="voto-item">${v.cidade} (${v.uf}) — <strong>${tipo}</strong></div>`;
             }).join('');
-            document.getElementById("ultimos-votos").innerHTML = ult || '<p style="text-align:center; color:#666; padding:20px;">Nenhum voto registrado ainda.</p>';
+            document.getElementById("ultimos-votos").innerHTML = ult || '<p style="text-align:center; color:#666; padding:25px;">Nenhum voto registrado ainda.</p>';
         }
 
         window.onload = async () => {
