@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APURAÇÃO ELEITORAL 2026</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body {
+    background: #050705;
+    color: #00ff41;
+    font-family: monospace;
+    text-align: center;
+}
+.container { max-width: 900px; margin: auto; padding: 20px; }
+select, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+}
+.result { margin-top: 20px; }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>🗳️ APURAÇÃO ELEITORAL</h1>
+
+    <select id="estado"></select>
+    <select id="cidade"></select>
+
+    <select id="candidato">
+        <option value="0">Candidato A</option>
+        <option value="1">Candidato B</option>
+        <option value="2">Candidato C</option>
+        <option value="3">NULO</option>
+    </select>
+
+    <button onclick="votar()">VOTAR</button>
+    <button onclick="zerar()">ZERAR</button>
+
+    <div class="result" id="resultado"></div>
+</div>
+
+<script>
+// 🔥 COLOQUE AQUI SEUS DADOS DO SUPABASE
+const SUPABASE_URL = "https://osofdmgokrxdzsxozsrf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe"";
+
+
+
+ 
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let votos = [];
+
+const estados = ["PA","SP","RJ","MG","BA"];
+
+const selectEstado = document.getElementById("estado");
+const selectCidade = document.getElementById("cidade");
+
+estados.forEach(uf => {
+    let op = document.createElement("option");
+    op.value = uf;
+    op.textContent = uf;
+    selectEstado.appendChild(op);
+});
+
+selectEstado.onchange = carregarCidades;
+
+function carregarCidades() {
+    const uf = selectEstado.value;
+
+    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`)
+    .then(r => r.json())
+    .then(dados => {
+        selectCidade.innerHTML = "";
+        dados.forEach(c => {
+            let op = document.createElement("option");
+            op.value = c.nome;
+            op.textContent = c.nome;
+            selectCidade.appendChild(op);
+        });
+    });
+}
+
+// 🔄 CARREGAR VOTOS
+async function carregarVotos() {
+    const { data, error } = await supabaseClient
+        .from("votes")
+        .select("*");
+
+    if (error) {
+        console.error(error);
+        alert("Erro ao buscar dados: " + error.message);
+        return;
+    }
+
+    votos = data;
+    atualizar();
+}
+
+// 🗳️ VOTAR
+async function votar() {
+    const uf = selectEstado.value;
+    const cidade = selectCidade.value;
+    const candidato = parseInt(document.getElementById("candidato").value);
+
+    const { error } = await supabaseClient
+        .from("votes")
+        .insert([{ uf, cidade, candidato }]);
+
+    if (error) {
+        alert("Erro ao votar: " + error.message);
+        return;
+    }
+
+    carregarVotos();
+}
+
+// 🔥 ZERAR
+async function zerar() {
+    const { error } = await supabaseClient
+        .from("votes")
+        .delete()
+        .neq("id", 0);
+
+    if (error) {
+        alert("Erro ao zerar: " + error.message);
+        return;
+    }
+
+    votos = [];
+    atualizar();
+}
+
+// 📊 ATUALIZAR
+function atualizar() {
+    let total = votos.length;
+    let a=0,b=0,c=0,n=0;
+
+    votos.forEach(v => {
+        if (v.candidato == 0) a++;
+        else if (v.candidato == 1) b++;
+        else if (v.candidato == 2) c++;
+        else n++;
+    });
+
+    document.getElementById("resultado").innerHTML = `
+        <h3>Total: ${total}</h3>
+        A: ${a} <br>
+        B: ${b} <br>
+        C: ${c} <br>
+        Nulos: ${n}
+    `;
+}
+
+// 🚀 INICIAR
+carregarCidades();
+carregarVotos();
+</script>
+
+</body>
+</html>
