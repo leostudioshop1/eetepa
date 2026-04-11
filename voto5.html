@@ -196,8 +196,20 @@
 
         let allVotes = [];
         let filtroAtual = 0;
+        let deviceUuid = "";
         const nomes = ["Candidato A", "Candidato B", "Candidato C"];
         const estados = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+
+        // Função para garantir um UUID válido para o banco de dados
+        function getDeviceUuid() {
+            let id = localStorage.getItem('voter_uuid');
+            if (!id) {
+                // Gera um UUID v4 compatível com a coluna UUID do Supabase
+                id = crypto.randomUUID();
+                localStorage.setItem('voter_uuid', id);
+            }
+            return id;
+        }
 
         function atualizarRelogio() { document.getElementById("relogio").innerText = new Date().toLocaleTimeString(); }
         setInterval(atualizarRelogio, 1000);
@@ -212,6 +224,7 @@
             const uf = document.getElementById("estado").value;
             const s = document.getElementById("cidade");
             if(!uf) return;
+            s.innerHTML = '<option>Carregando...</option>';
             const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
             const d = await r.json();
             s.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
@@ -228,7 +241,14 @@
             const cand = parseInt(document.getElementById("candidato").value);
             if(!uf || !cidade) return alert("Preencha tudo!");
 
-            const { error } = await supabaseClient.from('votes').insert([{ uf, cidade, candidato: cand, device_id: 'web-user' }]);
+            // Envia o UUID gerado em vez da string fixa "web-user"
+            const { error } = await supabaseClient.from('votes').insert([{ 
+                uf, 
+                cidade, 
+                candidato: cand, 
+                device_id: deviceUuid 
+            }]);
+
             if(error) alert("Erro: " + error.message);
             else loadVotes();
         }
@@ -278,7 +298,11 @@
             document.getElementById("ultimos-votos").innerHTML = allVotes.slice(0,5).map(v => `<div class="voto-item">${v.cidade} (${v.uf}) - ${v.candidato === 3 ? 'NULO' : nomes[v.candidato]}</div>`).join('');
         }
 
-        window.onload = () => { popularEstados(); loadVotes(); };
+        window.onload = () => { 
+            deviceUuid = getDeviceUuid(); // Gera o UUID logo ao carregar a página
+            popularEstados(); 
+            loadVotes(); 
+        };
     </script>
 </body>
 </html>
