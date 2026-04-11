@@ -62,16 +62,6 @@
             color: #00ff88;
         }
 
-        .status {
-            font-size: 0.95rem;
-            color: #66ff99;
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
         .container {
             max-width: 1450px;
             margin: 30px auto;
@@ -92,7 +82,6 @@
 
         h3 {
             font-family: 'Orbitron', sans-serif;
-            color: var(--matrix-green);
             margin-bottom: 22px;
             font-size: 1.45rem;
             text-shadow: 0 0 12px var(--matrix-green);
@@ -101,7 +90,6 @@
         .tabs {
             display: flex;
             background: #0a140a;
-            border: 1px solid rgba(0, 255, 65, 0.25);
             border-radius: 12px;
             padding: 6px;
             margin-bottom: 25px;
@@ -113,134 +101,67 @@
             text-align: center;
             border-radius: 10px;
             cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 500;
+            transition: 0.3s;
         }
 
         .tab.active {
             background: var(--matrix-green);
             color: #000;
-            box-shadow: var(--neon-glow);
-        }
-
-        label {
-            display: block;
-            margin: 16px 0 7px;
-            color: #a3e6b0;
-            font-size: 0.95rem;
+            font-weight: bold;
         }
 
         select, button {
             width: 100%;
-            padding: 15px 16px;
+            padding: 15px;
             border-radius: 10px;
             border: 1px solid rgba(0, 255, 65, 0.4);
             background: #0a140a;
             color: white;
-            font-family: inherit;
+            margin-top: 5px;
+            margin-bottom: 15px;
         }
 
         button {
             background: linear-gradient(90deg, #00ff41, #22c55e);
             color: #000;
             font-weight: 700;
-            font-size: 1.1rem;
-            margin-top: 25px;
             cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            transition: all 0.3s;
+            border: none;
+            transition: 0.3s;
         }
 
-        button:hover { transform: translateY(-4px); box-shadow: 0 0 30px rgba(0, 255, 65, 0.95); }
+        button:hover { transform: scale(1.02); box-shadow: var(--neon-glow); }
 
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
+        .reset-btn { background: #991b1b; color: white; margin-top: 10px; }
 
-        .stat-card {
-            background: rgba(10, 20, 10, 0.7);
-            padding: 14px;
-            border-radius: 12px;
-            text-align: center;
-            border: 1px solid rgba(0, 255, 65, 0.2);
-        }
+        .stats { display: flex; gap: 15px; margin-bottom: 20px; }
+        .stat-card { flex: 1; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px; text-align: center; border: 1px solid rgba(0,255,65,0.2); }
+        .stat-card strong { font-size: 1.5rem; color: #00ff88; display: block; }
 
-        .stat-card strong {
-            font-size: 1.6rem;
-            display: block;
-            color: #00ff88;
+        .donut-container { width: 150px; height: 150px; margin: 20px auto; position: relative; }
+        .donut { 
+            width: 100%; height: 100%; border-radius: 50%; 
+            background: conic-gradient(var(--matrix-green) 0% var(--p1), #22c55e var(--p1) var(--p2), #4ade80 var(--p2) 100%);
         }
+        .donut::after { content: ""; position: absolute; inset: 20%; background: #0a140a; border-radius: 50%; }
 
-        .donut-container {
-            width: 180px;
-            height: 180px;
-            margin: 20px auto;
-            position: relative;
-        }
-
-        .donut {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: conic-gradient(#00ff41 0% var(--p1), #22c55e var(--p1) var(--p2), #4ade80 var(--p2) 100%);
-            position: relative;
-        }
-
-        .donut::after {
-            content: "";
-            position: absolute;
-            inset: 25%;
-            background: #0a140a;
-            border-radius: 50%;
-        }
-
-        .ultimos-votos {
-            max-height: 280px;
-            overflow-y: auto;
-            font-size: 0.9rem;
-        }
-
-        .voto-item {
-            padding: 10px 12px;
-            background: rgba(10, 20, 10, 0.5);
-            margin-bottom: 8px;
-            border-radius: 8px;
-            border-left: 4px solid var(--matrix-green);
-        }
-
-        .reset-btn {
-            background: #991b1b;
-            margin-top: 15px;
-            font-size: 0.95rem;
-        }
-
-        @media (max-width: 980px) {
-            .container { grid-template-columns: 1fr; }
-        }
+        .voto-item { padding: 10px; border-bottom: 1px solid rgba(0,255,65,0.1); font-size: 0.85rem; }
     </style>
 </head>
 <body>
 
     <div class="topo">
         <h1>🗳️ APURAÇÃO ELEITORAL 2026</h1>
-        <div class="relogio" id="relogio"></div>
-        <div class="status" id="status">● Atualizando em tempo real</div>
+        <div class="relogio" id="relogio">00:00:00</div>
     </div>
 
     <div class="container">
-        <!-- Painel de Voto -->
         <div class="painel">
-            <h3>Registrar Voto</h3>
-            <label>Estado (UF)</label>
+            <h3>VOTAR</h3>
+            <label>Estado</label>
             <select id="estado" onchange="carregarCidades()"></select>
-
-            <label>Cidade / Município</label>
+            <label>Cidade</label>
             <select id="cidade"></select>
-
             <label>Candidato</label>
             <select id="candidato">
                 <option value="0">Candidato A</option>
@@ -248,277 +169,116 @@
                 <option value="2">Candidato C</option>
                 <option value="3">VOTO NULO</option>
             </select>
-
-            <button onclick="votar()">✅ CONFIRMAR VOTO</button>
-            <button class="reset-btn" onclick="zerarVotos()">🔄 Zerar todos os votos</button>
+            <button onclick="votar()">CONFIRMAR VOTO</button>
+            <button class="reset-btn" onclick="zerarVotos()">ZERAR BANCO</button>
         </div>
 
-        <!-- Painel Principal -->
         <div class="painel">
-            <h3>📊 Apuração em Tempo Real</h3>
             <div class="stats" id="stats-gerais"></div>
-
             <div class="tabs">
                 <div class="tab active" onclick="mudarFiltro(0)" id="tab0">GERAL</div>
-                <div class="tab" onclick="mudarFiltro(1)" id="tab1">POR ESTADO</div>
-                <div class="tab" onclick="mudarFiltro(2)" id="tab2">POR CIDADE</div>
+                <div class="tab" onclick="mudarFiltro(1)" id="tab1">ESTADO</div>
+                <div class="tab" onclick="mudarFiltro(2)" id="tab2">CIDADE</div>
             </div>
-
-            <div class="donut-container">
-                <div class="donut" id="donut"></div>
-            </div>
-
+            <div class="donut-container"><div class="donut" id="donut" style="--p1:0%; --p2:0%;"></div></div>
             <div id="resultado"></div>
-
-            <h3 style="margin-top:35px;">🕒 Últimos Votos Registrados</h3>
-            <div class="ultimos-votos" id="ultimos-votos"></div>
+            <h3 style="margin-top:20px;">ÚLTIMOS VOTOS</h3>
+            <div id="ultimos-votos"></div>
         </div>
     </div>
 
-    <!-- ====================== SCRIPTS ====================== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-    <script src="config.js"></script>
-
     <script>
-        // ====================== SUPABASE CONFIG ======================
-        if (typeof window.SUPABASE_CONFIG === 'undefined' || !window.SUPABASE_CONFIG.url || !window.SUPABASE_CONFIG.key) {
-            console.error("❌ SUPABASE_CONFIG não encontrado. Verifique o arquivo config.js");
-            document.body.innerHTML = `
-                <div style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#111827; color:#ff4444; padding:40px; border:3px solid #ff4444; border-radius:16px; text-align:center; max-width:90%; font-family:monospace;">
-                    <h2>Erro ao carregar a página</h2>
-                    <p><strong>config.js</strong> não foi encontrado ou está incorreto.</p>
-                    <p>Verifique se o arquivo config.js está na raiz do repositório e foi commitado.</p>
-                    <small>Pressione F12 para ver mais detalhes no console.</small>
-                </div>`;
-        } else {
-            const supabaseClient = supabase.createClient(
-                window.SUPABASE_CONFIG.url,
-                window.SUPABASE_CONFIG.key
-            );
+        // CREDENCIAIS ATUALIZADAS
+        const SUPABASE_URL = "https://osofdmgokrxdzsxozsrf.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-            // ====================== VARIÁVEIS GLOBAIS ======================
-            let deviceId = '';
-            let allVotes = [];
-            let nomes = ["Candidato A", "Candidato B", "Candidato C"];
-            let filtroAtual = 0;
-            const estados = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+        let allVotes = [];
+        let filtroAtual = 0;
+        const nomes = ["Candidato A", "Candidato B", "Candidato C"];
+        const estados = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
-            // ====================== DEVICE ID ======================
-            function initializeDevice() {
-                if (!deviceId) {
-                    deviceId = localStorage.getItem('device_id');
-                    if (!deviceId) {
-                        deviceId = crypto.randomUUID ? crypto.randomUUID() : `device-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-                        localStorage.setItem('device_id', deviceId);
-                    }
-                }
-            }
+        function atualizarRelogio() { document.getElementById("relogio").innerText = new Date().toLocaleTimeString(); }
+        setInterval(atualizarRelogio, 1000);
 
-            // ====================== RELÓGIO ======================
-            function atualizarRelogio() {
-                const agora = new Date();
-                document.getElementById("relogio").innerText = agora.toLocaleTimeString('pt-BR', { hour12: false });
-            }
-            setInterval(atualizarRelogio, 1000);
-
-            // ====================== ESTADOS E CIDADES ======================
-            const selectEstado = document.getElementById("estado");
-            estados.forEach(uf => {
-                let op = document.createElement("option");
-                op.value = uf; op.textContent = uf;
-                selectEstado.appendChild(op);
-            });
-
-            function carregarCidades() {
-                const uf = document.getElementById("estado").value;
-                const selectCidade = document.getElementById("cidade");
-                selectCidade.innerHTML = "<option value=''>Selecione a cidade...</option>";
-
-                if (!uf) return;
-
-                fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`)
-                    .then(r => r.json())
-                    .then(dados => {
-                        dados.forEach(c => {
-                            let op = document.createElement("option");
-                            op.value = c.nome; op.textContent = c.nome;
-                            selectCidade.appendChild(op);
-                        });
-                    });
-            }
-
-            // ====================== CARREGAR VOTOS ======================
-            async function loadVotes() {
-                const { data, error } = await supabaseClient
-                    .from('votes')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-
-                if (error) console.error('Erro ao carregar votos:', error);
-                else allVotes = data || [];
-            }
-
-            // ====================== REALTIME ======================
-            function setupRealtime() {
-                supabaseClient
-                    .channel('public:votes')
-                    .on('postgres_changes', 
-                        { event: 'INSERT', schema: 'public', table: 'votes' }, 
-                        (payload) => {
-                            const exists = allVotes.some(v => v.id === payload.new.id);
-                            if (!exists) {
-                                allVotes.unshift(payload.new);
-                                atualizar();
-                            }
-                        })
-                    .subscribe();
-            }
-
-            // ====================== VOTAR ======================
-            async function votar() {
-                const uf = document.getElementById("estado").value;
-                const cidade = document.getElementById("cidade").value;
-                const candIndex = parseInt(document.getElementById("candidato").value);
-
-                if (!uf || !cidade) {
-                    alert("Selecione Estado e Cidade!");
-                    return;
-                }
-
-                const { error } = await supabaseClient
-                    .from('votes')
-                    .insert({ 
-                        device_id: deviceId, 
-                        uf: uf, 
-                        cidade: cidade, 
-                        candidato: candIndex 
-                    });
-
-                if (error) {
-                    alert("Erro ao registrar voto: " + error.message);
-                    console.error(error);
-                    return;
-                }
-
-                await loadVotes();
-                atualizar();
-            }
-
-            // ====================== ZERAR VOTOS ======================
-            async function zerarVotos() {
-                if (confirm("Tem certeza que deseja zerar TODOS os votos?")) {
-                    const { error } = await supabaseClient
-                        .from('votes')
-                        .delete()
-                        .neq('id', null);
-
-                    if (error) alert("Erro ao zerar: " + error.message);
-                    else {
-                        allVotes = [];
-                        atualizar();
-                    }
-                }
-            }
-
-            // ====================== FILTRO ======================
-            function mudarFiltro(tipo) {
-                filtroAtual = tipo;
-                document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === tipo));
-                atualizar();
-            }
-
-            // ====================== CALCULAR VOTOS ======================
-            function calcularVotos() {
-                let totais = [0, 0, 0, 0];
-                const ufSel = document.getElementById("estado").value;
-                const cidSel = document.getElementById("cidade").value;
-
-                let filtered = allVotes;
-
-                if (filtroAtual === 1 && ufSel) filtered = allVotes.filter(v => v.uf === ufSel);
-                else if (filtroAtual === 2 && ufSel && cidSel) filtered = allVotes.filter(v => v.uf === ufSel && v.cidade === cidSel);
-
-                filtered.forEach(v => {
-                    if (v.candidato >= 0 && v.candidato <= 3) totais[v.candidato]++;
-                });
-
-                return totais;
-            }
-
-            // ====================== ATUALIZAR TELA ======================
-            function atualizar() {
-                const totais = calcularVotos();
-                const validos = totais[0] + totais[1] + totais[2];
-                const nulos = totais[3];
-                const totalGeral = validos + nulos;
-
-                // Stats rápidas
-                const secoesApuradas = Math.min(100, Math.floor(totalGeral / 12) + 23);
-                document.getElementById("stats-gerais").innerHTML = `
-                    <div class="stat-card"><strong>${secoesApuradas}%</strong> Seções Apuradas</div>
-                    <div class="stat-card"><strong>${totalGeral}</strong> Total de Votos</div>
-                    <div class="stat-card"><strong>${validos}</strong> Válidos</div>
-                    <div class="stat-card"><strong>${nulos}</strong> Nulos</div>
-                `;
-
-                // Donut Chart
-                if (validos > 0) {
-                    const p1 = (totais[0] / validos * 100).toFixed(1);
-                    const p2 = (p1 * 1 + (totais[1] / validos * 100)).toFixed(1);
-                    document.getElementById("donut").style.setProperty('--p1', p1 + '%');
-                    document.getElementById("donut").style.setProperty('--p2', p2 + '%');
-                }
-
-                // Resultados em barras
-                let html = "";
-                const maior = Math.max(totais[0], totais[1], totais[2]);
-
-                for (let i = 0; i < 3; i++) {
-                    const perc = validos ? ((totais[i] / validos) * 100).toFixed(1) : 0;
-                    html += `
-                    <div style="margin-bottom:20px; padding:16px; border-radius:14px; background:rgba(10,20,10,0.6);">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                            <strong>${nomes[i]}</strong>
-                            <span>${perc}% (${totais[i]} votos)</span>
-                        </div>
-                        <div style="height:24px; background:#1a2a1a; border-radius:999px; overflow:hidden;">
-                            <div style="height:100%; width:${perc}%; background:linear-gradient(90deg,#00ff41,#4ade80);"></div>
-                        </div>
-                    </div>`;
-                }
-
-                if (nulos > 0) {
-                    html += `<div style="text-align:center; padding:14px; background:rgba(80,80,80,0.2); border-radius:10px; margin-top:15px;">
-                        ⚪ Votos Nulos: <strong>${nulos}</strong> (${totalGeral ? ((nulos/totalGeral)*100).toFixed(1) : 0}%)
-                    </div>`;
-                }
-
-                document.getElementById("resultado").innerHTML = html || "<p style='text-align:center; padding:40px; color:#555;'>Nenhum voto registrado.</p>";
-
-                // Últimos votos
-                let feed = "";
-                const recent = allVotes.slice(0, 8);
-                recent.forEach(v => {
-                    const tempo = new Date(v.created_at).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-                    const tipo = v.candidato === 3 ? "NULO" : nomes[v.candidato];
-                    feed += `<div class="voto-item"><strong>${tempo}</strong> — ${v.cidade} - ${v.uf}<br><span style="color:#a3e6b0">${tipo}</span></div>`;
-                });
-                document.getElementById("ultimos-votos").innerHTML = feed || "<p style='color:#555; text-align:center; padding:20px;'>Nenhum voto registrado ainda.</p>";
-            }
-
-            // ====================== INICIALIZAÇÃO ======================
-            window.onload = async () => {
-                initializeDevice();
-                await loadVotes();
-                setupRealtime();
-                carregarCidades();
-                atualizar();
-
-                document.getElementById("estado").addEventListener("change", atualizar);
-                document.getElementById("cidade").addEventListener("change", atualizar);
-                setInterval(atualizar, 8000);
-            };
+        function popularEstados() {
+            const s = document.getElementById("estado");
+            s.innerHTML = '<option value="">UF...</option>';
+            estados.forEach(uf => s.innerHTML += `<option value="${uf}">${uf}</option>`);
         }
+
+        async function carregarCidades() {
+            const uf = document.getElementById("estado").value;
+            const s = document.getElementById("cidade");
+            if(!uf) return;
+            const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+            const d = await r.json();
+            s.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+        }
+
+        async function loadVotes() {
+            const { data, error } = await supabaseClient.from('votes').select('*').order('created_at', {ascending: false});
+            if(!error) { allVotes = data; atualizarTela(); }
+        }
+
+        async function votar() {
+            const uf = document.getElementById("estado").value;
+            const cidade = document.getElementById("cidade").value;
+            const cand = parseInt(document.getElementById("candidato").value);
+            if(!uf || !cidade) return alert("Preencha tudo!");
+
+            const { error } = await supabaseClient.from('votes').insert([{ uf, cidade, candidato: cand, device_id: 'web-user' }]);
+            if(error) alert("Erro: " + error.message);
+            else loadVotes();
+        }
+
+        async function zerarVotos() {
+            if(!confirm("Limpar base de dados?")) return;
+            await supabaseClient.from('votes').delete().neq('id', 0);
+            loadVotes();
+        }
+
+        function mudarFiltro(f) {
+            filtroAtual = f;
+            document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === f));
+            atualizarTela();
+        }
+
+        function atualizarTela() {
+            const uf = document.getElementById("estado").value;
+            const cid = document.getElementById("cidade").value;
+            let filtered = allVotes;
+
+            if(filtroAtual === 1 && uf) filtered = allVotes.filter(v => v.uf === uf);
+            if(filtroAtual === 2 && cid) filtered = allVotes.filter(v => v.cidade === cid);
+
+            let t = [0,0,0,0];
+            filtered.forEach(v => t[v.candidato]++);
+            const val = t[0]+t[1]+t[2];
+            const total = val + t[3];
+
+            document.getElementById("stats-gerais").innerHTML = `
+                <div class="stat-card"><strong>${total}</strong> VOTOS</div>
+                <div class="stat-card"><strong>${val}</strong> VÁLIDOS</div>
+                <div class="stat-card"><strong>${t[3]}</strong> NULOS</div>`;
+
+            if(val > 0) {
+                const p1 = (t[0]/val)*100;
+                const p2 = p1 + (t[1]/val)*100;
+                document.getElementById("donut").style.setProperty('--p1', p1+'%');
+                document.getElementById("donut").style.setProperty('--p2', p2+'%');
+            }
+
+            document.getElementById("resultado").innerHTML = nomes.map((n, i) => {
+                const p = val ? ((t[i]/val)*100).toFixed(1) : 0;
+                return `<div style="margin-top:10px">${n}: ${p}% (${t[i]}v)<div style="height:8px; background:#1a2a1a; border-radius:5px;"><div style="width:${p}%; height:100%; background:var(--matrix-green); border-radius:5px;"></div></div></div>`;
+            }).join('');
+
+            document.getElementById("ultimos-votos").innerHTML = allVotes.slice(0,5).map(v => `<div class="voto-item">${v.cidade} (${v.uf}) - ${v.candidato === 3 ? 'NULO' : nomes[v.candidato]}</div>`).join('');
+        }
+
+        window.onload = () => { popularEstados(); loadVotes(); };
     </script>
 </body>
 </html>
