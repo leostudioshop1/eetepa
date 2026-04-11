@@ -2,240 +2,279 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🗳️ Apuração Eleitoral 2026 • Brasil</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Apuração 2026 • TSE</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
         :root {
-            --verde-brasil: #009c3b;
-            --amarelo-brasil: #ffdf00;
-            --azul-brasil: #002776;
-            --fundo-escuro: #0a0f0a;
-            --painel: #1a1f1a;
+            --samsung-blue: #0a84ff;
+            --samsung-green: #00c853;
+            --samsung-dark: #121212;
+            --samsung-card: #1e1e1e;
+            --text-primary: #ffffff;
+            --text-secondary: #aaaaaa;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
-            background: var(--fundo-escuro);
-            color: #e0f0e0;
-            font-family: 'Open Sans', sans-serif;
-            font-size: 1.15rem;
-            line-height: 1.8;
+            background: var(--samsung-dark);
+            color: var(--text-primary);
+            font-family: 'Roboto', sans-serif;
             min-height: 100vh;
+            line-height: 1.6;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .header {
-            background: linear-gradient(to bottom, var(--azul-brasil), #001a4d);
-            color: white;
+            background: linear-gradient(135deg, #1a1a1a, #0a0a0a);
+            padding: 24px 20px;
             text-align: center;
-            padding: 35px 20px;
-            border-bottom: 8px solid var(--verde-brasil);
+            border-bottom: 4px solid var(--samsung-blue);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .header h1 {
-            font-family: 'Roboto', sans-serif;
-            font-size: 2.4rem;
+            font-size: 1.85rem;
             font-weight: 700;
+            letter-spacing: -0.5px;
         }
 
         .relogio {
-            font-size: 1.7rem;
-            margin-top: 12px;
-            color: var(--amarelo-brasil);
+            font-size: 1.35rem;
+            color: var(--samsung-green);
+            margin-top: 8px;
+            font-weight: 500;
         }
 
         .container {
-            max-width: 760px;
-            margin: 35px auto;
-            padding: 0 20px;
+            max-width: 100%;
+            padding: 20px 16px;
             display: flex;
             flex-direction: column;
-            gap: 30px;
+            gap: 24px;
         }
 
         .painel {
-            background: var(--painel);
-            border: 3px solid var(--verde-brasil);
-            border-radius: 20px;
-            padding: 35px 28px;
-            box-shadow: 0 8px 30px rgba(0, 156, 59, 0.3);
+            background: var(--samsung-card);
+            border-radius: 28px;
+            padding: 28px 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255,255,255,0.08);
         }
 
         h2 {
-            font-family: 'Roboto', sans-serif;
-            color: var(--amarelo-brasil);
-            font-size: 2rem;
+            font-size: 1.65rem;
+            font-weight: 600;
+            color: var(--samsung-blue);
             text-align: center;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
         }
 
-        /* ==================== PAINEL DE VOTO MELHORADO ==================== */
-        .voting-section .step {
+        .step {
             display: flex;
             align-items: center;
-            gap: 18px;
-            background: rgba(0, 156, 59, 0.2);
-            padding: 20px 24px;
-            border-radius: 18px;
-            margin: 24px 0;
-            font-size: 1.55rem;
-            font-weight: 700;
-            color: #c0ffc0;
+            gap: 14px;
+            background: rgba(10, 132, 255, 0.12);
+            padding: 16px 20px;
+            border-radius: 20px;
+            margin: 20px 0;
+            font-size: 1.35rem;
+            font-weight: 500;
         }
 
         label {
             display: block;
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: #c0ffc0;
-            margin: 24px 0 12px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #ddd;
+            margin: 20px 0 10px;
         }
 
-        select {
+        select, input {
             width: 100%;
-            padding: 22px 20px;
-            font-size: 1.55rem;
-            background: #0f150f;
+            padding: 18px 20px;
+            font-size: 1.35rem;
+            background: #2a2a2a;
             color: white;
-            border: 4px solid var(--verde-brasil);
-            border-radius: 16px;
-            min-height: 68px;
+            border: 2px solid #444;
+            border-radius: 18px;
         }
 
-        select:focus {
-            border-color: var(--amarelo-brasil);
-            box-shadow: 0 0 0 6px rgba(255, 223, 0, 0.3);
+        select:focus, input:focus {
+            border-color: var(--samsung-blue);
             outline: none;
+            box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.2);
         }
 
-        /* Busca de cidade */
         .search-container {
             position: relative;
-            margin-bottom: 10px;
-        }
-
-        .search-container input {
-            width: 100%;
-            padding: 18px 20px 18px 50px;
-            font-size: 1.4rem;
-            background: #0f150f;
-            color: white;
-            border: 3px solid var(--verde-brasil);
-            border-radius: 16px;
+            margin-bottom: 12px;
         }
 
         .search-container i {
             position: absolute;
-            left: 20px;
+            left: 18px;
             top: 50%;
             transform: translateY(-50%);
-            color: var(--amarelo-brasil);
-            font-size: 1.4rem;
+            color: var(--samsung-blue);
+            font-size: 1.3rem;
         }
 
         button {
             width: 100%;
-            padding: 26px;
-            margin-top: 32px;
-            font-size: 1.65rem;
+            padding: 22px;
+            font-size: 1.45rem;
             font-weight: 700;
             border: none;
-            border-radius: 18px;
+            border-radius: 20px;
+            margin-top: 24px;
             cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
         }
 
         .btn-votar {
-            background: linear-gradient(90deg, var(--verde-brasil), #00b050);
-            color: white;
+            background: linear-gradient(90deg, var(--samsung-green), #00e676);
+            color: #000;
+            font-weight: 700;
         }
 
         .btn-votar:hover:not(:disabled) {
-            transform: translateY(-4px);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 200, 83, 0.4);
         }
 
         .btn-reset {
-            background: #4a1f1f;
-            color: #ff9999;
-            font-size: 1.3rem;
-            padding: 18px;
-            margin-top: 15px;
+            background: #3a3a3a;
+            color: #ff8a80;
+            font-size: 1.2rem;
         }
 
         button:disabled {
             background: #333;
-            color: #888;
+            color: #777;
+            cursor: not-allowed;
         }
 
-        /* Outros elementos mantidos com bom contraste */
-        .tabs, .stats, .donut-container, .voto-item {
-            /* mesmos estilos anteriores */
+        .tabs {
+            display: flex;
+            background: #2a2a2a;
+            border-radius: 20px;
+            padding: 6px;
+            margin: 20px 0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 16px;
+            text-align: center;
+            border-radius: 16px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            background: var(--samsung-blue);
+            color: white;
         }
 
         .stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 20px;
-            margin: 30px 0;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
         }
 
         .stat-card {
-            background: #0f150f;
-            padding: 24px 15px;
-            border-radius: 16px;
+            background: #2a2a2a;
+            padding: 20px 12px;
+            border-radius: 20px;
             text-align: center;
-            border: 3px solid var(--amarelo-brasil);
         }
 
         .stat-card strong {
-            font-size: 2.5rem;
-            color: var(--amarelo-brasil);
+            font-size: 2.1rem;
+            color: var(--samsung-green);
+            display: block;
         }
 
         .donut-container {
-            width: 230px;
-            height: 230px;
-            margin: 40px auto;
+            width: 200px;
+            height: 200px;
+            margin: 30px auto;
+        }
+
+        .donut {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(#00c853 0% var(--p1), #0a84ff var(--p1) var(--p2), #ffdf00 var(--p2) 100%);
+        }
+
+        .donut::after {
+            content: "";
+            position: absolute;
+            inset: 24%;
+            background: var(--samsung-card);
+            border-radius: 50%;
         }
 
         .voto-item {
-            padding: 22px;
-            background: #0f150f;
-            margin-bottom: 16px;
-            border-radius: 16px;
-            font-size: 1.45rem;
-            border-left: 10px solid var(--amarelo-brasil);
+            padding: 18px;
+            background: #2a2a2a;
+            margin-bottom: 14px;
+            border-radius: 18px;
+            font-size: 1.3rem;
+        }
+
+        /* Otimizações mobile */
+        @media (max-width: 480px) {
+            .painel { padding: 24px 18px; }
+            button { padding: 24px; font-size: 1.5rem; }
+            select, input { font-size: 1.4rem; padding: 20px; }
+            .header h1 { font-size: 1.7rem; }
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>🗳️ APURAÇÃO ELEITORAL 2026</h1>
+        <h1>🗳️ Apuração Eleitoral 2026</h1>
         <div class="relogio" id="relogio">00:00:00</div>
     </div>
 
     <div class="container">
 
-        <!-- ==================== REGISTRAR VOTO - MELHORADO ==================== -->
-        <div class="painel voting-section">
-            <h2>REGISTRAR SEU VOTO</h2>
+        <!-- Painel de Voto -->
+        <div class="painel">
+            <h2>Registrar Voto</h2>
             
-            <div class="step">1️⃣ Escolha seu Estado</div>
+            <div class="step">1. Selecione seu Estado</div>
             <select id="estado" onchange="carregarCidades()"></select>
 
-            <div class="step">2️⃣ Escolha sua Cidade</div>
+            <div class="step">2. Selecione sua Cidade</div>
             <div class="search-container">
                 <i class="fas fa-search"></i>
-                <input type="text" id="searchCity" placeholder="Digite para buscar cidade..." onkeyup="filterCities()">
+                <input type="text" id="searchCity" placeholder="Buscar cidade..." onkeyup="filterCities()">
             </div>
-            <select id="cidade" size="6"></select>
+            <select id="cidade" size="5"></select>
 
-            <div class="step">3️⃣ Escolha o Candidato</div>
+            <div class="step">3. Escolha o Candidato</div>
             <select id="candidato">
                 <option value="0">Candidato A</option>
                 <option value="1">Candidato B</option>
@@ -244,23 +283,24 @@
             </select>
 
             <button id="btnVotar" class="btn-votar" onclick="votar()">
-                ✅ CONFIRMAR VOTO
+                <i class="fas fa-check-circle"></i> CONFIRMAR VOTO
             </button>
 
             <button class="btn-reset" onclick="zerarVotos()">
-                🔄 Zerar todos os votos (Administrador)
+                <i class="fas fa-trash"></i> Zerar Votos (Admin)
             </button>
         </div>
 
-        <!-- Painel de Resultados (mantido) -->
+        <!-- Painel de Resultados -->
         <div class="painel">
-            <h2>📊 RESULTADO DA APURAÇÃO</h2>
+            <h2>📊 Resultado em Tempo Real</h2>
+
             <div class="stats" id="stats-gerais"></div>
 
             <div class="tabs">
-                <div class="tab active" onclick="mudarFiltro(0)" id="tab0">GERAL</div>
-                <div class="tab" onclick="mudarFiltro(1)" id="tab1">POR ESTADO</div>
-                <div class="tab" onclick="mudarFiltro(2)" id="tab2">POR CIDADE</div>
+                <div class="tab active" onclick="mudarFiltro(0)" id="tab0">Geral</div>
+                <div class="tab" onclick="mudarFiltro(1)" id="tab1">Estado</div>
+                <div class="tab" onclick="mudarFiltro(2)" id="tab2">Cidade</div>
             </div>
 
             <div class="donut-container">
@@ -269,13 +309,14 @@
 
             <div id="resultado"></div>
 
-            <h2 style="margin-top:40px;">🕒 Últimos Votos</h2>
+            <h2 style="margin-top: 35px;">Últimos Votos</h2>
             <div class="ultimos-votos" id="ultimos-votos"></div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script>
+        // Config Supabase
         const SUPABASE_URL = "https://osofdmgokrxdzsxozsrf.supabase.co";
         const SUPABASE_KEY = "sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -283,7 +324,7 @@
         let allVotes = [];
         let filtroAtual = 0;
         let deviceUuid = "";
-        let allCities = []; // Para filtro de busca
+        let allCities = [];
         const nomes = ["Candidato A", "Candidato B", "Candidato C"];
         const estados = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
@@ -303,7 +344,7 @@
 
         function popularEstados() {
             const s = document.getElementById("estado");
-            s.innerHTML = '<option value="">Escolha seu Estado...</option>';
+            s.innerHTML = '<option value="">Selecione o Estado</option>';
             estados.forEach(uf => s.innerHTML += `<option value="${uf}">${uf}</option>`);
         }
 
@@ -312,7 +353,7 @@
             const selectCidade = document.getElementById("cidade");
             const searchInput = document.getElementById("searchCity");
 
-            selectCidade.innerHTML = '<option value="">Carregando cidades...</option>';
+            selectCidade.innerHTML = '<option value="">Carregando...</option>';
             searchInput.value = '';
 
             if (!uf) {
@@ -325,28 +366,21 @@
                 const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
                 const dados = await r.json();
                 allCities = dados;
-
                 renderCities(dados);
             } catch (e) {
-                selectCidade.innerHTML = '<option value="">Erro ao carregar cidades</option>';
+                selectCidade.innerHTML = '<option value="">Erro ao carregar</option>';
             }
         }
 
         function renderCities(cidades) {
             const select = document.getElementById("cidade");
-            select.innerHTML = cidades.map(c => 
-                `<option value="${c.nome}">${c.nome}</option>`
-            ).join('');
+            select.innerHTML = cidades.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
         }
 
         function filterCities() {
             const term = document.getElementById("searchCity").value.toLowerCase().trim();
             if (!allCities.length) return;
-
-            const filtered = allCities.filter(c => 
-                c.nome.toLowerCase().includes(term)
-            );
-
+            const filtered = allCities.filter(c => c.nome.toLowerCase().includes(term));
             renderCities(filtered);
         }
 
@@ -364,10 +398,10 @@
             const btn = document.getElementById("btnVotar");
             if (jaVotou) {
                 btn.disabled = true;
-                btn.textContent = "✅ VOTO JÁ REGISTRADO";
+                btn.innerHTML = `<i class="fas fa-check-circle"></i> VOTO REGISTRADO`;
             } else {
                 btn.disabled = false;
-                btn.textContent = "✅ CONFIRMAR VOTO";
+                btn.innerHTML = `<i class="fas fa-check-circle"></i> CONFIRMAR VOTO`;
             }
         }
 
@@ -393,7 +427,7 @@
         }
 
         async function zerarVotos() {
-            if (!confirm("Deseja realmente zerar todos os votos?")) return;
+            if (!confirm("Zerar todos os votos?")) return;
             await supabaseClient.from('votes').delete().neq('id', null);
             await loadVotes();
         }
@@ -405,7 +439,6 @@
         }
 
         function atualizarTela() {
-            // ... (mesmo código de antes - mantido igual)
             const ufSel = document.getElementById("estado").value;
             const cidSel = document.getElementById("cidade").value;
             let filtered = allVotes;
@@ -435,24 +468,24 @@
             let html = nomes.map((nome, i) => {
                 const perc = validos ? ((t[i] / validos) * 100).toFixed(1) : 0;
                 return `
-                    <div class="candidato-bar">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:1.45rem;">
+                    <div style="margin:18px 0; padding:18px; background:#2a2a2a; border-radius:18px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
                             <strong>${nome}</strong>
                             <span>${perc}% (${t[i]})</span>
                         </div>
-                        <div style="height:20px; background:#2a2f2a; border-radius:999px;">
-                            <div style="height:100%; width:${perc}%; background: linear-gradient(to right, #009c3b, #ffdf00);"></div>
+                        <div style="height:14px; background:#333; border-radius:999px;">
+                            <div style="height:100%; width:${perc}%; background: linear-gradient(90deg, #00c853, #0a84ff);"></div>
                         </div>
                     </div>`;
             }).join('');
 
-            document.getElementById("resultado").innerHTML = html || "<p style='text-align:center; color:#888; padding:40px;'>Nenhum voto registrado ainda.</p>";
+            document.getElementById("resultado").innerHTML = html || "<p style='text-align:center; color:#777; padding:30px;'>Nenhum voto registrado.</p>";
 
             let ult = allVotes.slice(0, 6).map(v => {
                 const tipo = v.candidato === 3 ? 'NULO' : nomes[v.candidato];
                 return `<div class="voto-item">${v.cidade} (${v.uf}) — <strong>${tipo}</strong></div>`;
             }).join('');
-            document.getElementById("ultimos-votos").innerHTML = ult || "<p style='text-align:center; color:#777; padding:40px;'>Nenhum voto registrado ainda.</p>";
+            document.getElementById("ultimos-votos").innerHTML = ult || "<p style='text-align:center; color:#777; padding:30px;'>Nenhum voto ainda.</p>";
         }
 
         window.onload = async () => {
