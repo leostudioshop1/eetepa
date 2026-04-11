@@ -7,18 +7,15 @@
     
     <style>
         :root {
-            --marinho: #001220; /* Azul Marinho Profundo */
+            --marinho: #001220;
             --marinho-claro: #00213b;
-            --verde-esmeralda: #00f5a0; /* Verde Vibrante */
+            --verde-esmeralda: #00f5a0;
             --verde-escuro: #00a86b;
             --texto-branco: #ffffff;
             --texto-cinza: #ced4da;
         }
 
-        * { 
-            margin: 0; padding: 0; box-sizing: border-box; 
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             background-color: var(--marinho);
@@ -39,16 +36,11 @@
             font-size: clamp(2.5rem, 10vw, 3.5rem); 
             color: var(--verde-esmeralda);
             text-shadow: 0 0 15px rgba(0, 245, 160, 0.4);
-            letter-spacing: -1px;
         }
 
-        .container { 
-            max-width: 850px; 
-            margin: 0 auto; 
-        }
+        .container { max-width: 850px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
 
-        /* CARD DE VOTAÇÃO */
-        .sessao-voto {
+        .card {
             background: var(--marinho-claro);
             border: 2px solid #003a66;
             border-radius: 30px;
@@ -62,46 +54,39 @@
             color: var(--verde-esmeralda);
             border-left: 10px solid var(--verde-esmeralda);
             padding-left: 20px;
+            text-transform: uppercase;
         }
 
-        .item-form { margin-bottom: 40px; }
+        .item-form { margin-bottom: 30px; }
 
         label {
             display: block;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: 700;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             color: var(--texto-cinza);
         }
 
-        /* SELECTS GIGANTES */
         select {
             width: 100%;
-            padding: 25px;
-            font-size: 2rem; /* Fonte muito grande */
+            padding: 22px;
+            font-size: 1.8rem;
             background: #000a12;
             border: 3px solid #004d85;
             border-radius: 20px;
             color: white;
             font-weight: bold;
-            appearance: none; /* Remove seta padrão */
+            appearance: none;
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300f5a0' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat: no-repeat;
             background-position: right 25px center;
             background-size: 30px;
         }
 
-        select:focus {
-            border-color: var(--verde-esmeralda);
-            outline: none;
-            box-shadow: 0 0 20px rgba(0, 245, 160, 0.2);
-        }
-
-        /* BOTÃO CONFIRMAR */
         .btn-confirmar {
             width: 100%;
-            padding: 35px;
-            font-size: 2.5rem;
+            padding: 30px;
+            font-size: 2.2rem;
             background: linear-gradient(135deg, var(--verde-escuro), var(--verde-esmeralda));
             color: var(--marinho);
             border: none;
@@ -110,63 +95,46 @@
             cursor: pointer;
             text-transform: uppercase;
             box-shadow: 0 10px 30px rgba(0, 168, 107, 0.4);
-            margin-top: 20px;
-            transition: all 0.2s;
         }
 
-        .btn-confirmar:active { transform: scale(0.97); }
-        .btn-confirmar:disabled {
-            background: #223e35;
-            color: #555;
-            box-shadow: none;
-            cursor: not-allowed;
+        .btn-confirmar:disabled { background: #223e35; color: #555; cursor: not-allowed; box-shadow: none; }
+
+        /* ESTILO DA APURAÇÃO */
+        .filtro-apuracao {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
-        /* RESULTADOS */
-        .card-resultados {
-            background: #000a12;
-            border-radius: 30px;
-            padding: 40px;
-            margin-top: 50px;
-            border: 2px solid #002d4d;
-        }
-
-        .cand-info {
-            display: flex; 
-            justify-content: space-between; 
-            font-size: 2rem; 
-            font-weight: 800;
-            margin-bottom: 15px;
-        }
+        .cand-info { display: flex; justify-content: space-between; font-size: 1.8rem; font-weight: 800; margin-bottom: 10px; }
 
         .barra-fundo {
-            height: 45px;
+            height: 40px;
             background: #001a2e;
-            border-radius: 22px;
+            border-radius: 20px;
             overflow: hidden;
-            margin-bottom: 35px;
+            margin-bottom: 25px;
             border: 1px solid #003a66;
         }
 
         .barra-progresso {
             height: 100%;
             background: linear-gradient(90deg, var(--verde-escuro), var(--verde-esmeralda));
-            transition: width 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+            transition: width 1s ease-in-out;
         }
 
         .total-votos {
             text-align: center;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             color: var(--verde-esmeralda);
             margin-top: 20px;
             font-weight: bold;
-        }
-
-        @media (max-width: 600px) {
-            header h1 { font-size: 2.2rem; }
-            .titulo-secao { font-size: 1.8rem; }
-            select { font-size: 1.6rem; }
-            .btn-confirmar { font-size: 1.8rem; padding: 25px; }
+            padding: 15px;
+            border-top: 1px solid #003a66;
         }
     </style>
 </head>
@@ -174,30 +142,28 @@
 
     <header>
         <h1>ELEIÇÕES 2026</h1>
-        <div id="relogio" style="font-size: 1.5rem; color: var(--texto-cinza); margin-top: 10px;">00:00:00</div>
+        <div id="relogio" style="font-size: 1.4rem; color: var(--texto-cinza);">00:00:00</div>
     </header>
 
     <div class="container">
         
-        <div class="sessao-voto">
-            <h2 class="titulo-secao">REGISTRAR VOTO</h2>
+        <div class="card">
+            <h2 class="titulo-secao">REGISTRAR MEU VOTO</h2>
 
             <div class="item-form">
-                <label>1. SELECIONE O ESTADO:</label>
-                <select id="estado" onchange="carregarCidades()">
-                    <option value="">Aguardando escolha...</option>
+                <label>ESTADO:</label>
+                <select id="voto-estado" onchange="carregarCidades('voto-estado', 'voto-cidade')"></select>
+            </div>
+
+            <div class="item-form">
+                <label>CIDADE:</label>
+                <select id="voto-cidade">
+                    <option value="">Selecione o estado</option>
                 </select>
             </div>
 
             <div class="item-form">
-                <label>2. SELECIONE A CIDADE:</label>
-                <select id="cidade">
-                    <option value="">Escolha o estado primeiro</option>
-                </select>
-            </div>
-
-            <div class="item-form">
-                <label>3. SELECIONE O CANDIDATO:</label>
+                <label>CANDIDATO:</label>
                 <select id="candidato">
                     <option value="0">Candidato A</option>
                     <option value="1">Candidato B</option>
@@ -209,10 +175,26 @@
             <button id="btnVotar" class="btn-confirmar" onclick="votar()">CONFIRMAR VOTO</button>
         </div>
 
-        <div class="card-resultados">
-            <h2 class="titulo-secao">APURAÇÃO NACIONAL</h2>
+        <div class="card">
+            <h2 class="titulo-secao">📊 APURAÇÃO</h2>
+
+            <div class="filtro-apuracao">
+                <div style="flex: 1;">
+                    <label style="font-size: 1.2rem;">FILTRAR POR ESTADO:</label>
+                    <select id="filtro-estado" onchange="carregarCidades('filtro-estado', 'filtro-cidade'); filtrarApuracao()" style="padding: 15px; font-size: 1.4rem;">
+                        <option value="BRASIL">TODO O BRASIL</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size: 1.2rem;">FILTRAR POR CIDADE:</label>
+                    <select id="filtro-cidade" onchange="filtrarApuracao()" style="padding: 15px; font-size: 1.4rem;">
+                        <option value="TODAS">TODAS AS CIDADES</option>
+                    </select>
+                </div>
+            </div>
+
             <div id="lista-resultados"></div>
-            <div id="contador-total" class="total-votos">Carregando dados...</div>
+            <div id="contador-total" class="total-votos">Aguardando dados...</div>
         </div>
 
     </div>
@@ -237,31 +219,39 @@
             return id;
         }
 
-        async function carregarCidades() {
-            const uf = document.getElementById("estado").value;
-            const s = document.getElementById("cidade");
-            if (!uf) return;
-            s.innerHTML = '<option>Carregando cidades...</option>';
-            const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
-            const d = await r.json();
-            s.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+        async function carregarCidades(idEstado, idCidade) {
+            const uf = document.getElementById(idEstado).value;
+            const s = document.getElementById(idCidade);
+            
+            if (!uf || uf === "BRASIL") {
+                s.innerHTML = '<option value="TODAS">TODAS AS CIDADES</option>';
+                return;
+            }
+
+            s.innerHTML = '<option>Carregando...</option>';
+            try {
+                const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+                const d = await r.json();
+                let options = idEstado === 'filtro-estado' ? '<option value="TODAS">TODAS AS CIDADES</option>' : '';
+                s.innerHTML = options + d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+            } catch (e) { s.innerHTML = '<option>Erro ao carregar</option>'; }
         }
 
         async function loadVotes() {
             const { data, error } = await supabaseClient.from('votes').select('*');
             if (!error) {
                 allVotes = data || [];
-                atualizarInterface();
+                filtrarApuracao();
             }
         }
 
         async function votar() {
-            const uf = document.getElementById("estado").value;
-            const cidade = document.getElementById("cidade").value;
+            const uf = document.getElementById("voto-estado").value;
+            const cidade = document.getElementById("voto-cidade").value;
             const cand = parseInt(document.getElementById("candidato").value);
 
-            if (!uf || !cidade) {
-                alert("AVISO: Escolha o Estado e a Cidade primeiro!");
+            if (!uf || !cidade || cidade === "Selecione o estado") {
+                alert("ERRO: Escolha o Estado e a Cidade primeiro!");
                 return;
             }
 
@@ -269,33 +259,48 @@
                 uf, cidade, candidato: cand, device_id: deviceUuid
             }]);
 
-            if (error) {
-                alert("Erro: " + error.message);
-            } else {
-                alert("VOTO COMPUTADO COM SUCESSO!");
+            if (error) alert("Erro: " + error.message);
+            else {
+                alert("VOTO CONFIRMADO!");
                 await loadVotes();
             }
         }
 
-        function atualizarInterface() {
+        function filtrarApuracao() {
+            const ufFiltro = document.getElementById("filtro-estado").value;
+            const cidFiltro = document.getElementById("filtro-cidade").value;
+
+            let votosFiltrados = allVotes;
+
+            if (ufFiltro !== "BRASIL") {
+                votosFiltrados = votosFiltrados.filter(v => v.uf === ufFiltro);
+            }
+            if (cidFiltro !== "TODAS") {
+                votosFiltrados = votosFiltrados.filter(v => v.cidade === cidFiltro);
+            }
+
+            atualizarGraficos(votosFiltrados);
+        }
+
+        function atualizarGraficos(votos) {
             let t = [0, 0, 0, 0];
-            allVotes.forEach(v => t[v.candidato]++);
+            votos.forEach(v => t[v.candidato]++);
             const validos = t[0] + t[1] + t[2];
 
             let html = '';
             nomes.forEach((nome, i) => {
                 const perc = validos ? ((t[i] / validos) * 100).toFixed(1) : 0;
                 html += `
-                    <div class="item-resultado">
+                    <div>
                         <div class="cand-info"><span>${nome}</span><span>${perc}%</span></div>
                         <div class="barra-fundo"><div class="barra-progresso" style="width:${perc}%"></div></div>
                     </div>`;
             });
 
             document.getElementById("lista-resultados").innerHTML = html;
-            document.getElementById("contador-total").innerText = "TOTAL DE VOTOS REGISTRADOS: " + allVotes.length;
+            document.getElementById("contador-total").innerText = `TOTAL DE VOTOS NESTE FILTRO: ${votos.length}`;
 
-            // Bloqueio se o dispositivo já votou
+            // Bloqueio se já votou
             if(allVotes.some(v => v.device_id === deviceUuid)) {
                 const btn = document.getElementById("btnVotar");
                 btn.disabled = true;
@@ -309,11 +314,14 @@
 
         window.onload = () => {
             deviceUuid = getDeviceUuid();
-            const s = document.getElementById("estado");
-            s.innerHTML = '<option value="">Escolha o Estado...</option>' + estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
-            loadVotes();
+            const sVoto = document.getElementById("voto-estado");
+            const sFiltro = document.getElementById("filtro-estado");
             
-            // Ouvinte em tempo real para novos votos
+            const ops = estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
+            sVoto.innerHTML = '<option value="">UF</option>' + ops;
+            sFiltro.innerHTML = '<option value="BRASIL">TODO O BRASIL</option>' + ops;
+            
+            loadVotes();
             supabaseClient.channel('realtime_votes').on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, loadVotes).subscribe();
         };
     </script>
