@@ -1,0 +1,214 @@
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>   <!-- ← Carrega as configurações -->
+
+<script>
+// ====================== SUPABASE CONFIG ======================
+if (!window.SUPABASE_CONFIG) {
+    alert("❌ Erro: Arquivo config.js não encontrado ou mal configurado!");
+    console.error("SUPABASE_CONFIG não definido");
+    throw new Error("Configuração Supabase ausente");
+}
+
+const supabaseClient = supabase.createClient(
+    window.SUPABASE_CONFIG.url,
+    window.SUPABASE_CONFIG.key
+);
+
+let rawData = [];        // todos os votos vindos do banco
+let charts = { main: null, pie: null };  // caso você queira usar gráficos depois
+
+// ==================== VARIÁVEIS GLOBAIS ====================
+let deviceId = '';
+let allVotes = rawData;   // mantemos compatibilidade com o código anterior
+let nomes = ["Candidato A", "Candidato B", "Candidato C"];
+let filtroAtual = 0;
+const estados = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+
+// ==================== DEVICE ID AUTOMÁTICO ====================
+function initializeDevice() {
+    if (!deviceId) {
+        deviceId = localStorage.getItem('device_id');
+        if (!deviceId) {
+            deviceId = crypto.randomUUID ? crypto.randomUUID() : `device-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            localStorage.setItem('device_id', deviceId);
+        }
+    }
+    return deviceId;
+}
+
+// ==================== RELÓGIO ====================
+function atualizarRelogio() {
+    const agora = new Date();
+    document.getElementById("relogio").innerText = agora.toLocaleTimeString('pt-BR', { hour12: false });
+}
+setInterval(atualizarRelogio, 1000);
+
+// ==================== CARREGAR ESTADOS E CIDADES (mantido igual) ====================
+const selectEstado = document.getElementById("estado");
+estados.forEach(uf => {
+    let op = document.createElement("option");
+    op.value = uf; 
+    op.textContent = uf;
+    selectEstado.appendChild(op);
+});
+
+function carregarCidades() {
+    const uf = document.getElementById("estado").value;
+    const selectCidade = document.getElementById("cidade");
+    selectCidade.innerHTML = "<option value=''>Selecione a cidade...</option>";
+
+    if (!uf) return;
+
+    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`)
+        .then(r => r.json())
+        .then(dados => {
+            dados.forEach(c => {
+                let op = document.createElement("option");
+                op.value = c.nome; 
+                op.textContent = c.nome;
+                selectCidade.appendChild(op);
+            });
+        });
+}
+
+// ==================== CARREGAR VOTOS DO SUPABASE ====================
+async function loadVotes() {
+    const { data, error } = await supabaseClient
+        .from('votes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Erro ao carregar votos:', error);
+        alert("Erro ao carregar dados do Supabase");
+    } else {
+        rawData = data || [];
+        allVotes = rawData;
+    }
+}
+
+// ==================== REALTIME ====================
+function setupRealtime() {
+    supabaseClient
+        .channel('public:votes')
+        .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'votes' },
+            (payload) => {
+                const exists = allVotes.some(v => v.id === payload.new.id);
+                if (!exists) {
+                    allVotes.unshift(payload.new);
+                    atualizar();
+                }
+            }
+        )
+        .subscribe();
+}
+
+// ==================== VOTAR ====================
+async function votar() {
+    const uf = document.getElementById("estado").value;
+    const cidade = document.getElementById("cidade").value;
+    const candIndex = parseInt(document.getElementById("candidato").value);
+
+    if (!uf || !cidade) {
+        alert("Selecione Estado e Cidade!");
+        return;
+    }
+
+    const { error } = await supabaseClient
+        .from('votes')
+        .insert({
+            device_id: deviceId,
+            uf: uf,
+            cidade: cidade,
+            candidato: candIndex
+        });
+
+    if (error) {
+        alert("Erro ao registrar voto: " + error.message);
+        console.error(error);
+        return;
+    }
+
+    await loadVotes();
+    atualizar();
+}
+
+// ==================== ZERAR VOTOS ====================
+async function zerarVotos() {
+    if (confirm("⚠️ Tem certeza que deseja zerar TODOS os votos?")) {
+        const { error } = await supabaseClient
+            .from('votes')
+            .delete()
+            .neq('id', null);   // deleta todos
+
+        if (error) {
+            alert("Erro ao zerar votos: " + error.message);
+        } else {
+            allVotes = [];
+            rawData = [];
+            atualizar();
+        }
+    }
+}
+
+// ==================== FILTRO E ATUALIZAÇÃO (mantido igual ao anterior) ====================
+function mudarFiltro(tipo) {
+    filtroAtual = tipo;
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === tipo));
+    atualizar();
+}
+
+function calcularVotos() {
+    let totais = [0, 0, 0, 0];
+    const ufSel = document.getElementById("estado").value;
+    const cidSel = document.getElementById("cidade").value;
+
+    let filtered = allVotes;
+
+    if (filtroAtual === 1 && ufSel) filtered = allVotes.filter(v => v.uf === ufSel);
+    else if (filtroAtual === 2 && ufSel && cidSel) filtered = allVotes.filter(v => v.uf === ufSel && v.cidade === cidSel);
+
+    filtered.forEach(v => {
+        if (v.candidato >= 0 && v.candidato <= 3) totais[v.candidato]++;
+    });
+
+    return totais;
+}
+
+function atualizar() {
+    // ... (todo o código de atualizar stats, donut, barras e últimos votos permanece igual ao que eu te passei anteriormente)
+    // Copie aqui o bloco completo de "function atualizar()" da versão anterior que enviei
+    const totais = calcularVotos();
+    const validos = totais[0] + totais[1] + totais[2];
+    const nulos = totais[3];
+    const totalGeral = validos + nulos;
+
+    // Stats rápidas
+    const secoesApuradas = Math.min(100, Math.floor(totalGeral / 12) + 23);
+    document.getElementById("stats-gerais").innerHTML = `
+        <div class="stat-card"><strong>${secoesApuradas}%</strong> Seções Apuradas</div>
+        <div class="stat-card"><strong>${totalGeral}</strong> Total de Votos</div>
+        <div class="stat-card"><strong>${validos}</strong> Válidos</div>
+        <div class="stat-card"><strong>${nulos}</strong> Nulos</div>
+    `;
+
+    // Donut, barras e últimos votos (mesmo código da versão anterior)
+    // ... (coloque aqui o restante do código de atualizar que você já tinha)
+}
+
+// ==================== INICIALIZAÇÃO ====================
+window.onload = async () => {
+    initializeDevice();
+    await loadVotes();
+    setupRealtime();
+    carregarCidades();
+    atualizar();
+
+    document.getElementById("estado").addEventListener("change", atualizar);
+    document.getElementById("cidade").addEventListener("change", atualizar);
+
+    setInterval(atualizar, 8000);
+};
+</script>
