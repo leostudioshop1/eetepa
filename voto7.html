@@ -131,7 +131,7 @@
     </header>
 
     <div class="container">
-        <!-- Mensagem de redirecionamento quando já votou -->
+        
         <div id="mensagem-ja-votou" class="mensagem-voto" style="display: none;">
             <h2>✅ Você já votou nesta eleição!</h2>
             <p>Redirecionando para o portal UOL em <span id="contador-redirecionamento">3</span> segundos...</p>
@@ -153,7 +153,6 @@
                     <button id="btnVotar" class="btn-confirmar" onclick="votar()">CONFIRMAR VOTO</button>
                 </div>
 
-                <!-- FILA DE ESPERA -->
                 <div id="fila-espera" class="fila-espera">
                     <h3>⏳ FILA DE ESPERA ATIVADA</h3>
                     <p>Estamos com alta demanda.</p>
@@ -174,15 +173,17 @@
         </div>
     </div>
 
-    <!-- Supabase CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-
-    <!-- Configuração (deve estar na mesma pasta do HTML) -->
+    <!-- Supabase + Config -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
 
     <script>
-        // Variáveis globais
-        let supabaseClient = null;
+        // ====================== CONEXÃO SUPABASE (igual ao JARVIS) ======================
+        const supabaseClient = supabase.createClient(
+            window.SUPABASE_CONFIG.url, 
+            window.SUPABASE_CONFIG.key
+        );
+
         let deviceUuid = "";
         let allVotes = [];
         const MAX_SIMULTANEOS = 2;
@@ -202,12 +203,12 @@
 
         // ====================== VERIFICAÇÃO DE VOTO ANTERIOR ======================
         async function verificarSeJaVotou() {
-            if (!supabaseClient) return false;
             const { data } = await supabaseClient
                 .from('votes')
                 .select('id')
                 .eq('device_id', deviceUuid)
                 .limit(1);
+
             return data && data.length > 0;
         }
 
@@ -229,7 +230,6 @@
 
         // ====================== FILA E HEARTBEAT ======================
         async function enviarHeartbeat() {
-            if (!supabaseClient) return;
             await supabaseClient.from('online_users').upsert({
                 device_id: deviceUuid,
                 entered_at: new Date().toISOString(),
@@ -243,13 +243,10 @@
 
         async function sairDaFila() {
             if (regressivoInterval) clearInterval(regressivoInterval);
-            if (supabaseClient) {
-                await supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
-            }
+            await supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
         }
 
         async function atualizarFila() {
-            if (!supabaseClient) return;
             const limiteTempo = new Date(Date.now() - 70 * 1000).toISOString();
 
             const { data } = await supabaseClient
@@ -297,25 +294,18 @@
             const s = document.getElementById("cidade");
             if (!uf) return;
             s.innerHTML = '<option>Carregando...</option>';
-            try {
-                const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
-                const d = await r.json();
-                s.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
-            } catch (e) {
-                s.innerHTML = '<option>Erro ao carregar cidades</option>';
-            }
+            const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+            const d = await r.json();
+            s.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
         }
 
         async function loadVotes() {
-            if (!supabaseClient) return;
             const { data } = await supabaseClient.from('votes').select('*');
             allVotes = data || [];
             atualizarInterface();
         }
 
         async function votar() {
-            if (!supabaseClient) return alert("Sistema não inicializado corretamente.");
-
             const uf = document.getElementById("estado").value;
             const cidade = document.getElementById("cidade").value;
             const cand = parseInt(document.getElementById("candidato").value);
@@ -344,8 +334,7 @@
             let html = '';
             nomes.forEach((nome, i) => {
                 const perc = validos ? ((t[i] / validos) * 100).toFixed(1) : 0;
-                html += `<div class="cand-info"><span>${nome}</span><span>${perc}%</span></div>
-                         <div class="barra-fundo"><div class="barra-progresso" style="width:${perc}%"></div></div>`;
+                html += `<div class="item-resultado"><div class="cand-info"><span>${nome}</span><span>${perc}%</span></div><div class="barra-fundo"><div class="barra-progresso" style="width:${perc}%"></div></div></div>`;
             });
 
             document.getElementById("lista-resultados").innerHTML = html;
@@ -353,18 +342,9 @@
         }
 
         // ====================== INICIALIZAÇÃO ======================
-        async function iniciarSistema() {
+        window.onload = async () => {
             deviceUuid = getDeviceUuid();
 
-            // Aguarda o config.js carregar
-            if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_KEY === 'undefined' || !SUPABASE_URL || !SUPABASE_KEY) {
-                alert("Erro: Arquivo config.js não encontrado ou mal configurado!\n\nVerifique se o arquivo 'config.js' está na mesma pasta do HTML.");
-                return;
-            }
-
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-            // Verifica se já votou
             const jaVotou = await verificarSeJaVotou();
 
             if (jaVotou) {
@@ -372,24 +352,20 @@
                 return;
             }
 
-            // Mostra a interface
             document.getElementById('area-principal').style.display = 'block';
 
-            // Carrega estados
-            const selectEstado = document.getElementById("estado");
-            selectEstado.innerHTML = '<option value="">Escolha o Estado...</option>' + 
-                                    estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
+            const s = document.getElementById("estado");
+            s.innerHTML = '<option value="">Escolha o Estado...</option>' + 
+                         estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
 
             await loadVotes();
             await entrarNaFila();
 
-            // Atualizações periódicas
             setInterval(atualizarFila, 30000);
             await atualizarFila();
 
             setInterval(enviarHeartbeat, 25000);
 
-            // Realtime
             supabaseClient.channel('realtime_votes')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, loadVotes)
                 .subscribe();
@@ -397,15 +373,10 @@
             supabaseClient.channel('realtime_online')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'online_users' }, atualizarFila)
                 .subscribe();
-        }
-
-        // Inicia quando a página carregar completamente
-        window.onload = iniciarSistema;
+        };
 
         window.addEventListener('beforeunload', () => {
-            if (supabaseClient && deviceUuid) {
-                supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
-            }
+            if (deviceUuid) supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
         });
     </script>
 </body>
