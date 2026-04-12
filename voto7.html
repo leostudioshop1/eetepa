@@ -17,13 +17,7 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background-color: var(--marinho);
-            color: var(--texto-branco);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            padding: 20px;
-            min-height: 100vh;
-        }
+        body { background-color: var(--marinho); color: var(--texto-branco); font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 20px; min-height: 100vh; }
 
         header { text-align: center; padding: 30px 0; border-bottom: 3px solid var(--verde-esmeralda); margin-bottom: 40px; }
         header h1 { font-size: clamp(2.5rem, 10vw, 3.5rem); color: var(--verde-esmeralda); text-shadow: 0 0 15px rgba(0, 245, 160, 0.4); }
@@ -48,13 +42,7 @@
 
         .item-form { margin-bottom: 40px; }
 
-        label {
-            display: block;
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            color: var(--texto-cinza);
-        }
+        label { display: block; font-size: 1.8rem; font-weight: 700; margin-bottom: 15px; color: var(--texto-cinza); }
 
         select {
             width: 100%;
@@ -84,8 +72,9 @@
         .fila-espera.active { display: block; }
 
         .fila-espera h3 { color: #ff9999; margin-bottom: 15px; font-size: 1.8rem; }
-        .posicao-fila { font-size: 3.8rem; font-weight: 900; color: var(--verde-esmeralda); margin: 15px 0; }
-        .status-fila { font-size: 1.4rem; color: #ffcc99; }
+        .posicao-fila { font-size: 3.8rem; font-weight: 900; color: var(--verde-esmeralda); margin: 10px 0; }
+        .contador-regressivo { font-size: 1.6rem; color: #ffcc99; font-weight: bold; margin: 15px 0; }
+        .status-fila { font-size: 1.3rem; color: #ffddaa; }
 
         .btn-confirmar {
             width: 100%;
@@ -113,19 +102,8 @@
         }
 
         .cand-info { display: flex; justify-content: space-between; font-size: 2rem; font-weight: 800; margin-bottom: 15px; }
-        .barra-fundo {
-            height: 45px;
-            background: #001a2e;
-            border-radius: 22px;
-            overflow: hidden;
-            margin-bottom: 35px;
-            border: 1px solid #003a66;
-        }
-        .barra-progresso {
-            height: 100%;
-            background: linear-gradient(90deg, var(--verde-escuro), var(--verde-esmeralda));
-            transition: width 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);
-        }
+        .barra-fundo { height: 45px; background: #001a2e; border-radius: 22px; overflow: hidden; margin-bottom: 35px; border: 1px solid #003a66; }
+        .barra-progresso { height: 100%; background: linear-gradient(90deg, var(--verde-escuro), var(--verde-esmeralda)); transition: width 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
         .total-votos { text-align: center; font-size: 1.8rem; color: var(--verde-esmeralda); margin-top: 20px; font-weight: bold; }
     </style>
 </head>
@@ -141,7 +119,6 @@
             <h2 class="titulo-secao">REGISTRAR VOTO</h2>
 
             <div id="area-votacao">
-                <!-- formulário de voto -->
                 <div class="item-form"><label>1. SELECIONE O ESTADO:</label><select id="estado" onchange="carregarCidades()"></select></div>
                 <div class="item-form"><label>2. SELECIONE A CIDADE:</label><select id="cidade"><option value="">Escolha o estado primeiro</option></select></div>
                 <div class="item-form"><label>3. SELECIONE O CANDIDATO:</label><select id="candidato">
@@ -153,12 +130,13 @@
                 <button id="btnVotar" class="btn-confirmar" onclick="votar()">CONFIRMAR VOTO</button>
             </div>
 
-            <!-- FILA DE ESPERA -->
+            <!-- FILA DE ESPERA COM CONTADOR REGRESSIVO -->
             <div id="fila-espera" class="fila-espera">
                 <h3>⏳ FILA DE ESPERA ATIVADA</h3>
-                <p>Estamos com alta demanda. Você está na fila.</p>
+                <p>Estamos com alta demanda.</p>
                 <div class="posicao-fila" id="posicao">1º</div>
-                <p id="mensagem-fila" class="status-fila">Verificando posição a cada 30 segundos...</p>
+                <div class="contador-regressivo" id="contador-regressivo">Sua vez em <span id="segundos">60</span> segundos</div>
+                <p id="mensagem-fila" class="status-fila">Atualizando automaticamente...</p>
                 <button onclick="sairDaFila()" style="margin-top:20px; padding:15px 30px; font-size:1.2rem; background:#333; color:white; border:none; border-radius:15px; cursor:pointer;">
                     Sair da Fila
                 </button>
@@ -180,9 +158,11 @@
 
         let deviceUuid = "";
         let allVotes = [];
-        const MAX_SIMULTANEOS = 2;
+        const MAX_SIMULTANEOS = 2;           // ← Limite rígido de 2 acessos simultâneos
         const nomes = ["Candidato A", "Candidato B", "Candidato C"];
         const estados = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+
+        let regressivoInterval = null;
 
         function getDeviceUuid() {
             let id = localStorage.getItem('voter_uuid');
@@ -193,15 +173,12 @@
             return id;
         }
 
-        // ==================== HEARTBEAT + FILA ====================
         async function enviarHeartbeat() {
-            await supabaseClient
-                .from('online_users')
-                .upsert({ 
-                    device_id: deviceUuid, 
-                    entered_at: new Date().toISOString(),
-                    last_active: new Date().toISOString()
-                }, { onConflict: 'device_id' });
+            await supabaseClient.from('online_users').upsert({
+                device_id: deviceUuid,
+                entered_at: new Date().toISOString(),
+                last_active: new Date().toISOString()
+            }, { onConflict: 'device_id' });
         }
 
         async function entrarNaFila() {
@@ -209,20 +186,23 @@
         }
 
         async function sairDaFila() {
+            if (regressivoInterval) clearInterval(regressivoInterval);
             await supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
             window.location.reload();
         }
 
         async function atualizarFila() {
+            const limiteTempo = new Date(Date.now() - 70 * 1000).toISOString(); // 70 segundos de tolerância
+
             const { data } = await supabaseClient
                 .from('online_users')
-                .select('device_id')
-                .gt('last_active', new Date(Date.now() - 60 * 1000).toISOString()) // só usuários ativos nos últimos 60s
+                .select('device_id, entered_at')
+                .gt('last_active', limiteTempo)
                 .order('entered_at', { ascending: true });
 
             if (!data) return;
 
-            const posicao = data.findIndex(user => user.device_id === deviceUuid) + 1;
+            const posicao = data.findIndex(u => u.device_id === deviceUuid) + 1;
 
             const filaDiv = document.getElementById('fila-espera');
             const areaVoto = document.getElementById('area-votacao');
@@ -230,13 +210,28 @@
             if (posicao > MAX_SIMULTANEOS) {
                 areaVoto.style.display = 'none';
                 filaDiv.classList.add('active');
+
                 document.getElementById('posicao').innerText = `${posicao}º`;
-                document.getElementById('mensagem-fila').innerHTML = `
-                    <strong>${posicao - MAX_SIMULTANEOS}</strong> pessoa(s) na sua frente.<br>
-                    <small>Atualizando a cada 30 segundos...</small>`;
+
+                const pessoasNaFrente = posicao - MAX_SIMULTANEOS;
+                const tempoEstimado = pessoasNaFrente * 45; // estimativa conservadora de 45s por vaga
+
+                document.getElementById('mensagem-fila').innerHTML = `${pessoasNaFrente} pessoa(s) na sua frente.`;
+
+                // Contador regressivo
+                let segundosRestantes = tempoEstimado;
+                document.getElementById('segundos').innerText = segundosRestantes;
+
+                if (regressivoInterval) clearInterval(regressivoInterval);
+                regressivoInterval = setInterval(() => {
+                    segundosRestantes--;
+                    if (segundosRestantes < 0) segundosRestantes = 0;
+                    document.getElementById('segundos').innerText = segundosRestantes;
+                }, 1000);
             } else {
                 areaVoto.style.display = 'block';
                 filaDiv.classList.remove('active');
+                if (regressivoInterval) clearInterval(regressivoInterval);
             }
         }
 
@@ -301,23 +296,20 @@
         window.onload = async () => {
             deviceUuid = getDeviceUuid();
 
-            // Estados
             const s = document.getElementById("estado");
             s.innerHTML = '<option value="">Escolha o Estado...</option>' + estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
 
             await loadVotes();
-
-            // Entrar na fila + heartbeat
             await entrarNaFila();
 
-            // Atualiza posição da fila a cada 30 segundos
+            // Atualiza fila a cada 30 segundos
             setInterval(atualizarFila, 30000);
-            await atualizarFila(); // primeira verificação imediata
+            await atualizarFila();
 
-            // Heartbeat a cada 30 segundos
-            setInterval(enviarHeartbeat, 30000);
+            // Heartbeat a cada 25 segundos (mais frequente que a limpeza)
+            setInterval(enviarHeartbeat, 25000);
 
-            // Real-time
+            // Real-time listeners
             supabaseClient.channel('realtime_votes')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, loadVotes)
                 .subscribe();
