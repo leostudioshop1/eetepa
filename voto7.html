@@ -1,149 +1,385 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Votação Segura</title>
-</head>
-
-<body style="background:#001220;color:white;font-family:sans-serif;text-align:center;padding:40px">
-
-<h1>ELEIÇÕES 2026</h1>
-
-<select id="estado">
-<option value="">Estado</option>
-<option value="PA">PA</option>
-<option value="SP">SP</option>
-</select>
-
-<select id="cidade">
-<option value="">Cidade</option>
-<option value="Rio Maria">Rio Maria</option>
-<option value="São Paulo">São Paulo</option>
-</select>
-
-<select id="candidato">
-<option value="0">Candidato A</option>
-<option value="1">Candidato B</option>
-<option value="2">Candidato C</option>
-<option value="3">Branco/Nulo</option>
-</select>
-
-<br><br>
-<button onclick="votar()" style="padding:20px;font-size:20px">VOTAR</button>
-
-<div id="status" style="margin-top:20px;color:#00f5a0"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script>
-let supabaseClient = null;
-
-try {
-    if (window.supabase) {
-        supabaseClient = window.supabase.createClient(
-            "https://osofdmgokrxdzsxozsrf.supabase.co",
-            "SUA_PUBLIC_KEY_AQUI"
-        );
-    } else {
-        document.getElementById("status").innerText = "Erro ao carregar Supabase.";
-    }
-} catch (e) {
-    document.getElementById("status").innerText = "Erro crítico.";
-}
-
-// ================= SEGURANÇA =================
-let deviceUuid = localStorage.getItem("voter_uuid");
-
-if (!deviceUuid) {
-    deviceUuid = crypto.randomUUID();
-    localStorage.setItem("voter_uuid", deviceUuid);
-}
-
-let lastAction = 0;
-
-function antiSpam() {
-    const now = Date.now();
-    if (now - lastAction < 5000) {
-        alert("Aguarde...");
-        return false;
-    }
-    lastAction = now;
-    return true;
-}
-
-function validar(uf, cidade, candidato) {
-    return uf && cidade && candidato >= 0 && candidato <= 3;
-}
-
-// ================= VOTAÇÃO =================
-async function votar() {
-
-    if (!supabaseClient) {
-        alert("Sistema indisponível.");
-        return;
-    }
-
-    if (!antiSpam()) return;
-
-    const uf = document.getElementById("estado").value;
-    const cidade = document.getElementById("cidade").value;
-    const candidato = parseInt(document.getElementById("candidato").value);
-
-    if (!validar(uf, cidade, candidato)) {
-        alert("Preencha tudo corretamente!");
-        return;
-    }
-
-    document.getElementById("status").innerText = "Enviando voto...";
-
-    try {
-        const { error } = await supabaseClient
-            .from("votes")
-            .insert([{
-                uf,
-                cidade,
-                candidato,
-                device_id: deviceUuid
-            }]);
-
-        if (error) {
-            if (error.message.includes("duplicate")) {
-                alert("Você já votou!");
-            } else {
-                alert("Erro: " + error.message);
-            }
-            return;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SISTEMA DE VOTAÇÃO 2026</title>
+    
+    <style>
+        :root {
+            --marinho: #001220;
+            --marinho-claro: #00213b;
+            --verde-esmeralda: #00f5a0;
+            --verde-escuro: #00a86b;
+            --texto-branco: #ffffff;
+            --texto-cinza: #ced4da;
+            --vermelho: #ff4d4d;
         }
 
-        document.getElementById("status").innerText = "✅ Voto registrado!";
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: var(--marinho);
+            color: var(--texto-branco);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        header { text-align: center; padding: 30px 0; border-bottom: 3px solid var(--verde-esmeralda); margin-bottom: 40px; }
+        header h1 { font-size: clamp(2.5rem, 10vw, 3.5rem); color: var(--verde-esmeralda); text-shadow: 0 0 15px rgba(0, 245, 160, 0.4); }
+
+        .container { max-width: 850px; margin: 0 auto; }
+
+        .sessao-voto {
+            background: var(--marinho-claro);
+            border: 2px solid #003a66;
+            border-radius: 30px;
+            padding: clamp(25px, 6vw, 50px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .titulo-secao {
+            font-size: 2.2rem;
+            margin-bottom: 30px;
+            color: var(--verde-esmeralda);
+            border-left: 10px solid var(--verde-esmeralda);
+            padding-left: 20px;
+        }
+
+        .item-form { margin-bottom: 40px; }
+
+        label { display: block; font-size: 1.8rem; font-weight: 700; margin-bottom: 15px; color: var(--texto-cinza); }
+
+        select {
+            width: 100%;
+            padding: 25px;
+            font-size: 2rem;
+            background: #000a12;
+            border: 3px solid #004d85;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300f5a0' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 25px center;
+            background-size: 30px;
+        }
+
+        .fila-espera {
+            background: #2a0f1f;
+            border: 2px solid #ff4d4d;
+            border-radius: 25px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+        .fila-espera.active { display: block; }
+
+        .fila-espera h3 { color: #ff9999; margin-bottom: 15px; font-size: 1.8rem; }
+        .posicao-fila { font-size: 3.8rem; font-weight: 900; color: var(--verde-esmeralda); margin: 10px 0; }
+        .contador-regressivo { font-size: 1.6rem; color: #ffcc99; font-weight: bold; margin: 15px 0; }
+        .status-fila { font-size: 1.3rem; color: #ffddaa; }
+
+        .mensagem-voto {
+            background: #1a3c2e;
+            border: 2px solid var(--verde-esmeralda);
+            border-radius: 25px;
+            padding: 40px;
+            text-align: center;
+            font-size: 1.8rem;
+            margin: 30px 0;
+        }
+
+        .btn-confirmar {
+            width: 100%;
+            padding: 35px;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--verde-escuro), var(--verde-esmeralda));
+            color: var(--marinho);
+            border: none;
+            border-radius: 25px;
+            font-weight: 900;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 10px 30px rgba(0, 168, 107, 0.4);
+            margin-top: 20px;
+            transition: all 0.2s;
+        }
+        .btn-confirmar:disabled { background: #223e35; color: #555; cursor: not-allowed; }
+
+        .card-resultados {
+            background: #000a12;
+            border-radius: 30px;
+            padding: 40px;
+            margin-top: 50px;
+            border: 2px solid #002d4d;
+        }
+
+        .cand-info { display: flex; justify-content: space-between; font-size: 2rem; font-weight: 800; margin-bottom: 15px; }
+        .barra-fundo { height: 45px; background: #001a2e; border-radius: 22px; overflow: hidden; margin-bottom: 35px; border: 1px solid #003a66; }
+        .barra-progresso { height: 100%; background: linear-gradient(90deg, var(--verde-escuro), var(--verde-esmeralda)); transition: width 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
+        .total-votos { text-align: center; font-size: 1.8rem; color: var(--verde-esmeralda); margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>ELEIÇÕES 2026</h1>
+        <div id="relogio" style="font-size: 1.5rem; color: var(--texto-cinza); margin-top: 10px;">00:00:00</div>
+    </header>
+
+    <div class="container">
         
-        setTimeout(() => {
-            window.location.href = "https://www.uol.com.br";
-        }, 1500);
+        <!-- Mensagem de redirecionamento quando já votou -->
+        <div id="mensagem-ja-votou" class="mensagem-voto" style="display: none;">
+            <h2>✅ Você já votou nesta eleição!</h2>
+            <p>Redirecionando para o portal UOL em <span id="contador-redirecionamento">3</span> segundos...</p>
+        </div>
 
-    } catch (e) {
-        document.getElementById("status").innerText = "Erro inesperado.";
-    }
-}
+        <div id="area-principal" style="display: none;">
+            <div class="sessao-voto">
+                <h2 class="titulo-secao">REGISTRAR VOTO</h2>
 
-// ================= VERIFICAÇÃO =================
-async function verificar() {
-    if (!supabaseClient) return;
+                <div id="area-votacao">
+                    <div class="item-form"><label>1. SELECIONE O ESTADO:</label><select id="estado" onchange="carregarCidades()"></select></div>
+                    <div class="item-form"><label>2. SELECIONE A CIDADE:</label><select id="cidade"><option value="">Escolha o estado primeiro</option></select></div>
+                    <div class="item-form"><label>3. SELECIONE O CANDIDATO:</label><select id="candidato">
+                        <option value="0">Candidato A</option>
+                        <option value="1">Candidato B</option>
+                        <option value="2">Candidato C</option>
+                        <option value="3">VOTO EM BRANCO / NULO</option>
+                    </select></div>
+                    <button id="btnVotar" class="btn-confirmar" onclick="votar()">CONFIRMAR VOTO</button>
+                </div>
 
-    const { data } = await supabaseClient
-        .from("votes")
-        .select("id")
-        .eq("device_id", deviceUuid)
-        .limit(1);
+                <!-- FILA DE ESPERA -->
+                <div id="fila-espera" class="fila-espera">
+                    <h3>⏳ FILA DE ESPERA ATIVADA</h3>
+                    <p>Estamos com alta demanda.</p>
+                    <div class="posicao-fila" id="posicao">1º</div>
+                    <div class="contador-regressivo" id="contador-regressivo">Sua vez em <span id="segundos">60</span> segundos</div>
+                    <p id="mensagem-fila" class="status-fila">Atualizando automaticamente...</p>
+                    <button onclick="sairDaFila()" style="margin-top:20px; padding:15px 30px; font-size:1.2rem; background:#333; color:white; border:none; border-radius:15px; cursor:pointer;">
+                        Sair da Fila
+                    </button>
+                </div>
+            </div>
 
-    if (data && data.length > 0) {
-        document.getElementById("status").innerText = "Você já votou!";
-    }
-}
+            <div class="card-resultados">
+                <h2 class="titulo-secao">APURAÇÃO NACIONAL</h2>
+                <div id="lista-resultados"></div>
+                <div id="contador-total" class="total-votos">Carregando dados...</div>
+            </div>
+        </div>
+    </div>
 
-verificar();
-</script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script>
+        const SUPABASE_URL = "https://osofdmgokrxdzsxozsrf.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        let deviceUuid = "";
+        let allVotes = [];
+        const MAX_SIMULTANEOS = 2;
+        const nomes = ["Candidato A", "Candidato B", "Candidato C"];
+        const estados = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+
+        let regressivoInterval = null;
+
+        function getDeviceUuid() {
+            let id = localStorage.getItem('voter_uuid');
+            if (!id) {
+                id = crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now();
+                localStorage.setItem('voter_uuid', id);
+            }
+            return id;
+        }
+
+        // ====================== VERIFICAÇÃO DE VOTO ANTERIOR ======================
+        async function verificarSeJaVotou() {
+            const { data } = await supabaseClient
+                .from('votes')
+                .select('id')
+                .eq('device_id', deviceUuid)
+                .limit(1);
+
+            return data && data.length > 0;
+        }
+
+        async function redirecionarParaUOL() {
+            const msgDiv = document.getElementById('mensagem-ja-votou');
+            const contadorEl = document.getElementById('contador-redirecionamento');
+            msgDiv.style.display = 'block';
+
+            let segundos = 3;
+            const interval = setInterval(() => {
+                segundos--;
+                contadorEl.innerText = segundos;
+                if (segundos <= 0) {
+                    clearInterval(interval);
+                    window.location.href = "https://www.uol.com.br";
+                }
+            }, 1000);
+        }
+
+        // ====================== FILA E HEARTBEAT ======================
+        async function enviarHeartbeat() {
+            await supabaseClient.from('online_users').upsert({
+                device_id: deviceUuid,
+                entered_at: new Date().toISOString(),
+                last_active: new Date().toISOString()
+            }, { onConflict: 'device_id' });
+        }
+
+        async function entrarNaFila() {
+            await enviarHeartbeat();
+        }
+
+        async function sairDaFila() {
+            if (regressivoInterval) clearInterval(regressivoInterval);
+            await supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
+        }
+
+        async function atualizarFila() {
+            const limiteTempo = new Date(Date.now() - 70 * 1000).toISOString();
+
+            const { data } = await supabaseClient
+                .from('online_users')
+                .select('device_id, entered_at')
+                .gt('last_active', limiteTempo)
+                .order('entered_at', { ascending: true });
+
+            if (!data) return;
+
+            const posicao = data.findIndex(u => u.device_id === deviceUuid) + 1;
+
+            const filaDiv = document.getElementById('fila-espera');
+            const areaVoto = document.getElementById('area-votacao');
+
+            if (posicao > MAX_SIMULTANEOS) {
+                areaVoto.style.display = 'none';
+                filaDiv.classList.add('active');
+
+                document.getElementById('posicao').innerText = `${posicao}º`;
+                const pessoasNaFrente = posicao - MAX_SIMULTANEOS;
+                const tempoEstimado = Math.max(30, pessoasNaFrente * 45);
+
+                document.getElementById('mensagem-fila').innerHTML = `${pessoasNaFrente} pessoa(s) na sua frente.`;
+
+                let segundosRestantes = tempoEstimado;
+                document.getElementById('segundos').innerText = segundosRestantes;
+
+                if (regressivoInterval) clearInterval(regressivoInterval);
+                regressivoInterval = setInterval(() => {
+                    segundosRestantes--;
+                    if (segundosRestantes < 0) segundosRestantes = 0;
+                    document.getElementById('segundos').innerText = segundosRestantes;
+                }, 1000);
+            } else {
+                areaVoto.style.display = 'block';
+                filaDiv.classList.remove('active');
+                if (regressivoInterval) clearInterval(regressivoInterval);
+            }
+        }
+
+        // ====================== VOTAÇÃO ======================
+        async function carregarCidades() {
+            const uf = document.getElementById("estado").value;
+            const s = document.getElementById("cidade");
+            if (!uf) return;
+            s.innerHTML = '<option>Carregando...</option>';
+            const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+            const d = await r.json();
+            s.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+        }
+
+        async function loadVotes() {
+            const { data } = await supabaseClient.from('votes').select('*');
+            allVotes = data || [];
+            atualizarInterface();
+        }
+
+        async function votar() {
+            const uf = document.getElementById("estado").value;
+            const cidade = document.getElementById("cidade").value;
+            const cand = parseInt(document.getElementById("candidato").value);
+
+            if (!uf || !cidade) return alert("Escolha Estado e Cidade!");
+
+            const { error } = await supabaseClient.from('votes').insert([{
+                uf, cidade, candidato: cand, device_id: deviceUuid
+            }]);
+
+            if (error) alert("Erro: " + error.message);
+            else {
+                alert("✅ VOTO COMPUTADO COM SUCESSO!");
+                await sairDaFila();
+                // Redireciona imediatamente após votar
+                setTimeout(() => {
+                    window.location.href = "https://www.uol.com.br";
+                }, 1500);
+            }
+        }
+
+        function atualizarInterface() {
+            let t = [0, 0, 0, 0];
+            allVotes.forEach(v => t[v.candidato]++);
+            const validos = t[0] + t[1] + t[2];
+
+            let html = '';
+            nomes.forEach((nome, i) => {
+                const perc = validos ? ((t[i] / validos) * 100).toFixed(1) : 0;
+                html += `<div class="item-resultado"><div class="cand-info"><span>${nome}</span><span>${perc}%</span></div><div class="barra-fundo"><div class="barra-progresso" style="width:${perc}%"></div></div></div>`;
+            });
+
+            document.getElementById("lista-resultados").innerHTML = html;
+            document.getElementById("contador-total").innerText = `TOTAL DE VOTOS REGISTRADOS: ${allVotes.length}`;
+        }
+
+        // ====================== INICIALIZAÇÃO ======================
+        window.onload = async () => {
+            deviceUuid = getDeviceUuid();
+
+            // Verifica se já votou
+            const jaVotou = await verificarSeJaVotou();
+
+            if (jaVotou) {
+                redirecionarParaUOL();
+                return; // para a execução aqui
+            }
+
+            // Se não votou, mostra a interface normal
+            document.getElementById('area-principal').style.display = 'block';
+
+            // Carrega estados
+            const s = document.getElementById("estado");
+            s.innerHTML = '<option value="">Escolha o Estado...</option>' + 
+                         estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
+
+            await loadVotes();
+            await entrarNaFila();
+
+            // Atualizações em tempo real
+            setInterval(atualizarFila, 30000);
+            await atualizarFila();
+
+            setInterval(enviarHeartbeat, 25000);
+
+            supabaseClient.channel('realtime_votes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, loadVotes)
+                .subscribe();
+
+            supabaseClient.channel('realtime_online')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'online_users' }, atualizarFila)
+                .subscribe();
+        };
+
+        window.addEventListener('beforeunload', () => {
+            if (deviceUuid) supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
+        });
+    </script>
 </body>
 </html>
