@@ -72,10 +72,20 @@
             background-size: 30px;
         }
 
-        select:focus {
-            border-color: var(--verde-esmeralda);
-            box-shadow: 0 0 20px rgba(0, 245, 160, 0.2);
+        .fila-espera {
+            background: #2a0f1f;
+            border: 2px solid #ff4d4d;
+            border-radius: 25px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+            display: none;
         }
+        .fila-espera.active { display: block; }
+
+        .fila-espera h3 { color: #ff9999; margin-bottom: 15px; font-size: 1.8rem; }
+        .posicao-fila { font-size: 3.8rem; font-weight: 900; color: var(--verde-esmeralda); margin: 15px 0; }
+        .status-fila { font-size: 1.4rem; color: #ffcc99; }
 
         .btn-confirmar {
             width: 100%;
@@ -92,39 +102,7 @@
             margin-top: 20px;
             transition: all 0.2s;
         }
-
-        .btn-confirmar:active { transform: scale(0.97); }
-        .btn-confirmar:disabled {
-            background: #223e35;
-            color: #555;
-            cursor: not-allowed;
-        }
-
-        /* FILA DE ESPERA */
-        .fila-espera {
-            background: #2a0f1f;
-            border: 2px solid #ff4d4d;
-            border-radius: 25px;
-            padding: 30px;
-            text-align: center;
-            margin: 20px 0;
-            display: none;
-        }
-
-        .fila-espera.active { display: block; }
-
-        .fila-espera h3 {
-            color: #ff9999;
-            margin-bottom: 15px;
-            font-size: 1.8rem;
-        }
-
-        .posicao-fila {
-            font-size: 3.5rem;
-            font-weight: 900;
-            color: var(--verde-esmeralda);
-            margin: 15px 0;
-        }
+        .btn-confirmar:disabled { background: #223e35; color: #555; cursor: not-allowed; }
 
         .card-resultados {
             background: #000a12;
@@ -134,10 +112,7 @@
             border: 2px solid #002d4d;
         }
 
-        .cand-info {
-            display: flex; justify-content: space-between; font-size: 2rem; font-weight: 800; margin-bottom: 15px;
-        }
-
+        .cand-info { display: flex; justify-content: space-between; font-size: 2rem; font-weight: 800; margin-bottom: 15px; }
         .barra-fundo {
             height: 45px;
             background: #001a2e;
@@ -146,16 +121,12 @@
             margin-bottom: 35px;
             border: 1px solid #003a66;
         }
-
         .barra-progresso {
             height: 100%;
             background: linear-gradient(90deg, var(--verde-escuro), var(--verde-esmeralda));
             transition: width 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);
         }
-
         .total-votos { text-align: center; font-size: 1.8rem; color: var(--verde-esmeralda); margin-top: 20px; font-weight: bold; }
-
-        .status { text-align: center; padding: 15px; border-radius: 15px; margin: 15px 0; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -166,45 +137,28 @@
     </header>
 
     <div class="container">
-        
         <div class="sessao-voto">
             <h2 class="titulo-secao">REGISTRAR VOTO</h2>
 
             <div id="area-votacao">
-
-                <div class="item-form">
-                    <label>1. SELECIONE O ESTADO:</label>
-                    <select id="estado" onchange="carregarCidades()">
-                        <option value="">Aguardando escolha...</option>
-                    </select>
-                </div>
-
-                <div class="item-form">
-                    <label>2. SELECIONE A CIDADE:</label>
-                    <select id="cidade">
-                        <option value="">Escolha o estado primeiro</option>
-                    </select>
-                </div>
-
-                <div class="item-form">
-                    <label>3. SELECIONE O CANDIDATO:</label>
-                    <select id="candidato">
-                        <option value="0">Candidato A</option>
-                        <option value="1">Candidato B</option>
-                        <option value="2">Candidato C</option>
-                        <option value="3">VOTO EM BRANCO / NULO</option>
-                    </select>
-                </div>
-
+                <!-- formulário de voto -->
+                <div class="item-form"><label>1. SELECIONE O ESTADO:</label><select id="estado" onchange="carregarCidades()"></select></div>
+                <div class="item-form"><label>2. SELECIONE A CIDADE:</label><select id="cidade"><option value="">Escolha o estado primeiro</option></select></div>
+                <div class="item-form"><label>3. SELECIONE O CANDIDATO:</label><select id="candidato">
+                    <option value="0">Candidato A</option>
+                    <option value="1">Candidato B</option>
+                    <option value="2">Candidato C</option>
+                    <option value="3">VOTO EM BRANCO / NULO</option>
+                </select></div>
                 <button id="btnVotar" class="btn-confirmar" onclick="votar()">CONFIRMAR VOTO</button>
             </div>
 
             <!-- FILA DE ESPERA -->
             <div id="fila-espera" class="fila-espera">
-                <h3>⏳ SISTEMA COM LIMITE DE ACESSO</h3>
-                <p>Estamos com alta demanda. Você está na fila de espera.</p>
+                <h3>⏳ FILA DE ESPERA ATIVADA</h3>
+                <p>Estamos com alta demanda. Você está na fila.</p>
                 <div class="posicao-fila" id="posicao">1º</div>
-                <p id="mensagem-fila">Aguarde... Liberaremos sua votação em breve.</p>
+                <p id="mensagem-fila" class="status-fila">Verificando posição a cada 30 segundos...</p>
                 <button onclick="sairDaFila()" style="margin-top:20px; padding:15px 30px; font-size:1.2rem; background:#333; color:white; border:none; border-radius:15px; cursor:pointer;">
                     Sair da Fila
                 </button>
@@ -216,7 +170,6 @@
             <div id="lista-resultados"></div>
             <div id="contador-total" class="total-votos">Carregando dados...</div>
         </div>
-
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -225,15 +178,11 @@
         const SUPABASE_KEY = "sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let allVotes = [];
         let deviceUuid = "";
-        let minhaPosicaoNaFila = null;
-        let channelOnline = null;
-
+        let allVotes = [];
+        const MAX_SIMULTANEOS = 2;
         const nomes = ["Candidato A", "Candidato B", "Candidato C"];
         const estados = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
-
-        const MAX_SIMULTANEOS = 2; // ← Limite de pessoas votando ao mesmo tempo
 
         function getDeviceUuid() {
             let id = localStorage.getItem('voter_uuid');
@@ -244,14 +193,19 @@
             return id;
         }
 
-        // ==================== FILA DE ESPERA ====================
+        // ==================== HEARTBEAT + FILA ====================
+        async function enviarHeartbeat() {
+            await supabaseClient
+                .from('online_users')
+                .upsert({ 
+                    device_id: deviceUuid, 
+                    entered_at: new Date().toISOString(),
+                    last_active: new Date().toISOString()
+                }, { onConflict: 'device_id' });
+        }
 
         async function entrarNaFila() {
-            const { error } = await supabaseClient
-                .from('online_users')
-                .upsert({ device_id: deviceUuid, entered_at: new Date().toISOString() }, { onConflict: 'device_id' });
-
-            if (error) console.error("Erro ao entrar na fila:", error);
+            await enviarHeartbeat();
         }
 
         async function sairDaFila() {
@@ -262,45 +216,45 @@
         async function atualizarFila() {
             const { data } = await supabaseClient
                 .from('online_users')
-                .select('device_id, entered_at')
+                .select('device_id')
+                .gt('last_active', new Date(Date.now() - 60 * 1000).toISOString()) // só usuários ativos nos últimos 60s
                 .order('entered_at', { ascending: true });
 
             if (!data) return;
 
             const posicao = data.findIndex(user => user.device_id === deviceUuid) + 1;
 
+            const filaDiv = document.getElementById('fila-espera');
+            const areaVoto = document.getElementById('area-votacao');
+
             if (posicao > MAX_SIMULTANEOS) {
-                // Está na fila
-                document.getElementById('area-votacao').style.display = 'none';
-                const filaDiv = document.getElementById('fila-espera');
+                areaVoto.style.display = 'none';
                 filaDiv.classList.add('active');
                 document.getElementById('posicao').innerText = `${posicao}º`;
-                document.getElementById('mensagem-fila').innerText = `Há ${posicao - MAX_SIMULTANEOS} pessoa(s) na sua frente.`;
+                document.getElementById('mensagem-fila').innerHTML = `
+                    <strong>${posicao - MAX_SIMULTANEOS}</strong> pessoa(s) na sua frente.<br>
+                    <small>Atualizando a cada 30 segundos...</small>`;
             } else {
-                // Pode votar
-                document.getElementById('area-votacao').style.display = 'block';
-                document.getElementById('fila-espera').classList.remove('active');
+                areaVoto.style.display = 'block';
+                filaDiv.classList.remove('active');
             }
         }
 
         // ==================== VOTAÇÃO ====================
-
         async function carregarCidades() {
             const uf = document.getElementById("estado").value;
             const s = document.getElementById("cidade");
             if (!uf) return;
-            s.innerHTML = '<option>Carregando cidades...</option>';
+            s.innerHTML = '<option>Carregando...</option>';
             const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
             const d = await r.json();
             s.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
         }
 
         async function loadVotes() {
-            const { data, error } = await supabaseClient.from('votes').select('*');
-            if (!error) {
-                allVotes = data || [];
-                atualizarInterface();
-            }
+            const { data } = await supabaseClient.from('votes').select('*');
+            allVotes = data || [];
+            atualizarInterface();
         }
 
         async function votar() {
@@ -308,20 +262,16 @@
             const cidade = document.getElementById("cidade").value;
             const cand = parseInt(document.getElementById("candidato").value);
 
-            if (!uf || !cidade) {
-                alert("AVISO: Escolha o Estado e a Cidade primeiro!");
-                return;
-            }
+            if (!uf || !cidade) return alert("Escolha Estado e Cidade!");
 
             const { error } = await supabaseClient.from('votes').insert([{
                 uf, cidade, candidato: cand, device_id: deviceUuid
             }]);
 
-            if (error) {
-                alert("Erro: " + error.message);
-            } else {
+            if (error) alert("Erro: " + error.message);
+            else {
                 alert("✅ VOTO COMPUTADO COM SUCESSO!");
-                await sairDaFila(); // Remove da fila após votar
+                await sairDaFila();
                 await loadVotes();
             }
         }
@@ -334,18 +284,13 @@
             let html = '';
             nomes.forEach((nome, i) => {
                 const perc = validos ? ((t[i] / validos) * 100).toFixed(1) : 0;
-                html += `
-                    <div class="item-resultado">
-                        <div class="cand-info"><span>${nome}</span><span>${perc}%</span></div>
-                        <div class="barra-fundo"><div class="barra-progresso" style="width:${perc}%"></div></div>
-                    </div>`;
+                html += `<div class="item-resultado"><div class="cand-info"><span>${nome}</span><span>${perc}%</span></div><div class="barra-fundo"><div class="barra-progresso" style="width:${perc}%"></div></div></div>`;
             });
 
             document.getElementById("lista-resultados").innerHTML = html;
             document.getElementById("contador-total").innerText = `TOTAL DE VOTOS REGISTRADOS: ${allVotes.length}`;
 
-            // Bloqueio se já votou
-            if(allVotes.some(v => v.device_id === deviceUuid)) {
+            if (allVotes.some(v => v.device_id === deviceUuid)) {
                 const btn = document.getElementById("btnVotar");
                 btn.disabled = true;
                 btn.innerText = "VOTO JÁ ENVIADO";
@@ -353,45 +298,37 @@
         }
 
         // ==================== INICIALIZAÇÃO ====================
-
-        setInterval(() => {
-            document.getElementById("relogio").innerText = new Date().toLocaleTimeString('pt-BR');
-        }, 1000);
-
         window.onload = async () => {
             deviceUuid = getDeviceUuid();
 
-            // Popular estados
+            // Estados
             const s = document.getElementById("estado");
-            s.innerHTML = '<option value="">Escolha o Estado...</option>' + 
-                         estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
+            s.innerHTML = '<option value="">Escolha o Estado...</option>' + estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
 
-            // Carregar votos
             await loadVotes();
 
-            // Entrar na fila de espera
+            // Entrar na fila + heartbeat
             await entrarNaFila();
 
-            // Atualizar fila a cada 2 segundos
-            setInterval(atualizarFila, 2000);
-            await atualizarFila();
+            // Atualiza posição da fila a cada 30 segundos
+            setInterval(atualizarFila, 30000);
+            await atualizarFila(); // primeira verificação imediata
 
-            // Real-time votes
+            // Heartbeat a cada 30 segundos
+            setInterval(enviarHeartbeat, 30000);
+
+            // Real-time
             supabaseClient.channel('realtime_votes')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, loadVotes)
                 .subscribe();
 
-            // Real-time fila
             supabaseClient.channel('realtime_online')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'online_users' }, atualizarFila)
                 .subscribe();
         };
 
-        // Sair da fila quando fechar a aba/janela
         window.addEventListener('beforeunload', () => {
-            if (deviceUuid) {
-                supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
-            }
+            if (deviceUuid) supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
         });
     </script>
 </body>
