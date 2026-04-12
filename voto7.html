@@ -17,7 +17,13 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: var(--marinho); color: var(--texto-branco); font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 20px; min-height: 100vh; }
+        body {
+            background-color: var(--marinho);
+            color: var(--texto-branco);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
 
         header { text-align: center; padding: 30px 0; border-bottom: 3px solid var(--verde-esmeralda); margin-bottom: 40px; }
         header h1 { font-size: clamp(2.5rem, 10vw, 3.5rem); color: var(--verde-esmeralda); text-shadow: 0 0 15px rgba(0, 245, 160, 0.4); }
@@ -76,6 +82,16 @@
         .contador-regressivo { font-size: 1.6rem; color: #ffcc99; font-weight: bold; margin: 15px 0; }
         .status-fila { font-size: 1.3rem; color: #ffddaa; }
 
+        .mensagem-voto {
+            background: #1a3c2e;
+            border: 2px solid var(--verde-esmeralda);
+            border-radius: 25px;
+            padding: 40px;
+            text-align: center;
+            font-size: 1.8rem;
+            margin: 30px 0;
+        }
+
         .btn-confirmar {
             width: 100%;
             padding: 35px;
@@ -115,38 +131,47 @@
     </header>
 
     <div class="container">
-        <div class="sessao-voto">
-            <h2 class="titulo-secao">REGISTRAR VOTO</h2>
-
-            <div id="area-votacao">
-                <div class="item-form"><label>1. SELECIONE O ESTADO:</label><select id="estado" onchange="carregarCidades()"></select></div>
-                <div class="item-form"><label>2. SELECIONE A CIDADE:</label><select id="cidade"><option value="">Escolha o estado primeiro</option></select></div>
-                <div class="item-form"><label>3. SELECIONE O CANDIDATO:</label><select id="candidato">
-                    <option value="0">Candidato A</option>
-                    <option value="1">Candidato B</option>
-                    <option value="2">Candidato C</option>
-                    <option value="3">VOTO EM BRANCO / NULO</option>
-                </select></div>
-                <button id="btnVotar" class="btn-confirmar" onclick="votar()">CONFIRMAR VOTO</button>
-            </div>
-
-            <!-- FILA DE ESPERA COM CONTADOR REGRESSIVO -->
-            <div id="fila-espera" class="fila-espera">
-                <h3>⏳ FILA DE ESPERA ATIVADA</h3>
-                <p>Estamos com alta demanda.</p>
-                <div class="posicao-fila" id="posicao">1º</div>
-                <div class="contador-regressivo" id="contador-regressivo">Sua vez em <span id="segundos">60</span> segundos</div>
-                <p id="mensagem-fila" class="status-fila">Atualizando automaticamente...</p>
-                <button onclick="sairDaFila()" style="margin-top:20px; padding:15px 30px; font-size:1.2rem; background:#333; color:white; border:none; border-radius:15px; cursor:pointer;">
-                    Sair da Fila
-                </button>
-            </div>
+        
+        <!-- Mensagem de redirecionamento quando já votou -->
+        <div id="mensagem-ja-votou" class="mensagem-voto" style="display: none;">
+            <h2>✅ Você já votou nesta eleição!</h2>
+            <p>Redirecionando para o portal UOL em <span id="contador-redirecionamento">3</span> segundos...</p>
         </div>
 
-        <div class="card-resultados">
-            <h2 class="titulo-secao">APURAÇÃO NACIONAL</h2>
-            <div id="lista-resultados"></div>
-            <div id="contador-total" class="total-votos">Carregando dados...</div>
+        <div id="area-principal" style="display: none;">
+            <div class="sessao-voto">
+                <h2 class="titulo-secao">REGISTRAR VOTO</h2>
+
+                <div id="area-votacao">
+                    <div class="item-form"><label>1. SELECIONE O ESTADO:</label><select id="estado" onchange="carregarCidades()"></select></div>
+                    <div class="item-form"><label>2. SELECIONE A CIDADE:</label><select id="cidade"><option value="">Escolha o estado primeiro</option></select></div>
+                    <div class="item-form"><label>3. SELECIONE O CANDIDATO:</label><select id="candidato">
+                        <option value="0">Candidato A</option>
+                        <option value="1">Candidato B</option>
+                        <option value="2">Candidato C</option>
+                        <option value="3">VOTO EM BRANCO / NULO</option>
+                    </select></div>
+                    <button id="btnVotar" class="btn-confirmar" onclick="votar()">CONFIRMAR VOTO</button>
+                </div>
+
+                <!-- FILA DE ESPERA -->
+                <div id="fila-espera" class="fila-espera">
+                    <h3>⏳ FILA DE ESPERA ATIVADA</h3>
+                    <p>Estamos com alta demanda.</p>
+                    <div class="posicao-fila" id="posicao">1º</div>
+                    <div class="contador-regressivo" id="contador-regressivo">Sua vez em <span id="segundos">60</span> segundos</div>
+                    <p id="mensagem-fila" class="status-fila">Atualizando automaticamente...</p>
+                    <button onclick="sairDaFila()" style="margin-top:20px; padding:15px 30px; font-size:1.2rem; background:#333; color:white; border:none; border-radius:15px; cursor:pointer;">
+                        Sair da Fila
+                    </button>
+                </div>
+            </div>
+
+            <div class="card-resultados">
+                <h2 class="titulo-secao">APURAÇÃO NACIONAL</h2>
+                <div id="lista-resultados"></div>
+                <div id="contador-total" class="total-votos">Carregando dados...</div>
+            </div>
         </div>
     </div>
 
@@ -158,7 +183,7 @@
 
         let deviceUuid = "";
         let allVotes = [];
-        const MAX_SIMULTANEOS = 2;           // ← Limite rígido de 2 acessos simultâneos
+        const MAX_SIMULTANEOS = 2;
         const nomes = ["Candidato A", "Candidato B", "Candidato C"];
         const estados = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
@@ -173,6 +198,34 @@
             return id;
         }
 
+        // ====================== VERIFICAÇÃO DE VOTO ANTERIOR ======================
+        async function verificarSeJaVotou() {
+            const { data } = await supabaseClient
+                .from('votes')
+                .select('id')
+                .eq('device_id', deviceUuid)
+                .limit(1);
+
+            return data && data.length > 0;
+        }
+
+        async function redirecionarParaUOL() {
+            const msgDiv = document.getElementById('mensagem-ja-votou');
+            const contadorEl = document.getElementById('contador-redirecionamento');
+            msgDiv.style.display = 'block';
+
+            let segundos = 3;
+            const interval = setInterval(() => {
+                segundos--;
+                contadorEl.innerText = segundos;
+                if (segundos <= 0) {
+                    clearInterval(interval);
+                    window.location.href = "https://www.uol.com.br";
+                }
+            }, 1000);
+        }
+
+        // ====================== FILA E HEARTBEAT ======================
         async function enviarHeartbeat() {
             await supabaseClient.from('online_users').upsert({
                 device_id: deviceUuid,
@@ -188,11 +241,10 @@
         async function sairDaFila() {
             if (regressivoInterval) clearInterval(regressivoInterval);
             await supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
-            window.location.reload();
         }
 
         async function atualizarFila() {
-            const limiteTempo = new Date(Date.now() - 70 * 1000).toISOString(); // 70 segundos de tolerância
+            const limiteTempo = new Date(Date.now() - 70 * 1000).toISOString();
 
             const { data } = await supabaseClient
                 .from('online_users')
@@ -212,13 +264,11 @@
                 filaDiv.classList.add('active');
 
                 document.getElementById('posicao').innerText = `${posicao}º`;
-
                 const pessoasNaFrente = posicao - MAX_SIMULTANEOS;
-                const tempoEstimado = pessoasNaFrente * 45; // estimativa conservadora de 45s por vaga
+                const tempoEstimado = Math.max(30, pessoasNaFrente * 45);
 
                 document.getElementById('mensagem-fila').innerHTML = `${pessoasNaFrente} pessoa(s) na sua frente.`;
 
-                // Contador regressivo
                 let segundosRestantes = tempoEstimado;
                 document.getElementById('segundos').innerText = segundosRestantes;
 
@@ -235,7 +285,7 @@
             }
         }
 
-        // ==================== VOTAÇÃO ====================
+        // ====================== VOTAÇÃO ======================
         async function carregarCidades() {
             const uf = document.getElementById("estado").value;
             const s = document.getElementById("cidade");
@@ -267,7 +317,10 @@
             else {
                 alert("✅ VOTO COMPUTADO COM SUCESSO!");
                 await sairDaFila();
-                await loadVotes();
+                // Redireciona imediatamente após votar
+                setTimeout(() => {
+                    window.location.href = "https://www.uol.com.br";
+                }, 1500);
             }
         }
 
@@ -284,32 +337,37 @@
 
             document.getElementById("lista-resultados").innerHTML = html;
             document.getElementById("contador-total").innerText = `TOTAL DE VOTOS REGISTRADOS: ${allVotes.length}`;
-
-            if (allVotes.some(v => v.device_id === deviceUuid)) {
-                const btn = document.getElementById("btnVotar");
-                btn.disabled = true;
-                btn.innerText = "VOTO JÁ ENVIADO";
-            }
         }
 
-        // ==================== INICIALIZAÇÃO ====================
+        // ====================== INICIALIZAÇÃO ======================
         window.onload = async () => {
             deviceUuid = getDeviceUuid();
 
+            // Verifica se já votou
+            const jaVotou = await verificarSeJaVotou();
+
+            if (jaVotou) {
+                redirecionarParaUOL();
+                return; // para a execução aqui
+            }
+
+            // Se não votou, mostra a interface normal
+            document.getElementById('area-principal').style.display = 'block';
+
+            // Carrega estados
             const s = document.getElementById("estado");
-            s.innerHTML = '<option value="">Escolha o Estado...</option>' + estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
+            s.innerHTML = '<option value="">Escolha o Estado...</option>' + 
+                         estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
 
             await loadVotes();
             await entrarNaFila();
 
-            // Atualiza fila a cada 30 segundos
+            // Atualizações em tempo real
             setInterval(atualizarFila, 30000);
             await atualizarFila();
 
-            // Heartbeat a cada 25 segundos (mais frequente que a limpeza)
             setInterval(enviarHeartbeat, 25000);
 
-            // Real-time listeners
             supabaseClient.channel('realtime_votes')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, loadVotes)
                 .subscribe();
