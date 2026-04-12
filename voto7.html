@@ -6,11 +6,10 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://osofdmgokrxdzsxozsrf.supabase.co;">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-Frame-Options" content="DENY">
-    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
     <title>SISTEMA DE VOTAÇÃO 2026 - SECURE</title>
     
     <style>
-        :root { --marinho:#001220; --marinho-claro:#00213b; --verde-esmeralda:#00f5a0; --verde-escuro:#00a86b; --texto-branco:#ffffff; --texto-cinza:#ced4da; }
+        :root { --marinho:#001220; --marinho-claro:#00213b; --verde-esmeralda:#00f5a0; --verde-escuro:#00a86b; --texto-branco:#ffffff; --texto-cinza:#ced4da; --vermelho:#ff4d4d; }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { background:var(--marinho); color:var(--texto-branco); font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif; padding:20px; min-height:100vh; }
         header { text-align:center; padding:30px 0; border-bottom:3px solid var(--verde-esmeralda); margin-bottom:40px; }
@@ -23,15 +22,20 @@
         select { width:100%; padding:25px; font-size:2rem; background:#000a12; border:3px solid #004d85; border-radius:20px; color:white; font-weight:bold; appearance:none; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300f5a0' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 25px center; background-size:30px; }
         .fila-espera { background:#2a0f1f; border:2px solid #ff4d4d; border-radius:25px; padding:30px; text-align:center; margin:20px 0; display:none; }
         .fila-espera.active { display:block; }
+        .fila-espera h3 { color:#ff9999; margin-bottom:15px; font-size:1.8rem; }
+        .posicao-fila { font-size:3.8rem; font-weight:900; color:var(--verde-esmeralda); margin:10px 0; }
+        .contador-regressivo { font-size:1.6rem; color:#ffcc99; font-weight:bold; margin:15px 0; }
+        .status-fila { font-size:1.3rem; color:#ffddaa; }
         .mensagem-voto { background:#1a3c2e; border:2px solid var(--verde-esmeralda); border-radius:25px; padding:40px; text-align:center; font-size:1.8rem; margin:30px 0; }
-        .btn-confirmar { width:100%; padding:35px; font-size:2.5rem; background:linear-gradient(135deg,var(--verde-escuro),var(--verde-esmeralda)); color:var(--marinho); border:none; border-radius:25px; font-weight:900; cursor:pointer; text-transform:uppercase; margin-top:20px; transition:all 0.2s; }
+        .btn-confirmar { width:100%; padding:35px; font-size:2.5rem; background:linear-gradient(135deg,var(--verde-escuro),var(--verde-esmeralda)); color:var(--marinho); border:none; border-radius:25px; font-weight:900; cursor:pointer; text-transform:uppercase; box-shadow:0 10px 30px rgba(0,168,107,0.4); margin-top:20px; transition:all 0.2s; }
         .btn-confirmar:disabled { background:#223e35; color:#555; cursor:not-allowed; }
         .card-resultados { background:#000a12; border-radius:30px; padding:40px; margin-top:50px; border:2px solid #002d4d; }
         .cand-info { display:flex; justify-content:space-between; font-size:2rem; font-weight:800; margin-bottom:15px; }
         .barra-fundo { height:45px; background:#001a2e; border-radius:22px; overflow:hidden; margin-bottom:35px; border:1px solid #003a66; }
-        .barra-progresso { height:100%; background:linear-gradient(90deg,var(--verde-escuro),var(--verde-esmeralda)); }
+        .barra-progresso { height:100%; background:linear-gradient(90deg,var(--verde-escuro),var(--verde-esmeralda)); transition:width 1.2s cubic-bezier(0.17,0.67,0.83,0.67); }
+        .total-votos { text-align:center; font-size:1.8rem; color:var(--verde-esmeralda); margin-top:20px; font-weight:bold; }
         .honeypot { display:none; }
-        .anti-tamper { position:fixed; bottom:8px; right:8px; font-size:9px; color:#111; pointer-events:none; z-index:9999; }
+        .anti-tamper { position:fixed; bottom:8px; right:8px; font-size:9px; color:#222; pointer-events:none; z-index:9999; }
     </style>
 </head>
 <body>
@@ -42,6 +46,7 @@
     </header>
 
     <div class="container">
+        <!-- Mensagem se já votou -->
         <div id="mensagem-ja-votou" class="mensagem-voto" style="display:none;">
             <h2>✅ Você já votou nesta eleição!</h2>
             <p>Redirecionando para o portal UOL em <span id="contador-redirecionamento">3</span> segundos...</p>
@@ -69,6 +74,7 @@
                     <button id="btnVotar" class="btn-confirmar" onclick="votar()" disabled>CONFIRMAR VOTO</button>
                 </div>
 
+                <!-- Fila de espera -->
                 <div id="fila-espera" class="fila-espera">
                     <h3>⏳ FILA DE ESPERA ATIVADA</h3>
                     <p>Estamos com alta demanda.</p>
@@ -91,15 +97,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script>
-        // ====================== CONFIGURAÇÃO OFUSCADA ======================
-        const config = {
-            u: atob("aHR0cHM6Ly9vc29mZG1nb2tyeGR6c3hvenNyZi5zdXBhYmFzZS5jbw=="), // URL ofuscada
-            k: atob("c2JfcHVibGlzaGFibGVfS1Rib2NoX2U5S3lDbU1OWkJsVE05d19WX1hoeTY4ZQ==") // chave ofuscada (base64)
-        };
+        // === CHAVES DIRETAS (anon key é pública por design) ===
+        const SUPABASE_URL = "https://osofdmgokrxdzsxozsrf.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe";
 
-        const supabaseClient = supabase.createClient(config.u, config.k, {
-            auth: { persistSession: false },
-            global: { headers: { 'X-Client-Info': 'voto-secure-2026' } }
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: { persistSession: false }
         });
 
         let deviceUuid = "";
@@ -108,55 +111,62 @@
         const MAX_SIMULTANEOS = 2;
         const nomes = ["Candidato A", "Candidato B", "Candidato C"];
         const estados = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+        let regressivoInterval = null;
 
-        // ====================== FINGERPRINT + UUID ======================
+        function getDeviceUuid() {
+            let id = localStorage.getItem('voter_uuid');
+            if (!id) {
+                id = crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + Math.random().toString(36).substr(2);
+                localStorage.setItem('voter_uuid', id);
+            }
+            return id;
+        }
+
         async function getFingerprint() {
             const data = {
                 ua: navigator.userAgent,
-                screen: screen.width + "x" + screen.height + "x" + screen.colorDepth,
+                screen: `${screen.width}x${screen.height}x${screen.colorDepth}`,
                 tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
                 lang: navigator.language,
                 hw: navigator.hardwareConcurrency || 0,
                 ts: Date.now()
             };
             try {
-                const c = document.createElement('canvas');
-                const ctx = c.getContext('2d');
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
                 ctx.fillStyle = '#00f5a0';
                 ctx.fillText('VOTO SECURE 2026', 20, 50);
-                data.canvas = c.toDataURL();
+                data.canvas = canvas.toDataURL();
             } catch(e) {}
             const str = JSON.stringify(data);
-            let h = 0;
-            for (let i = 0; i < str.length; i++) h = ((h << 5) - h) + str.charCodeAt(i);
-            return 'fp_' + Math.abs(h).toString(36);
-        }
-
-        function getDeviceUuid() {
-            let id = localStorage.getItem('voter_uuid');
-            if (!id) {
-                id = crypto.randomUUID ? crypto.randomUUID() : 'u-' + Date.now() + Math.random().toString(36);
-                localStorage.setItem('voter_uuid', id);
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                hash |= 0;
             }
-            return id;
+            return 'fp_' + Math.abs(hash).toString(36);
         }
 
-        // ====================== VERIFICAÇÕES ======================
         async function verificarSeJaVotou() {
-            const { data } = await supabaseClient.from('votes').select('id').or(`device_id.eq.${deviceUuid},fingerprint.eq.${deviceFingerprint}`).limit(1);
+            const { data } = await supabaseClient
+                .from('votes')
+                .select('id')
+                .or(`device_id.eq.${deviceUuid},fingerprint.eq.${deviceFingerprint}`)
+                .limit(1);
             return data && data.length > 0;
         }
 
         async function redirecionarParaUOL() {
-            document.getElementById('mensagem-ja-votou').style.display = 'block';
-            let s = 3;
-            const int = setInterval(() => {
-                s--; document.getElementById('contador-redirecionamento').innerText = s;
-                if (s <= 0) window.location.href = "https://www.uol.com.br";
+            const msgDiv = document.getElementById('mensagem-ja-votou');
+            msgDiv.style.display = 'block';
+            let segundos = 3;
+            const interval = setInterval(() => {
+                segundos--;
+                document.getElementById('contador-redirecionamento').innerText = segundos;
+                if (segundos <= 0) window.location.href = "https://www.uol.com.br";
             }, 1000);
         }
 
-        // ====================== FILA + HEARTBEAT ======================
         async function enviarHeartbeat() {
             await supabaseClient.from('online_users').upsert({
                 device_id: deviceUuid,
@@ -166,29 +176,85 @@
             }, { onConflict: 'device_id' });
         }
 
-        async function atualizarFila() { /* mesma lógica anterior, mantida por brevidade */ 
-            const limite = new Date(Date.now() - 70*1000).toISOString();
-            const { data } = await supabaseClient.from('online_users').select('device_id').gt('last_active', limite).order('entered_at', { ascending: true });
+        async function entrarNaFila() {
+            await enviarHeartbeat();
+        }
+
+        async function sairDaFila() {
+            if (regressivoInterval) clearInterval(regressivoInterval);
+            await supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
+        }
+
+        async function atualizarFila() {
+            const limiteTempo = new Date(Date.now() - 70 * 1000).toISOString();
+            const { data } = await supabaseClient
+                .from('online_users')
+                .select('device_id')
+                .gt('last_active', limiteTempo)
+                .order('entered_at', { ascending: true });
+
             if (!data) return;
-            const pos = data.findIndex(u => u.device_id === deviceUuid) + 1;
-            const fila = document.getElementById('fila-espera');
-            const voto = document.getElementById('area-votacao');
-            if (pos > MAX_SIMULTANEOS) {
-                voto.style.display = 'none';
-                fila.classList.add('active');
-                document.getElementById('posicao').innerText = pos + 'º';
-                const frente = pos - MAX_SIMULTANEOS;
-                let tempo = Math.max(30, frente * 45);
-                document.getElementById('segundos').innerText = tempo;
+
+            const posicao = data.findIndex(u => u.device_id === deviceUuid) + 1;
+            const filaDiv = document.getElementById('fila-espera');
+            const areaVoto = document.getElementById('area-votacao');
+
+            if (posicao > MAX_SIMULTANEOS) {
+                areaVoto.style.display = 'none';
+                filaDiv.classList.add('active');
+                document.getElementById('posicao').innerText = `${posicao}º`;
+                const pessoasNaFrente = posicao - MAX_SIMULTANEOS;
+                const tempoEstimado = Math.max(30, pessoasNaFrente * 45);
+                document.getElementById('mensagem-fila').innerHTML = `${pessoasNaFrente} pessoa(s) na sua frente.`;
+                let segundosRestantes = tempoEstimado;
+                document.getElementById('segundos').innerText = segundosRestantes;
+
+                if (regressivoInterval) clearInterval(regressivoInterval);
+                regressivoInterval = setInterval(() => {
+                    segundosRestantes = Math.max(0, segundosRestantes - 1);
+                    document.getElementById('segundos').innerText = segundosRestantes;
+                }, 1000);
             } else {
-                voto.style.display = 'block';
-                fila.classList.remove('active');
+                areaVoto.style.display = 'block';
+                filaDiv.classList.remove('active');
+                if (regressivoInterval) clearInterval(regressivoInterval);
             }
         }
 
-        // ====================== VOTAÇÃO ======================
+        async function carregarCidades() {
+            const uf = document.getElementById("estado").value;
+            const s = document.getElementById("cidade");
+            if (!uf) return;
+            s.innerHTML = '<option>Carregando...</option>';
+            try {
+                const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+                const d = await r.json();
+                s.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+            } catch(e) {
+                s.innerHTML = '<option>Erro ao carregar cidades</option>';
+            }
+            verificarFormularioCompleto();
+        }
+
+        function verificarFormularioCompleto() {
+            const estado = document.getElementById("estado").value;
+            const cidade = document.getElementById("cidade").value;
+            const candidato = document.getElementById("candidato").value;
+            const naoRobo = document.getElementById("nao-robo").checked;
+            const honeypot = document.getElementById("honeypot").value.trim();
+            document.getElementById("btnVotar").disabled = !(estado && cidade && candidato !== "" && naoRobo && !honeypot);
+        }
+
+        async function loadVotes() {
+            const { data } = await supabaseClient.from('votes').select('*');
+            allVotes = data || [];
+            atualizarInterface();
+        }
+
         async function votar() {
-            if (document.getElementById("honeypot").value.trim()) return alert("❌ Bloqueado por detecção de automação.");
+            if (document.getElementById("honeypot").value.trim()) {
+                return alert("❌ Ação bloqueada: detecção de automação.");
+            }
 
             const uf = document.getElementById("estado").value;
             const cidade = document.getElementById("cidade").value;
@@ -201,14 +267,31 @@
             }]);
 
             if (error) {
-                if (error.message.includes("unique")) {
-                    alert("Você já votou!");
+                if (error.message.includes("unique") || error.code === "23505") {
+                    alert("⚠️ Você já votou nesta eleição!");
+                    await sairDaFila();
                     redirecionarParaUOL();
-                } else alert("Erro: " + error.message);
+                } else {
+                    alert("Erro: " + error.message);
+                }
             } else {
                 alert("✅ VOTO COMPUTADO COM SUCESSO!");
-                setTimeout(() => window.location.href = "https://www.uol.com.br", 1500);
+                await sairDaFila();
+                setTimeout(() => { window.location.href = "https://www.uol.com.br"; }, 1500);
             }
+        }
+
+        function atualizarInterface() {
+            let t = [0, 0, 0, 0];
+            allVotes.forEach(v => t[v.candidato]++);
+            const validos = t[0] + t[1] + t[2];
+            let html = '';
+            nomes.forEach((nome, i) => {
+                const perc = validos ? ((t[i] / validos) * 100).toFixed(1) : 0;
+                html += `<div class="item-resultado"><div class="cand-info"><span>${nome}</span><span>${perc}%</span></div><div class="barra-fundo"><div class="barra-progresso" style="width:${perc}%"></div></div></div>`;
+            });
+            document.getElementById("lista-resultados").innerHTML = html;
+            document.getElementById("contador-total").innerText = `TOTAL DE VOTOS REGISTRADOS: ${allVotes.length}`;
         }
 
         // ====================== INICIALIZAÇÃO ======================
@@ -216,39 +299,44 @@
             deviceUuid = getDeviceUuid();
             deviceFingerprint = await getFingerprint();
 
-            if (await verificarSeJaVotou()) {
+            const jaVotou = await verificarSeJaVotou();
+            if (jaVotou) {
                 redirecionarParaUOL();
                 return;
             }
 
             document.getElementById('area-principal').style.display = 'block';
 
-            // Estados
-            const sel = document.getElementById("estado");
-            sel.innerHTML = '<option value="">Escolha o Estado...</option>' + estados.map(u => `<option value="${u}">${u}</option>`).join('');
+            // Popular estados
+            const s = document.getElementById("estado");
+            s.innerHTML = '<option value="">Escolha o Estado...</option>' + estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
 
             // Eventos do formulário
-            document.querySelectorAll('#area-votacao select, #nao-robo').forEach(el => el.addEventListener('change', () => {
-                const ok = document.getElementById("estado").value && document.getElementById("cidade").value && document.getElementById("candidato").value !== "" && document.getElementById("nao-robo").checked;
-                document.getElementById("btnVotar").disabled = !ok;
-            }));
+            document.querySelectorAll('#area-votacao select, #nao-robo').forEach(el => {
+                el.addEventListener('change', verificarFormularioCompleto);
+            });
 
-            // Carregar dados
-            await Promise.all([loadVotes(), entrarNaFila()]);
+            await loadVotes();
+            await entrarNaFila();
 
             setInterval(atualizarFila, 30000);
+            await atualizarFila();
+
             setInterval(enviarHeartbeat, 25000);
 
             // Real-time
-            supabaseClient.channel('votes').on('postgres_changes', {event:'*', schema:'public', table:'votes'}, () => loadVotes()).subscribe();
+            supabaseClient.channel('realtime_votes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, loadVotes)
+                .subscribe();
+
+            supabaseClient.channel('realtime_online')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'online_users' }, atualizarFila)
+                .subscribe();
         };
 
         window.addEventListener('beforeunload', () => {
-            supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
+            if (deviceUuid) supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
         });
-
-        // Anti-inspeção
-        console.log = () => {};
     </script>
 </body>
 </html>
