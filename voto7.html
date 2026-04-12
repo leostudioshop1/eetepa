@@ -175,12 +175,15 @@
         </div>
     </div>
 
+    <!-- Carrega o arquivo de configuração com as chaves do Supabase -->
+    <script src="config.js"></script>
+    
+    <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-    <script>
-        const SUPABASE_URL = "https://osofdmgokrxdzsxozsrf.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe";
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    <script>
+        // Variáveis globais
+        let supabaseClient;
         let deviceUuid = "";
         let allVotes = [];
         const MAX_SIMULTANEOS = 2;
@@ -317,7 +320,6 @@
             else {
                 alert("✅ VOTO COMPUTADO COM SUCESSO!");
                 await sairDaFila();
-                // Redireciona imediatamente após votar
                 setTimeout(() => {
                     window.location.href = "https://www.uol.com.br";
                 }, 1500);
@@ -343,15 +345,24 @@
         window.onload = async () => {
             deviceUuid = getDeviceUuid();
 
+            // Verifica se o config.js foi carregado corretamente
+            if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_KEY === 'undefined') {
+                alert("Erro: Arquivo config.js não encontrado ou mal configurado!");
+                return;
+            }
+
+            // Inicializa o cliente Supabase a partir do config.js
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
             // Verifica se já votou
             const jaVotou = await verificarSeJaVotou();
 
             if (jaVotou) {
                 redirecionarParaUOL();
-                return; // para a execução aqui
+                return;
             }
 
-            // Se não votou, mostra a interface normal
+            // Mostra a interface normal
             document.getElementById('area-principal').style.display = 'block';
 
             // Carrega estados
@@ -378,7 +389,9 @@
         };
 
         window.addEventListener('beforeunload', () => {
-            if (deviceUuid) supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
+            if (deviceUuid && supabaseClient) {
+                supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
+            }
         });
     </script>
 </body>
