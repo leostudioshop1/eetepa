@@ -131,7 +131,6 @@
     </header>
 
     <div class="container">
-        
         <!-- Mensagem de redirecionamento quando já votou -->
         <div id="mensagem-ja-votou" class="mensagem-voto" style="display: none;">
             <h2>✅ Você já votou nesta eleição!</h2>
@@ -175,15 +174,15 @@
         </div>
     </div>
 
-    <!-- Carrega o arquivo de configuração com as chaves do Supabase -->
-    <script src="config.js"></script>
-    
-    <!-- Supabase Client -->
+    <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+    <!-- Configuração (deve estar na mesma pasta do HTML) -->
+    <script src="config.js"></script>
 
     <script>
         // Variáveis globais
-        let supabaseClient;
+        let supabaseClient = null;
         let deviceUuid = "";
         let allVotes = [];
         const MAX_SIMULTANEOS = 2;
@@ -203,12 +202,12 @@
 
         // ====================== VERIFICAÇÃO DE VOTO ANTERIOR ======================
         async function verificarSeJaVotou() {
+            if (!supabaseClient) return false;
             const { data } = await supabaseClient
                 .from('votes')
                 .select('id')
                 .eq('device_id', deviceUuid)
                 .limit(1);
-
             return data && data.length > 0;
         }
 
@@ -230,6 +229,7 @@
 
         // ====================== FILA E HEARTBEAT ======================
         async function enviarHeartbeat() {
+            if (!supabaseClient) return;
             await supabaseClient.from('online_users').upsert({
                 device_id: deviceUuid,
                 entered_at: new Date().toISOString(),
@@ -243,10 +243,13 @@
 
         async function sairDaFila() {
             if (regressivoInterval) clearInterval(regressivoInterval);
-            await supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
+            if (supabaseClient) {
+                await supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
+            }
         }
 
         async function atualizarFila() {
+            if (!supabaseClient) return;
             const limiteTempo = new Date(Date.now() - 70 * 1000).toISOString();
 
             const { data } = await supabaseClient
@@ -294,18 +297,25 @@
             const s = document.getElementById("cidade");
             if (!uf) return;
             s.innerHTML = '<option>Carregando...</option>';
-            const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
-            const d = await r.json();
-            s.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+            try {
+                const r = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+                const d = await r.json();
+                s.innerHTML = d.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+            } catch (e) {
+                s.innerHTML = '<option>Erro ao carregar cidades</option>';
+            }
         }
 
         async function loadVotes() {
+            if (!supabaseClient) return;
             const { data } = await supabaseClient.from('votes').select('*');
             allVotes = data || [];
             atualizarInterface();
         }
 
         async function votar() {
+            if (!supabaseClient) return alert("Sistema não inicializado corretamente.");
+
             const uf = document.getElementById("estado").value;
             const cidade = document.getElementById("cidade").value;
             const cand = parseInt(document.getElementById("candidato").value);
@@ -334,7 +344,8 @@
             let html = '';
             nomes.forEach((nome, i) => {
                 const perc = validos ? ((t[i] / validos) * 100).toFixed(1) : 0;
-                html += `<div class="item-resultado"><div class="cand-info"><span>${nome}</span><span>${perc}%</span></div><div class="barra-fundo"><div class="barra-progresso" style="width:${perc}%"></div></div></div>`;
+                html += `<div class="cand-info"><span>${nome}</span><span>${perc}%</span></div>
+                         <div class="barra-fundo"><div class="barra-progresso" style="width:${perc}%"></div></div>`;
             });
 
             document.getElementById("lista-resultados").innerHTML = html;
@@ -342,16 +353,15 @@
         }
 
         // ====================== INICIALIZAÇÃO ======================
-        window.onload = async () => {
+        async function iniciarSistema() {
             deviceUuid = getDeviceUuid();
 
-            // Verifica se o config.js foi carregado corretamente
-            if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_KEY === 'undefined') {
-                alert("Erro: Arquivo config.js não encontrado ou mal configurado!");
+            // Aguarda o config.js carregar
+            if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_KEY === 'undefined' || !SUPABASE_URL || !SUPABASE_KEY) {
+                alert("Erro: Arquivo config.js não encontrado ou mal configurado!\n\nVerifique se o arquivo 'config.js' está na mesma pasta do HTML.");
                 return;
             }
 
-            // Inicializa o cliente Supabase a partir do config.js
             supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
             // Verifica se já votou
@@ -362,23 +372,24 @@
                 return;
             }
 
-            // Mostra a interface normal
+            // Mostra a interface
             document.getElementById('area-principal').style.display = 'block';
 
             // Carrega estados
-            const s = document.getElementById("estado");
-            s.innerHTML = '<option value="">Escolha o Estado...</option>' + 
-                         estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
+            const selectEstado = document.getElementById("estado");
+            selectEstado.innerHTML = '<option value="">Escolha o Estado...</option>' + 
+                                    estados.map(uf => `<option value="${uf}">${uf}</option>`).join('');
 
             await loadVotes();
             await entrarNaFila();
 
-            // Atualizações em tempo real
+            // Atualizações periódicas
             setInterval(atualizarFila, 30000);
             await atualizarFila();
 
             setInterval(enviarHeartbeat, 25000);
 
+            // Realtime
             supabaseClient.channel('realtime_votes')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, loadVotes)
                 .subscribe();
@@ -386,10 +397,13 @@
             supabaseClient.channel('realtime_online')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'online_users' }, atualizarFila)
                 .subscribe();
-        };
+        }
+
+        // Inicia quando a página carregar completamente
+        window.onload = iniciarSistema;
 
         window.addEventListener('beforeunload', () => {
-            if (deviceUuid && supabaseClient) {
+            if (supabaseClient && deviceUuid) {
                 supabaseClient.from('online_users').delete().eq('device_id', deviceUuid);
             }
         });
