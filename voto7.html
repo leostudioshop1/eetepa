@@ -1,64 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Votação Segura</title>
+</head>
+
+<body style="background:#001220;color:white;font-family:sans-serif;text-align:center;padding:40px">
+
+<h1>ELEIÇÕES 2026</h1>
+
+<select id="estado">
+<option value="">Estado</option>
+<option value="PA">PA</option>
+<option value="SP">SP</option>
+</select>
+
+<select id="cidade">
+<option value="">Cidade</option>
+<option value="Rio Maria">Rio Maria</option>
+<option value="São Paulo">São Paulo</option>
+</select>
+
+<select id="candidato">
+<option value="0">Candidato A</option>
+<option value="1">Candidato B</option>
+<option value="2">Candidato C</option>
+<option value="3">Branco/Nulo</option>
+</select>
+
+<br><br>
+<button onclick="votar()" style="padding:20px;font-size:20px">VOTAR</button>
+
+<div id="status" style="margin-top:20px;color:#00f5a0"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-const SUPABASE_URL = "https://osofdmgokrxdzsxozsrf.supabase.co";
-const SUPABASE_KEY = "SUA_PUBLIC_KEY_AQUI";
+let supabaseClient = null;
 
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-let deviceUuid = "";
-let lastVoteTime = 0;
+try {
+    if (window.supabase) {
+        supabaseClient = window.supabase.createClient(
+            "https://osofdmgokrxdzsxozsrf.supabase.co",
+            "SUA_PUBLIC_KEY_AQUI"
+        );
+    } else {
+        document.getElementById("status").innerText = "Erro ao carregar Supabase.";
+    }
+} catch (e) {
+    document.getElementById("status").innerText = "Erro crítico.";
+}
 
 // ================= SEGURANÇA =================
+let deviceUuid = localStorage.getItem("voter_uuid");
 
-// gera ID único mais forte
-function getDeviceUuid() {
-    let id = localStorage.getItem('voter_uuid');
-
-    if (!id) {
-        id = crypto.randomUUID();
-        localStorage.setItem('voter_uuid', id);
-    }
-
-    return id;
+if (!deviceUuid) {
+    deviceUuid = crypto.randomUUID();
+    localStorage.setItem("voter_uuid", deviceUuid);
 }
 
-// anti spam (5 segundos entre ações)
+let lastAction = 0;
+
 function antiSpam() {
     const now = Date.now();
-    if (now - lastVoteTime < 5000) {
-        alert("Aguarde alguns segundos...");
+    if (now - lastAction < 5000) {
+        alert("Aguarde...");
         return false;
     }
-    lastVoteTime = now;
+    lastAction = now;
     return true;
 }
 
-// valida dados antes de enviar
-function validarDados(uf, cidade, candidato) {
-    if (!uf || uf.length !== 2) return false;
-    if (!cidade || cidade.length < 2) return false;
-    if (isNaN(candidato) || candidato < 0 || candidato > 3) return false;
-    return true;
+function validar(uf, cidade, candidato) {
+    return uf && cidade && candidato >= 0 && candidato <= 3;
 }
 
 // ================= VOTAÇÃO =================
-
 async function votar() {
+
+    if (!supabaseClient) {
+        alert("Sistema indisponível.");
+        return;
+    }
+
     if (!antiSpam()) return;
 
     const uf = document.getElementById("estado").value;
     const cidade = document.getElementById("cidade").value;
     const candidato = parseInt(document.getElementById("candidato").value);
 
-    if (!validarDados(uf, cidade, candidato)) {
-        alert("Dados inválidos!");
+    if (!validar(uf, cidade, candidato)) {
+        alert("Preencha tudo corretamente!");
         return;
     }
 
+    document.getElementById("status").innerText = "Enviando voto...";
+
     try {
         const { error } = await supabaseClient
-            .from('votes')
+            .from("votes")
             .insert([{
                 uf,
                 cidade,
@@ -70,71 +111,39 @@ async function votar() {
             if (error.message.includes("duplicate")) {
                 alert("Você já votou!");
             } else {
-                alert("Erro ao votar.");
+                alert("Erro: " + error.message);
             }
             return;
         }
 
-        alert("✅ Voto registrado com sucesso!");
-        window.location.href = "https://www.uol.com.br";
+        document.getElementById("status").innerText = "✅ Voto registrado!";
+        
+        setTimeout(() => {
+            window.location.href = "https://www.uol.com.br";
+        }, 1500);
 
     } catch (e) {
-        alert("Erro inesperado.");
+        document.getElementById("status").innerText = "Erro inesperado.";
     }
 }
 
-// ================= FILA =================
-
-async function enviarHeartbeat() {
-    await supabaseClient.from('online_users').upsert({
-        device_id: deviceUuid,
-        last_active: new Date().toISOString(),
-        entered_at: new Date().toISOString()
-    }, { onConflict: 'device_id' });
-}
-
-async function atualizarFila() {
-    const limiteTempo = new Date(Date.now() - 60000).toISOString();
+// ================= VERIFICAÇÃO =================
+async function verificar() {
+    if (!supabaseClient) return;
 
     const { data } = await supabaseClient
-        .from('online_users')
-        .select('*')
-        .gt('last_active', limiteTempo)
-        .order('entered_at', { ascending: true });
-
-    if (!data) return;
-
-    const pos = data.findIndex(u => u.device_id === deviceUuid) + 1;
-
-    if (pos > 2) {
-        document.getElementById("area-votacao").style.display = "none";
-        document.getElementById("fila-espera").style.display = "block";
-    } else {
-        document.getElementById("area-votacao").style.display = "block";
-        document.getElementById("fila-espera").style.display = "none";
-    }
-}
-
-// ================= INIT =================
-
-window.onload = async () => {
-    deviceUuid = getDeviceUuid();
-
-    // verifica se já votou
-    const { data } = await supabaseClient
-        .from('votes')
-        .select('id')
-        .eq('device_id', deviceUuid)
+        .from("votes")
+        .select("id")
+        .eq("device_id", deviceUuid)
         .limit(1);
 
     if (data && data.length > 0) {
-        alert("Você já votou!");
-        window.location.href = "https://www.uol.com.br";
-        return;
+        document.getElementById("status").innerText = "Você já votou!";
     }
+}
 
-    await enviarHeartbeat();
-    setInterval(enviarHeartbeat, 20000);
-    setInterval(atualizarFila, 10000);
-};
+verificar();
 </script>
+
+</body>
+</html>
