@@ -21,10 +21,6 @@
       transform: translateY(-2px);
       box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
     }
-    .selected {
-      border-color: #6366f1;
-      background-color: #1e1b4b;
-    }
     .correct {
       border-color: #22c55e;
       background-color: #052e16;
@@ -84,11 +80,11 @@
         <div id="result-screen" class="hidden text-center py-12">
           <h2 class="text-5xl font-bold mb-6 text-emerald-400">Quiz Concluído!</h2>
           <div id="final-score-text" class="text-7xl font-bold mb-6"></div>
-          <p class="text-xl text-zinc-400 mb-10">Obrigado por participar!</p>
+          <p class="text-xl text-zinc-400 mb-10">Resultado salvo automaticamente no Supabase.</p>
           
-          <button onclick="saveAndRestart()" 
-                  class="bg-emerald-600 hover:bg-emerald-500 px-12 py-5 rounded-2xl font-semibold text-lg transition">
-            Salvar Resultado no Supabase
+          <button onclick="restartQuiz()" 
+                  class="bg-zinc-700 hover:bg-zinc-600 px-12 py-5 rounded-2xl font-semibold text-lg transition">
+            Reiniciar Quiz
           </button>
         </div>
       </div>
@@ -244,18 +240,22 @@
         score++;
       }
 
+      // Feedback visual
       const buttons = document.querySelectorAll('#options button');
       buttons.forEach((btn, i) => {
         btn.disabled = true;
-        if (i === q.correct) {
-          btn.classList.add('correct');
-        }
-        if (i === selectedIndex && i !== q.correct) {
-          btn.classList.add('incorrect');
-        }
+        if (i === q.correct) btn.classList.add('correct');
+        if (i === selectedIndex && i !== q.correct) btn.classList.add('incorrect');
       });
 
       updateScore();
+
+      // Se for a última pergunta, salva automaticamente após 800ms
+      if (currentQuestion === questions.length - 1) {
+        setTimeout(() => {
+          saveToSupabase();
+        }, 800);
+      }
     }
 
     function updateScore() {
@@ -272,8 +272,6 @@
       if (currentQuestion < questions.length - 1) {
         currentQuestion++;
         loadQuestion();
-      } else {
-        showResults();
       }
     }
 
@@ -295,7 +293,8 @@
       `;
     }
 
-    async function saveAndRestart() {
+    // Função que salva automaticamente no Supabase
+    async function saveToSupabase() {
       try {
         const { error } = await supabaseClient
           .from('quiz_results2')
@@ -308,14 +307,30 @@
             created_at: new Date().toISOString()
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Erro ao salvar:", error);
+          alert("Erro ao salvar automaticamente. Tente usar o botão manual se disponível.");
+        } else {
+          console.log("Resultado salvo automaticamente no Supabase!");
+        }
 
-        alert(`Resultado salvo com sucesso!\nPontuação: ${score}/${questions.length}`);
-        location.reload();
+        // Mostra a tela de resultado após tentar salvar
+        showResults();
       } catch (err) {
         console.error(err);
-        alert('Erro ao salvar no Supabase. Verifique sua configuração.');
+        alert("Erro de conexão com o Supabase.");
+        showResults(); // ainda mostra o resultado mesmo se falhar o save
       }
+    }
+
+    // Botão manual (backup)
+    async function saveAndRestart() {
+      await saveToSupabase();
+      restartQuiz();
+    }
+
+    function restartQuiz() {
+      location.reload();
     }
 
     window.onload = () => {
