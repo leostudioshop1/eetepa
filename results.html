@@ -1,8 +1,3 @@
-Aqui está o arquivo completo. Reintegrei todas as questões que você enviou (incluindo as de manipulação de estrutura e filtros) e mantive a lógica de conexão vinculada ao seu `config.js`.
-
-Também ajustei as variáveis para que o quiz calcule automaticamente o progresso com base no número total de questões presentes no array, facilitando caso você queira adicionar mais futuramente.
-
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -11,116 +6,140 @@ Também ajustei as variáveis para que o quiz calcule automaticamente o progress
   <title>Quiz SQL Básico - EETEPA Xinguara</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
   <script src="config.js"></script>
 
   <style>
-    body { font-family: system-ui, sans-serif; }
-    .question-card { transition: all 0.3s; }
-    .selected { border-color: #3b82f6; background-color: #eff6ff; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0a0a0a;
+      color: #e5e5e5;
+    }
+    .question-card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .question-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+    }
+    .selected {
+      border-color: #6366f1;
+      background-color: #1e1b4b;
+    }
+    .correct {
+      border-color: #22c55e;
+      background-color: #052e16;
+    }
+    .incorrect {
+      border-color: #ef4444;
+      background-color: #450a0a;
+    }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="min-h-screen">
   <div class="max-w-6xl mx-auto p-6">
     <div class="flex flex-col lg:flex-row gap-8">
 
-      <div class="flex-1 bg-white rounded-2xl shadow-xl p-8">
-        <h1 class="text-4xl font-bold text-center mb-2 text-indigo-700">Quiz SQL Básico</h1>
-        <p class="text-center text-gray-600 mb-8">Prática de Banco de Dados • Desenvolvido por Léo Cruz</p>
+      <!-- Área Principal -->
+      <div class="flex-1 bg-zinc-900 rounded-3xl shadow-2xl p-8 border border-zinc-800">
+        <div class="flex items-center justify-between mb-8">
+          <h1 class="text-4xl font-bold text-indigo-400">Quiz SQL Básico</h1>
+          <p class="text-zinc-400 text-sm">40 questões • Conceitos Fundamentais</p>
+        </div>
 
-        <div id="start-screen" class="text-center">
+        <!-- Tela Inicial -->
+        <div id="start-screen" class="text-center py-12">
           <div class="max-w-md mx-auto">
-            <input id="user-name" type="text" placeholder="Seu nome completo" 
-                   class="w-full px-6 py-4 text-lg border border-gray-300 rounded-xl focus:outline-none focus:border-indigo-500 mb-6">
+            <input id="user-name" type="text" placeholder="Digite seu nome completo" 
+                   class="w-full px-6 py-5 bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-indigo-500 text-lg placeholder-zinc-500">
             <button onclick="startQuiz()" 
-                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-4 px-8 rounded-xl text-xl transition">
+                    class="mt-8 w-full bg-indigo-600 hover:bg-indigo-500 transition py-5 rounded-2xl text-xl font-semibold">
               Iniciar Quiz
             </button>
           </div>
         </div>
 
+        <!-- Tela do Quiz -->
         <div id="quiz-screen" class="hidden">
           <div class="flex justify-between items-center mb-8">
-            <div>
-              <span id="question-counter" class="text-2xl font-bold text-indigo-700">1/--</span>
-            </div>
+            <span id="question-counter" class="text-2xl font-bold text-indigo-400">1/40</span>
             <div class="text-right">
-              <div class="text-sm text-gray-500">Pontuação</div>
-              <div id="score-main" class="text-3xl font-bold text-emerald-600">0</div>
+              <div class="text-xs text-zinc-500">Pontuação</div>
+              <div id="score-main" class="text-4xl font-bold text-emerald-400">0</div>
             </div>
           </div>
 
-          <div id="question-text" class="text-2xl font-medium mb-10 leading-relaxed min-h-[120px]"></div>
+          <div id="question-text" class="text-2xl font-medium leading-relaxed min-h-[110px] mb-10"></div>
 
           <div id="options" class="grid grid-cols-1 gap-4"></div>
 
           <div class="flex justify-between mt-12">
             <button onclick="prevQuestion()" id="btn-prev"
-                    class="px-6 py-3 bg-gray-200 hover:bg-gray-300 rounded-xl font-medium hidden">Anterior</button>
+                    class="px-8 py-4 bg-zinc-800 hover:bg-zinc-700 rounded-2xl font-medium hidden">← Anterior</button>
             <button onclick="nextQuestion()" id="btn-next"
-                    class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium">Próxima</button>
+                    class="px-10 py-4 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-medium">Próxima →</button>
           </div>
         </div>
 
-        <div id="result-screen" class="hidden text-center">
-          <h2 class="text-5xl font-bold mb-4 text-emerald-600">Parabéns!</h2>
-          <div id="final-score-text" class="text-6xl font-bold mb-8"></div>
-          <p class="text-xl text-gray-600 mb-10">Você completou o quiz de SQL Básico.</p>
+        <!-- Tela de Resultado -->
+        <div id="result-screen" class="hidden text-center py-12">
+          <h2 class="text-5xl font-bold mb-6 text-emerald-400">Quiz Concluído!</h2>
+          <div id="final-score-text" class="text-7xl font-bold mb-6"></div>
+          <p class="text-xl text-zinc-400 mb-10">Obrigado por participar!</p>
           
           <button onclick="saveAndRestart()" 
-                  class="bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-4 rounded-2xl font-semibold text-lg">
-            Salvar no Supabase e Reiniciar
+                  class="bg-emerald-600 hover:bg-emerald-500 px-12 py-5 rounded-2xl font-semibold text-lg transition">
+            Salvar Resultado no Supabase
           </button>
         </div>
       </div>
 
-      <div class="w-full lg:w-80 bg-white rounded-2xl shadow-xl p-6 h-fit sticky top-6">
-        <h3 class="font-bold text-xl mb-6 text-gray-800">Informações</h3>
+      <!-- Sidebar -->
+      <div class="w-full lg:w-80 bg-zinc-900 rounded-3xl shadow-2xl p-8 border border-zinc-800 h-fit sticky top-6">
+        <h3 class="font-bold text-2xl mb-8 text-white">Informações</h3>
         
-        <div class="space-y-6">
+        <div class="space-y-8">
           <div>
-            <p class="text-sm text-gray-500">Nome do Usuário</p>
-            <p id="sidebar-name" class="font-semibold text-lg">—</p>
+            <p class="text-xs uppercase tracking-widest text-zinc-500">Nome</p>
+            <p id="sidebar-name" class="font-semibold text-lg mt-1">—</p>
           </div>
           
           <div>
-            <p class="text-sm text-gray-500">ID do Dispositivo</p>
-            <p id="sidebar-device" class="font-mono text-xs bg-gray-100 p-2 rounded break-all">—</p>
+            <p class="text-xs uppercase tracking-widest text-zinc-500">ID do Dispositivo</p>
+            <p id="sidebar-device" class="font-mono text-sm bg-zinc-800 p-3 rounded-xl break-all mt-1">—</p>
           </div>
 
           <div>
-            <p class="text-sm text-gray-500">Pontuação Atual</p>
-            <div id="sidebar-score" class="text-5xl font-bold text-emerald-600">0</div>
+            <p class="text-xs uppercase tracking-widest text-zinc-500">Pontuação Atual</p>
+            <div id="sidebar-score" class="text-6xl font-bold text-emerald-400 mt-1">0</div>
+            <p class="text-sm text-zinc-500">de 40</p>
           </div>
 
-          <div class="pt-6 border-t">
-            <p class="text-xs text-gray-400">Progresso Geral</p>
-            <div class="h-2 bg-gray-200 rounded-full mt-2">
-              <div id="progress-bar" class="h-2 bg-indigo-600 rounded-full w-0 transition-all"></div>
+          <div>
+            <p class="text-xs uppercase tracking-widest text-zinc-500 mb-2">Progresso</p>
+            <div class="h-3 bg-zinc-800 rounded-full overflow-hidden">
+              <div id="progress-bar" class="h-3 bg-gradient-to-r from-indigo-500 to-violet-500 w-0 transition-all duration-300"></div>
             </div>
           </div>
         </div>
 
-        <div class="mt-10 text-xs text-gray-400 text-center">
+        <div class="mt-12 text-center text-xs text-zinc-500">
           EETEPA Xinguara<br>
-          <span id="supabase-status" class="text-emerald-500">Conectado ao Supabase ✓</span>
+          Desenvolvido por Léo Cruz
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    // ==================== CONEXÃO SUPABASE (DINÂMICA) ====================
     if (!window.SUPABASE_CONFIG) {
-        alert("Erro: Arquivo config.js não encontrado ou inválido!");
+      alert("Erro: Arquivo config.js não encontrado!");
     }
 
     const supabaseClient = supabase.createClient(
-        window.SUPABASE_CONFIG.url,
-        window.SUPABASE_CONFIG.key
+      window.SUPABASE_CONFIG.url,
+      window.SUPABASE_CONFIG.key
     );
 
-    // ==================== DADOS DO QUIZ ====================
     let currentQuestion = 0;
     let score = 0;
     let userName = '';
@@ -129,19 +148,47 @@ Também ajustei as variáveis para que o quiz calcule automaticamente o progress
 
     const questions = [
       { q: "O que significa a sigla SQL?", options: ["Structured Query Language", "Simple Query Language", "System Query Language", "Sequential Query Language"], correct: 0 },
-      { q: "Qual comando SQL é usado para criar uma nova tabela?", options: ["CREATE TABLE", "NEW TABLE", "MAKE TABLE", "BUILD TABLE"], correct: 0 },
-      { q: "Qual comando seleciona todos os registros de uma tabela chamada 'clientes'?", options: ["SELECT * FROM clientes", "GET ALL FROM clientes", "SHOW clientes", "READ clientes"], correct: 0 },
+      { q: "Qual comando é usado para criar uma nova tabela?", options: ["CREATE TABLE", "NEW TABLE", "MAKE TABLE", "BUILD TABLE"], correct: 0 },
+      { q: "Qual comando seleciona todos os registros de uma tabela chamada 'alunos'?", options: ["SELECT * FROM alunos", "GET ALL FROM alunos", "SHOW alunos", "READ alunos"], correct: 0 },
       { q: "Qual comando insere um novo registro em uma tabela?", options: ["INSERT INTO", "ADD INTO", "CREATE RECORD", "PUT INTO"], correct: 0 },
-      { q: "Qual comando remove registros de uma tabela sem excluir a estrutura?", options: ["DELETE FROM", "DROP TABLE", "TRUNCATE TABLE", "REMOVE ALL"], correct: 0 },
-      { q: "O que o comando WHERE faz em uma consulta SELECT?", options: ["Filtra os resultados", "Ordena os resultados", "Agrupa os resultados", "Limita o número de linhas"], correct: 0 },
-      { q: "Qual é o comando para excluir uma tabela inteira (estrutura + dados)?", options: ["DROP TABLE", "DELETE TABLE", "REMOVE TABLE", "TRUNCATE TABLE"], correct: 0 },
-      { q: "Para atualizar um registro existente, usamos:", options: ["UPDATE", "MODIFY", "ALTER", "CHANGE"], correct: 0 },
-      { q: "Qual cláusula ordena resultados em ordem crescente?", options: ["ORDER BY coluna ASC", "SORT BY coluna", "GROUP BY coluna", "ARRANGE BY coluna"], correct: 0 },
-      { q: "Como selecionamos valores diferentes (sem repetição) em uma coluna?", options: ["SELECT DISTINCT", "SELECT UNIQUE", "SELECT DIFFERENT", "SELECT ONLY"], correct: 0 }
-      // Nota: Adicione as outras 20 questões seguindo este padrão para completar as 30.
+      { q: "Qual comando remove registros específicos de uma tabela sem excluir sua estrutura?", options: ["DELETE FROM", "DROP TABLE", "TRUNCATE TABLE", "REMOVE ALL"], correct: 0 },
+      { q: "O que a cláusula WHERE faz em um SELECT?", options: ["Filtra os resultados", "Ordena os resultados", "Agrupa os resultados", "Limita o número de linhas"], correct: 0 },
+      { q: "Qual comando exclui completamente uma tabela (estrutura e dados)?", options: ["DROP TABLE", "DELETE TABLE", "TRUNCATE TABLE", "REMOVE TABLE"], correct: 0 },
+      { q: "Qual comando atualiza dados existentes em uma tabela?", options: ["UPDATE", "MODIFY", "ALTER", "CHANGE"], correct: 0 },
+      { q: "Qual cláusula é usada para ordenar os resultados?", options: ["ORDER BY", "SORT BY", "GROUP BY", "ARRANGE BY"], correct: 0 },
+      { q: "Como obter valores únicos (sem duplicatas) em uma coluna?", options: ["SELECT DISTINCT", "SELECT UNIQUE", "SELECT DIFFERENT", "SELECT ONLY"], correct: 0 },
+      { q: "Qual comando cria um novo banco de dados?", options: ["CREATE DATABASE", "NEW DATABASE", "MAKE DATABASE", "BUILD DATABASE"], correct: 0 },
+      { q: "O que significa DDL em SQL?", options: ["Data Definition Language", "Data Manipulation Language", "Data Control Language", "Data Query Language"], correct: 0 },
+      { q: "Qual é o comando DML mais usado para consultar dados?", options: ["SELECT", "INSERT", "UPDATE", "DELETE"], correct: 0 },
+      { q: "Qual cláusula limita o número de linhas retornadas?", options: ["LIMIT", "TOP", "ROWNUM", "MAXROWS"], correct: 0 },
+      { q: "Para contar o número de registros usamos:", options: ["COUNT(*)", "SUM(*)", "TOTAL(*)", "NUMBER(*)"], correct: 0 },
+      { q: "Qual função retorna o maior valor de uma coluna?", options: ["MAX()", "BIGGEST()", "HIGHEST()", "TOP()"], correct: 0 },
+      { q: "Qual função retorna o menor valor de uma coluna?", options: ["MIN()", "SMALLEST()", "LOWEST()", "BOTTOM()"], correct: 0 },
+      { q: "Qual cláusula agrupa registros com valores iguais?", options: ["GROUP BY", "ORDER BY", "HAVING", "CLUSTER BY"], correct: 0 },
+      { q: "A cláusula HAVING é usada junto com:", options: ["GROUP BY", "WHERE", "ORDER BY", "JOIN"], correct: 0 },
+      { q: "Qual comando adiciona uma nova coluna em uma tabela existente?", options: ["ALTER TABLE ... ADD", "CREATE COLUMN", "INSERT COLUMN", "MODIFY TABLE"], correct: 0 },
+      { q: "O que o JOIN faz em SQL?", options: ["Combina dados de duas ou mais tabelas", "Exclui dados duplicados", "Ordena os registros", "Cria uma nova tabela"], correct: 0 },
+      { q: "Qual tipo de JOIN retorna apenas registros que têm correspondência em ambas as tabelas?", options: ["INNER JOIN", "LEFT JOIN", "RIGHT JOIN", "FULL JOIN"], correct: 0 },
+      { q: "Qual é o operador para concatenar strings em SQL padrão?", options: ["||", "+", "CONCAT", "JOIN"], correct: 0 },
+      { q: "Qual comando renomeia uma tabela?", options: ["ALTER TABLE ... RENAME", "RENAME TABLE", "CHANGE TABLE", "MODIFY TABLE"], correct: 0 },
+      { q: "O que é uma chave primária (PRIMARY KEY)?", options: ["Identificador único para cada registro", "Campo que aceita nulos", "Coluna de texto longo", "Chave estrangeira"], correct: 0 },
+      { q: "Qual comando exclui todos os registros de uma tabela rapidamente?", options: ["TRUNCATE TABLE", "DELETE FROM", "DROP TABLE", "CLEAR TABLE"], correct: 0 },
+      { q: "Para filtrar após agrupamento usamos:", options: ["HAVING", "WHERE", "FILTER", "AFTER"], correct: 0 },
+      { q: "Qual é o valor padrão de uma coluna quando não especificado?", options: ["NULL", "0", "Empty", "Undefined"], correct: 0 },
+      { q: "Qual operador é usado para padrão de texto (curinga)?", options: ["LIKE", "MATCH", "SIMILAR", "PATTERN"], correct: 0 },
+      { q: "O comando BETWEEN é usado para:", options: ["Faixa de valores", "Valores iguais", "Valores diferentes", "Valores nulos"], correct: 0 },
+      { q: "Qual comando modifica a estrutura de uma tabela?", options: ["ALTER TABLE", "UPDATE TABLE", "MODIFY TABLE", "CHANGE TABLE"], correct: 0 },
+      { q: "O que significa DML?", options: ["Data Manipulation Language", "Data Definition Language", "Data Control Language", "Data Query Language"], correct: 0 },
+      { q: "Qual é o comando para conceder permissões?", options: ["GRANT", "ALLOW", "PERMIT", "AUTHORIZE"], correct: 0 },
+      { q: "Para inserir dados com colunas específicas usamos:", options: ["INSERT INTO tabela (colunas) VALUES (...)", "INSERT VALUES", "ADD INTO", "CREATE RECORD"], correct: 0 },
+      { q: "Qual função calcula a média de uma coluna numérica?", options: ["AVG()", "MEAN()", "AVERAGE()", "MEDIAN()"], correct: 0 },
+      { q: "O que o operador IN faz?", options: ["Verifica se o valor está em uma lista", "Verifica igualdade", "Verifica intervalo", "Verifica nulo"], correct: 0 },
+      { q: "Qual é o símbolo de comentário de linha em SQL?", options: ["--", "//", "#", "/*"], correct: 0 },
+      { q: "Para combinar resultados de duas consultas usamos:", options: ["UNION", "JOIN", "MERGE", "COMBINE"], correct: 0 },
+      { q: "Qual comando remove uma coluna de uma tabela?", options: ["ALTER TABLE ... DROP COLUMN", "DELETE COLUMN", "REMOVE COLUMN", "DROP COLUMN"], correct: 0 },
+      { q: "O que é uma chave estrangeira (FOREIGN KEY)?", options: ["Referência a chave primária de outra tabela", "Chave única na própria tabela", "Campo de texto", "Coluna auto-incremento"], correct: 0 }
     ];
 
-    // ==================== FUNÇÕES CORE ====================
     function generateDeviceId() {
       if (!localStorage.getItem('deviceId')) {
         localStorage.setItem('deviceId', crypto.randomUUID());
@@ -151,15 +198,21 @@ Também ajustei as variáveis para que o quiz calcule automaticamente o progress
 
     async function startQuiz() {
       userName = document.getElementById('user-name').value.trim();
-      if (!userName) { alert("Por favor, digite seu nome."); return; }
+      if (!userName) {
+        alert("Por favor, digite seu nome completo.");
+        return;
+      }
 
       deviceId = generateDeviceId();
       document.getElementById('start-screen').classList.add('hidden');
       document.getElementById('quiz-screen').classList.remove('hidden');
+
       document.getElementById('sidebar-name').textContent = userName;
       document.getElementById('sidebar-device').textContent = deviceId;
 
-      currentQuestion = 0; score = 0; answers = [];
+      currentQuestion = 0;
+      score = 0;
+      answers = [];
       loadQuestion();
     }
 
@@ -173,26 +226,33 @@ Também ajustei as variáveis para que o quiz calcule automaticamente o progress
 
       q.options.forEach((option, index) => {
         const btn = document.createElement('button');
-        btn.className = `w-full text-left p-5 border-2 border-gray-200 rounded-2xl hover:border-indigo-400 transition text-lg question-card`;
+        btn.className = `w-full text-left p-6 border-2 border-zinc-700 hover:border-indigo-500 rounded-2xl transition text-lg question-card bg-zinc-800`;
         btn.textContent = option;
-        btn.onclick = () => selectAnswer(index);
+        btn.onclick = () => selectAnswer(index, btn);
         optionsDiv.appendChild(btn);
       });
 
       updateProgress();
+      updateScore();
     }
 
-    function selectAnswer(selectedIndex) {
+    function selectAnswer(selectedIndex, selectedBtn) {
       const q = questions[currentQuestion];
       answers[currentQuestion] = selectedIndex;
 
-      if (selectedIndex === q.correct) score++;
+      if (selectedIndex === q.correct) {
+        score++;
+      }
 
       const buttons = document.querySelectorAll('#options button');
       buttons.forEach((btn, i) => {
         btn.disabled = true;
-        if (i === q.correct) btn.classList.add('border-emerald-500', 'bg-emerald-50');
-        if (i === selectedIndex && i !== q.correct) btn.classList.add('border-red-500', 'bg-red-50');
+        if (i === q.correct) {
+          btn.classList.add('correct');
+        }
+        if (i === selectedIndex && i !== q.correct) {
+          btn.classList.add('incorrect');
+        }
       });
 
       updateScore();
@@ -231,7 +291,7 @@ Também ajustei as variáveis para que o quiz calcule automaticamente o progress
       const percentage = Math.round((score / questions.length) * 100);
       document.getElementById('final-score-text').innerHTML = `
         ${score} / ${questions.length}<br>
-        <span class="text-3xl font-normal text-gray-600">(${percentage}%)</span>
+        <span class="text-3xl font-normal text-zinc-400">(${percentage}%)</span>
       `;
     }
 
@@ -250,16 +310,17 @@ Também ajustei as variáveis para que o quiz calcule automaticamente o progress
 
         if (error) throw error;
 
-        alert(`Resultado de ${userName} salvo com sucesso!`);
+        alert(`Resultado salvo com sucesso!\nPontuação: ${score}/${questions.length}`);
         location.reload();
       } catch (err) {
         console.error(err);
-        alert('Erro ao conectar ao Supabase. Verifique a tabela e as chaves.');
+        alert('Erro ao salvar no Supabase. Verifique sua configuração.');
       }
     }
 
-    window.onload = () => { deviceId = generateDeviceId(); };
+    window.onload = () => {
+      deviceId = generateDeviceId();
+    };
   </script>
 </body>
 </html>
-```
