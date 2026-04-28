@@ -125,7 +125,7 @@
             🏆 Placar Geral
           </h4>
           <div id="ranking-list" class="space-y-2 text-sm">
-            <!-- Preenchido automaticamente pelo JavaScript -->
+            <!-- Preenchido pelo JavaScript -->
           </div>
         </div>
 
@@ -154,31 +154,26 @@
     let answers = [];
 
     const questions = [
-      // 1. Ler NOME, IDADE e NOTA
       { q: "Qual comando é usado para ler dados do usuário em Portugol?", options: ["leia()", "escreva()", "ler()", "input()"], correct: 0 },
       { q: "Em Portugol, para declarar uma variável do tipo texto usamos:", options: ["cadeia", "string", "texto", "char"], correct: 0 },
       { q: "Qual é o tipo correto para armazenar a idade de uma pessoa?", options: ["inteiro", "real", "cadeia", "logico"], correct: 0 },
       { q: "Para ler a nota de um aluno, qual comando devemos usar?", options: ["leia(nota)", "escreva(nota)", "nota = leia()", "ler nota"], correct: 0 },
       { q: "Qual palavra reservada é usada para declarar variáveis em Portugol?", options: ["var", "declare", "tipo", "def"], correct: 0 },
-      // 2. Calcular área do triângulo
       { q: "Qual é a fórmula correta para calcular a área de um triângulo em Portugol?", options: ["(base * altura) / 2", "base * altura", "base + altura / 2", "base ^ altura"], correct: 0 },
       { q: "Qual operador é usado para divisão em Portugol?", options: ["/", "div", "÷", "//"], correct: 0 },
       { q: "Se base = 10 e altura = 5, qual é a área do triângulo?", options: ["25", "50", "15", "30"], correct: 0 },
       { q: "Para calcular área do triângulo precisamos de:", options: ["base e altura", "lado1, lado2 e lado3", "raio", "diâmetro"], correct: 0 },
       { q: "Qual função pode ser usada para exibir o resultado da área?", options: ["escreva()", "leia()", "mostrar()", "print()"], correct: 0 },
-      // 3. Verificar se número é PAR ou ÍMPAR
       { q: "Qual operador é usado para verificar o resto da divisão em Portugol?", options: ["mod", "%", "resto", "div"], correct: 0 },
       { q: "Um número é par quando o resto da divisão por 2 é igual a:", options: ["0", "1", "2", "10"], correct: 0 },
       { q: "Qual estrutura é mais adequada para verificar se um número é par ou ímpar?", options: ["se...então...senão", "enquanto", "para", "escolha"], correct: 0 },
       { q: "Qual é o resultado de 7 mod 2?", options: ["1", "0", "3", "2"], correct: 0 },
       { q: "Para testar se um número é ímpar, podemos usar:", options: ["numero mod 2 == 1", "numero / 2 == 0", "numero == par", "numero mod 2 != 0"], correct: 0 },
-      // 4. Programa de LOGIN
       { q: "Qual operador é usado para comparar se duas strings são iguais em Portugol?", options: ["==", "=", "igual", "comparar"], correct: 0 },
       { q: "No programa de login, devemos comparar:", options: ["usuário e senha digitados com os cadastrados", "apenas a senha", "apenas o nome", "idade e nota"], correct: 0 },
       { q: "Qual estrutura é mais usada em um sistema de login?", options: ["se...então...senão", "enquanto", "para", "repita"], correct: 0 },
       { q: "Para armazenar usuário e senha é comum usar variáveis do tipo:", options: ["cadeia", "inteiro", "real", "logico"], correct: 0 },
       { q: "O que deve acontecer se o login for inválido?", options: ["Mostrar mensagem de erro", "Encerrar o programa", "Reiniciar o computador", "Salvar a senha"], correct: 0 },
-      // 5. Somar 5 números
       { q: "Qual estrutura de repetição é mais indicada para somar 5 números fixos?", options: ["para", "enquanto", "repita", "se"], correct: 0 },
       { q: "Qual variável é usada para acumular a soma dos números?", options: ["soma", "total", "acumulador", "todas as anteriores"], correct: 0 },
       { q: "Para ler 5 números e somá-los, quantas vezes o comando 'leia()' deve ser executado?", options: ["5 vezes", "1 vez", "10 vezes", "6 vezes"], correct: 0 },
@@ -301,7 +296,7 @@
         if (error) console.error("Erro ao salvar:", error);
         else console.log("Resultado salvo com sucesso!");
 
-        await loadRanking();   // Atualiza o placar após salvar
+        await loadRanking();
         showResults();
       } catch (err) {
         console.error(err);
@@ -309,8 +304,11 @@
       }
     }
 
-    // ===================== FUNÇÃO DO PLACAR GERAL =====================
+    // ===================== PLACAR GERAL - VERSÃO COM DIAGNÓSTICO =====================
     async function loadRanking() {
+      const rankingDiv = document.getElementById('ranking-list');
+      rankingDiv.innerHTML = `<p class="text-zinc-400 text-center py-4">Carregando ranking...</p>`;
+
       try {
         const { data, error } = await supabaseClient
           .from('quiz_results2')
@@ -318,29 +316,36 @@
           .order('score', { ascending: false })
           .limit(10);
 
-        const rankingDiv = document.getElementById('ranking-list');
-        rankingDiv.innerHTML = '';
+        console.log("🔍 Resposta Supabase - Ranking:", { data, error });
 
-        if (error || !data || data.length === 0) {
-          rankingDiv.innerHTML = `<p class="text-zinc-500 text-center py-4">Nenhum resultado ainda.</p>`;
+        if (error) {
+          console.error("Erro Supabase:", error);
+          rankingDiv.innerHTML = `<p class="text-red-400 text-center py-4">Erro: ${error.message}</p>`;
           return;
         }
 
+        if (!data || data.length === 0) {
+          rankingDiv.innerHTML = `<p class="text-zinc-500 text-center py-4">Nenhum resultado encontrado ainda.</p>`;
+          return;
+        }
+
+        rankingDiv.innerHTML = '';
         data.forEach((item, index) => {
           const div = document.createElement('div');
           div.className = `ranking-item flex justify-between items-center bg-zinc-800 px-4 py-3 rounded-2xl`;
           div.innerHTML = `
             <div class="flex items-center gap-3">
               <span class="text-emerald-400 font-bold w-6">${index + 1}º</span>
-              <span class="text-zinc-300 truncate">${item.user_name}</span>
+              <span class="text-zinc-300 truncate">${item.user_name || 'Anônimo'}</span>
             </div>
             <span class="font-bold text-emerald-400">${item.score}/40</span>
           `;
           rankingDiv.appendChild(div);
         });
+
       } catch (err) {
-        console.error("Erro ao carregar ranking:", err);
-        document.getElementById('ranking-list').innerHTML = `<p class="text-zinc-500 text-center py-4">Erro ao carregar ranking.</p>`;
+        console.error("Erro inesperado ao carregar ranking:", err);
+        rankingDiv.innerHTML = `<p class="text-red-400 text-center py-4">Erro ao carregar ranking.</p>`;
       }
     }
 
@@ -348,10 +353,10 @@
       location.reload();
     }
 
-    // Carrega o ranking quando a página abre
+    // Inicialização
     window.onload = () => {
       deviceId = generateDeviceId();
-      loadRanking();
+      loadRanking();        // Carrega o placar ao abrir a página
     };
   </script>
 </body>
