@@ -2,127 +2,119 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Placar Geral - Quiz SQL</title>
+  <title>Placar Geral</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-
-  <style>
-    body {
-      background: #0a0a0a;
-      color: #e5e5e5;
-      font-family: system-ui;
-    }
-  </style>
 </head>
 
-<body class="min-h-screen p-6">
+<body class="bg-black text-white p-6">
 
-  <div class="max-w-6xl mx-auto">
+<h1 class="text-3xl text-indigo-400 mb-6">🏆 Ranking Geral</h1>
 
-    <div class="flex justify-between items-center mb-8">
-      <h1 class="text-4xl font-bold text-indigo-400">
-        🏆 Placar Geral
-      </h1>
+<div id="status" class="mb-4 text-yellow-400"></div>
 
-      <button onclick="loadRanking()" 
-        class="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl">
-        Atualizar
-      </button>
-    </div>
-
-    <!-- Tabela -->
-    <div class="bg-zinc-900 rounded-3xl p-6 border border-zinc-800 shadow-2xl">
-
-      <table class="w-full text-left">
-        <thead>
-          <tr class="text-zinc-400 border-b border-zinc-700">
-            <th class="py-4">#</th>
-            <th>Nome</th>
-            <th>Pontuação</th>
-            <th>Aproveitamento</th>
-            <th>Data</th>
-          </tr>
-        </thead>
-
-        <tbody id="ranking-table"></tbody>
-
-      </table>
-
-    </div>
-
-  </div>
+<table class="w-full border border-zinc-700">
+  <thead>
+    <tr class="bg-zinc-800">
+      <th>#</th>
+      <th>Nome</th>
+      <th>Pontos</th>
+      <th>%</th>
+    </tr>
+  </thead>
+  <tbody id="tabela"></tbody>
+</table>
 
 <script>
 
+const statusDiv = document.getElementById("status");
+
 if (!window.SUPABASE_CONFIG) {
-  alert("Erro: config.js não encontrado!");
+  statusDiv.innerHTML = "❌ config.js NÃO encontrado";
 }
 
+// 🔗 CONEXÃO
 const supabaseClient = supabase.createClient(
   window.SUPABASE_CONFIG.url,
   window.SUPABASE_CONFIG.key
 );
 
-// 🔥 CARREGAR RANKING
-async function loadRanking() {
-
-  const table = document.getElementById('ranking-table');
-  table.innerHTML = `<tr><td colspan="5" class="py-6 text-center">Carregando...</td></tr>`;
+// 🚨 TESTE DE CONEXÃO
+async function testarConexao() {
+  statusDiv.innerHTML = "🔄 Conectando ao banco...";
 
   try {
-
     const { data, error } = await supabaseClient
       .from('quiz_results2')
       .select('*')
-      .order('score', { ascending: false })
-      .limit(50);
+      .limit(1);
 
     if (error) {
+      statusDiv.innerHTML = "❌ ERRO: " + error.message;
       console.error(error);
-      table.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-red-400">Erro ao carregar</td></tr>`;
-      return;
+      return false;
     }
 
-    if (data.length === 0) {
-      table.innerHTML = `<tr><td colspan="5" class="py-6 text-center">Nenhum resultado ainda</td></tr>`;
-      return;
-    }
-
-    table.innerHTML = '';
-
-    data.forEach((player, index) => {
-
-      const percent = Math.round((player.score / player.total_questions) * 100);
-
-      const medal =
-        index === 0 ? "🥇" :
-        index === 1 ? "🥈" :
-        index === 2 ? "🥉" : "";
-
-      const row = `
-        <tr class="border-b border-zinc-800 hover:bg-zinc-800 transition">
-          <td class="py-4 font-bold">${index + 1} ${medal}</td>
-          <td>${player.user_name}</td>
-          <td class="text-emerald-400 font-bold">${player.score}</td>
-          <td>${percent}%</td>
-          <td class="text-sm text-zinc-400">${new Date(player.created_at).toLocaleString()}</td>
-        </tr>
-      `;
-
-      table.innerHTML += row;
-    });
+    statusDiv.innerHTML = "✅ Conectado com sucesso!";
+    return true;
 
   } catch (err) {
+    statusDiv.innerHTML = "❌ Falha na conexão";
     console.error(err);
-    table.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-red-400">Erro inesperado</td></tr>`;
+    return false;
   }
 }
 
-// carregar automático
-window.onload = loadRanking;
+// 📊 CARREGAR DADOS
+async function carregarRanking() {
+
+  const ok = await testarConexao();
+  if (!ok) return;
+
+  statusDiv.innerHTML = "📥 Buscando dados...";
+
+  const { data, error } = await supabaseClient
+    .from('quiz_results2')
+    .select('user_name, score, total_questions, created_at')
+    .order('score', { ascending: false });
+
+  if (error) {
+    statusDiv.innerHTML = "❌ Erro ao buscar: " + error.message;
+    console.error(error);
+    return;
+  }
+
+  console.log("DADOS:", data);
+
+  const tabela = document.getElementById("tabela");
+  tabela.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    statusDiv.innerHTML = "⚠️ Nenhum dado encontrado!";
+    return;
+  }
+
+  data.forEach((item, i) => {
+
+    const percent = Math.round((item.score / item.total_questions) * 100);
+
+    tabela.innerHTML += `
+      <tr class="border-t border-zinc-700">
+        <td class="p-2">${i+1}</td>
+        <td>${item.user_name}</td>
+        <td class="text-green-400">${item.score}</td>
+        <td>${percent}%</td>
+      </tr>
+    `;
+  });
+
+  statusDiv.innerHTML = `✅ ${data.length} registros carregados`;
+}
+
+// iniciar
+carregarRanking();
 
 </script>
 
