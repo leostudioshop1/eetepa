@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quiz Lógica de Programação - EETEPA Xinguara</title>
+  <title>Quiz Portugol Básico - EETEPA Xinguara</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
@@ -19,17 +19,15 @@
     }
     .question-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
     }
     .correct {
-      border-color: #22c55e !important;
-      background-color: #052e16 !important;
-      box-shadow: 0 0 10px #22c55e;
+      border-color: #22c55e;
+      background-color: #052e16;
     }
     .incorrect {
-      border-color: #ef4444 !important;
-      background-color: #450a0a !important;
-      box-shadow: 0 0 10px #ef4444;
+      border-color: #ef4444;
+      background-color: #450a0a;
     }
   </style>
 </head>
@@ -37,177 +35,174 @@
   <div class="max-w-6xl mx-auto p-6">
     <div class="flex flex-col lg:flex-row gap-8">
 
+      <!-- Área Principal -->
       <div class="flex-1 bg-zinc-900 rounded-3xl shadow-2xl p-8 border border-zinc-800">
         <div class="flex items-center justify-between mb-8">
-          <div>
-            <h1 class="text-4xl font-bold text-indigo-400">Quiz: Portugol & Lógica</h1>
-            <p class="text-zinc-400 text-sm mt-1">Algoritmos e Estruturas Fundamentais</p>
-          </div>
+          <h1 class="text-4xl font-bold text-emerald-400">Quiz Portugol Básico</h1>
+          <p class="text-zinc-400 text-sm">40 questões • Algoritmos Fundamentais</p>
         </div>
 
+        <!-- Tela Inicial -->
         <div id="start-screen" class="text-center py-12">
           <div class="max-w-md mx-auto">
-            <input id="user-name" type="text" placeholder="Seu nome completo" 
-                   class="w-full px-6 py-5 bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-indigo-500 text-lg placeholder-zinc-500 mb-4">
-            
-            <input id="user-course" type="text" placeholder="Curso (ex: Informática)" 
-                   class="w-full px-6 py-5 bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-indigo-500 text-lg placeholder-zinc-500">
-            
+            <input id="user-name" type="text" placeholder="Digite seu nome completo" 
+                   class="w-full px-6 py-5 bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-lg placeholder-zinc-500">
             <button onclick="startQuiz()" 
-                    class="mt-8 w-full bg-indigo-600 hover:bg-indigo-500 transition py-5 rounded-2xl text-xl font-semibold shadow-lg shadow-indigo-500/20">
-              Iniciar Desafio
+                    class="mt-8 w-full bg-emerald-600 hover:bg-emerald-500 transition py-5 rounded-2xl text-xl font-semibold">
+              Iniciar Quiz
             </button>
           </div>
         </div>
 
+        <!-- Tela do Quiz -->
         <div id="quiz-screen" class="hidden">
           <div class="flex justify-between items-center mb-8">
-            <span id="question-counter" class="text-2xl font-bold text-indigo-400">1/5</span>
+            <span id="question-counter" class="text-2xl font-bold text-emerald-400">1/40</span>
             <div class="text-right">
-              <div class="text-xs text-zinc-500">Pontos Ganhos</div>
+              <div class="text-xs text-zinc-500">Pontuação</div>
               <div id="score-main" class="text-4xl font-bold text-emerald-400">0</div>
             </div>
           </div>
 
-          <div id="question-text" class="text-2xl font-medium leading-relaxed min-h-[110px] mb-10 text-white"></div>
+          <div id="question-text" class="text-2xl font-medium leading-relaxed min-h-[110px] mb-10"></div>
 
           <div id="options" class="grid grid-cols-1 gap-4"></div>
 
-          <div class="flex justify-end mt-12">
+          <div class="flex justify-between mt-12">
+            <button onclick="prevQuestion()" id="btn-prev"
+                    class="px-8 py-4 bg-zinc-800 hover:bg-zinc-700 rounded-2xl font-medium hidden">← Anterior</button>
             <button onclick="nextQuestion()" id="btn-next"
-                    class="px-10 py-4 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-medium shadow-lg shadow-indigo-500/20">Próxima →</button>
+                    class="px-10 py-4 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-medium">Próxima →</button>
           </div>
         </div>
 
+        <!-- Tela de Resultado -->
         <div id="result-screen" class="hidden text-center py-12">
-          <h2 class="text-5xl font-bold mb-6 text-emerald-400">Mandou bem!</h2>
+          <h2 class="text-5xl font-bold mb-6 text-emerald-400">Quiz Concluído!</h2>
           <div id="final-score-text" class="text-7xl font-bold mb-6"></div>
-          <p class="text-xl text-zinc-400 mb-10">Dados enviados para o ranking da EETEPA.</p>
+          <p class="text-xl text-zinc-400 mb-10">Resultado salvo automaticamente no Supabase.</p>
           
           <button onclick="restartQuiz()" 
                   class="bg-zinc-700 hover:bg-zinc-600 px-12 py-5 rounded-2xl font-semibold text-lg transition">
-            Tentar Novamente
+            Reiniciar Quiz
           </button>
         </div>
       </div>
 
+      <!-- Sidebar -->
       <div class="w-full lg:w-80 bg-zinc-900 rounded-3xl shadow-2xl p-8 border border-zinc-800 h-fit sticky top-6">
-        <h3 class="font-bold text-2xl mb-8 text-white">Status</h3>
+        <h3 class="font-bold text-2xl mb-8 text-white">Informações</h3>
         
         <div class="space-y-8">
           <div>
-            <p class="text-xs uppercase tracking-widest text-zinc-500">Estudante</p>
-            <p id="sidebar-name" class="font-semibold text-lg mt-1 text-indigo-300">—</p>
+            <p class="text-xs uppercase tracking-widest text-zinc-500">Nome</p>
+            <p id="sidebar-name" class="font-semibold text-lg mt-1">—</p>
+          </div>
+          
+          <div>
+            <p class="text-xs uppercase tracking-widest text-zinc-500">ID do Dispositivo</p>
+            <p id="sidebar-device" class="font-mono text-sm bg-zinc-800 p-3 rounded-xl break-all mt-1">—</p>
           </div>
 
           <div>
-            <p class="text-xs uppercase tracking-widest text-zinc-500">Pontuação</p>
+            <p class="text-xs uppercase tracking-widest text-zinc-500">Pontuação Atual</p>
             <div id="sidebar-score" class="text-6xl font-bold text-emerald-400 mt-1">0</div>
+            <p class="text-sm text-zinc-500">de 40</p>
           </div>
 
           <div>
-            <p class="text-xs uppercase tracking-widest text-zinc-500 mb-2">Progresso do Quiz</p>
+            <p class="text-xs uppercase tracking-widest text-zinc-500 mb-2">Progresso</p>
             <div class="h-3 bg-zinc-800 rounded-full overflow-hidden">
-              <div id="progress-bar" class="h-3 bg-gradient-to-r from-indigo-500 to-emerald-500 w-0 transition-all duration-300"></div>
+              <div id="progress-bar" class="h-3 bg-gradient-to-r from-emerald-500 to-teal-500 w-0 transition-all duration-300"></div>
             </div>
           </div>
         </div>
 
-        <div class="mt-12 pt-8 border-t border-zinc-800 text-center text-xs text-zinc-500">
-          <p class="font-bold text-zinc-400">EETEPA Xinguara</p>
-          <p>Prof. Léo Cruz</p>
+        <div class="mt-12 text-center text-xs text-zinc-500">
+          EETEPA Xinguara<br>
+          Desenvolvido por Léo Cruz
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    const supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
+    if (!window.SUPABASE_CONFIG) {
+      alert("Erro: Arquivo config.js não encontrado!");
+    }
+
+    const supabaseClient = supabase.createClient(
+      window.SUPABASE_CONFIG.url,
+      window.SUPABASE_CONFIG.key
+    );
 
     let currentQuestion = 0;
     let score = 0;
     let userName = '';
-    let userCourse = '';
     let deviceId = '';
     let answers = [];
 
-    // Questões baseadas na sua solicitação
     const questions = [
-      { 
-        q: "Qual a sintaxe correta para ler NOME, IDADE e NOTA em Portugol?", 
-        options: [
-          "leia(nome, idade, nota)", 
-          "escreva(nome, idade, nota)", 
-          "leia(\"nome\", \"idade\", \"nota\")", 
-          "entrada -> nome, idade, nota"
-        ], 
-        correct: 0 
-      },
-      { 
-        q: "Para calcular a área de um triângulo (base * altura / 2), qual a expressão correta?", 
-        options: [
-          "area <- base * altura / 2", 
-          "area <- base + altura / 2", 
-          "area <- (base * altura) * 2", 
-          "area <- base * altura ^ 2"
-        ], 
-        correct: 0 
-      },
-      { 
-        q: "Como verificar se um número é PAR ou ÍMPAR usando o operador de resto (%)?", 
-        options: [
-          "se (num % 2 == 0) entao { escreva(\"PAR\") }", 
-          "se (num / 2 == 0) entao { escreva(\"PAR\") }", 
-          "se (num % 2 == 1) entao { escreva(\"PAR\") }", 
-          "se (num * 2 == 0) entao { escreva(\"PAR\") }"
-        ], 
-        correct: 0 
-      },
-      { 
-        q: "Em um programa de LOGIN, qual estrutura é usada para validar usuário e senha?", 
-        options: [
-          "Estrutura de Seleção (se...entao...senao)", 
-          "Estrutura de Repetição (para)", 
-          "Apenas variáveis do tipo Inteiro", 
-          "Comando de Saída (escreva)"
-        ], 
-        correct: 0 
-      },
-      { 
-        q: "Para somar 5 números digitados pelo usuário, qual a melhor abordagem?", 
-        options: [
-          "Usar um laço de repetição (para i de 1 ate 5)", 
-          "Criar 50 variáveis diferentes", 
-          "Usar apenas o comando escreva", 
-          "Não é possível somar mais de 2 números"
-        ], 
-        correct: 0 
-      }
+      // 1. Ler NOME, IDADE e NOTA (8 questões)
+      { q: "Qual comando é usado para ler dados do usuário em Portugol?", options: ["leia()", "escreva()", "ler()", "input()"], correct: 0 },
+      { q: "Em Portugol, para declarar uma variável do tipo texto usamos:", options: ["cadeia", "string", "texto", "char"], correct: 0 },
+      { q: "Qual é o tipo correto para armazenar a idade de uma pessoa?", options: ["inteiro", "real", "cadeia", "logico"], correct: 0 },
+      { q: "Para ler a nota de um aluno, qual comando devemos usar?", options: ["leia(nota)", "escreva(nota)", "nota = leia()", "ler nota"], correct: 0 },
+      { q: "Qual palavra reservada é usada para declarar variáveis em Portugol?", options: ["var", "declare", "tipo", "def"], correct: 0 },
+
+      // 2. Calcular área do triângulo (8 questões)
+      { q: "Qual é a fórmula correta para calcular a área de um triângulo em Portugol?", options: ["(base * altura) / 2", "base * altura", "base + altura / 2", "base ^ altura"], correct: 0 },
+      { q: "Qual operador é usado para divisão em Portugol?", options: ["/", "div", "÷", "//"], correct: 0 },
+      { q: "Se base = 10 e altura = 5, qual é a área do triângulo?", options: ["25", "50", "15", "30"], correct: 0 },
+      { q: "Para calcular área do triângulo precisamos de:", options: ["base e altura", "lado1, lado2 e lado3", "raio", "diâmetro"], correct: 0 },
+      { q: "Qual função pode ser usada para exibir o resultado da área?", options: ["escreva()", "leia()", "mostrar()", "print()"], correct: 0 },
+
+      // 3. Verificar se número é PAR ou ÍMPAR (8 questões)
+      { q: "Qual operador é usado para verificar o resto da divisão em Portugol?", options: ["mod", "%", "resto", "div"], correct: 0 },
+      { q: "Um número é par quando o resto da divisão por 2 é igual a:", options: ["0", "1", "2", "10"], correct: 0 },
+      { q: "Qual estrutura é mais adequada para verificar se um número é par ou ímpar?", options: ["se...então...senão", "enquanto", "para", "escolha"], correct: 0 },
+      { q: "Qual é o resultado de 7 mod 2?", options: ["1", "0", "3", "2"], correct: 0 },
+      { q: "Para testar se um número é ímpar, podemos usar:", options: ["numero mod 2 == 1", "numero / 2 == 0", "numero == par", "numero mod 2 != 0"], correct: 0 },
+
+      // 4. Programa de LOGIN (8 questões)
+      { q: "Qual operador é usado para comparar se duas strings são iguais em Portugol?", options: ["==", "=", "igual", "comparar"], correct: 0 },
+      { q: "No programa de login, devemos comparar:", options: ["usuário e senha digitados com os cadastrados", "apenas a senha", "apenas o nome", "idade e nota"], correct: 0 },
+      { q: "Qual estrutura é mais usada em um sistema de login?", options: ["se...então...senão", "enquanto", "para", "repita"], correct: 0 },
+      { q: "Para armazenar usuário e senha é comum usar variáveis do tipo:", options: ["cadeia", "inteiro", "real", "logico"], correct: 0 },
+      { q: "O que deve acontecer se o login for inválido?", options: ["Mostrar mensagem de erro", "Encerrar o programa", "Reiniciar o computador", "Salvar a senha"], correct: 0 },
+
+      // 5. Somar 5 números (8 questões)
+      { q: "Qual estrutura de repetição é mais indicada para somar 5 números fixos?", options: ["para", "enquanto", "repita", "se"], correct: 0 },
+      { q: "Qual variável é usada para acumular a soma dos números?", options: ["soma", "total", "acumulador", "todas as anteriores"], correct: 0 },
+      { q: "Para ler 5 números e somá-los, quantas vezes o comando 'leia()' deve ser executado?", options: ["5 vezes", "1 vez", "10 vezes", "6 vezes"], correct: 0 },
+      { q: "Qual é a inicialização correta para a variável de soma?", options: ["soma <- 0", "soma <- 1", "soma <- null", "soma <- vazio"], correct: 0 },
+      { q: "Após somar os 5 números, o que devemos fazer com o resultado?", options: ["Exibir com escreva()", "Guardar em arquivo", "Ignorar", "Dividir por 5"], correct: 0 }
     ];
 
     function generateDeviceId() {
       if (!localStorage.getItem('deviceId')) {
-        localStorage.setItem('deviceId', 'DEV-' + Math.random().toString(36).substr(2, 9).toUpperCase());
+        localStorage.setItem('deviceId', crypto.randomUUID());
       }
       return localStorage.getItem('deviceId');
     }
 
     async function startQuiz() {
       userName = document.getElementById('user-name').value.trim();
-      userCourse = document.getElementById('user-course').value.trim();
-      
-      if (!userName || !userCourse) {
-        alert("Preencha seu nome e curso para continuar!");
+      if (!userName) {
+        alert("Por favor, digite seu nome completo.");
         return;
       }
 
       deviceId = generateDeviceId();
       document.getElementById('start-screen').classList.add('hidden');
       document.getElementById('quiz-screen').classList.remove('hidden');
+
       document.getElementById('sidebar-name').textContent = userName;
+      document.getElementById('sidebar-device').textContent = deviceId;
 
       currentQuestion = 0;
       score = 0;
+      answers = [];
       loadQuestion();
     }
 
@@ -221,33 +216,37 @@
 
       q.options.forEach((option, index) => {
         const btn = document.createElement('button');
-        btn.className = `w-full text-left p-6 border-2 border-zinc-700 hover:border-indigo-500 rounded-2xl transition text-lg question-card bg-zinc-800 text-zinc-300`;
+        btn.className = `w-full text-left p-6 border-2 border-zinc-700 hover:border-emerald-500 rounded-2xl transition text-lg question-card bg-zinc-800`;
         btn.textContent = option;
         btn.onclick = () => selectAnswer(index, btn);
         optionsDiv.appendChild(btn);
       });
 
       updateProgress();
+      updateScore();
     }
 
     function selectAnswer(selectedIndex, selectedBtn) {
       const q = questions[currentQuestion];
-      const buttons = document.querySelectorAll('#options button');
-      
-      buttons.forEach(btn => btn.disabled = true);
+      answers[currentQuestion] = selectedIndex;
 
       if (selectedIndex === q.correct) {
-        score += 20; // 20 pontos por questão para totalizar 100
-        selectedBtn.classList.add('correct');
-      } else {
-        selectedBtn.classList.add('incorrect');
-        buttons[q.correct].classList.add('correct');
+        score++;
       }
+
+      const buttons = document.querySelectorAll('#options button');
+      buttons.forEach((btn, i) => {
+        btn.disabled = true;
+        if (i === q.correct) btn.classList.add('correct');
+        if (i === selectedIndex && i !== q.correct) btn.classList.add('incorrect');
+      });
 
       updateScore();
 
       if (currentQuestion === questions.length - 1) {
-        setTimeout(saveToSupabase, 1500);
+        setTimeout(() => {
+          saveToSupabase();
+        }, 800);
       }
     }
 
@@ -268,31 +267,54 @@
       }
     }
 
-    async function saveToSupabase() {
-      try {
-        await supabaseClient.from('quiz_results2').insert({
-          user_name: userName,
-          course: userCourse,
-          device_id: deviceId,
-          score: score,
-          created_at: new Date().toISOString()
-        });
-        showResults();
-      } catch (err) {
-        console.error("Erro Supabase:", err);
-        showResults();
+    function prevQuestion() {
+      if (currentQuestion > 0) {
+        currentQuestion--;
+        loadQuestion();
       }
     }
 
     function showResults() {
       document.getElementById('quiz-screen').classList.add('hidden');
       document.getElementById('result-screen').classList.remove('hidden');
-      document.getElementById('final-score-text').textContent = `${score} Pontos`;
+
+      const percentage = Math.round((score / questions.length) * 100);
+      document.getElementById('final-score-text').innerHTML = `
+        ${score} / ${questions.length}<br>
+        <span class="text-3xl font-normal text-zinc-400">(${percentage}%)</span>
+      `;
+    }
+
+    async function saveToSupabase() {
+      try {
+        const { error } = await supabaseClient
+          .from('quiz_results2')
+          .insert({
+            user_name: userName,
+            device_id: deviceId,
+            score: score,
+            total_questions: questions.length,
+            answers: JSON.stringify(answers),
+            created_at: new Date().toISOString()
+          });
+
+        if (error) console.error("Erro ao salvar:", error);
+        else console.log("Resultado salvo com sucesso!");
+
+        showResults();
+      } catch (err) {
+        console.error(err);
+        showResults();
+      }
     }
 
     function restartQuiz() {
       location.reload();
     }
+
+    window.onload = () => {
+      deviceId = generateDeviceId();
+    };
   </script>
 </body>
 </html>
