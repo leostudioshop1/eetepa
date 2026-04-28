@@ -1,147 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quiz Portugol Básico - EETEPA Xinguara</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js"></script>
-
-  <style>
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: #0a0a0a;
-      color: #e5e5e5;
-    }
-    .question-card {
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .question-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
-    }
-    .correct {
-      border-color: #22c55e;
-      background-color: #052e16;
-    }
-    .incorrect {
-      border-color: #ef4444;
-      background-color: #450a0a;
-    }
-    .ranking-item {
-      transition: all 0.2s;
-    }
-    .ranking-item:hover {
-      background-color: #27272a;
-    }
-  </style>
-</head>
-<body class="min-h-screen">
-  <div class="max-w-6xl mx-auto p-6">
-    <div class="flex flex-col lg:flex-row gap-8">
-
-      <!-- Área Principal -->
-      <div class="flex-1 bg-zinc-900 rounded-3xl shadow-2xl p-8 border border-zinc-800">
-        <div class="flex items-center justify-between mb-8">
-          <h1 class="text-4xl font-bold text-emerald-400">Quiz Portugol Básico</h1>
-          <p class="text-zinc-400 text-sm">40 questões • Algoritmos Fundamentais</p>
-        </div>
-
-        <!-- Tela Inicial -->
-        <div id="start-screen" class="text-center py-12">
-          <div class="max-w-md mx-auto">
-            <input id="user-name" type="text" placeholder="Digite seu nome completo" 
-                   class="w-full px-6 py-5 bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-lg placeholder-zinc-500">
-            <button onclick="startQuiz()" 
-                    class="mt-8 w-full bg-emerald-600 hover:bg-emerald-500 transition py-5 rounded-2xl text-xl font-semibold">
-              Iniciar Quiz
-            </button>
-          </div>
-        </div>
-
-        <!-- Tela do Quiz -->
-        <div id="quiz-screen" class="hidden">
-          <div class="flex justify-between items-center mb-8">
-            <span id="question-counter" class="text-2xl font-bold text-emerald-400">1/40</span>
-            <div class="text-right">
-              <div class="text-xs text-zinc-500">Pontuação</div>
-              <div id="score-main" class="text-4xl font-bold text-emerald-400">0</div>
-            </div>
-          </div>
-
-          <div id="question-text" class="text-2xl font-medium leading-relaxed min-h-[110px] mb-10"></div>
-          <div id="options" class="grid grid-cols-1 gap-4"></div>
-
-          <div class="flex justify-between mt-12">
-            <button onclick="prevQuestion()" id="btn-prev"
-                    class="px-8 py-4 bg-zinc-800 hover:bg-zinc-700 rounded-2xl font-medium hidden">← Anterior</button>
-            <button onclick="nextQuestion()" id="btn-next"
-                    class="px-10 py-4 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-medium">Próxima →</button>
-          </div>
-        </div>
-
-        <!-- Tela de Resultado -->
-        <div id="result-screen" class="hidden text-center py-12">
-          <h2 class="text-5xl font-bold mb-6 text-emerald-400">Quiz Concluído!</h2>
-          <div id="final-score-text" class="text-7xl font-bold mb-6"></div>
-          <p class="text-xl text-zinc-400 mb-10">Resultado salvo automaticamente.</p>
-          
-          <button onclick="restartQuiz()" 
-                  class="bg-zinc-700 hover:bg-zinc-600 px-12 py-5 rounded-2xl font-semibold text-lg transition">
-            Reiniciar Quiz
-          </button>
-        </div>
-      </div>
-
-      <!-- Sidebar -->
-      <div class="w-full lg:w-80 bg-zinc-900 rounded-3xl shadow-2xl p-8 border border-zinc-800 h-fit sticky top-6">
-        <h3 class="font-bold text-2xl mb-8 text-white">Informações</h3>
-        
-        <div class="space-y-8">
-          <div>
-            <p class="text-xs uppercase tracking-widest text-zinc-500">Nome</p>
-            <p id="sidebar-name" class="font-semibold text-lg mt-1">—</p>
-          </div>
-          
-          <div>
-            <p class="text-xs uppercase tracking-widest text-zinc-500">ID do Dispositivo</p>
-            <p id="sidebar-device" class="font-mono text-sm bg-zinc-800 p-3 rounded-xl break-all mt-1">—</p>
-          </div>
-
-          <div>
-            <p class="text-xs uppercase tracking-widest text-zinc-500">Sua Pontuação</p>
-            <div id="sidebar-score" class="text-6xl font-bold text-emerald-400 mt-1">0</div>
-            <p class="text-sm text-zinc-500">de 40</p>
-          </div>
-
-          <div>
-            <p class="text-xs uppercase tracking-widest text-zinc-500 mb-2">Progresso</p>
-            <div class="h-3 bg-zinc-800 rounded-full overflow-hidden">
-              <div id="progress-bar" class="h-3 bg-gradient-to-r from-emerald-500 to-teal-500 w-0 transition-all duration-300"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Placar Geral -->
-        <div class="mt-10">
-          <h4 class="font-bold text-lg mb-4 text-white flex items-center gap-2">
-            🏆 Placar Geral
-          </h4>
-          <div id="ranking-list" class="space-y-2 text-sm">
-            <!-- Preenchido via JavaScript -->
-          </div>
-        </div>
-
-        <div class="mt-12 text-center text-xs text-zinc-500">
-          EETEPA Xinguara<br>
-          Desenvolvido por Léo Cruz
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
+<script>
     if (!window.SUPABASE_CONFIG) {
       alert("Erro: Arquivo config.js não encontrado!");
     }
@@ -157,15 +14,150 @@
     let deviceId = '';
     let answers = [];
 
-    const questions = [ /* ... suas 40 questões permanecem iguais ... */ ];
+    const questions = [
+      // ← Cole aqui as 40 questões que eu te passei anteriormente
+      // (as perguntas sobre Portugol: nome/idade/nota, área do triângulo, par/ímpar, login e soma)
+    ];
 
-    // Funções existentes (generateDeviceId, startQuiz, loadQuestion, etc.) permanecem iguais
-    // ... (cole aqui todo o código anterior das funções)
+    function generateDeviceId() {
+      if (!localStorage.getItem('deviceId')) {
+        localStorage.setItem('deviceId', crypto.randomUUID());
+      }
+      return localStorage.getItem('deviceId');
+    }
 
-    // ===================== NOVA FUNÇÃO: CARREGAR RANKING =====================
+    async function startQuiz() {
+      userName = document.getElementById('user-name').value.trim();
+      if (!userName) {
+        alert("Por favor, digite seu nome completo.");
+        return;
+      }
+
+      deviceId = generateDeviceId();
+      document.getElementById('start-screen').classList.add('hidden');
+      document.getElementById('quiz-screen').classList.remove('hidden');
+
+      document.getElementById('sidebar-name').textContent = userName;
+      document.getElementById('sidebar-device').textContent = deviceId;
+
+      currentQuestion = 0;
+      score = 0;
+      answers = [];
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      const q = questions[currentQuestion];
+      document.getElementById('question-counter').textContent = `${currentQuestion + 1}/${questions.length}`;
+      document.getElementById('question-text').textContent = q.q;
+
+      const optionsDiv = document.getElementById('options');
+      optionsDiv.innerHTML = '';
+
+      q.options.forEach((option, index) => {
+        const btn = document.createElement('button');
+        btn.className = `w-full text-left p-6 border-2 border-zinc-700 hover:border-emerald-500 rounded-2xl transition text-lg question-card bg-zinc-800`;
+        btn.textContent = option;
+        btn.onclick = () => selectAnswer(index, btn);
+        optionsDiv.appendChild(btn);
+      });
+
+      updateProgress();
+      updateScore();
+    }
+
+    function selectAnswer(selectedIndex, selectedBtn) {
+      const q = questions[currentQuestion];
+      answers[currentQuestion] = selectedIndex;
+
+      if (selectedIndex === q.correct) {
+        score++;
+      }
+
+      // Feedback visual
+      const buttons = document.querySelectorAll('#options button');
+      buttons.forEach((btn, i) => {
+        btn.disabled = true;
+        if (i === q.correct) btn.classList.add('correct');
+        if (i === selectedIndex && i !== q.correct) btn.classList.add('incorrect');
+      });
+
+      updateScore();
+      updateProgress();
+
+      // Avança automaticamente após 1 segundo (1000ms)
+      setTimeout(() => {
+        if (currentQuestion < questions.length - 1) {
+          currentQuestion++;
+          loadQuestion();
+        } else {
+          saveToSupabase();   // Última questão → salva e mostra resultado
+        }
+      }, 1000);
+    }
+
+    function updateScore() {
+      document.getElementById('score-main').textContent = score;
+      document.getElementById('sidebar-score').textContent = score;
+    }
+
+    function updateProgress() {
+      const progress = ((currentQuestion + 1) / questions.length) * 100;
+      document.getElementById('progress-bar').style.width = `${progress}%`;
+    }
+
+    function nextQuestion() {
+      if (currentQuestion < questions.length - 1) {
+        currentQuestion++;
+        loadQuestion();
+      }
+    }
+
+    function prevQuestion() {
+      if (currentQuestion > 0) {
+        currentQuestion--;
+        loadQuestion();
+      }
+    }
+
+    function showResults() {
+      document.getElementById('quiz-screen').classList.add('hidden');
+      document.getElementById('result-screen').classList.remove('hidden');
+
+      const percentage = Math.round((score / questions.length) * 100);
+      document.getElementById('final-score-text').innerHTML = `
+        ${score} / ${questions.length}<br>
+        <span class="text-3xl font-normal text-zinc-400">(${percentage}%)</span>
+      `;
+    }
+
+    async function saveToSupabase() {
+      try {
+        const { error } = await supabaseClient
+          .from('quiz_results2')
+          .insert({
+            user_name: userName,
+            device_id: deviceId,
+            score: score,
+            total_questions: questions.length,
+            answers: JSON.stringify(answers),
+            created_at: new Date().toISOString()
+          });
+
+        if (error) console.error("Erro ao salvar:", error);
+        else console.log("Resultado salvo!");
+
+        await loadRanking();
+        showResults();
+      } catch (err) {
+        console.error(err);
+        showResults();
+      }
+    }
+
     async function loadRanking() {
       try {
-        const { data, error } = await supabaseClient
+        const { data } = await supabaseClient
           .from('quiz_results2')
           .select('user_name, score')
           .order('score', { ascending: false })
@@ -174,7 +166,7 @@
         const rankingDiv = document.getElementById('ranking-list');
         rankingDiv.innerHTML = '';
 
-        if (error || !data || data.length === 0) {
+        if (!data || data.length === 0) {
           rankingDiv.innerHTML = `<p class="text-zinc-500 text-center py-4">Nenhum resultado ainda.</p>`;
           return;
         }
@@ -196,40 +188,12 @@
       }
     }
 
-    // Atualiza a função saveToSupabase para recarregar o ranking após salvar
-    async function saveToSupabase() {
-      try {
-        const { error } = await supabaseClient
-          .from('quiz_results2')
-          .insert({
-            user_name: userName,
-            device_id: deviceId,
-            score: score,
-            total_questions: questions.length,
-            answers: JSON.stringify(answers),
-            created_at: new Date().toISOString()
-          });
-
-        if (error) console.error("Erro ao salvar:", error);
-        else console.log("Resultado salvo com sucesso!");
-
-        await loadRanking();   // Atualiza o placar geral
-        showResults();
-      } catch (err) {
-        console.error(err);
-        showResults();
-      }
-    }
-
     function restartQuiz() {
       location.reload();
     }
 
-    // Carrega o ranking quando a página abre
     window.onload = () => {
       deviceId = generateDeviceId();
-      loadRanking();        // ← Novo
+      loadRanking();
     };
   </script>
-</body>
-</html>
