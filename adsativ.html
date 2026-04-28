@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
+
   <style>
     body {
       font-family: system-ui, -apple-system, sans-serif;
@@ -28,12 +29,6 @@
       border-color: #ef4444;
       background-color: #450a0a;
     }
-    .ranking-item {
-      transition: all 0.2s;
-    }
-    .ranking-item:hover {
-      background-color: #27272a;
-    }
   </style>
 </head>
 <body class="min-h-screen">
@@ -50,9 +45,9 @@
         <!-- Tela Inicial -->
         <div id="start-screen" class="text-center py-12">
           <div class="max-w-md mx-auto">
-            <input id="user-name" type="text" placeholder="Digite seu nome completo"
+            <input id="user-name" type="text" placeholder="Digite seu nome completo" 
                    class="w-full px-6 py-5 bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-emerald-500 text-lg placeholder-zinc-500">
-            <button onclick="startQuiz()"
+            <button onclick="startQuiz()" 
                     class="mt-8 w-full bg-emerald-600 hover:bg-emerald-500 transition py-5 rounded-2xl text-xl font-semibold">
               Iniciar Quiz
             </button>
@@ -68,7 +63,9 @@
               <div id="score-main" class="text-4xl font-bold text-emerald-400">0</div>
             </div>
           </div>
+
           <div id="question-text" class="text-2xl font-medium leading-relaxed min-h-[110px] mb-10"></div>
+
           <div id="options" class="grid grid-cols-1 gap-4"></div>
 
           <div class="flex justify-between mt-12">
@@ -84,8 +81,8 @@
           <h2 class="text-5xl font-bold mb-6 text-emerald-400">Quiz Concluído!</h2>
           <div id="final-score-text" class="text-7xl font-bold mb-6"></div>
           <p class="text-xl text-zinc-400 mb-10">Resultado salvo automaticamente no Supabase.</p>
-         
-          <button onclick="restartQuiz()"
+          
+          <button onclick="restartQuiz()" 
                   class="bg-zinc-700 hover:bg-zinc-600 px-12 py-5 rounded-2xl font-semibold text-lg transition">
             Reiniciar Quiz
           </button>
@@ -95,37 +92,29 @@
       <!-- Sidebar -->
       <div class="w-full lg:w-80 bg-zinc-900 rounded-3xl shadow-2xl p-8 border border-zinc-800 h-fit sticky top-6">
         <h3 class="font-bold text-2xl mb-8 text-white">Informações</h3>
-       
+        
         <div class="space-y-8">
           <div>
             <p class="text-xs uppercase tracking-widest text-zinc-500">Nome</p>
             <p id="sidebar-name" class="font-semibold text-lg mt-1">—</p>
           </div>
-         
+          
           <div>
             <p class="text-xs uppercase tracking-widest text-zinc-500">ID do Dispositivo</p>
             <p id="sidebar-device" class="font-mono text-sm bg-zinc-800 p-3 rounded-xl break-all mt-1">—</p>
           </div>
+
           <div>
             <p class="text-xs uppercase tracking-widest text-zinc-500">Pontuação Atual</p>
             <div id="sidebar-score" class="text-6xl font-bold text-emerald-400 mt-1">0</div>
             <p class="text-sm text-zinc-500">de 40</p>
           </div>
+
           <div>
             <p class="text-xs uppercase tracking-widest text-zinc-500 mb-2">Progresso</p>
             <div class="h-3 bg-zinc-800 rounded-full overflow-hidden">
               <div id="progress-bar" class="h-3 bg-gradient-to-r from-emerald-500 to-teal-500 w-0 transition-all duration-300"></div>
             </div>
-          </div>
-        </div>
-
-        <!-- PLACAR GERAL -->
-        <div class="mt-10">
-          <h4 class="font-bold text-lg mb-4 text-white flex items-center gap-2">
-            🏆 Placar Geral
-          </h4>
-          <div id="ranking-list" class="space-y-2 text-sm">
-            <!-- Preenchido pelo JavaScript -->
           </div>
         </div>
 
@@ -154,26 +143,35 @@
     let answers = [];
 
     const questions = [
+      // 1. Ler NOME, IDADE e NOTA (8 questões)
       { q: "Qual comando é usado para ler dados do usuário em Portugol?", options: ["leia()", "escreva()", "ler()", "input()"], correct: 0 },
       { q: "Em Portugol, para declarar uma variável do tipo texto usamos:", options: ["cadeia", "string", "texto", "char"], correct: 0 },
       { q: "Qual é o tipo correto para armazenar a idade de uma pessoa?", options: ["inteiro", "real", "cadeia", "logico"], correct: 0 },
       { q: "Para ler a nota de um aluno, qual comando devemos usar?", options: ["leia(nota)", "escreva(nota)", "nota = leia()", "ler nota"], correct: 0 },
       { q: "Qual palavra reservada é usada para declarar variáveis em Portugol?", options: ["var", "declare", "tipo", "def"], correct: 0 },
+
+      // 2. Calcular área do triângulo (8 questões)
       { q: "Qual é a fórmula correta para calcular a área de um triângulo em Portugol?", options: ["(base * altura) / 2", "base * altura", "base + altura / 2", "base ^ altura"], correct: 0 },
       { q: "Qual operador é usado para divisão em Portugol?", options: ["/", "div", "÷", "//"], correct: 0 },
       { q: "Se base = 10 e altura = 5, qual é a área do triângulo?", options: ["25", "50", "15", "30"], correct: 0 },
       { q: "Para calcular área do triângulo precisamos de:", options: ["base e altura", "lado1, lado2 e lado3", "raio", "diâmetro"], correct: 0 },
       { q: "Qual função pode ser usada para exibir o resultado da área?", options: ["escreva()", "leia()", "mostrar()", "print()"], correct: 0 },
+
+      // 3. Verificar se número é PAR ou ÍMPAR (8 questões)
       { q: "Qual operador é usado para verificar o resto da divisão em Portugol?", options: ["mod", "%", "resto", "div"], correct: 0 },
       { q: "Um número é par quando o resto da divisão por 2 é igual a:", options: ["0", "1", "2", "10"], correct: 0 },
       { q: "Qual estrutura é mais adequada para verificar se um número é par ou ímpar?", options: ["se...então...senão", "enquanto", "para", "escolha"], correct: 0 },
       { q: "Qual é o resultado de 7 mod 2?", options: ["1", "0", "3", "2"], correct: 0 },
       { q: "Para testar se um número é ímpar, podemos usar:", options: ["numero mod 2 == 1", "numero / 2 == 0", "numero == par", "numero mod 2 != 0"], correct: 0 },
+
+      // 4. Programa de LOGIN (8 questões)
       { q: "Qual operador é usado para comparar se duas strings são iguais em Portugol?", options: ["==", "=", "igual", "comparar"], correct: 0 },
       { q: "No programa de login, devemos comparar:", options: ["usuário e senha digitados com os cadastrados", "apenas a senha", "apenas o nome", "idade e nota"], correct: 0 },
       { q: "Qual estrutura é mais usada em um sistema de login?", options: ["se...então...senão", "enquanto", "para", "repita"], correct: 0 },
       { q: "Para armazenar usuário e senha é comum usar variáveis do tipo:", options: ["cadeia", "inteiro", "real", "logico"], correct: 0 },
       { q: "O que deve acontecer se o login for inválido?", options: ["Mostrar mensagem de erro", "Encerrar o programa", "Reiniciar o computador", "Salvar a senha"], correct: 0 },
+
+      // 5. Somar 5 números (8 questões)
       { q: "Qual estrutura de repetição é mais indicada para somar 5 números fixos?", options: ["para", "enquanto", "repita", "se"], correct: 0 },
       { q: "Qual variável é usada para acumular a soma dos números?", options: ["soma", "total", "acumulador", "todas as anteriores"], correct: 0 },
       { q: "Para ler 5 números e somá-los, quantas vezes o comando 'leia()' deve ser executado?", options: ["5 vezes", "1 vez", "10 vezes", "6 vezes"], correct: 0 },
@@ -194,11 +192,14 @@
         alert("Por favor, digite seu nome completo.");
         return;
       }
+
       deviceId = generateDeviceId();
       document.getElementById('start-screen').classList.add('hidden');
       document.getElementById('quiz-screen').classList.remove('hidden');
+
       document.getElementById('sidebar-name').textContent = userName;
       document.getElementById('sidebar-device').textContent = deviceId;
+
       currentQuestion = 0;
       score = 0;
       answers = [];
@@ -212,6 +213,7 @@
 
       const optionsDiv = document.getElementById('options');
       optionsDiv.innerHTML = '';
+
       q.options.forEach((option, index) => {
         const btn = document.createElement('button');
         btn.className = `w-full text-left p-6 border-2 border-zinc-700 hover:border-emerald-500 rounded-2xl transition text-lg question-card bg-zinc-800`;
@@ -219,6 +221,7 @@
         btn.onclick = () => selectAnswer(index, btn);
         optionsDiv.appendChild(btn);
       });
+
       updateProgress();
       updateScore();
     }
@@ -226,6 +229,7 @@
     function selectAnswer(selectedIndex, selectedBtn) {
       const q = questions[currentQuestion];
       answers[currentQuestion] = selectedIndex;
+
       if (selectedIndex === q.correct) {
         score++;
       }
@@ -273,6 +277,7 @@
     function showResults() {
       document.getElementById('quiz-screen').classList.add('hidden');
       document.getElementById('result-screen').classList.remove('hidden');
+
       const percentage = Math.round((score / questions.length) * 100);
       document.getElementById('final-score-text').innerHTML = `
         ${score} / ${questions.length}<br>
@@ -296,7 +301,6 @@
         if (error) console.error("Erro ao salvar:", error);
         else console.log("Resultado salvo com sucesso!");
 
-        await loadRanking();
         showResults();
       } catch (err) {
         console.error(err);
@@ -304,59 +308,12 @@
       }
     }
 
-    // ===================== PLACAR GERAL - VERSÃO COM DIAGNÓSTICO =====================
-    async function loadRanking() {
-      const rankingDiv = document.getElementById('ranking-list');
-      rankingDiv.innerHTML = `<p class="text-zinc-400 text-center py-4">Carregando ranking...</p>`;
-
-      try {
-        const { data, error } = await supabaseClient
-          .from('quiz_results2')
-          .select('user_name, score')
-          .order('score', { ascending: false })
-          .limit(10);
-
-        console.log("🔍 Resposta Supabase - Ranking:", { data, error });
-
-        if (error) {
-          console.error("Erro Supabase:", error);
-          rankingDiv.innerHTML = `<p class="text-red-400 text-center py-4">Erro: ${error.message}</p>`;
-          return;
-        }
-
-        if (!data || data.length === 0) {
-          rankingDiv.innerHTML = `<p class="text-zinc-500 text-center py-4">Nenhum resultado encontrado ainda.</p>`;
-          return;
-        }
-
-        rankingDiv.innerHTML = '';
-        data.forEach((item, index) => {
-          const div = document.createElement('div');
-          div.className = `ranking-item flex justify-between items-center bg-zinc-800 px-4 py-3 rounded-2xl`;
-          div.innerHTML = `
-            <div class="flex items-center gap-3">
-              <span class="text-emerald-400 font-bold w-6">${index + 1}º</span>
-              <span class="text-zinc-300 truncate">${item.user_name || 'Anônimo'}</span>
-            </div>
-            <span class="font-bold text-emerald-400">${item.score}/40</span>
-          `;
-          rankingDiv.appendChild(div);
-        });
-
-      } catch (err) {
-        console.error("Erro inesperado ao carregar ranking:", err);
-        rankingDiv.innerHTML = `<p class="text-red-400 text-center py-4">Erro ao carregar ranking.</p>`;
-      }
-    }
-
     function restartQuiz() {
       location.reload();
     }
 
-    // Inicialização
     window.onload = () => {
       deviceId = generateDeviceId();
-      loadRanking();        // Carrega o placar ao abrir a página
     };
   </script>
 </body>
