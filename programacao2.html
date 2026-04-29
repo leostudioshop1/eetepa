@@ -3,283 +3,133 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Master Quiz: Lógica e Portugol - EETEPA Xinguara</title>
+  <title>Quiz Seguro - EETEPA Xinguara</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a0a; color: #e5e5e5; }
-    .question-card { transition: all 0.2s ease; }
-    .selected-option { border-color: #fbbf24 !important; background-color: #27272a !important; transform: scale(1.01); }
-    .correct { border-color: #22c55e !important; background-color: #052e16 !important; }
-    .incorrect { border-color: #ef4444 !important; background-color: #450a0a !important; }
-    .ranking-item { transition: all 0.2s; }
+    body { font-family: system-ui, sans-serif; background: #0a0a0a; color: #e5e5e5; }
+    .selected-option { border-color: #fbbf24 !important; background: #27272a !important; }
+    .correct { border-color: #22c55e !important; background: #052e16 !important; }
+    .incorrect { border-color: #ef4444 !important; background: #450a0a !important; }
   </style>
 </head>
-<body class="min-h-screen">
-  <div class="max-w-6xl mx-auto p-6">
-    <div class="flex flex-col lg:flex-row gap-8">
-      
-      <div class="flex-1 bg-zinc-900 rounded-3xl shadow-2xl p-8 border border-zinc-800">
-        <div class="flex items-center justify-between mb-8">
-          <div>
-            <h1 class="text-4xl font-bold text-yellow-500">Lógica & Portugol</h1>
-            <p class="text-zinc-400 text-sm mt-1">EETEPA Xinguara • 40 Questões</p>
-          </div>
-          <div class="text-right">
-            <p class="text-xs text-zinc-500 uppercase">Acertos</p>
-            <div id="score-main" class="text-4xl font-bold text-yellow-500">0</div>
-          </div>
-        </div>
-
-        <div id="start-screen" class="text-center py-12">
-          <div class="max-w-md mx-auto">
-            <input id="user-name" type="text" placeholder="Seu nome completo" 
-                   class="w-full px-6 py-5 bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-yellow-500 text-lg mb-6 text-white">
-            <button onclick="startQuiz()" 
-                    class="w-full bg-yellow-600 hover:bg-yellow-500 py-5 rounded-2xl text-xl font-bold transition shadow-lg shadow-yellow-900/20">
-              Iniciar Desafio
-            </button>
-          </div>
-        </div>
-
-        <div id="quiz-screen" class="hidden">
-          <div class="flex justify-between items-center mb-8">
-            <span id="question-counter" class="text-2xl font-bold text-yellow-500">1/40</span>
-          </div>
-          <div id="question-text" class="text-xl font-medium mb-10 min-h-[100px] leading-relaxed"></div>
-          <div id="options" class="grid grid-cols-1 gap-4"></div>
-          
-          <div class="flex justify-end mt-12">
-            <button id="btn-confirm" onclick="confirmAnswer()" 
-                    class="w-full md:w-64 py-4 bg-zinc-700 text-zinc-400 rounded-2xl font-bold transition-all" disabled>
-              Confirmar Resposta
-            </button>
-          </div>
-        </div>
-
-        <div id="result-screen" class="hidden text-center py-12">
-          <h2 class="text-5xl font-bold mb-6 text-yellow-500">Quiz Finalizado!</h2>
-          <div id="final-score-text" class="text-8xl font-bold mb-10 text-white"></div>
-          <button onclick="location.reload()" class="bg-zinc-800 hover:bg-zinc-700 px-12 py-5 rounded-2xl font-bold border border-zinc-700">
-            Tentar Novamente
-          </button>
-        </div>
-      </div>
-
-      <div class="w-full lg:w-80 bg-zinc-900 rounded-3xl p-8 border border-zinc-800 h-fit sticky top-6">
-        <div class="space-y-6">
-          <div>
-            <p class="text-xs text-zinc-500 uppercase tracking-widest">Aluno</p>
-            <p id="sidebar-name" class="font-bold text-lg text-white mt-1">—</p>
-          </div>
-          
-          <div>
-            <p class="text-xs text-zinc-500 uppercase tracking-widest">ID do Dispositivo</p>
-            <p id="sidebar-device" class="font-mono text-[10px] bg-zinc-800 p-3 rounded-xl mt-2 break-all text-zinc-400 border border-zinc-700">—</p>
-          </div>
-
-          <div>
-            <p class="text-xs text-zinc-500 uppercase tracking-widest mb-2">Progresso do Teste</p>
-            <div class="h-3 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700">
-              <div id="progress-bar" class="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 w-0 transition-all duration-500"></div>
-            </div>
-          </div>
-
-          <div class="pt-6 border-t border-zinc-800">
-            <h4 class="font-bold text-white mb-4 flex items-center gap-2">
-              <span>🏆</span> Top 10 Ranking
-            </h4>
-            <div id="ranking-list" class="space-y-2 text-sm">
-              <p class="text-zinc-600 animate-pulse text-center">Carregando...</p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="mt-12 text-center text-[10px] text-zinc-600 uppercase tracking-tighter">
-          Desenvolvido por Léo Cruz<br>EETEPA Xinguara
-        </div>
-      </div>
+<body class="min-h-screen p-6">
+  <div class="max-w-4xl mx-auto bg-zinc-900 rounded-3xl p-8 border border-zinc-800 shadow-2xl">
+    
+    <div id="setup-screen" class="text-center py-10">
+      <h1 class="text-3xl font-bold text-yellow-500 mb-6">Avaliação de Algoritmos</h1>
+      <input id="user-name" type="text" placeholder="Nome do Aluno" class="w-full max-w-sm px-6 py-4 bg-zinc-800 border border-zinc-700 rounded-xl mb-6 outline-none focus:border-yellow-500">
+      <button onclick="iniciarProva()" class="block mx-auto bg-yellow-600 hover:bg-yellow-500 px-10 py-4 rounded-xl font-bold transition">Carregar Prova</button>
     </div>
+
+    <div id="quiz-screen" class="hidden">
+      <div class="flex justify-between mb-8">
+        <span id="progress-text" class="text-yellow-500 font-bold">Questão 1</span>
+        <span id="timer" class="text-zinc-500">ID: —</span>
+      </div>
+      <h2 id="question-text" class="text-2xl mb-8 leading-relaxed"></h2>
+      <div id="options-container" class="grid gap-4"></div>
+      <button id="btn-confirm" onclick="validarResposta()" class="mt-10 w-full py-4 bg-zinc-700 rounded-xl font-bold opacity-50" disabled>Confirmar Resposta</button>
+    </div>
+
+    <div id="result-screen" class="hidden text-center py-10">
+      <h2 class="text-4xl font-bold text-yellow-500 mb-4">Prova Concluída</h2>
+      <p id="final-score" class="text-6xl font-bold mb-8"></p>
+      <button onclick="location.reload()" class="bg-zinc-800 px-8 py-3 rounded-lg border border-zinc-700">Sair</button>
+    </div>
+
   </div>
 
   <script>
     const supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
-    
-    let currentQuestion = 0, score = 0, userName = '', selectedIdx = null, deviceId = '';
+    let questoes = [], indiceAtual = 0, acertos = 0, selecionada = null, nomeAluno = '', deviceId = '';
 
-    // GARANTE QUE O DEVICE ID SEJA GERADO E EXIBIDO
-    function getDeviceId() {
-      let id = localStorage.getItem('deviceId');
-      if (!id) {
-        id = 'DEV-' + crypto.randomUUID().substring(0, 8).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
-        localStorage.setItem('deviceId', id);
-      }
-      return id;
-    }
+    // Bloqueia inspeção básica
+    document.addEventListener('contextmenu', e => e.preventDefault());
 
-    const questions = [
-        { q: "Qual a função principal de um algoritmo?", options: ["Executar tarefas aleatórias", "Uma sequência lógica para resolver um problema", "Apenas realizar cálculos matemáticos", "Substituir componentes de hardware"], correct: 1 },
-        { q: "O comando 'leia()' é utilizado para:", options: ["Exibir resultados na tela", "Entrada de dados via teclado", "Limpar variáveis da memória", "Repetir um bloco de código"], correct: 1 },
-        { q: "O que o operador '%' (ou mod) retorna?", options: ["O valor da porcentagem", "O resultado da divisão real", "O resto da divisão inteira", "A potência de um número"], correct: 2 },
-        { q: "Qual tipo de dado é ideal para armazenar a idade de uma pessoa?", options: ["Real", "Cadeia", "Inteiro", "Logico"], correct: 2 },
-        { q: "A estrutura 'se-senao' pertence a qual categoria?", options: ["Estruturas de Repetição", "Estruturas de Decisão/Condicional", "Estruturas de Atribuição", "Estruturas de Dados"], correct: 1 },
-        { q: "O que define um 'Loop Infinito'?", options: ["Um código que roda muito rápido", "Um laço cuja condição de parada nunca é atingida", "Um erro de conexão com o banco", "Uma função que chama a si mesma"], correct: 1 },
-        { q: "Qual símbolo representa 'diferente' em Portugol?", options: ["==", "!=", "><", "<>"], correct: 3 },
-        { q: "Qual estrutura é melhor para repetir um código 50 vezes?", options: ["Escolha-Caso", "Para", "Se", "Escreva"], correct: 1 },
-        { q: "Na lógica, o que acontece em 'x = x + 1'?", options: ["Um erro de sintaxe", "O valor de x é incrementado em 1", "X passa a valer zero", "O programa para a execução"], correct: 1 },
-        { q: "Tipo de dado usado para armazenar o endereço (Rua, Nº)?", options: ["Caracter", "Cadeia", "Real", "Logico"], correct: 1 },
-        { q: "Se 'P' é verdadeiro e 'Q' é falso, 'P e Q' resulta em:", options: ["Verdadeiro", "Falso", "Nulo", "Erro"], correct: 1 },
-        { q: "Se 'P' é verdadeiro ou 'Q' é falso, 'P ou Q' resulta em:", options: ["Verdadeiro", "Falso", "Indeterminado", "Erro"], correct: 0 },
-        { q: "O comando 'escreva' representa uma operação de:", options: ["Entrada", "Processamento", "Saída", "Memória"], correct: 2 },
-        { q: "Em um vetor de 10 posições, qual o índice da última posição?", options: ["10", "9", "0", "11"], correct: 1 },
-        { q: "Qual comando encerra imediatamente um laço de repetição?", options: ["pare", "continua", "fim", "limpa"], correct: 0 },
-        { q: "A ordem correta do ciclo de vida de um programa é:", options: ["Código -> Lógica -> Execução", "Lógica -> Codificação -> Teste", "Teste -> Lógica -> Código", "Codificação -> Teste -> Lógica"], correct: 1 },
-        { q: "O que faz a função 'limpa()' em Portugol?", options: ["Apaga o HD", "Limpa as variáveis", "Limpa o console de saída", "Fecha o programa"], correct: 2 },
-        { q: "Como comentar uma linha no código?", options: ["--", "/*", "#", "//"], correct: 3 },
-        { q: "Se A=10 e B=20, após 'A = B' e 'B = A', quais os valores?", options: ["A=10, B=20", "A=20, B=10", "A=20, B=20", "A=10, B=10"], correct: 2 },
-        { q: "Uma variável 'Real' aceita:", options: ["Apenas números inteiros", "Números com ponto flutuante/decimais", "Somente letras", "Arquivos de imagem"], correct: 1 },
-        { q: "O que é indentação no código?", options: ["Um erro gráfico", "Organização visual por recuos", "Um tipo de compilador", "Um comando de saída"], correct: 1 },
-        { q: "Qual a precedência correta de operadores?", options: ["Soma antes de Multiplicação", "Parênteses antes de tudo", "Relacionais antes de Aritméticos", "Ou antes de E"], correct: 1 },
-        { q: "O laço 'faca-enquanto' garante que o código rode:", options: ["Nenhuma vez", "Ao menos uma vez", "Sempre 10 vezes", "Até o usuário cancelar"], correct: 1 },
-        { q: "O que é um 'Teste de Mesa'?", options: ["Um benchmark de hardware", "Simulação manual da execução do código", "Limpar a poeira do PC", "Instalar o software"], correct: 1 },
-        { q: "O operador 'não' (negação) inverte:", options: ["O valor de um Inteiro", "O valor lógico (V para F e vice-versa)", "A ordem das linhas", "O nome da variável"], correct: 1 },
-        { q: "Resultado de: escreva(10 + 5 * 2)?", options: ["30", "20", "25", "15"], correct: 1 },
-        { q: "Um algoritmo deve ser 'determinístico', o que significa?", options: ["Que ele nunca acaba", "Que para a mesma entrada ele gera a mesma saída", "Que ele escolhe caminhos aleatórios", "Que ele só roda em Windows"], correct: 1 },
-        { q: "Qual nome de variável é inválido?", options: ["_idade", "2nome", "nomeAluno", "salario_bruto"], correct: 1 },
-        { q: "O que é uma constante?", options: ["Um laço que nunca para", "Um valor que não se altera durante o programa", "Uma variável que muda muito", "Um erro"], correct: 1 },
-        { q: "Para unir dois textos usamos a:", options: ["Concatenção", "Divisão", "Subtração", "Multiplicação"], correct: 0 },
-        { q: "O que o compilador faz?", options: ["Cria o design do app", "Traduz código para linguagem de máquina", "Digita o código sozinho", "Aumenta a memória RAM"], correct: 1 },
-        { q: "Em Portugol, a divisão inteira de 9 por 2 resulta em:", options: ["4.5", "4", "5", "0"], correct: 1 },
-        { q: "O operador 'OU' é verdadeiro se:", options: ["Pelo menos um for verdadeiro", "Somente se ambos forem verdadeiros", "Somente se ambos forem falsos", "Nunca"], correct: 0 },
-        { q: "O que é uma função?", options: ["Um hardware", "Um bloco de código que executa uma tarefa específica", "Um erro no laço", "Um tipo de cabo"], correct: 1 },
-        { q: "O fluxo padrão de execução é:", options: ["De baixo para cima", "Top-down (cima para baixo)", "Aleatório", "Inverso"], correct: 1 },
-        { q: "Qual a saída de 'nao (10 > 5)'?", options: ["Verdadeiro", "Falso", "10", "Erro"], correct: 1 },
-        { q: "Uma 'matriz' é:", options: ["Um vetor de uma única dimensão", "Um vetor de várias dimensões (tabela)", "Uma placa de vídeo", "Um comando de entrada"], correct: 1 },
-        { q: "A lógica de programação é importante para:", options: ["Apenas programadores C++", "Desenvolver o raciocínio para qualquer linguagem", "Comprar peças de PC", "Usar redes sociais"], correct: 1 },
-        { q: "O Pseudocódigo serve para:", options: ["Executar no servidor", "Planejar a lógica sem se preocupar com sintaxe rígida", "Esconder o código", "Criar sites"], correct: 1 },
-        { q: "Qual o site oficial da EETEPA Xinguara?", options: ["Google", "Não possui site", "Portal oficial da SEDUC", "Facebook"], correct: 2 }
-    ];
+    async function iniciarProva() {
+      nomeAluno = document.getElementById('user-name').value.trim();
+      if (!nomeAluno) return alert("Digite seu nome!");
 
-    function startQuiz() {
-      userName = document.getElementById('user-name').value.trim();
-      if (!userName) return alert("Por favor, digite seu nome!");
+      // Busca questões no banco (o gabarito vem junto, mas você pode tratar isso)
+      const { data, error } = await supabaseClient.from('questoes_portugol').select('*');
       
-      deviceId = getDeviceId();
+      if (error || !data) return alert("Erro ao carregar questões do banco.");
       
-      document.getElementById('start-screen').classList.add('hidden');
+      questoes = data.sort(() => Math.random() - 0.5); // Embaralha ordem
+      deviceId = localStorage.getItem('deviceId') || 'DEV-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+      localStorage.setItem('deviceId', deviceId);
+
+      document.getElementById('setup-screen').classList.add('hidden');
       document.getElementById('quiz-screen').classList.remove('hidden');
-      
-      document.getElementById('sidebar-name').textContent = userName;
-      document.getElementById('sidebar-device').textContent = deviceId;
-      
-      loadQuestion();
+      mostrarQuestao();
     }
 
-    function loadQuestion() {
-      selectedIdx = null;
-      const btnConfirm = document.getElementById('btn-confirm');
-      btnConfirm.disabled = true;
-      btnConfirm.classList.replace('bg-yellow-600', 'bg-zinc-700');
-      btnConfirm.classList.add('text-zinc-400');
-      btnConfirm.classList.remove('text-white');
-
-      const q = questions[currentQuestion];
-      document.getElementById('question-counter').textContent = `${currentQuestion + 1}/${questions.length}`;
-      document.getElementById('question-text').textContent = q.q;
+    function mostrarQuestao() {
+      const q = questoes[indiceAtual];
+      selecionada = null;
+      document.getElementById('progress-text').textContent = `Questão ${indiceAtual + 1}/${questoes.length}`;
+      document.getElementById('question-text').textContent = q.pergunta;
       
-      const optionsDiv = document.getElementById('options');
-      optionsDiv.innerHTML = '';
+      const container = document.getElementById('options-container');
+      container.innerHTML = '';
       
-      q.options.forEach((opt, i) => {
+      q.opcoes.forEach((opt, i) => {
         const btn = document.createElement('button');
-        btn.className = `w-full text-left p-5 border-2 border-zinc-700 rounded-2xl transition-all question-card bg-zinc-800 hover:border-zinc-500 text-lg`;
+        btn.className = "w-full text-left p-5 bg-zinc-800 border-2 border-zinc-700 rounded-xl transition-all hover:border-zinc-500";
         btn.textContent = opt;
-        btn.onclick = () => selectOption(i, btn);
-        optionsDiv.appendChild(btn);
+        btn.onclick = () => {
+          selecionada = i;
+          document.querySelectorAll('#options-container button').forEach(b => b.classList.remove('selected-option'));
+          btn.classList.add('selected-option');
+          document.getElementById('btn-confirm').disabled = false;
+          document.getElementById('btn-confirm').classList.remove('opacity-50');
+          document.getElementById('btn-confirm').classList.add('bg-yellow-600');
+        };
+        container.appendChild(btn);
       });
-      updateProgress();
     }
 
-    function selectOption(idx, btn) {
-      selectedIdx = idx;
-      document.querySelectorAll('.question-card').forEach(b => b.classList.remove('selected-option'));
-      btn.classList.add('selected-option');
+    async function validarResposta() {
+      const q = questoes[indiceAtual];
+      const botoes = document.querySelectorAll('#options-container button');
       
-      const btnConfirm = document.getElementById('btn-confirm');
-      btnConfirm.disabled = false;
-      btnConfirm.classList.replace('bg-zinc-700', 'bg-yellow-600');
-      btnConfirm.classList.replace('text-zinc-400', 'text-white');
-    }
-
-    function confirmAnswer() {
-      const q = questions[currentQuestion];
-      const buttons = document.querySelectorAll('.question-card');
+      botoes.forEach(b => b.disabled = true);
       
-      buttons.forEach((btn, i) => {
-        btn.disabled = true;
-        if (i === q.correct) btn.classList.add('correct');
-        if (i === selectedIdx && i !== q.correct) btn.classList.add('incorrect');
-      });
-
-      if (selectedIdx === q.correct) score++;
-      document.getElementById('score-main').textContent = score;
+      // Validação
+      if (selecionada === q.correta) {
+        acertos++;
+        botoes[selecionada].classList.add('correct');
+      } else {
+        botoes[selecionada].classList.add('incorrect');
+        botoes[q.correta].classList.add('correct');
+      }
 
       setTimeout(() => {
-        if (currentQuestion < questions.length - 1) {
-          currentQuestion++;
-          loadQuestion();
+        if (indiceAtual < questoes.length - 1) {
+          indiceAtual++;
+          mostrarQuestao();
+          document.getElementById('btn-confirm').disabled = true;
+          document.getElementById('btn-confirm').classList.add('opacity-50');
         } else {
-          saveResult();
+          finalizarProva();
         }
-      }, 1200);
+      }, 1500);
     }
 
-    function updateProgress() {
-      document.getElementById('progress-bar').style.width = `${((currentQuestion + 1) / questions.length) * 100}%`;
-    }
+    async function finalizarProva() {
+      await supabaseClient.from('quiz_results2').insert({
+        user_name: nomeAluno,
+        device_id: deviceId,
+        score: acertos,
+        total_questions: questoes.length
+      });
 
-    async function saveResult() {
-      try {
-        await supabaseClient.from('quiz_results2').insert({ 
-            user_name: userName, 
-            device_id: deviceId,
-            score: score, 
-            total_questions: 40,
-            created_at: new Date().toISOString()
-        });
-        showResults();
-        loadRanking();
-      } catch (e) {
-        showResults();
-      }
-    }
-
-    function showResults() {
       document.getElementById('quiz-screen').classList.add('hidden');
       document.getElementById('result-screen').classList.remove('hidden');
-      document.getElementById('final-score-text').textContent = `${score} / 40`;
+      document.getElementById('final-score').textContent = `${acertos} / ${questoes.length}`;
     }
-
-    async function loadRanking() {
-      try {
-        const { data } = await supabaseClient.from('quiz_results2').select('user_name, score').order('score', { ascending: false }).limit(10);
-        document.getElementById('ranking-list').innerHTML = data?.map((item, i) => `
-          <div class="ranking-item flex justify-between items-center bg-zinc-800 p-3 rounded-xl border border-zinc-700">
-            <span class="truncate pr-2 font-medium"><span class="text-yellow-500 mr-1">${i+1}º</span> ${item.user_name}</span>
-            <span class="text-yellow-500 font-bold">${item.score}/40</span>
-          </div>
-        `).join('') || '<p class="text-zinc-600 text-center">Nenhum recorde.</p>';
-      } catch (err) {
-        document.getElementById('ranking-list').innerHTML = '<p class="text-red-500 text-center">Erro ao carregar.</p>';
-      }
-    }
-
-    window.onload = () => {
-      deviceId = getDeviceId();
-      document.getElementById('sidebar-device').textContent = deviceId;
-      loadRanking();
-    };
   </script>
 </body>
 </html>
