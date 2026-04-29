@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Raciocínio Lógico - Portugol</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0a0a0a;
+      color: #e5e5e5;
+    }
+    .question-card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .question-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+    }
+    .correct {
+      border-color: #22c55e;
+      background-color: #052e16;
+    }
+    .incorrect {
+      border-color: #ef4444;
+      background-color: #450a0a;
+    }
+    .ranking-item {
+      transition: all 0.2s;
+    }
+    .ranking-item:hover {
+      background-color: #27272a;
+    }
+    code {
+      background: #18181b;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      color: #fbbf24;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="max-w-6xl mx-auto p-6">
+    <div class="flex flex-col lg:flex-row gap-8">
+
+      <div class="flex-1 bg-zinc-900 rounded-3xl shadow-2xl p-8 border border-zinc-800">
+        <div class="flex items-center justify-between mb-8">
+          <h1 class="text-4xl font-bold text-amber-400">Raciocínio Lógico</h1>
+          <p class="text-zinc-400 text-sm">Estruturação de Algoritmos • Portugol</p>
+        </div>
+
+        <div id="start-screen" class="text-center py-12">
+          <div class="max-w-md mx-auto">
+            <input id="user-name" type="text" placeholder="Seu nome completo"
+                   class="w-full px-6 py-5 bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-amber-500 text-lg placeholder-zinc-500">
+            <button onclick="startQuiz()"
+                    class="mt-8 w-full bg-amber-600 hover:bg-amber-500 transition py-5 rounded-2xl text-xl font-semibold">
+              Iniciar Desafio
+            </button>
+          </div>
+        </div>
+
+        <div id="quiz-screen" class="hidden">
+          <div class="flex justify-between items-center mb-8">
+            <span id="question-counter" class="text-2xl font-bold text-amber-400">1/10</span>
+            <div class="text-right">
+              <div class="text-xs text-zinc-500">Acertos</div>
+              <div id="score-main" class="text-4xl font-bold text-amber-400">0</div>
+            </div>
+          </div>
+          <div id="question-text" class="text-xl font-medium leading-relaxed min-h-[110px] mb-10 whitespace-pre-line"></div>
+          <div id="options" class="grid grid-cols-1 gap-4"></div>
+
+          <div class="flex justify-end mt-12">
+            <button onclick="nextQuestion()" id="btn-next"
+                    class="px-10 py-4 bg-amber-600 hover:bg-amber-500 rounded-2xl font-medium">Próxima →</button>
+          </div>
+        </div>
+
+        <div id="result-screen" class="hidden text-center py-12">
+          <h2 class="text-5xl font-bold mb-6 text-amber-400">Treinamento Concluído!</h2>
+          <div id="final-score-text" class="text-7xl font-bold mb-6"></div>
+          <p class="text-xl text-zinc-400 mb-10">Sua performance lógica foi registrada.</p>
+         
+          <button onclick="restartQuiz()"
+                  class="bg-zinc-700 hover:bg-zinc-600 px-12 py-5 rounded-2xl font-semibold text-lg transition">
+            Tentar Novamente
+          </button>
+        </div>
+      </div>
+
+      <div class="w-full lg:w-80 bg-zinc-900 rounded-3xl shadow-2xl p-8 border border-zinc-800 h-fit sticky top-6">
+        <h3 class="font-bold text-2xl mb-8 text-white">Status</h3>
+       
+        <div class="space-y-8">
+          <div>
+            <p class="text-xs uppercase tracking-widest text-zinc-500">Usuário</p>
+            <p id="sidebar-name" class="font-semibold text-lg mt-1">—</p>
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-widest text-zinc-500">Pontuação</p>
+            <div id="sidebar-score" class="text-6xl font-bold text-amber-400 mt-1">0</div>
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-widest text-zinc-500 mb-2">Progresso Lógico</p>
+            <div class="h-3 bg-zinc-800 rounded-full overflow-hidden">
+              <div id="progress-bar" class="h-3 bg-gradient-to-r from-amber-500 to-orange-500 w-0 transition-all duration-300"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-10">
+          <h4 class="font-bold text-lg mb-4 text-white">🏆 Ranking Lógico</h4>
+          <div id="ranking-list" class="space-y-2 text-sm"></div>
+        </div>
+
+        <div class="mt-12 text-center text-xs text-zinc-500">
+          EETEPA Xinguara<br>
+          Desenvolvido por Léo Cruz
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
+
+    let currentQuestion = 0;
+    let score = 0;
+    let userName = '';
+    let deviceId = '';
+    let answers = [];
+
+    const questions = [
+      {
+        q: "Ao criar um algoritmo para trocar uma lâmpada, qual seria o primeiro passo lógico?",
+        options: ["Girar a lâmpada nova", "Subir na escada", "Verificar se o interruptor está desligado", "Jogar a lâmpada velha fora"],
+        correct: 2
+      },
+      {
+        q: "Se 'A' é verdadeiro e 'B' é falso, qual o resultado da expressão: (A e B)?",
+        options: ["Verdadeiro", "Falso", "Erro de sintaxe", "Depende do valor de C"],
+        correct: 1
+      },
+      {
+        q: "Para calcular a média de 4 notas, qual a sequência lógica correta?",
+        options: ["Dividir por 4 e depois somar", "Somar todas e dividir por 4", "Multiplicar por 4", "Subtrair a menor nota"],
+        correct: 1
+      },
+      {
+        q: "Em Portugol, se você quer repetir uma ação exatamente 10 vezes, qual estrutura é mais eficiente?",
+        options: ["se...então", "escolha...caso", "para", "enquanto (verdadeiro)"],
+        correct: 2
+      },
+      {
+        q: "Analise o código: \n x = 10 \n y = 5 \n x = y \n y = x \n Quais os valores finais de X e Y?",
+        options: ["X=10, Y=5", "X=5, Y=10", "X=5, Y=5", "X=10, Y=10"],
+        correct: 2
+      },
+      {
+        q: "Qual dessas condições verifica se um número 'N' está entre 10 e 20 (inclusive)?",
+        options: ["N > 10 e N < 20", "N >= 10 ou N <= 20", "N >= 10 e N <= 20", "N = 10 e 20"],
+        correct: 2
+      },
+      {
+        q: "Um algoritmo 'leia(valor)' está dentro de um laço que roda 3 vezes. Quantas vezes o usuário digitará algo?",
+        options: ["1 vez", "3 vezes", "Nenhuma", "Depende da condição"],
+        correct: 1
+      },
+      {
+        q: "Para decidir se um aluno foi aprovado (média >= 7) ou reprovado, usamos:",
+        options: ["Estrutura de Repetição", "Estrutura Condicional", "Variável do tipo Inteiro", "Comando de saída apenas"],
+        correct: 1
+      },
+      {
+        q: "O que acontece se um laço 'enquanto' tiver uma condição que nunca se torna falsa?",
+        options: ["O programa pula para o fim", "O programa trava em loop infinito", "O programa apaga as variáveis", "O computador desliga"],
+        correct: 1
+      },
+      {
+        q: "Na lógica de programação, o que é uma variável?",
+        options: ["Um comando de escrita", "Um espaço na memória para guardar dados", "Um erro no código", "Um tipo de hardware"],
+        correct: 1
+      }
+    ];
+
+    function generateDeviceId() {
+      if (!localStorage.getItem('deviceId')) {
+        localStorage.setItem('deviceId', crypto.randomUUID());
+      }
+      return localStorage.getItem('deviceId');
+    }
+
+    async function startQuiz() {
+      userName = document.getElementById('user-name').value.trim();
+      if (!userName) return alert("Por favor, informe seu nome.");
+      deviceId = generateDeviceId();
+      document.getElementById('start-screen').classList.add('hidden');
+      document.getElementById('quiz-screen').classList.remove('hidden');
+      document.getElementById('sidebar-name').textContent = userName;
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      const q = questions[currentQuestion];
+      document.getElementById('question-counter').textContent = `${currentQuestion + 1}/${questions.length}`;
+      document.getElementById('question-text').textContent = q.q;
+      const optionsDiv = document.getElementById('options');
+      optionsDiv.innerHTML = '';
+      
+      q.options.forEach((option, index) => {
+        const btn = document.createElement('button');
+        btn.className = `w-full text-left p-6 border-2 border-zinc-700 hover:border-amber-500 rounded-2xl transition text-lg question-card bg-zinc-800`;
+        btn.textContent = option;
+        btn.onclick = () => selectAnswer(index, btn);
+        optionsDiv.appendChild(btn);
+      });
+      updateProgress();
+    }
+
+    function selectAnswer(selectedIndex, selectedBtn) {
+      const q = questions[currentQuestion];
+      const buttons = document.querySelectorAll('#options button');
+      
+      if (selectedIndex === q.correct) score++;
+
+      buttons.forEach((btn, i) => {
+        btn.disabled = true;
+        if (i === q.correct) btn.classList.add('correct');
+        if (i === selectedIndex && i !== q.correct) btn.classList.add('incorrect');
+      });
+
+      document.getElementById('score-main').textContent = score;
+      document.getElementById('sidebar-score').textContent = score;
+
+      if (currentQuestion === questions.length - 1) {
+        setTimeout(saveToSupabase, 1000);
+      }
+    }
+
+    function updateProgress() {
+      const progress = ((currentQuestion + 1) / questions.length) * 100;
+      document.getElementById('progress-bar').style.width = `${progress}%`;
+    }
+
+    function nextQuestion() {
+      if (currentQuestion < questions.length - 1) {
+        currentQuestion++;
+        loadQuestion();
+      }
+    }
+
+    async function saveToSupabase() {
+      try {
+        await supabaseClient.from('quiz_results2').insert({
+          user_name: userName,
+          device_id: deviceId,
+          score: score,
+          total_questions: questions.length,
+          created_at: new Date().toISOString()
+        });
+        showResults();
+        loadRanking();
+      } catch (e) {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      document.getElementById('quiz-screen').classList.add('hidden');
+      document.getElementById('result-screen').classList.remove('hidden');
+      document.getElementById('final-score-text').textContent = `${score} / ${questions.length}`;
+    }
+
+    async function loadRanking() {
+      const { data } = await supabaseClient.from('quiz_results2')
+        .select('user_name, score')
+        .order('score', { ascending: false })
+        .limit(10);
+      
+      const list = document.getElementById('ranking-list');
+      list.innerHTML = data?.map((item, i) => `
+        <div class="ranking-item flex justify-between bg-zinc-800 px-4 py-3 rounded-2xl">
+          <span class="truncate pr-2">${i+1}º ${item.user_name}</span>
+          <span class="text-amber-400 font-bold">${item.score}</span>
+        </div>
+      `).join('') || '<p class="text-zinc-500">Sem dados.</p>';
+    }
+
+    function restartQuiz() { location.reload(); }
+    window.onload = loadRanking;
+  </script>
+</body>
+</html>
