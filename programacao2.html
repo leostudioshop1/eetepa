@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Master Quiz: Lógica e Portugol - EETEPA</title>
+  <title>Master Quiz: Lógica e Portugol - EETEPA Xinguara</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a0a; color: #e5e5e5; }
     .question-card { transition: all 0.2s ease; }
-    .selected-option { border-color: #fbbf24 !important; background-color: #27272a !important; transform: scale(1.02); }
+    .selected-option { border-color: #fbbf24 !important; background-color: #27272a !important; transform: scale(1.01); }
     .correct { border-color: #22c55e !important; background-color: #052e16 !important; }
     .incorrect { border-color: #ef4444 !important; background-color: #450a0a !important; }
     .ranking-item { transition: all 0.2s; }
@@ -20,50 +20,84 @@
   <div class="max-w-6xl mx-auto p-6">
     <div class="flex flex-col lg:flex-row gap-8">
       
-      <!-- Área Principal -->
       <div class="flex-1 bg-zinc-900 rounded-3xl shadow-2xl p-8 border border-zinc-800">
         <div class="flex items-center justify-between mb-8">
-          <h1 class="text-4xl font-bold text-yellow-500">Lógica & Portugol</h1>
-          <p class="text-zinc-400 text-sm">40 Questões • Nível Pro</p>
+          <div>
+            <h1 class="text-4xl font-bold text-yellow-500">Lógica & Portugol</h1>
+            <p class="text-zinc-400 text-sm mt-1">EETEPA Xinguara • 40 Questões</p>
+          </div>
+          <div class="text-right">
+            <p class="text-xs text-zinc-500 uppercase">Acertos</p>
+            <div id="score-main" class="text-4xl font-bold text-yellow-500">0</div>
+          </div>
         </div>
 
         <div id="start-screen" class="text-center py-12">
-          <input id="user-name" type="text" placeholder="Nome Completo" class="w-full max-w-md px-6 py-5 bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-yellow-500 text-lg mb-6">
-          <button onclick="startQuiz()" class="w-full max-w-md bg-yellow-600 hover:bg-yellow-500 py-5 rounded-2xl text-xl font-bold transition">Iniciar Desafio</button>
+          <div class="max-w-md mx-auto">
+            <input id="user-name" type="text" placeholder="Seu nome completo" 
+                   class="w-full px-6 py-5 bg-zinc-800 border border-zinc-700 rounded-2xl focus:outline-none focus:border-yellow-500 text-lg mb-6 text-white">
+            <button onclick="startQuiz()" 
+                    class="w-full bg-yellow-600 hover:bg-yellow-500 py-5 rounded-2xl text-xl font-bold transition shadow-lg shadow-yellow-900/20">
+              Iniciar Desafio
+            </button>
+          </div>
         </div>
 
         <div id="quiz-screen" class="hidden">
           <div class="flex justify-between items-center mb-8">
             <span id="question-counter" class="text-2xl font-bold text-yellow-500">1/40</span>
-            <div id="score-main" class="text-4xl font-bold text-yellow-500">0</div>
           </div>
-          <div id="question-text" class="text-xl font-medium mb-10 min-h-[80px]"></div>
+          <div id="question-text" class="text-xl font-medium mb-10 min-h-[100px] leading-relaxed"></div>
           <div id="options" class="grid grid-cols-1 gap-4"></div>
           
-          <div class="flex justify-between mt-12">
-            <button id="btn-confirm" onclick="confirmAnswer()" class="w-full py-4 bg-zinc-700 text-white rounded-2xl font-bold opacity-50 cursor-not-allowed" disabled>Confirmar Resposta</button>
+          <div class="flex justify-end mt-12">
+            <button id="btn-confirm" onclick="confirmAnswer()" 
+                    class="w-full md:w-64 py-4 bg-zinc-700 text-zinc-400 rounded-2xl font-bold transition-all" disabled>
+              Confirmar Resposta
+            </button>
           </div>
         </div>
 
         <div id="result-screen" class="hidden text-center py-12">
-          <h2 class="text-5xl font-bold mb-6 text-yellow-500">Finalizado!</h2>
-          <div id="final-score-text" class="text-7xl font-bold mb-10"></div>
-          <button onclick="location.reload()" class="bg-zinc-700 hover:bg-zinc-600 px-12 py-5 rounded-2xl font-bold">Reiniciar</button>
+          <h2 class="text-5xl font-bold mb-6 text-yellow-500">Quiz Finalizado!</h2>
+          <div id="final-score-text" class="text-8xl font-bold mb-10 text-white"></div>
+          <button onclick="location.reload()" class="bg-zinc-800 hover:bg-zinc-700 px-12 py-5 rounded-2xl font-bold border border-zinc-700">
+            Tentar Novamente
+          </button>
         </div>
       </div>
 
-      <!-- Sidebar -->
       <div class="w-full lg:w-80 bg-zinc-900 rounded-3xl p-8 border border-zinc-800 h-fit sticky top-6">
         <div class="space-y-6">
-          <div><p class="text-xs text-zinc-500 uppercase">Aluno</p><p id="sidebar-name" class="font-bold text-lg">—</p></div>
           <div>
-            <p class="text-xs text-zinc-500 uppercase mb-2">Progresso</p>
-            <div class="h-2 bg-zinc-800 rounded-full overflow-hidden"><div id="progress-bar" class="h-full bg-yellow-500 w-0 transition-all"></div></div>
+            <p class="text-xs text-zinc-500 uppercase tracking-widest">Aluno</p>
+            <p id="sidebar-name" class="font-bold text-lg text-white mt-1">—</p>
           </div>
+          
+          <div>
+            <p class="text-xs text-zinc-500 uppercase tracking-widest">ID do Dispositivo</p>
+            <p id="sidebar-device" class="font-mono text-[10px] bg-zinc-800 p-3 rounded-xl mt-2 break-all text-zinc-400 border border-zinc-700">—</p>
+          </div>
+
+          <div>
+            <p class="text-xs text-zinc-500 uppercase tracking-widest mb-2">Progresso do Teste</p>
+            <div class="h-3 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700">
+              <div id="progress-bar" class="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 w-0 transition-all duration-500"></div>
+            </div>
+          </div>
+
           <div class="pt-6 border-t border-zinc-800">
-            <h4 class="font-bold mb-4">🏆 Top Ranking</h4>
-            <div id="ranking-list" class="space-y-2 text-sm"></div>
+            <h4 class="font-bold text-white mb-4 flex items-center gap-2">
+              <span>🏆</span> Top 10 Ranking
+            </h4>
+            <div id="ranking-list" class="space-y-2 text-sm">
+              <p class="text-zinc-600 animate-pulse text-center">Carregando...</p>
+            </div>
           </div>
+        </div>
+        
+        <div class="mt-12 text-center text-[10px] text-zinc-600 uppercase tracking-tighter">
+          Desenvolvido por Léo Cruz<br>EETEPA Xinguara
         </div>
       </div>
     </div>
@@ -71,58 +105,74 @@
 
   <script>
     const supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
-    let currentQuestion = 0, score = 0, userName = '', selectedIdx = null;
+    
+    let currentQuestion = 0, score = 0, userName = '', selectedIdx = null, deviceId = '';
+
+    // GARANTE QUE O DEVICE ID SEJA GERADO E EXIBIDO
+    function getDeviceId() {
+      let id = localStorage.getItem('deviceId');
+      if (!id) {
+        id = 'DEV-' + crypto.randomUUID().substring(0, 8).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
+        localStorage.setItem('deviceId', id);
+      }
+      return id;
+    }
 
     const questions = [
-        { q: "Qual a função do algoritmo?", options: ["Executar tarefas aleatórias", "Sequência lógica para resolver um problema", "Apenas somar números", "Substituir o hardware"], correct: 1 },
-        { q: "O comando 'leia()' serve para:", options: ["Mostrar dados", "Entrada de dados pelo usuário", "Limpar a memória", "Repetir o código"], correct: 1 },
-        { q: "Para que serve o operador 'mod' ou '%'?", options: ["Multiplicação", "Média aritmética", "Resto da divisão inteira", "Potenciação"], correct: 2 },
-        { q: "Qual variável armazena 'Verdadeiro' ou 'Falso'?", options: ["Inteiro", "Cadeia", "Logico", "Real"], correct: 2 },
-        { q: "A estrutura 'se-senao' é do tipo:", options: ["Repetição", "Condicional", "Atribuição", "Leitura"], correct: 1 },
-        { q: "O que é um 'Loop Infinito'?", options: ["Um erro de hardware", "Um laço que nunca termina", "Um código muito rápido", "Uma função matemática"], correct: 1 },
-        { q: "Qual símbolo representa 'diferente de' em Portugol?", options: ["==", "!=", "><", "<>"], correct: 3 },
-        { q: "Para contar de 1 a 10, qual estrutura é ideal?", options: ["Escolha-Caso", "Para", "Se", "Escreva"], correct: 1 },
-        { q: "O que acontece na atribuição 'x = x + 1'?", options: ["Erro de lógica", "Incremento do valor de x", "X vira zero", "Nada acontece"], correct: 1 },
-        { q: "Qual o tipo de dado para o nome de uma pessoa?", options: ["Caracter", "Cadeia", "Real", "Inteiro"], correct: 1 },
-        // ... Adicionando mais lógica e raciocínio ...
-        { q: "Se todos os programadores são lógicos e João é programador, logo:", options: ["João é lógico", "João não é lógico", "Lógicos são programadores", "João gosta de café"], correct: 0 },
-        { q: "Qual o resultado de (10 > 5 e 2 < 1)?", options: ["Verdadeiro", "Falso", "Erro", "10"], correct: 1 },
-        { q: "O comando 'escreva' é uma operação de:", options: ["Entrada", "Processamento", "Saída", "Armazenamento"], correct: 2 },
-        { q: "Um vetor de 5 posições vai de qual índice a qual?", options: ["1 a 5", "0 a 4", "0 a 5", "1 a 6"], correct: 1 },
-        { q: "Qual estrutura avalia uma variável entre várias opções?", options: ["Para", "Enquanto", "Escolha-Caso", "Se-Senao"], correct: 2 },
-        { q: "A ordem correta do desenvolvimento é:", options: ["Código -> Teste -> Lógica", "Lógica -> Código -> Teste", "Teste -> Lógica -> Código", "Código -> Lógica -> Teste"], correct: 1 },
-        { q: "O que faz o comando 'interrompa'?", options: ["Desliga o PC", "Para a execução de um laço", "Pula para o próximo 'se'", "Lê um dado"], correct: 1 },
-        { q: "Como declarar um comentário em Portugol?", options: ["//", "/*", "#", "--"], correct: 0 },
-        { q: "Qual o valor de 'A' se: A = 5, B = 2, A = A * B?", options: ["5", "2", "10", "7"], correct: 2 },
-        { q: "Uma variável 'Real' armazena:", options: ["Apenas inteiros", "Números com casas decimais", "Textos", "Fotos"], correct: 1 },
-        { q: "O que é indentação?", options: ["Erros no código", "Recuo do texto para organização", "Tipo de variável", "Velocidade do processador"], correct: 1 },
-        { q: "Qual operador tem maior precedência?", options: ["Soma (+)", "Subtração (-)", "Multiplicação (*)", "Igualdade (==)"], correct: 2 },
-        { q: "Para que serve o 'Enquanto'?", options: ["Repetir enquanto uma condição for verdadeira", "Executar uma vez só", "Escolher um caminho", "Finalizar o programa"], correct: 0 },
-        { q: "O que é 'Teste de Mesa'?", options: ["Limpar o computador", "Seguir o código manualmente no papel", "Comprar uma mesa nova", "Um software de benchmark"], correct: 1 },
-        { q: "Se A=verdadeiro, o que é 'nao A'?", options: ["Verdadeiro", "Falso", "Nulo", "Erro"], correct: 1 },
-        { q: "Qual a saída de: escreva(2 + 2 * 3)?", options: ["12", "8", "10", "4"], correct: 1 },
-        { q: "Um algoritmo deve ser sempre:", options: ["Infinito", "Finito", "Ambíguo", "Confuso"], correct: 1 },
-        { q: "Qual destas é uma variável válida?", options: ["1nome", "nome_aluno", "nome aluno", "nome-aluno"], correct: 1 },
-        { q: "O que é uma constante?", options: ["Valor que muda sempre", "Valor que não muda durante a execução", "Um tipo de laço", "Um erro"], correct: 1 },
-        { q: "Para concatenar textos em Portugol usamos:", options: ["+", "-", "*", "/"], correct: 0 },
-        { q: "O que significa 'compilar'?", options: ["Escrever o código", "Traduzir o código para linguagem de máquina", "Apagar o código", "Desenhar o algoritmo"], correct: 1 },
-        { q: "Qual o resultado de 15 / 2 em uma variável Inteira?", options: ["7.5", "7", "8", "0"], correct: 1 },
-        { q: "O operador 'OU' resulta em falso apenas quando:", options: ["Ambos são falsos", "Um é verdadeiro", "Ambos são verdadeiros", "Nunca é falso"], correct: 0 },
-        { q: "O que é um parâmetro?", options: ["Um erro", "Informação enviada para uma função", "Um tipo de monitor", "Um laço de repetição"], correct: 1 },
-        { q: "O fluxo de um algoritmo geralmente segue:", options: ["Baixo para cima", "Cima para baixo, esquerda para direita", "Aleatório", "Direita para esquerda"], correct: 1 },
-        { q: "Qual a função da Placa-mãe na lógica?", options: ["Nenhuma, é hardware", "Interligar os componentes", "Processar dados", "Armazenar o BIOS"], correct: 1 },
-        { q: "Um 'Se' dentro de outro 'Se' é chamado de:", options: ["Loop", "Condicional Aninhada", "Recursão", "Erro"], correct: 1 },
-        { q: "Qual a melhor forma de aprender lógica?", options: ["Decorar códigos", "Praticar resolvendo problemas", "Assistir filmes", "Apenas ler"], correct: 1 },
-        { q: "O que é Pseudocódigo?", options: ["Código falso que não funciona", "Linguagem intermediária entre natural e programação", "Linguagem de máquina", "Vírus"], correct: 1 },
-        { q: "O Portugol Studio é:", options: ["Um jogo", "Uma IDE para aprender programação", "Um sistema operacional", "Um editor de fotos"], correct: 1 }
+        { q: "Qual a função principal de um algoritmo?", options: ["Executar tarefas aleatórias", "Uma sequência lógica para resolver um problema", "Apenas realizar cálculos matemáticos", "Substituir componentes de hardware"], correct: 1 },
+        { q: "O comando 'leia()' é utilizado para:", options: ["Exibir resultados na tela", "Entrada de dados via teclado", "Limpar variáveis da memória", "Repetir um bloco de código"], correct: 1 },
+        { q: "O que o operador '%' (ou mod) retorna?", options: ["O valor da porcentagem", "O resultado da divisão real", "O resto da divisão inteira", "A potência de um número"], correct: 2 },
+        { q: "Qual tipo de dado é ideal para armazenar a idade de uma pessoa?", options: ["Real", "Cadeia", "Inteiro", "Logico"], correct: 2 },
+        { q: "A estrutura 'se-senao' pertence a qual categoria?", options: ["Estruturas de Repetição", "Estruturas de Decisão/Condicional", "Estruturas de Atribuição", "Estruturas de Dados"], correct: 1 },
+        { q: "O que define um 'Loop Infinito'?", options: ["Um código que roda muito rápido", "Um laço cuja condição de parada nunca é atingida", "Um erro de conexão com o banco", "Uma função que chama a si mesma"], correct: 1 },
+        { q: "Qual símbolo representa 'diferente' em Portugol?", options: ["==", "!=", "><", "<>"], correct: 3 },
+        { q: "Qual estrutura é melhor para repetir um código 50 vezes?", options: ["Escolha-Caso", "Para", "Se", "Escreva"], correct: 1 },
+        { q: "Na lógica, o que acontece em 'x = x + 1'?", options: ["Um erro de sintaxe", "O valor de x é incrementado em 1", "X passa a valer zero", "O programa para a execução"], correct: 1 },
+        { q: "Tipo de dado usado para armazenar o endereço (Rua, Nº)?", options: ["Caracter", "Cadeia", "Real", "Logico"], correct: 1 },
+        { q: "Se 'P' é verdadeiro e 'Q' é falso, 'P e Q' resulta em:", options: ["Verdadeiro", "Falso", "Nulo", "Erro"], correct: 1 },
+        { q: "Se 'P' é verdadeiro ou 'Q' é falso, 'P ou Q' resulta em:", options: ["Verdadeiro", "Falso", "Indeterminado", "Erro"], correct: 0 },
+        { q: "O comando 'escreva' representa uma operação de:", options: ["Entrada", "Processamento", "Saída", "Memória"], correct: 2 },
+        { q: "Em um vetor de 10 posições, qual o índice da última posição?", options: ["10", "9", "0", "11"], correct: 1 },
+        { q: "Qual comando encerra imediatamente um laço de repetição?", options: ["pare", "continua", "fim", "limpa"], correct: 0 },
+        { q: "A ordem correta do ciclo de vida de um programa é:", options: ["Código -> Lógica -> Execução", "Lógica -> Codificação -> Teste", "Teste -> Lógica -> Código", "Codificação -> Teste -> Lógica"], correct: 1 },
+        { q: "O que faz a função 'limpa()' em Portugol?", options: ["Apaga o HD", "Limpa as variáveis", "Limpa o console de saída", "Fecha o programa"], correct: 2 },
+        { q: "Como comentar uma linha no código?", options: ["--", "/*", "#", "//"], correct: 3 },
+        { q: "Se A=10 e B=20, após 'A = B' e 'B = A', quais os valores?", options: ["A=10, B=20", "A=20, B=10", "A=20, B=20", "A=10, B=10"], correct: 2 },
+        { q: "Uma variável 'Real' aceita:", options: ["Apenas números inteiros", "Números com ponto flutuante/decimais", "Somente letras", "Arquivos de imagem"], correct: 1 },
+        { q: "O que é indentação no código?", options: ["Um erro gráfico", "Organização visual por recuos", "Um tipo de compilador", "Um comando de saída"], correct: 1 },
+        { q: "Qual a precedência correta de operadores?", options: ["Soma antes de Multiplicação", "Parênteses antes de tudo", "Relacionais antes de Aritméticos", "Ou antes de E"], correct: 1 },
+        { q: "O laço 'faca-enquanto' garante que o código rode:", options: ["Nenhuma vez", "Ao menos uma vez", "Sempre 10 vezes", "Até o usuário cancelar"], correct: 1 },
+        { q: "O que é um 'Teste de Mesa'?", options: ["Um benchmark de hardware", "Simulação manual da execução do código", "Limpar a poeira do PC", "Instalar o software"], correct: 1 },
+        { q: "O operador 'não' (negação) inverte:", options: ["O valor de um Inteiro", "O valor lógico (V para F e vice-versa)", "A ordem das linhas", "O nome da variável"], correct: 1 },
+        { q: "Resultado de: escreva(10 + 5 * 2)?", options: ["30", "20", "25", "15"], correct: 1 },
+        { q: "Um algoritmo deve ser 'determinístico', o que significa?", options: ["Que ele nunca acaba", "Que para a mesma entrada ele gera a mesma saída", "Que ele escolhe caminhos aleatórios", "Que ele só roda em Windows"], correct: 1 },
+        { q: "Qual nome de variável é inválido?", options: ["_idade", "2nome", "nomeAluno", "salario_bruto"], correct: 1 },
+        { q: "O que é uma constante?", options: ["Um laço que nunca para", "Um valor que não se altera durante o programa", "Uma variável que muda muito", "Um erro"], correct: 1 },
+        { q: "Para unir dois textos usamos a:", options: ["Concatenção", "Divisão", "Subtração", "Multiplicação"], correct: 0 },
+        { q: "O que o compilador faz?", options: ["Cria o design do app", "Traduz código para linguagem de máquina", "Digita o código sozinho", "Aumenta a memória RAM"], correct: 1 },
+        { q: "Em Portugol, a divisão inteira de 9 por 2 resulta em:", options: ["4.5", "4", "5", "0"], correct: 1 },
+        { q: "O operador 'OU' é verdadeiro se:", options: ["Pelo menos um for verdadeiro", "Somente se ambos forem verdadeiros", "Somente se ambos forem falsos", "Nunca"], correct: 0 },
+        { q: "O que é uma função?", options: ["Um hardware", "Um bloco de código que executa uma tarefa específica", "Um erro no laço", "Um tipo de cabo"], correct: 1 },
+        { q: "O fluxo padrão de execução é:", options: ["De baixo para cima", "Top-down (cima para baixo)", "Aleatório", "Inverso"], correct: 1 },
+        { q: "Qual a saída de 'nao (10 > 5)'?", options: ["Verdadeiro", "Falso", "10", "Erro"], correct: 1 },
+        { q: "Uma 'matriz' é:", options: ["Um vetor de uma única dimensão", "Um vetor de várias dimensões (tabela)", "Uma placa de vídeo", "Um comando de entrada"], correct: 1 },
+        { q: "A lógica de programação é importante para:", options: ["Apenas programadores C++", "Desenvolver o raciocínio para qualquer linguagem", "Comprar peças de PC", "Usar redes sociais"], correct: 1 },
+        { q: "O Pseudocódigo serve para:", options: ["Executar no servidor", "Planejar a lógica sem se preocupar com sintaxe rígida", "Esconder o código", "Criar sites"], correct: 1 },
+        { q: "Qual o site oficial da EETEPA Xinguara?", options: ["Google", "Não possui site", "Portal oficial da SEDUC", "Facebook"], correct: 2 }
     ];
 
     function startQuiz() {
       userName = document.getElementById('user-name').value.trim();
-      if (!userName) return alert("Digite seu nome!");
+      if (!userName) return alert("Por favor, digite seu nome!");
+      
+      deviceId = getDeviceId();
+      
       document.getElementById('start-screen').classList.add('hidden');
       document.getElementById('quiz-screen').classList.remove('hidden');
+      
       document.getElementById('sidebar-name').textContent = userName;
+      document.getElementById('sidebar-device').textContent = deviceId;
+      
       loadQuestion();
     }
 
@@ -130,8 +180,9 @@
       selectedIdx = null;
       const btnConfirm = document.getElementById('btn-confirm');
       btnConfirm.disabled = true;
-      btnConfirm.classList.add('opacity-50', 'cursor-not-allowed');
-      btnConfirm.classList.remove('bg-yellow-600');
+      btnConfirm.classList.replace('bg-yellow-600', 'bg-zinc-700');
+      btnConfirm.classList.add('text-zinc-400');
+      btnConfirm.classList.remove('text-white');
 
       const q = questions[currentQuestion];
       document.getElementById('question-counter').textContent = `${currentQuestion + 1}/${questions.length}`;
@@ -142,7 +193,7 @@
       
       q.options.forEach((opt, i) => {
         const btn = document.createElement('button');
-        btn.className = `w-full text-left p-5 border-2 border-zinc-700 rounded-2xl transition-all question-card bg-zinc-800 hover:border-zinc-500`;
+        btn.className = `w-full text-left p-5 border-2 border-zinc-700 rounded-2xl transition-all question-card bg-zinc-800 hover:border-zinc-500 text-lg`;
         btn.textContent = opt;
         btn.onclick = () => selectOption(i, btn);
         optionsDiv.appendChild(btn);
@@ -157,8 +208,8 @@
       
       const btnConfirm = document.getElementById('btn-confirm');
       btnConfirm.disabled = false;
-      btnConfirm.classList.remove('opacity-50', 'cursor-not-allowed');
-      btnConfirm.classList.add('bg-yellow-600');
+      btnConfirm.classList.replace('bg-zinc-700', 'bg-yellow-600');
+      btnConfirm.classList.replace('text-zinc-400', 'text-white');
     }
 
     function confirmAnswer() {
@@ -189,24 +240,46 @@
     }
 
     async function saveResult() {
-      await supabaseClient.from('quiz_results2').insert({ user_name: userName, score: score, total_questions: 40 });
+      try {
+        await supabaseClient.from('quiz_results2').insert({ 
+            user_name: userName, 
+            device_id: deviceId,
+            score: score, 
+            total_questions: 40,
+            created_at: new Date().toISOString()
+        });
+        showResults();
+        loadRanking();
+      } catch (e) {
+        showResults();
+      }
+    }
+
+    function showResults() {
       document.getElementById('quiz-screen').classList.add('hidden');
       document.getElementById('result-screen').classList.remove('hidden');
       document.getElementById('final-score-text').textContent = `${score} / 40`;
-      loadRanking();
     }
 
     async function loadRanking() {
-      const { data } = await supabaseClient.from('quiz_results2').select('user_name, score').order('score', { ascending: false }).limit(10);
-      document.getElementById('ranking-list').innerHTML = data?.map((item, i) => `
-        <div class="ranking-item flex justify-between bg-zinc-800 p-3 rounded-xl border border-zinc-700">
-          <span class="truncate pr-2">${i+1}º ${item.user_name}</span>
-          <span class="text-yellow-500 font-bold">${item.score}</span>
-        </div>
-      `).join('') || '';
+      try {
+        const { data } = await supabaseClient.from('quiz_results2').select('user_name, score').order('score', { ascending: false }).limit(10);
+        document.getElementById('ranking-list').innerHTML = data?.map((item, i) => `
+          <div class="ranking-item flex justify-between items-center bg-zinc-800 p-3 rounded-xl border border-zinc-700">
+            <span class="truncate pr-2 font-medium"><span class="text-yellow-500 mr-1">${i+1}º</span> ${item.user_name}</span>
+            <span class="text-yellow-500 font-bold">${item.score}/40</span>
+          </div>
+        `).join('') || '<p class="text-zinc-600 text-center">Nenhum recorde.</p>';
+      } catch (err) {
+        document.getElementById('ranking-list').innerHTML = '<p class="text-red-500 text-center">Erro ao carregar.</p>';
+      }
     }
 
-    window.onload = loadRanking;
+    window.onload = () => {
+      deviceId = getDeviceId();
+      document.getElementById('sidebar-device').textContent = deviceId;
+      loadRanking();
+    };
   </script>
 </body>
 </html>
