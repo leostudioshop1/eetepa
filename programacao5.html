@@ -22,10 +22,8 @@
 
   <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
     
-  
     <div class="lg:col-span-3 bg-zinc-900 rounded-3xl p-6 md:p-10 border border-zinc-800 shadow-2xl h-fit">
       
-  
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
         <div>
           <h1 class="text-3xl font-bold text-yellow-500 tracking-tight">Lógica de Programação</h1>
@@ -39,7 +37,6 @@
         </div>
       </div>
 
-    
       <div id="setup-screen" class="max-w-md mx-auto py-12 text-center">
         <div class="mb-8">
           <div class="w-20 h-20 bg-yellow-600/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-yellow-600/20">
@@ -61,7 +58,6 @@
         </button>
       </div>
 
-    
       <div id="quiz-screen" class="hidden">
         <div class="mb-8">
           <div class="flex justify-between items-end mb-2">
@@ -85,7 +81,6 @@
         </div>
       </div>
 
-   
       <div id="result-screen" class="hidden text-center py-12">
         <div class="mb-6">
           <span class="text-6xl">🏆</span>
@@ -107,7 +102,6 @@
 
     </div>
 
-   
     <div class="lg:col-span-1">
       <div class="ranking-card rounded-3xl p-6 border border-zinc-800 sticky top-8 shadow-2xl">
         <div class="flex items-center justify-between mb-6">
@@ -141,14 +135,17 @@
   <script>
     const supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
     let questoes = [], indiceAtual = 0, acertos = 0, selecionada = null, nomeAluno = '', deviceId = '';
+    
     document.addEventListener('contextmenu', e => e.preventDefault());
     document.onkeydown = (e) => {
       if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && e.keyCode == 73)) return false;
     };
+
     window.onload = () => {
       loadRanking();
       prepararDeviceId();
     };
+
     function prepararDeviceId() {
       deviceId = localStorage.getItem('deviceId');
       if (!deviceId) {
@@ -164,6 +161,7 @@
         .select('user_name, score')
         .order('score', { ascending: false })
         .limit(10);
+
       const container = document.getElementById('ranking-list');
       if (error) {
         container.innerHTML = '<p class="text-red-900/50 text-center text-xs italic">Erro de conexão</p>';
@@ -183,7 +181,8 @@
     async function iniciarProva() {
       nomeAluno = document.getElementById('user-name').value.trim();
       if (nomeAluno.length < 3) return alert("Por favor, digite seu nome para registro.");
-      const { data, error } = await supabaseClient.from('quiz_questions5').select('*');
+      
+      const { data, error } = await supabaseClient.from('questoes_portugol5').select('*');
       
       if (error || !data || data.length === 0) {
         return alert("Erro ao carregar banco de questões.");
@@ -201,7 +200,6 @@
       const q = questoes[indiceAtual];
       selecionada = null;
       
-    
       document.getElementById('progress-text').textContent = `Questão ${indiceAtual + 1}/${questoes.length}`;
       document.getElementById('progress-bar').style.width = `${((indiceAtual + 1) / questoes.length) * 100}%`;
       document.getElementById('question-text').textContent = q.pergunta;
@@ -217,7 +215,6 @@
         container.appendChild(btn);
       });
 
-    
       const btnC = document.getElementById('btn-confirm');
       btnC.disabled = true;
       btnC.className = "w-full md:w-72 py-5 bg-zinc-700 text-zinc-400 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 cursor-not-allowed";
@@ -259,7 +256,6 @@
     }
 
     async function finalizarProva() {
-     
       try {
         await supabaseClient.from('quiz_results5').insert({
           user_name: nomeAluno,
