@@ -160,7 +160,7 @@
 
     async function loadRanking() {
       const { data, error } = await supabaseClient
-        .from('quiz_results52')
+        .from('quiz_results5')
         .select('user_name, score')
         .order('score', { ascending: false })
         .limit(10);
@@ -183,7 +183,7 @@
     async function iniciarProva() {
       nomeAluno = document.getElementById('user-name').value.trim();
       if (nomeAluno.length < 3) return alert("Por favor, digite seu nome para registro.");
-      const { data, error } = await supabaseClient.from('questoes_portugol').select('*');
+      const { data, error } = await supabaseClient.from('quiz_questions5').select('*');
       
       if (error || !data || data.length === 0) {
         return alert("Erro ao carregar banco de questões.");
@@ -261,7 +261,7 @@
     async function finalizarProva() {
      
       try {
-        await supabaseClient.from('quiz_results52').insert({
+        await supabaseClient.from('quiz_results5').insert({
           user_name: nomeAluno,
           device_id: deviceId,
           score: acertos,
