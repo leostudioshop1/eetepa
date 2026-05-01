@@ -22,7 +22,6 @@
 
   <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
     
-    <!-- Área Principal do Quiz -->
     <div class="lg:col-span-3 bg-zinc-900 rounded-3xl p-6 md:p-10 border border-zinc-800 shadow-2xl h-fit">
       
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
@@ -38,29 +37,24 @@
         </div>
       </div>
 
-      <!-- Tela Inicial -->
       <div id="setup-screen" class="max-w-md mx-auto py-12 text-center">
         <div class="mb-8">
           <div class="w-20 h-20 bg-yellow-600/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-yellow-600/20">
             <span class="text-3xl">👨‍💻</span>
           </div>
           <h2 class="text-xl font-semibold">Atividade</h2>
-          <p class="text-zinc-500 text-sm">Insira seus dados para começar.</p>
+          <p class="text-zinc-500 text-sm">Insira seu nome para começar.</p>
         </div>
         
-        <input id="user-name" type="text" placeholder="Nome do Aluno" 
+        <input id="user-name" type="text" placeholder="Nome Completo" 
                class="w-full px-6 py-4 bg-zinc-800 border border-zinc-700 rounded-2xl mb-6 outline-none focus:border-yellow-500 text-white transition-all">
         
         <button onclick="iniciarProva()" 
                 class="w-full bg-yellow-600 hover:bg-yellow-500 px-12 py-5 rounded-2xl font-bold transition-all shadow-xl shadow-yellow-900/10 flex items-center justify-center gap-2">
-          <span>Carregar Atividade</span>
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
+          <span>Iniciar Desafio</span>
         </button>
       </div>
 
-      <!-- Tela do Quiz -->
       <div id="quiz-screen" class="hidden">
         <div class="mb-8">
           <div class="flex justify-between items-end mb-2">
@@ -71,11 +65,8 @@
             <div id="progress-bar" class="h-full bg-yellow-600 transition-all duration-500 w-0"></div>
           </div>
         </div>
-
         <h2 id="question-text" class="text-2xl md:text-3xl mb-10 leading-snug font-medium text-zinc-100"></h2>
-        
         <div id="options-container" class="grid gap-4"></div>
-        
         <div class="mt-12 flex justify-end">
           <button id="btn-confirm" onclick="validarResposta()" 
                   class="w-full md:w-72 py-5 bg-zinc-700 text-zinc-400 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 cursor-not-allowed" disabled>
@@ -84,117 +75,65 @@
         </div>
       </div>
 
-      <!-- Tela de Resultados -->
       <div id="result-screen" class="hidden text-center py-12">
-        <div class="mb-6">
-          <span class="text-6xl">🏆</span>
-        </div>
-        <h2 class="text-4xl font-bold text-white mb-2">Atividade Concluída!</h2>
-        <p class="text-zinc-500 mb-10">Seu desempenho foi registrado no sistema.</p>
-        
+        <div class="mb-6"><span class="text-6xl">🏆</span></div>
+        <h2 class="text-4xl font-bold text-white mb-2">Concluído!</h2>
+        <p class="text-zinc-500 mb-10">Seu resultado foi sincronizado.</p>
         <div class="bg-zinc-800/50 inline-block px-16 py-8 rounded-3xl border border-zinc-700 mb-10">
-          <p class="text-sm text-zinc-400 uppercase tracking-widest mb-2">Sua Nota</p>
+          <p class="text-sm text-zinc-400 uppercase tracking-widest mb-2">Nota Final</p>
           <p id="final-score" class="text-7xl font-black text-yellow-500"></p>
         </div>
-        
         <div>
-          <button onclick="location.reload()" class="text-zinc-500 hover:text-white transition-colors text-sm font-medium">
-            Sair e voltar ao início
-          </button>
+          <button onclick="location.reload()" class="text-zinc-500 hover:text-white transition-colors text-sm font-medium">Voltar ao Início</button>
         </div>
       </div>
     </div>
 
-    <!-- Barra Lateral de Ranking -->
     <div class="lg:col-span-1">
       <div class="ranking-card rounded-3xl p-6 border border-zinc-800 sticky top-8 shadow-2xl">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-lg font-bold text-white flex items-center gap-2">
-            <span class="text-yellow-500">🥇</span> Top 10 Alunos
-          </h3>
-          <button onclick="loadRanking()" class="text-zinc-600 hover:text-zinc-400 transition">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
-        </div>
-
-        <div id="ranking-list" class="space-y-3">
-          <p class="text-zinc-600 text-center py-10 text-sm animate-pulse italic">Sincronizando banco...</p>
-        </div>
-
-        <div class="mt-8 pt-6 border-t border-zinc-800/50">
-          <div class="text-center">
-            <p class="text-[9px] text-zinc-600 uppercase tracking-[0.2em] leading-relaxed">
-              Desenvolvido por<br>
-              <span class="text-zinc-500 font-bold">LÉO CRUZ - EETEPA XINGUARA</span>
-            </p>
-          </div>
+        <h3 class="text-lg font-bold text-white mb-6">🥇 Ranking</h3>
+        <div id="ranking-list" class="space-y-3"></div>
+        <div class="mt-8 pt-6 border-t border-zinc-800/50 text-center">
+          <p class="text-[9px] text-zinc-600 uppercase tracking-widest">EETEPA XINGUARA</p>
         </div>
       </div>
     </div>
-
   </div>
 
   <script>
     const supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
-    let questoes = [], indiceAtual = 0, acertos = 0, selecionada = null, nomeAluno = '', deviceId = '';
-
-    // Segurança contra inspeção
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.onkeydown = (e) => {
-      if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && e.keyCode == 73)) return false;
-    };
+    let questoes = [], indiceAtual = 0, acertos = 0, selecionada = null, nomeAluno = '', uDeviceId = '';
 
     window.onload = () => {
       loadRanking();
-      prepararDeviceId();
+      prepararId();
     };
 
-    function prepararDeviceId() {
-      deviceId = localStorage.getItem('deviceId');
-      if (!deviceId) {
-        deviceId = 'DEV-' + crypto.randomUUID().split('-')[0].toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
-        localStorage.setItem('deviceId', deviceId);
-      }
-      document.getElementById('device-tag').textContent = `ID: ${deviceId}`;
+    function prepararId() {
+      uDeviceId = localStorage.getItem('uDeviceId') || 'MOB-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+      localStorage.setItem('uDeviceId', uDeviceId);
+      document.getElementById('device-tag').textContent = `ID: ${uDeviceId}`;
     }
 
     async function loadRanking() {
-      const { data, error } = await supabaseClient
-        .from('quiz_results5')
-        .select('user_name, score')
-        .order('score', { ascending: false })
-        .limit(10);
-
+      const { data } = await supabaseClient.from('quiz_results5').select('user_name, score').order('score', { ascending: false }).limit(10);
       const container = document.getElementById('ranking-list');
-      if (error) {
-        container.innerHTML = '<p class="text-red-900/50 text-center text-xs italic">Erro de conexão</p>';
-        return;
+      if (data) {
+        container.innerHTML = data.map((item, i) => `
+          <div class="flex justify-between bg-zinc-800/40 p-3 rounded-xl border border-zinc-700/50">
+            <span class="text-sm truncate w-32">${i+1}º ${item.user_name}</span>
+            <span class="text-yellow-500 font-bold">${item.score}</span>
+          </div>
+        `).join('');
       }
-      container.innerHTML = data.map((item, index) => `
-        <div class="flex justify-between items-center bg-zinc-800/30 p-4 rounded-2xl border border-zinc-700/30 hover:bg-zinc-800/60 transition-colors group">
-          <span class="truncate pr-2 text-sm">
-            <b class="text-yellow-600 font-mono mr-2">${index + 1}º</b> 
-            <span class="text-zinc-300 group-hover:text-white transition-colors">${item.user_name}</span>
-          </span>
-          <span class="font-black text-yellow-500 text-xs bg-yellow-500/10 px-2 py-1 rounded-lg">${item.score}</span>
-        </div>
-      `).join('') || '<p class="text-zinc-700 text-center py-4 text-xs italic">Aguardando primeiros resultados...</p>';
     }
 
     async function iniciarProva() {
       nomeAluno = document.getElementById('user-name').value.trim();
-      if (nomeAluno.length < 3) return alert("Por favor, digite seu nome completo.");
-      
+      if (nomeAluno.length < 3) return alert("Digite seu nome completo.");
       const { data, error } = await supabaseClient.from('questoes_portugol5').select('*');
-      
-      if (error || !data || data.length === 0) {
-        return alert("Erro ao carregar banco de questões.");
-      }
-      
-      questoes = data.sort(() => Math.random() - 0.5); 
-      
+      if (error) return alert("Erro de conexão.");
+      questoes = data.sort(() => Math.random() - 0.5);
       document.getElementById('setup-screen').classList.add('hidden');
       document.getElementById('quiz-screen').classList.remove('hidden');
       document.getElementById('quiz-stats').classList.remove('hidden');
@@ -204,44 +143,30 @@
     function mostrarQuestao() {
       const q = questoes[indiceAtual];
       selecionada = null;
-      
       document.getElementById('progress-text').textContent = `Questão ${indiceAtual + 1}/${questoes.length}`;
       document.getElementById('progress-bar').style.width = `${((indiceAtual + 1) / questoes.length) * 100}%`;
       document.getElementById('question-text').textContent = q.pergunta;
-      
       const container = document.getElementById('options-container');
       container.innerHTML = '';
-      
       q.opcoes.forEach((opt, i) => {
         const btn = document.createElement('button');
-        btn.className = "w-full text-left p-5 bg-zinc-800 border-2 border-zinc-700/50 rounded-2xl transition-all hover:bg-zinc-700 hover:border-zinc-500 text-lg font-medium";
+        btn.className = "w-full text-left p-5 bg-zinc-800 border-2 border-zinc-700/50 rounded-2xl transition-all";
         btn.textContent = opt;
-        btn.onclick = () => selecionar(i, btn);
+        btn.onclick = () => {
+          selecionada = i;
+          document.querySelectorAll('#options-container button').forEach(b => b.classList.remove('selected-option'));
+          btn.classList.add('selected-option');
+          document.getElementById('btn-confirm').disabled = false;
+          document.getElementById('btn-confirm').classList.replace('bg-zinc-700', 'bg-yellow-600');
+        };
         container.appendChild(btn);
       });
-
-      const btnC = document.getElementById('btn-confirm');
-      btnC.disabled = true;
-      btnC.textContent = "Confirmar Resposta";
-      btnC.className = "w-full md:w-72 py-5 bg-zinc-700 text-zinc-400 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 cursor-not-allowed";
-    }
-
-    function selecionar(idx, btn) {
-      selecionada = idx;
-      document.querySelectorAll('#options-container button').forEach(b => b.classList.remove('selected-option'));
-      btn.classList.add('selected-option');
-      
-      const btnC = document.getElementById('btn-confirm');
-      btnC.disabled = false;
-      btnC.className = "w-full md:w-72 py-5 bg-yellow-600 text-white rounded-2xl font-bold transition-all shadow-lg shadow-yellow-900/20 hover:bg-yellow-500 cursor-pointer scale-105";
     }
 
     async function validarResposta() {
       const q = questoes[indiceAtual];
       const botoes = document.querySelectorAll('#options-container button');
-      
       botoes.forEach(b => b.disabled = true);
-      
       if (selecionada === q.correta) {
         acertos++;
         botoes[selecionada].classList.add('correct');
@@ -250,7 +175,6 @@
         botoes[selecionada].classList.add('incorrect');
         botoes[q.correta].classList.add('correct');
       }
-
       setTimeout(() => {
         if (indiceAtual < questoes.length - 1) {
           indiceAtual++;
@@ -258,38 +182,36 @@
         } else {
           finalizarProva();
         }
-      }, 1400);
+      }, 1200);
     }
 
     async function finalizarProva() {
-      const btnConfirm = document.getElementById('btn-confirm');
-      if(btnConfirm) {
-          btnConfirm.textContent = "Sincronizando...";
-          btnConfirm.disabled = true;
-      }
+      const btn = document.getElementById('btn-confirm');
+      btn.textContent = "Sincronizando...";
+      btn.disabled = true;
+
+      const payload = {
+        user_name: nomeAluno,
+        device_id: uDeviceId,
+        score: acertos,
+        total_questions: questoes.length,
+        created_at: new Date().toISOString()
+      };
 
       try {
-        // Envio estruturado como array para maior compatibilidade mobile
-        const { error } = await supabaseClient.from('quiz_results5').insert([{
-          user_name: nomeAluno,
-          device_id: deviceId,
-          score: acertos,
-          total_questions: questoes.length,
-          created_at: new Date().toISOString()
-        }]);
-
+        // O segredo para o celular: usar o await e verificar o erro explicitamente
+        const { error } = await supabaseClient
+          .from('quiz_results5')
+          .insert([payload]);
+        
         if (error) throw error;
-
       } catch (err) {
-        console.error("Erro ao salvar:", err.message);
-        alert("Aviso: Não foi possível salvar no servidor, mas sua nota aparecerá na tela.");
+        console.error(err);
+        alert("Erro ao enviar para o ranking, mas sua nota foi registrada localmente.");
       }
 
-      // Garante que o ranking atualize antes de trocar de tela
-      await loadRanking(); 
-
+      await loadRanking();
       document.getElementById('quiz-screen').classList.add('hidden');
-      document.getElementById('quiz-stats').classList.add('hidden');
       document.getElementById('result-screen').classList.remove('hidden');
       document.getElementById('final-score').textContent = `${acertos}/${questoes.length}`;
     }
