@@ -22,6 +22,7 @@
 
   <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
     
+    <!-- Área Principal do Quiz -->
     <div class="lg:col-span-3 bg-zinc-900 rounded-3xl p-6 md:p-10 border border-zinc-800 shadow-2xl h-fit">
       
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
@@ -37,13 +38,14 @@
         </div>
       </div>
 
+      <!-- Tela Inicial -->
       <div id="setup-screen" class="max-w-md mx-auto py-12 text-center">
         <div class="mb-8">
           <div class="w-20 h-20 bg-yellow-600/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-yellow-600/20">
             <span class="text-3xl">👨‍💻</span>
           </div>
           <h2 class="text-xl font-semibold">Atividade</h2>
-          <p class="text-zinc-500 text-sm">Insira seus dados.</p>
+          <p class="text-zinc-500 text-sm">Insira seus dados para começar.</p>
         </div>
         
         <input id="user-name" type="text" placeholder="Nome do Aluno" 
@@ -51,13 +53,14 @@
         
         <button onclick="iniciarProva()" 
                 class="w-full bg-yellow-600 hover:bg-yellow-500 px-12 py-5 rounded-2xl font-bold transition-all shadow-xl shadow-yellow-900/10 flex items-center justify-center gap-2">
-          <span>Carregar </span>
+          <span>Carregar Atividade</span>
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
           </svg>
         </button>
       </div>
 
+      <!-- Tela do Quiz -->
       <div id="quiz-screen" class="hidden">
         <div class="mb-8">
           <div class="flex justify-between items-end mb-2">
@@ -81,12 +84,13 @@
         </div>
       </div>
 
+      <!-- Tela de Resultados -->
       <div id="result-screen" class="hidden text-center py-12">
         <div class="mb-6">
           <span class="text-6xl">🏆</span>
         </div>
         <h2 class="text-4xl font-bold text-white mb-2">Atividade Concluída!</h2>
-        <p class="text-zinc-500 mb-10">Os dados foram enviados para o sistema.</p>
+        <p class="text-zinc-500 mb-10">Seu desempenho foi registrado no sistema.</p>
         
         <div class="bg-zinc-800/50 inline-block px-16 py-8 rounded-3xl border border-zinc-700 mb-10">
           <p class="text-sm text-zinc-400 uppercase tracking-widest mb-2">Sua Nota</p>
@@ -99,9 +103,9 @@
           </button>
         </div>
       </div>
-
     </div>
 
+    <!-- Barra Lateral de Ranking -->
     <div class="lg:col-span-1">
       <div class="ranking-card rounded-3xl p-6 border border-zinc-800 sticky top-8 shadow-2xl">
         <div class="flex items-center justify-between mb-6">
@@ -135,7 +139,8 @@
   <script>
     const supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
     let questoes = [], indiceAtual = 0, acertos = 0, selecionada = null, nomeAluno = '', deviceId = '';
-    
+
+    // Segurança contra inspeção
     document.addEventListener('contextmenu', e => e.preventDefault());
     document.onkeydown = (e) => {
       if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && e.keyCode == 73)) return false;
@@ -157,7 +162,7 @@
 
     async function loadRanking() {
       const { data, error } = await supabaseClient
-        .from('quiz_results2')
+        .from('quiz_results5')
         .select('user_name, score')
         .order('score', { ascending: false })
         .limit(10);
@@ -180,7 +185,7 @@
 
     async function iniciarProva() {
       nomeAluno = document.getElementById('user-name').value.trim();
-      if (nomeAluno.length < 3) return alert("Por favor, digite seu nome para registro.");
+      if (nomeAluno.length < 3) return alert("Por favor, digite seu nome completo.");
       
       const { data, error } = await supabaseClient.from('questoes_portugol5').select('*');
       
@@ -217,6 +222,7 @@
 
       const btnC = document.getElementById('btn-confirm');
       btnC.disabled = true;
+      btnC.textContent = "Confirmar Resposta";
       btnC.className = "w-full md:w-72 py-5 bg-zinc-700 text-zinc-400 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 cursor-not-allowed";
     }
 
@@ -256,19 +262,31 @@
     }
 
     async function finalizarProva() {
+      const btnConfirm = document.getElementById('btn-confirm');
+      if(btnConfirm) {
+          btnConfirm.textContent = "Sincronizando...";
+          btnConfirm.disabled = true;
+      }
+
       try {
-        await supabaseClient.from('quiz_results2').insert({
+        // Envio estruturado como array para maior compatibilidade mobile
+        const { error } = await supabaseClient.from('quiz_results5').insert([{
           user_name: nomeAluno,
           device_id: deviceId,
           score: acertos,
           total_questions: questoes.length,
           created_at: new Date().toISOString()
-        });
+        }]);
+
+        if (error) throw error;
+
       } catch (err) {
-        console.error("Erro ao salvar resultado.");
+        console.error("Erro ao salvar:", err.message);
+        alert("Aviso: Não foi possível salvar no servidor, mas sua nota aparecerá na tela.");
       }
 
-      loadRanking(); 
+      // Garante que o ranking atualize antes de trocar de tela
+      await loadRanking(); 
 
       document.getElementById('quiz-screen').classList.add('hidden');
       document.getElementById('quiz-stats').classList.add('hidden');
