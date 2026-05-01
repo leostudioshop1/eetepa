@@ -157,7 +157,7 @@
 
     async function loadRanking() {
       const { data, error } = await supabaseClient
-        .from('quiz_results5')
+        .from('quiz_results2')
         .select('user_name, score')
         .order('score', { ascending: false })
         .limit(10);
@@ -257,7 +257,7 @@
 
     async function finalizarProva() {
       try {
-        await supabaseClient.from('quiz_results5').insert({
+        await supabaseClient.from('quiz_results2').insert({
           user_name: nomeAluno,
           device_id: deviceId,
           score: acertos,
