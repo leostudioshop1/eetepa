@@ -163,7 +163,7 @@
         .from('quiz_results5')
         .select('user_name, score')
         .order('score', { ascending: false })
-        .limit(10);
+        .limit(30);
       const container = document.getElementById('ranking-list');
       if (error) {
         container.innerHTML = '<p class="text-red-900/50 text-center text-xs italic">Erro de conexão</p>';
