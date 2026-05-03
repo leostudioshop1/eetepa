@@ -1,263 +1,166 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQL Terminal Acadêmico - Supabase Edition</title>
-    <!-- SDK do Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root {
-            --neon-cyan: #00f2ff;
-            --neon-magenta: #bc13fe;
-            --terminal-black: #0d1117;
-            --border-color: #30363d;
-        }
+<meta charset="UTF-8">
+<title>Simulador SQL Profissional</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        body {
-            background-color: #010409;
-            color: #c9d1d9;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
+<!-- SQL.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
 
-        .terminal-container {
-            width: 100%;
-            max-width: 1000px;
-            background: var(--terminal-black);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-        }
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: #fff;
+    margin: 0;
+  }
 
-        .header {
-            background: #161b22;
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+  header {
+    background: #020617;
+    padding: 15px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+  }
 
-        .header h1 {
-            font-size: 16px;
-            margin: 0;
-            color: var(--neon-cyan);
-            font-family: 'Courier New', monospace;
-        }
+  .container {
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+  }
 
-        .status-badge {
-            font-size: 11px;
-            padding: 4px 10px;
-            border-radius: 12px;
-            background: #238636;
-            color: white;
-            font-weight: bold;
-        }
+  textarea {
+    width: 100%;
+    height: 180px;
+    background: #020617;
+    color: #22c55e;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 14px;
+  }
 
-        .editor-box {
-            background: #0d1117;
-            padding: 0;
-        }
+  button {
+    margin-top: 10px;
+    padding: 12px;
+    background: #22c55e;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+  }
 
-        textarea {
-            width: 100%;
-            height: 200px;
-            background: transparent;
-            color: #79c0ff;
-            border: none;
-            padding: 20px;
-            font-family: 'Fira Code', 'Courier New', monospace;
-            font-size: 16px;
-            outline: none;
-            box-sizing: border-box;
-            resize: vertical;
-        }
+  button:hover {
+    background: #16a34a;
+  }
 
-        .toolbar {
-            padding: 10px 20px;
-            background: #161b22;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+  .output {
+    margin-top: 20px;
+    background: #020617;
+    padding: 10px;
+    border-radius: 10px;
+    overflow-x: auto;
+  }
 
-        button {
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
-            transition: 0.3s;
-        }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
 
-        .btn-execute {
-            background: var(--neon-magenta);
-            border: none;
-            color: white;
-        }
+  th, td {
+    border: 1px solid #334155;
+    padding: 8px;
+    text-align: left;
+  }
 
-        .btn-execute:hover {
-            box-shadow: 0 0 15px var(--neon-magenta);
-            filter: brightness(1.1);
-        }
+  th {
+    background: #1e293b;
+  }
 
-        .results-area {
-            padding: 20px;
-            background: #0d1117;
-            border-top: 1px solid var(--border-color);
-            min-height: 200px;
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th {
-            background: #161b22;
-            color: var(--neon-cyan);
-            text-align: left;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-        }
-
-        td {
-            padding: 10px;
-            border: 1px solid var(--border-color);
-        }
-
-        .error-msg {
-            color: #ff7b72;
-            background: rgba(255, 123, 114, 0.1);
-            padding: 15px;
-            border-radius: 6px;
-            border-left: 4px solid #ff7b72;
-        }
-
-        .success-msg {
-            color: #7ee787;
-            margin-bottom: 10px;
-        }
-
-        .loading {
-            color: #8b949e;
-            font-style: italic;
-        }
-    </style>
+  .status {
+    margin-top: 10px;
+    color: #38bdf8;
+  }
+</style>
 </head>
+
 <body>
 
-<div class="terminal-container">
-    <div class="header">
-        <h1>SQL TERMINAL // SUPABASE CLOUD</h1>
-        <span class="status-badge">PRONTO</span>
-    </div>
+<header>🔥 Simulador SQL Profissional</header>
 
-    <div class="editor-box">
-        <textarea id="sqlQuery" placeholder="-- Exemplo: SELECT * FROM sua_tabela LIMIT 5\nSELECT * FROM "></textarea>
-    </div>
+<div class="container">
 
-    <div class="toolbar">
-        <span style="font-size: 12px; color: #8b949e;">Powered by Supabase SDK</span>
-        <button class="btn-execute" onclick="executeSQL()">EXECUTAR COMANDO (_>)</button>
-    </div>
+<textarea id="sql">
+-- Exemplo inicial
+CREATE TABLE alunos (id INTEGER PRIMARY KEY, nome TEXT, nota REAL);
 
-    <div id="results" class="results-area">
-        <div style="color: #484f58; text-align: center; margin-top: 50px;">Aguardando comando SQL...</div>
-    </div>
+INSERT INTO alunos (nome, nota) VALUES ('João', 8.5);
+INSERT INTO alunos (nome, nota) VALUES ('Maria', 9.2);
+
+SELECT * FROM alunos;
+</textarea>
+
+<button onclick="executar()">Executar SQL</button>
+
+<div class="status" id="status"></div>
+
+<div class="output" id="resultado"></div>
+
 </div>
 
-<!-- Script de Configuração e Inicialização -->
 <script>
-    // Substitua pelas suas credenciais do projeto no Supabase
- 
-// 🔥 USE ESSE PADRÃO (igual seu acompanhamento)
-const supabaseClient = supabase.createClient(
-'https://osofdmgokrxdzsxozsrf.supabase.co',
-'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
-);
-    // Inicialização do cliente de forma segura
-    let supabaseClient = null;
-    try {
-        if (typeof supabase !== 'undefined') {
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        }
-    } catch (e) {
-        console.error("Erro ao inicializar Supabase:", e);
+let db;
+
+initSqlJs({
+  locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+}).then(SQL => {
+  db = new SQL.Database();
+  document.getElementById("status").innerText = "Banco pronto!";
+});
+
+function executar() {
+  const sql = document.getElementById("sql").value;
+  const resultadoDiv = document.getElementById("resultado");
+
+  try {
+    const resultados = db.exec(sql);
+
+    if (resultados.length === 0) {
+      resultadoDiv.innerHTML = "<p>Comando executado com sucesso.</p>";
+      return;
     }
 
-    async function executeSQL() {
-        const query = document.getElementById('sqlQuery').value.trim();
-        const resultsDiv = document.getElementById('results');
-        
-        if (!query) return;
+    let html = "";
 
-        if (!supabaseClient) {
-            resultsDiv.innerHTML = `
-                <div class="error-msg">
-                    <strong>Erro de Inicialização:</strong><br>
-                    O cliente Supabase não pôde ser inicializado. Verifique a importação do SDK e as suas credenciais.
-                </div>`;
-            return;
-        }
+    resultados.forEach(res => {
+      html += "<table><tr>";
 
-        resultsDiv.innerHTML = '<div class="loading">Executando consulta no banco remoto...</div>';
+      res.columns.forEach(col => {
+        html += `<th>${col}</th>`;
+      });
 
-        try {
-            const { data, error } = await supabaseClient.rpc('exec_sql', { query_text: query });
+      html += "</tr>";
 
-            if (error) throw error;
-
-            if (data && data.length > 0) {
-                renderTable(data);
-            } else {
-                resultsDiv.innerHTML = '<div class="success-msg">> Comando executado com sucesso. Nenhum dado retornado ou tabela vazia.</div>';
-            }
-
-        } catch (err) {
-            resultsDiv.innerHTML = `
-                <div class="error-msg">
-                    <strong>Erro no Supabase:</strong><br>
-                    ${err.message || err}
-                    <p style="font-size: 11px; margin-top: 10px; color: #8b949e;">
-                        Dica: Certifique-se de que a função RPC 'exec_sql' está criada no seu banco de dados e que o Supabase URL/Key estão corretos.
-                    </p>
-                </div>`;
-        }
-    }
-
-    function renderTable(data) {
-        const columns = Object.keys(data[0]);
-        let html = '<div class="success-msg">> ' + data.length + ' registros encontrados:</div>';
-        html += '<table><thead><tr>';
-        
-        columns.forEach(col => {
-            html += `<th>${col}</th>`;
+      res.values.forEach(linha => {
+        html += "<tr>";
+        linha.forEach(valor => {
+          html += `<td>${valor}</td>`;
         });
-        
-        html += '</tr></thead><tbody>';
-        
-        data.forEach(row => {
-            html += '<tr>';
-            columns.forEach(col => {
-                html += `<td>${row[col] !== null ? row[col] : '<em>null</em>'}</td>`;
-            });
-            html += '</tr>';
-        });
-        
-        html += '</tbody></table>';
-        document.getElementById('results').innerHTML = html;
-    }
+        html += "</tr>";
+      });
+
+      html += "</table><br>";
+    });
+
+    resultadoDiv.innerHTML = html;
+    document.getElementById("status").innerText = "Executado com sucesso!";
+    
+  } catch (e) {
+    document.getElementById("status").innerText = "Erro: " + e.message;
+  }
+}
 </script>
 
 </body>
