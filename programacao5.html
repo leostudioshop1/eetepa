@@ -86,7 +86,7 @@
       </div>
 
    
-      <div id="result-screen" class="hidden text-center py-12">
+      <div id="-screen" class="hidden text-center py-12">
         <div class="mb-6">
           <span class="text-6xl">🏆</span>
         </div>
@@ -160,7 +160,7 @@
 
     async function loadRanking() {
       const { data, error } = await supabaseClient
-        .from('quiz_results5')
+        .from('quiz_results6')
         .select('user_name, score')
         .order('score', { ascending: false })
         .limit(30);
@@ -261,7 +261,7 @@
     async function finalizarProva() {
      
       try {
-        await supabaseClient.from('quiz_results5').insert({
+        await supabaseClient.from('quiz_results6').insert({
           user_name: nomeAluno,
           device_id: deviceId,
           score: acertos,
