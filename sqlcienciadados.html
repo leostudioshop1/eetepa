@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -90,15 +89,6 @@
             align-items: center;
         }
 
-        .table-selector {
-            background: #21262d;
-            color: #c9d1d9;
-            border: 1px solid var(--border-color);
-            padding: 5px 10px;
-            border-radius: 6px;
-            outline: none;
-        }
-
         button {
             padding: 10px 20px;
             border-radius: 6px;
@@ -170,12 +160,11 @@
 <div class="terminal-container">
     <div class="header">
         <h1>SQL TERMINAL // SUPABASE CLOUD</h1>
-        <span class="status-badge">CONNECTED</span>
+        <span class="status-badge">PRONTO</span>
     </div>
 
     <div class="editor-box">
-        <textarea id="sqlQuery" placeholder="-- Exemplo: SELECT * FROM sua_tabela LIMIT 5
-SELECT * FROM "></textarea>
+        <textarea id="sqlQuery" placeholder="-- Exemplo: SELECT * FROM sua_tabela LIMIT 5\nSELECT * FROM "></textarea>
     </div>
 
     <div class="toolbar">
@@ -188,44 +177,60 @@ SELECT * FROM "></textarea>
     </div>
 </div>
 
-<!-- Importação das credenciais -->
-<script src="config.js"></script>
-
+<!-- Script de Configuração e Inicialização -->
 <script>
+    // Substitua pelas suas credenciais do projeto no Supabase
+ 
+// 🔥 USE ESSE PADRÃO (igual seu acompanhamento)
+const supabaseClient = supabase.createClient(
+'https://osofdmgokrxdzsxozsrf.supabase.co',
+'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
+);
+    // Inicialização do cliente de forma segura
+    let supabaseClient = null;
+    try {
+        if (typeof supabase !== 'undefined') {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+    } catch (e) {
+        console.error("Erro ao inicializar Supabase:", e);
+    }
+
     async function executeSQL() {
         const query = document.getElementById('sqlQuery').value.trim();
         const resultsDiv = document.getElementById('results');
         
         if (!query) return;
 
+        if (!supabaseClient) {
+            resultsDiv.innerHTML = `
+                <div class="error-msg">
+                    <strong>Erro de Inicialização:</strong><br>
+                    O cliente Supabase não pôde ser inicializado. Verifique a importação do SDK e as suas credenciais.
+                </div>`;
+            return;
+        }
+
         resultsDiv.innerHTML = '<div class="loading">Executando consulta no banco remoto...</div>';
 
         try {
-            /* NOTA IMPORTANTE: 
-               O Supabase SDK não permite rodar SQL bruto (SELECT * FROM...) diretamente por segurança (SQL Injection).
-               Para rodar SQL bruto no front-end, você precisaria de uma RPC (Remote Procedure Call) no Supabase.
-               
-               Abaixo, simulamos a chamada via RPC 'exec_sql' que você deve criar no painel do Supabase.
-            */
-            
-            // Tentativa via RPC (Recomendado para simuladores acadêmicos)
-            const { data, error } = await supabase.rpc('exec_sql', { query_text: query });
+            const { data, error } = await supabaseClient.rpc('exec_sql', { query_text: query });
 
             if (error) throw error;
 
             if (data && data.length > 0) {
                 renderTable(data);
             } else {
-                resultsDiv.innerHTML = '<div class="success-msg">> Comando executado. Nenhum dado retornado ou tabela vazia.</div>';
+                resultsDiv.innerHTML = '<div class="success-msg">> Comando executado com sucesso. Nenhum dado retornado ou tabela vazia.</div>';
             }
 
         } catch (err) {
             resultsDiv.innerHTML = `
                 <div class="error-msg">
                     <strong>Erro no Supabase:</strong><br>
-                    ${err.message}
+                    ${err.message || err}
                     <p style="font-size: 11px; margin-top: 10px; color: #8b949e;">
-                        Dica: Certifique-se de que a função RPC 'exec_sql' está criada no seu banco de dados.
+                        Dica: Certifique-se de que a função RPC 'exec_sql' está criada no seu banco de dados e que o Supabase URL/Key estão corretos.
                     </p>
                 </div>`;
         }
