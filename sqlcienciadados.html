@@ -2,207 +2,158 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>TERMINAL SQL // CYBERPUNK</title>
+    <title>Simulador SQL Profissional</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- SQL.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-    <!-- Google Fonts for Cyberpunk vibe -->
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
-        :root {
-            --bg-color: #050505;
-            --panel-bg: #0a0a0c;
-            --neon-cyan: #00f3ff;
-            --neon-magenta: #ff00ff;
-            --neon-yellow: #fcee0a;
-            --text-color: #e0e0e0;
-            --border-glow: 0 0 10px rgba(0, 243, 255, 0.3);
-        }
-
-        * { box-sizing: border-box; }
-
-        body {
-            font-family: 'Fira Code', monospace;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background: #0f172a; 
+            color: #fff; 
             margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-            /* Efeito de Scanlines */
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 4px, 3px 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
-
-        header {
-            background: var(--panel-bg);
-            padding: 20px;
-            text-align: center;
-            font-family: 'Orbitron', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 5px;
-            color: var(--neon-cyan);
-            border-bottom: 3px solid var(--neon-magenta);
-            box-shadow: 0 4px 15px rgba(255, 0, 255, 0.3);
-            text-shadow: 0 0 10px var(--neon-cyan);
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 20px auto;
-            padding: 20px;
-        }
-
-        .editor-container {
-            position: relative;
-            margin-bottom: 20px;
-        }
-
-        .editor-container::before {
-            content: "SYSTEM_INPUT_";
-            position: absolute;
-            top: -12px;
-            left: 15px;
-            background: var(--bg-color);
-            padding: 0 10px;
-            color: var(--neon-magenta);
-            font-size: 0.8rem;
+        
+        header { 
+            background: #020617; 
+            padding: 20px 15px; 
+            text-align: center; 
             font-weight: bold;
+            font-size: 1.2rem;
+            border-bottom: 1px solid #1e293b;
         }
 
-        textarea {
-            width: 100%;
-            height: 250px;
-            background: rgba(10, 10, 12, 0.8);
-            color: var(--neon-yellow);
-            border: 2px solid var(--neon-cyan);
-            border-radius: 4px;
+        .container { 
             padding: 15px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            gap: 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Editor de Código */
+        textarea {
+            width: 100%; 
+            height: 180px; 
+            background: #020617; 
+            color: #22c55e;
+            border: 1px solid #334155; 
+            border-radius: 10px; 
+            padding: 12px;
             font-family: 'Fira Code', monospace;
             font-size: 14px;
-            outline: none;
-            box-shadow: var(--border-glow);
             resize: vertical;
+            box-sizing: border-box;
         }
 
         button {
             width: 100%;
-            padding: 15px;
-            background: transparent;
-            color: var(--neon-cyan);
-            border: 2px solid var(--neon-cyan);
-            font-family: 'Orbitron', sans-serif;
-            font-weight: bold;
+            padding: 15px; 
+            background: #22c55e;
+            color: #020617;
+            border: none; 
+            border-radius: 8px; 
             cursor: pointer;
-            text-transform: uppercase;
-            transition: 0.3s;
-            position: relative;
-            overflow: hidden;
-            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+            font-weight: bold;
+            font-size: 16px;
+            transition: background 0.3s;
         }
 
-        button:hover {
-            background: var(--neon-cyan);
-            color: #000;
-            box-shadow: 0 0 20px var(--neon-cyan);
+        button:active {
+            background: #16a34a;
+            transform: scale(0.98);
         }
 
-        .status {
-            margin: 15px 0;
-            padding: 10px;
+        .status { 
             font-size: 0.9rem;
-            color: var(--neon-magenta);
-            border-left: 3px solid var(--neon-magenta);
-            background: rgba(255, 0, 255, 0.05);
+            color: #38bdf8;
+            padding: 5px 0;
         }
 
-        .output-container {
-            margin-top: 30px;
-            overflow-x: auto; /* Garante responsividade na tabela */
+        /* Área de Resultados - Sempre abaixo no Mobile */
+        .output { 
+            margin-top: 10px; 
+            background: #020617; 
+            border-radius: 10px;
+            border: 1px solid #1e293b;
+            overflow: hidden;
         }
 
-        table {
+        /* Wrapper para tornar tabelas roláveis horizontalmente no mobile */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
             width: 100%;
-            border-collapse: collapse;
-            background: rgba(0, 243, 255, 0.02);
-            border: 1px solid rgba(0, 243, 255, 0.2);
         }
 
-        th {
-            background: rgba(0, 243, 255, 0.1);
-            color: var(--neon-cyan);
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            padding: 12px;
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            min-width: 400px; /* Garante que não esprema demais */
+        }
+
+        th, td { 
+            border: 1px solid #334155; 
+            padding: 12px 10px; 
             text-align: left;
-            border-bottom: 2px solid var(--neon-cyan);
-        }
-
-        td {
-            padding: 10px;
-            border-bottom: 1px solid rgba(0, 243, 255, 0.1);
             font-size: 14px;
         }
 
-        tr:hover {
-            background: rgba(255, 255, 255, 0.05);
+        th { 
+            background: #1e293b; 
+            color: #38bdf8;
+            text-transform: uppercase;
+            font-size: 12px;
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-color); }
-        ::-webkit-scrollbar-thumb { background: var(--neon-magenta); }
-
-        @media (max-width: 600px) {
-            header { font-size: 1.2rem; letter-spacing: 2px; }
-            .container { padding: 10px; }
-            textarea { height: 180px; }
+        tr:nth-child(even) {
+            background: #0f172a;
         }
     </style>
 </head>
 
 <body>
 
-<header>⚡ SQL_CORE_EXECUTOR</header>
+<header>🔥 Simulador SQL Profissional</header>
 
 <div class="container">
+    <!-- Bloco Superior: Input -->
+    <div class="input-area">
+        <textarea id="sql" spellcheck="false">
+CREATE TABLE alunos (id INTEGER PRIMARY KEY, nome TEXT, nota REAL);
 
-    <div class="editor-container">
-<textarea id="sql">
--- Inicializando matriz de dados...
-CREATE TABLE unidades_ciberneticas (
-    id INTEGER PRIMARY KEY, 
-    modelo TEXT, 
-    nivel_hacking INTEGER
-);
+INSERT INTO alunos (nome, nota) VALUES ('João', 8.5);
+INSERT INTO alunos (nome, nota) VALUES ('Maria', 9.2);
 
-INSERT INTO unidades_ciberneticas (modelo, nivel_hacking) VALUES ('V-Type Raven', 88);
-INSERT INTO unidades_ciberneticas (modelo, nivel_hacking) VALUES ('NetRunner Elite', 95);
+SELECT * FROM alunos;</textarea>
 
-SELECT * FROM unidades_ciberneticas;</textarea>
+        <button onclick="executar()">Executar Comandos</button>
+        <div class="status" id="status">Carregando motor SQL...</div>
     </div>
 
-    <button onclick="executar()">Executar Protocolo</button>
-
-    <div class="status" id="status">Iniciando sistema...</div>
-
-    <div class="output-container" id="resultado"></div>
-
+    <!-- Bloco Inferior: Resultados -->
+    <div class="output" id="resultado">
+        <!-- As tabelas aparecerão aqui -->
+    </div>
 </div>
 
 <script>
 let db;
 
-// Inicialização com tratamento de erro
+// Inicializa o SQL.js
 initSqlJs({
     locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
 }).then(SQL => {
     db = new SQL.Database();
-    document.getElementById("status").innerText = "> SISTEMA ONLINE // AGUARDANDO COMANDOS";
-}).catch(err => {
-    document.getElementById("status").innerText = "> FALHA NO NÚCLEO: " + err.message;
+    document.getElementById("status").innerText = "✔ Banco de dados pronto!";
 });
 
 function executar() {
@@ -211,8 +162,6 @@ function executar() {
 
     const resultadoDiv = document.getElementById("resultado");
     resultadoDiv.innerHTML = "";
-    
-    document.getElementById("status").innerText = "> PROCESSANDO REQUISIÇÃO...";
 
     try {
         comandos.forEach(cmd => {
@@ -220,28 +169,32 @@ function executar() {
                 const res = db.exec(cmd);
 
                 res.forEach(r => {
-                    let html = "<table><thead><tr>";
+                    let html = `<div class="table-responsive"><table><thead><tr>`;
+
+                    // Cabeçalho
                     r.columns.forEach(col => html += `<th>${col}</th>`);
                     html += "</tr></thead><tbody>";
 
+                    // Linhas
                     r.values.forEach(linha => {
                         html += "<tr>";
                         linha.forEach(v => html += `<td>${v}</td>`);
                         html += "</tr>";
                     });
 
-                    html += "</tbody></table><br>";
+                    html += "</tbody></table></div>";
                     resultadoDiv.innerHTML += html;
                 });
+
             } else {
-                db.run(cmd);
+                db.run(cmd); 
             }
         });
 
-        document.getElementById("status").innerText = "> SUCESSO: OPERAÇÃO CONCLUÍDA.";
+        document.getElementById("status").innerText = "✔ Executado com sucesso!";
         
     } catch (e) {
-        document.getElementById("status").innerText = "> ERRO CRÍTICO: " + e.message.toUpperCase();
+        document.getElementById("status").innerText = "❌ Erro: " + e.message;
     }
 }
 </script>
