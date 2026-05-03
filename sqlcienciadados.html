@@ -1,123 +1,31 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Simulador SQL Profissional</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Simulador SQL Profissional</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
 
-    <style>
-        body { 
-            font-family: 'Segoe UI', Arial, sans-serif; 
-            background: #0f172a; 
-            color: #fff; 
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        
-        header { 
-            background: #020617; 
-            padding: 20px 15px; 
-            text-align: center; 
-            font-weight: bold;
-            font-size: 1.2rem;
-            border-bottom: 1px solid #1e293b;
-        }
-
-        .container { 
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-            gap: 15px;
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        /* Editor de Código */
-        textarea {
-            width: 100%; 
-            height: 180px; 
-            background: #020617; 
-            color: #22c55e;
-            border: 1px solid #334155; 
-            border-radius: 10px; 
-            padding: 12px;
-            font-family: 'Fira Code', monospace;
-            font-size: 14px;
-            resize: vertical;
-            box-sizing: border-box;
-        }
-
-        button {
-            width: 100%;
-            padding: 15px; 
-            background: #22c55e;
-            color: #020617;
-            border: none; 
-            border-radius: 8px; 
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 16px;
-            transition: background 0.3s;
-        }
-
-        button:active {
-            background: #16a34a;
-            transform: scale(0.98);
-        }
-
-        .status { 
-            font-size: 0.9rem;
-            color: #38bdf8;
-            padding: 5px 0;
-        }
-
-        /* Área de Resultados - Sempre abaixo no Mobile */
-        .output { 
-            margin-top: 10px; 
-            background: #020617; 
-            border-radius: 10px;
-            border: 1px solid #1e293b;
-            overflow: hidden;
-        }
-
-        /* Wrapper para tornar tabelas roláveis horizontalmente no mobile */
-        .table-responsive {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            width: 100%;
-        }
-
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            min-width: 400px; /* Garante que não esprema demais */
-        }
-
-        th, td { 
-            border: 1px solid #334155; 
-            padding: 12px 10px; 
-            text-align: left;
-            font-size: 14px;
-        }
-
-        th { 
-            background: #1e293b; 
-            color: #38bdf8;
-            text-transform: uppercase;
-            font-size: 12px;
-        }
-
-        tr:nth-child(even) {
-            background: #0f172a;
-        }
-    </style>
+<style>
+  body { font-family: Arial; background:#0f172a; color:#fff; margin:0;}
+  header { background:#020617; padding:15px; text-align:center; font-weight:bold;}
+  .container { padding:15px; }
+  textarea {
+    width:100%; height:200px; background:#020617; color:#22c55e;
+    border:1px solid #334155; border-radius:10px; padding:10px;
+    font-family:monospace;
+  }
+  button {
+    margin-top:10px; padding:12px; background:#22c55e;
+    border:none; border-radius:8px; cursor:pointer;
+  }
+  .output { margin-top:20px; background:#020617; padding:10px; border-radius:10px;}
+  table { width:100%; border-collapse:collapse; }
+  th, td { border:1px solid #334155; padding:8px; }
+  th { background:#1e293b; }
+  .status { margin-top:10px; color:#38bdf8;}
+</style>
 </head>
 
 <body>
@@ -125,77 +33,73 @@
 <header>🔥 Simulador SQL Profissional</header>
 
 <div class="container">
-    <!-- Bloco Superior: Input -->
-    <div class="input-area">
-        <textarea id="sql" spellcheck="false">
+
+<textarea id="sql">
 CREATE TABLE alunos (id INTEGER PRIMARY KEY, nome TEXT, nota REAL);
 
 INSERT INTO alunos (nome, nota) VALUES ('João', 8.5);
 INSERT INTO alunos (nome, nota) VALUES ('Maria', 9.2);
 
-SELECT * FROM alunos;</textarea>
+SELECT * FROM alunos;
+</textarea>
 
-        <button onclick="executar()">Executar Comandos</button>
-        <div class="status" id="status">Carregando motor SQL...</div>
-    </div>
+<button onclick="executar()">Executar SQL</button>
 
-    <!-- Bloco Inferior: Resultados -->
-    <div class="output" id="resultado">
-        <!-- As tabelas aparecerão aqui -->
-    </div>
+<div class="status" id="status"></div>
+<div class="output" id="resultado"></div>
+
 </div>
 
 <script>
 let db;
 
-// Inicializa o SQL.js
 initSqlJs({
-    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+  locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
 }).then(SQL => {
-    db = new SQL.Database();
-    document.getElementById("status").innerText = "✔ Banco de dados pronto!";
+  db = new SQL.Database();
+  document.getElementById("status").innerText = "Banco pronto!";
 });
 
 function executar() {
-    const sqlTexto = document.getElementById("sql").value;
-    const comandos = sqlTexto.split(";").map(c => c.trim()).filter(c => c);
+  const sqlTexto = document.getElementById("sql").value;
+  const comandos = sqlTexto.split(";").map(c => c.trim()).filter(c => c);
 
-    const resultadoDiv = document.getElementById("resultado");
-    resultadoDiv.innerHTML = "";
+  const resultadoDiv = document.getElementById("resultado");
+  resultadoDiv.innerHTML = "";
 
-    try {
-        comandos.forEach(cmd => {
-            if (cmd.toLowerCase().startsWith("select")) {
-                const res = db.exec(cmd);
+  try {
+    comandos.forEach(cmd => {
 
-                res.forEach(r => {
-                    let html = `<div class="table-responsive"><table><thead><tr>`;
+      if (cmd.toLowerCase().startsWith("select")) {
+        const res = db.exec(cmd);
 
-                    // Cabeçalho
-                    r.columns.forEach(col => html += `<th>${col}</th>`);
-                    html += "</tr></thead><tbody>";
+        res.forEach(r => {
+          let html = "<table><tr>";
 
-                    // Linhas
-                    r.values.forEach(linha => {
-                        html += "<tr>";
-                        linha.forEach(v => html += `<td>${v}</td>`);
-                        html += "</tr>";
-                    });
+          r.columns.forEach(col => html += `<th>${col}</th>`);
+          html += "</tr>";
 
-                    html += "</tbody></table></div>";
-                    resultadoDiv.innerHTML += html;
-                });
+          r.values.forEach(linha => {
+            html += "<tr>";
+            linha.forEach(v => html += `<td>${v}</td>`);
+            html += "</tr>";
+          });
 
-            } else {
-                db.run(cmd); 
-            }
+          html += "</table><br>";
+          resultadoDiv.innerHTML += html;
         });
 
-        document.getElementById("status").innerText = "✔ Executado com sucesso!";
-        
-    } catch (e) {
-        document.getElementById("status").innerText = "❌ Erro: " + e.message;
-    }
+      } else {
+        db.run(cmd); // INSERT, UPDATE, DELETE, CREATE
+      }
+
+    });
+
+    document.getElementById("status").innerText = "Todos os comandos executados!";
+    
+  } catch (e) {
+    document.getElementById("status").innerText = "Erro: " + e.message;
+  }
 }
 </script>
 
