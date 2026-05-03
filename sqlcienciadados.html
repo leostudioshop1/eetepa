@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador SQL - Prática Interativa</title>
+    <script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.0/dist/sql-wasm.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e2937 100%);
+            color: #e2e8f0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background: #1e2937;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            color: #60a5fa;
+        }
+        
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .editor-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            background: #1e2937;
+            border-right: 1px solid #334155;
+        }
+        
+        .results-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        
+        textarea {
+            flex: 1;
+            background: #0f172a;
+            color: #e2e8f0;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 1rem;
+            resize: none;
+            margin-bottom: 1rem;
+        }
+        
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1rem;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: #1e40af;
+            transform: translateY(-2px);
+        }
+        
+        .btn-clear {
+            background: #64748b;
+        }
+        
+        .btn-clear:hover {
+            background: #475569;
+        }
+        
+        .console {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Consolas', monospace;
+            font-size: 0.95rem;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            background: #1e2937;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+        
+        th {
+            background: #334155;
+            color: #93c5fd;
+        }
+        
+        tr:hover {
+            background: #334155;
+        }
+        
+        .db-info {
+            background: #1e2937;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .example-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .example-btn {
+            font-size: 0.85rem;
+            padding: 6px 12px;
+            background: #334155;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🗄️ Simulador SQL</h1>
+        <div>
+            <span id="status">Banco de dados carregado com sucesso</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Painel do Editor -->
+        <div class="editor-panel">
+            <h2 style="margin-bottom: 10px;">Editor SQL</h2>
+            
+            <div class="db-info">
+                <strong>Banco atual:</strong> <span id="current-db">escola_db</span><br>
+                <strong>Tabelas existentes:</strong> <span id="table-list">nenhuma</span>
+            </div>
+
+            <textarea id="sql-input" rows="12" placeholder="Digite seu comando SQL aqui...&#10;Exemplo:&#10;CREATE TABLE alunos (&#10;  id INTEGER PRIMARY KEY,&#10;  nome TEXT,&#10;  idade INTEGER&#10;);">CREATE TABLE IF NOT EXISTS alunos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nome TEXT NOT NULL,
+  idade INTEGER,
+  email TEXT
+);
+
+INSERT INTO alunos (nome, idade, email) VALUES 
+('João Silva', 16, 'joao@email.com'),
+('Maria Santos', 17, 'maria@email.com'),
+('Pedro Costa', 15, 'pedro@email.com'); </textarea>
+
+            <div class="toolbar">
+                <button onclick="executarSQL()">▶ Executar Query</button>
+                <button class="btn-clear" onclick="limparConsole()">Limpar Console</button>
+                <button onclick="resetarBanco()">🔄 Resetar Banco</button>
+            </div>
+
+            <h3>Exemplos rápidos:</h3>
+            <div class="example-btns">
+                <button class="example-btn" onclick="carregarExemplo(0)">Criar Tabela</button>
+                <button class="example-btn" onclick="carregarExemplo(1)">Inserir Dados</button>
+                <button class="example-btn" onclick="carregarExemplo(2)">SELECT</button>
+                <button class="example-btn" onclick="carregarExemplo(3)">UPDATE / DELETE</button>
+            </div>
+        </div>
+
+        <!-- Painel de Resultados -->
+        <div class="results-panel">
+            <h2>Resultados</h2>
+            <div id="results"></div>
+            
+            <h2 style="margin-top: 20px;">Console / Histórico</h2>
+            <div id="console" class="console"></div>
+        </div>
+    </div>
+
+    <script>
+        let db;
+        let config = { locateFile: filename => `https://cdn.jsdelivr.net/npm/sql.js@1.10.0/dist/${filename}` };
+
+        async function initDB() {
+            try {
+                const SQL = await initSqlJs(config);
+                db = new SQL.Database();
+                
+                // Banco inicial com dados de exemplo
+                db.run(`
+                    CREATE TABLE IF NOT EXISTS alunos (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        nome TEXT NOT NULL,
+                        idade INTEGER,
+                        email TEXT,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    );
+                    
+                    INSERT OR IGNORE INTO alunos (nome, idade, email) VALUES 
+                    ('Ana Oliveira', 16, 'ana@email.com'),
+                    ('Lucas Mendes', 17, 'lucas@email.com'),
+                    ('Beatriz Lima', 15, 'bia@email.com');
+                `);
+                
+                logConsole("✅ Banco de dados inicializado com sucesso!", "success");
+                atualizarInfoTabelas();
+            } catch (err) {
+                logConsole("❌ Erro ao inicializar o banco: " + err.message, "error");
+            }
+        }
+
+        function logConsole(msg, type = "info") {
+            const consoleEl = document.getElementById('console');
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            
+            let color = '#e2e8f0';
+            if (type === 'success') color = '#4ade80';
+            if (type === 'error') color = '#f87171';
+            if (type === 'warning') color = '#fbbf24';
+            
+            consoleEl.innerHTML += `<span style="color: ${color}">[${timestamp}] ${msg}</span><br>`;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function atualizarInfoTabelas() {
+            try {
+                const res = db.exec("SELECT name FROM sqlite_master WHERE type='table';");
+                let tables = [];
+                
+                if (res.length > 0 && res[0].values) {
+                    tables = res[0].values.map(row => row[0]);
+                }
+                
+                document.getElementById('table-list').textContent = tables.length ? tables.join(', ') : 'nenhuma';
+            } catch(e) {}
+        }
+
+        function executarSQL() {
+            const sql = document.getElementById('sql-input').value.trim();
+            if (!sql) {
+                logConsole("⚠️ Digite um comando SQL!", "warning");
+                return;
+            }
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            
+            try {
+                logConsole(`▶ Executando: <span style="color:#93c5fd">${sql.substring(0, 80)}${sql.length > 80 ? '...' : ''}</span>`);
+                
+                const result = db.exec(sql);
+                
+                if (result.length === 0) {
+                    // Comando sem retorno (INSERT, UPDATE, DELETE, CREATE, etc)
+                    const changes = db.getRowsModified();
+                    logConsole(`✅ Comando executado com sucesso! (${changes} linha(s) afetada(s))`, "success");
+                    atualizarInfoTabelas();
+                    return;
+                }
+                
+                // Exibe resultado em tabela
+                result.forEach((stmtResult, index) => {
+                    if (stmtResult.columns.length === 0) return;
+                    
+                    let html = `<h3>Resultado ${index + 1}</h3>`;
+                    html += '<table><thead><tr>';
+                    
+                    stmtResult.columns.forEach(col => {
+                        html += `<th>${col}</th>`;
+                    });
+                    html += '</tr></thead><tbody>';
+                    
+                    stmtResult.values.forEach(row => {
+                        html += '<tr>';
+                        row.forEach(cell => {
+                            html += `<td>${cell === null ? '<em>NULL</em>' : cell}</td>`;
+                        });
+                        html += '</tr>';
+                    });
+                    
+                    html += '</tbody></table>';
+                    resultsDiv.innerHTML += html;
+                });
+                
+                logConsole(`✅ ${result.length} consulta(s) retornada(s) com sucesso!`, "success");
+                
+            } catch (err) {
+                logConsole(`❌ Erro SQL: ${err.message}`, "error");
+                resultsDiv.innerHTML = `<p style="color:#f87171">Erro: ${err.message}</p>`;
+            }
+        }
+
+        function limparConsole() {
+            document.getElementById('console').innerHTML = '';
+        }
+
+        function resetarBanco() {
+            if (confirm("Tem certeza que deseja resetar todo o banco de dados?")) {
+                db.close();
+                initDB();
+                document.getElementById('results').innerHTML = '';
+                logConsole("🔄 Banco de dados resetado!", "success");
+            }
+        }
+
+        const exemplos = [
+            // 0 - Criar tabela
+            `CREATE TABLE IF NOT EXISTS professores (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nome TEXT NOT NULL,
+  materia TEXT,
+  salario REAL
+);
+
+INSERT INTO professores (nome, materia, salario) VALUES 
+('Carlos Mendes', 'Matemática', 4500.00),
+('Juliana Costa', 'Português', 4200.00);`,
+            
+            // 1 - Inserir
+            `INSERT INTO alunos (nome, idade, email) VALUES 
+('Fernanda Alves', 16, 'fernanda@email.com'),
+('Roberto Nunes', 17, 'roberto@email.com');`,
+            
+            // 2 - SELECT
+            `SELECT * FROM alunos ORDER BY idade DESC;
+            
+-- Ou com filtro:
+-- SELECT nome, idade FROM alunos WHERE idade >= 16;`,
+            
+            // 3 - Update + Delete
+            `UPDATE alunos SET idade = 18 WHERE nome = 'João Silva';
+DELETE FROM alunos WHERE id = 1;`
+        ];
+
+        function carregarExemplo(indice) {
+            document.getElementById('sql-input').value = exemplos[indice];
+        }
+
+        // Atalhos de teclado
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                executarSQL();
+            }
+        });
+
+        // Inicialização
+        window.onload = function() {
+            initDB();
+            
+            // Dica inicial
+            setTimeout(() => {
+                logConsole("👋 Bem-vindo ao Simulador SQL!", "success");
+                logConsole("Dica: Use Ctrl + Enter para executar rapidamente.");
+            }, 800);
+        };
+    </script>
+</body>
+</html>
