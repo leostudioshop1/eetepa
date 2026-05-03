@@ -4,7 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQL Simulator - GitHub Edition</title>
+    <title>SQL Terminal Acadêmico - Supabase Edition</title>
+    <!-- SDK do Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --neon-cyan: #00f2ff;
@@ -18,26 +20,26 @@
             color: #c9d1d9;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            padding: 20px;
         }
 
-        .container {
+        .terminal-container {
             width: 100%;
-            max-width: 900px;
+            max-width: 1000px;
             background: var(--terminal-black);
             border: 1px solid var(--border-color);
-            border-radius: 6px;
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
         }
 
         .header {
             background: #161b22;
-            padding: 12px 20px;
+            padding: 15px 20px;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
@@ -45,98 +47,89 @@
         }
 
         .header h1 {
-            font-size: 14px;
+            font-size: 16px;
             margin: 0;
             color: var(--neon-cyan);
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            font-family: 'Courier New', monospace;
         }
 
-        .badge {
+        .status-badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 12px;
             background: #238636;
             color: white;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 11px;
             font-weight: bold;
         }
 
-        .editor-container {
-            position: relative;
+        .editor-box {
             background: #0d1117;
+            padding: 0;
         }
 
         textarea {
             width: 100%;
-            height: 180px;
+            height: 200px;
             background: transparent;
             color: #79c0ff;
             border: none;
             padding: 20px;
             font-family: 'Fira Code', 'Courier New', monospace;
-            font-size: 15px;
+            font-size: 16px;
             outline: none;
             box-sizing: border-box;
-            resize: none;
+            resize: vertical;
         }
 
-        .controls {
+        .toolbar {
             padding: 10px 20px;
             background: #161b22;
             border-top: 1px solid var(--border-color);
             display: flex;
-            justify-content: flex-end;
-            gap: 10px;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-selector {
+            background: #21262d;
+            color: #c9d1d9;
+            border: 1px solid var(--border-color);
+            padding: 5px 10px;
+            border-radius: 6px;
+            outline: none;
         }
 
         button {
-            padding: 8px 16px;
+            padding: 10px 20px;
             border-radius: 6px;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 13px;
-            transition: 0.2s;
+            font-weight: bold;
+            font-size: 14px;
+            transition: 0.3s;
         }
 
-        .btn-run {
-            background-color: var(--neon-magenta);
-            border: 1px solid var(--neon-magenta);
+        .btn-execute {
+            background: var(--neon-magenta);
+            border: none;
             color: white;
         }
 
-        .btn-run:hover {
-            filter: brightness(1.2);
-            box-shadow: 0 0 10px var(--neon-magenta);
+        .btn-execute:hover {
+            box-shadow: 0 0 15px var(--neon-magenta);
+            filter: brightness(1.1);
         }
 
-        .btn-clear {
-            background-color: #21262d;
-            border: 1px solid var(--border-color);
-            color: #c9d1d9;
-        }
-
-        .btn-clear:hover {
-            background-color: #30363d;
-        }
-
-        .output-area {
+        .results-area {
             padding: 20px;
             background: #0d1117;
             border-top: 1px solid var(--border-color);
-            min-height: 150px;
-        }
-
-        .status-msg {
-            font-size: 13px;
-            margin-bottom: 15px;
-            padding-left: 10px;
-            border-left: 3px solid var(--neon-cyan);
+            min-height: 200px;
+            overflow-x: auto;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
             margin-top: 10px;
         }
 
@@ -144,7 +137,7 @@
             background: #161b22;
             color: var(--neon-cyan);
             text-align: left;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid var(--border-color);
         }
 
@@ -153,104 +146,112 @@
             border: 1px solid var(--border-color);
         }
 
-        tr:nth-child(even) {
-            background: #161b2244;
+        .error-msg {
+            color: #ff7b72;
+            background: rgba(255, 123, 114, 0.1);
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #ff7b72;
         }
 
-        .empty-state {
-            color: #484f58;
-            text-align: center;
-            margin-top: 40px;
+        .success-msg {
+            color: #7ee787;
+            margin-bottom: 10px;
         }
-        
-        .footer-info {
-            margin-top: 20px;
-            font-size: 11px;
-            color: #484f58;
+
+        .loading {
+            color: #8b949e;
+            font-style: italic;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="terminal-container">
     <div class="header">
-        <h1>SQL Simulator // Client-Side</h1>
-        <span class="badge">Static GitHub Host</span>
+        <h1>SQL TERMINAL // SUPABASE CLOUD</h1>
+        <span class="status-badge">CONNECTED</span>
     </div>
 
-    <div class="editor-container">
-        <textarea id="sqlInput" placeholder="-- Digite seus comandos SQL aqui (Simulação Local)
--- Exemplo:
-CREATE TABLE alunos (id INT, nome TEXT);
-INSERT INTO alunos VALUES (1, 'Léo Cruz');
-SELECT * FROM alunos;"></textarea>
+    <div class="editor-box">
+        <textarea id="sqlQuery" placeholder="-- Exemplo: SELECT * FROM sua_tabela LIMIT 5
+SELECT * FROM "></textarea>
     </div>
 
-    <div class="controls">
-        <button class="btn-clear" onclick="clearEditor()">LIMPAR</button>
-        <button class="btn-run" onclick="runSimulation()">EXECUTAR NO NAVEGADOR (_>)</button>
+    <div class="toolbar">
+        <span style="font-size: 12px; color: #8b949e;">Powered by Supabase SDK</span>
+        <button class="btn-execute" onclick="executeSQL()">EXECUTAR COMANDO (_>)</button>
     </div>
 
-    <div id="output" class="output-area">
-        <div class="empty-state">O terminal está pronto. Digite um comando para simular o resultado.</div>
+    <div id="results" class="results-area">
+        <div style="color: #484f58; text-align: center; margin-top: 50px;">Aguardando comando SQL...</div>
     </div>
 </div>
 
-<div class="footer-info">
-    Interface otimizada para GitHub Pages | Desenvolvido para práticas acadêmicas
-</div>
+<!-- Importação das credenciais -->
+<script src="config.js"></script>
 
 <script>
-    function clearEditor() {
-        document.getElementById('sqlInput').value = '';
-        document.getElementById('output').innerHTML = '<div class="empty-state">O terminal está pronto. Digite um comando para simular o resultado.</div>';
+    async function executeSQL() {
+        const query = document.getElementById('sqlQuery').value.trim();
+        const resultsDiv = document.getElementById('results');
+        
+        if (!query) return;
+
+        resultsDiv.innerHTML = '<div class="loading">Executando consulta no banco remoto...</div>';
+
+        try {
+            /* NOTA IMPORTANTE: 
+               O Supabase SDK não permite rodar SQL bruto (SELECT * FROM...) diretamente por segurança (SQL Injection).
+               Para rodar SQL bruto no front-end, você precisaria de uma RPC (Remote Procedure Call) no Supabase.
+               
+               Abaixo, simulamos a chamada via RPC 'exec_sql' que você deve criar no painel do Supabase.
+            */
+            
+            // Tentativa via RPC (Recomendado para simuladores acadêmicos)
+            const { data, error } = await supabase.rpc('exec_sql', { query_text: query });
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                renderTable(data);
+            } else {
+                resultsDiv.innerHTML = '<div class="success-msg">> Comando executado. Nenhum dado retornado ou tabela vazia.</div>';
+            }
+
+        } catch (err) {
+            resultsDiv.innerHTML = `
+                <div class="error-msg">
+                    <strong>Erro no Supabase:</strong><br>
+                    ${err.message}
+                    <p style="font-size: 11px; margin-top: 10px; color: #8b949e;">
+                        Dica: Certifique-se de que a função RPC 'exec_sql' está criada no seu banco de dados.
+                    </p>
+                </div>`;
+        }
     }
 
-    function runSimulation() {
-        const sql = document.getElementById('sqlInput').value.trim().toUpperCase();
-        const output = document.getElementById('output');
+    function renderTable(data) {
+        const columns = Object.keys(data[0]);
+        let html = '<div class="success-msg">> ' + data.length + ' registros encontrados:</div>';
+        html += '<table><thead><tr>';
         
-        if (!sql) return;
-
-        // Simulação de lógica para fins didáticos (já que GitHub Pages é estático)
-        let html = '<div class="status-msg">Simulando execução... (Ambiente Local)</div>';
+        columns.forEach(col => {
+            html += `<th>${col}</th>`;
+        });
         
-        if (sql.includes('SELECT')) {
-            html += `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>NOME</th>
-                            <th>CURSO</th>
-                            <th>STATUS</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>Léo Cruz</td>
-                            <td>Sistemas</td>
-                            <td>Ativo</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>Ana Silva</td>
-                            <td>Informática</td>
-                            <td>Ativo</td>
-                        </tr>
-                    </tbody>
-                </table>
-            `;
-        } else if (sql.includes('INSERT') || sql.includes('UPDATE') || sql.includes('DELETE')) {
-            html += '<div style="color: #55ff55;">> Comando executado com sucesso! 1 linha afetada.</div>';
-        } else if (sql.includes('CREATE') || sql.includes('DROP')) {
-            html += '<div style="color: #55ff55;">> Estrutura modificada com sucesso.</div>';
-        } else {
-            html += '<div style="color: #ff5555;">> Erro de sintaxe: Comando não reconhecido neste simulador.</div>';
-        }
-
-        output.innerHTML = html;
+        html += '</tr></thead><tbody>';
+        
+        data.forEach(row => {
+            html += '<tr>';
+            columns.forEach(col => {
+                html += `<td>${row[col] !== null ? row[col] : '<em>null</em>'}</td>`;
+            });
+            html += '</tr>';
+        });
+        
+        html += '</tbody></table>';
+        document.getElementById('results').innerHTML = html;
     }
 </script>
 
