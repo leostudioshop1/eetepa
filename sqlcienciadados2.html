@@ -10,37 +10,36 @@ body { margin:0; font-family: Arial; background:#0f172a; color:#fff; display:fle
 header { background:#020617; padding:15px; text-align:center; font-weight:bold; color: #22c55e; border-bottom: 2px solid #22c55e; }
 .main { display:flex; flex:1; overflow:hidden; }
 .sidebar { width:250px; background:#020617; padding:10px; overflow-y:auto; border-right:1px solid #334155; }
-.table-item { padding:8px; background:#1e293b; margin-bottom:5px; border-radius:6px; cursor:pointer; }
+.table-item { padding:8px; background:#1e293b; margin-bottom:5px; border-radius:6px; cursor:pointer; font-size: 14px; }
 .table-item:hover { background:#334155; color: #22c55e; }
 .content { flex:1; padding:10px; display:flex; flex-direction:column; }
 textarea { width:100%; height:180px; background:#020617; color:#22c55e; border:1px solid #334155; border-radius:10px; padding:15px; font-family:monospace; font-size: 14px; outline: none; }
 button { margin-top:10px; padding:12px; background:#22c55e; border:none; border-radius:8px; cursor:pointer; font-weight: bold; color: #020617; }
-button:active { transform: scale(0.98); }
 .output { margin-top:10px; background:#020617; padding:10px; border-radius:10px; overflow:auto; flex:1; border: 1px solid #334155; }
 table { width:100%; border-collapse:collapse; }
 th, td { border:1px solid #334155; padding:10px; text-align: left; }
 th { background:#1e293b; color: #38bdf8; }
-.status { margin-top:5px; color:#38bdf8; font-size: 13px; font-weight: bold; min-height: 20px;}
+.status { margin-top:5px; color:#38bdf8; font-size: 13px; font-weight: bold; }
 footer { background: #020617; padding: 10px; text-align: center; font-size: 11px; color: #94a3b8; }
 </style>
 </head>
 <body>
 
-<header>🔥 Simulador SQL Completo (EETEPA-XINGUARA)</header>
+<header>🔥 Simulador SQL Interativo (EETEPA-XINGUARA)</header>
 
 <div class="main">
   <div class="sidebar">
-    <h3 style="color: #38bdf8;">📊 Navegação</h3>
+    <h3 style="color: #38bdf8;">📊 Comandos</h3>
     <div id="tabelas">
-        <div class="table-item" onclick="limparEditor()">Limpar Editor</div>
-        <div class="table-item" onclick="inserirExemplo()">Exemplo: INSERT</div>
+        <div class="table-item" onclick="setSQL('SELECT * FROM alunos;')">Ver Alunos</div>
+        <div class="table-item" onclick="setSQL('INSERT INTO alunos (nome, nota) VALUES (\'Léo Cruz\', 10);')">Inserir Exemplo</div>
+        <div class="table-item" onclick="document.getElementById('sql').value = ''">Limpar Tudo</div>
     </div>
   </div>
 
   <div class="content">
-    <textarea id="sql">-- Tente SELECT, INSERT, UPDATE ou DELETE
-SELECT * FROM alunos;</textarea>
-    <button id="btnExecutar" onclick="executarNoSupabase()">Executar Comando SQL</button>
+    <textarea id="sql">SELECT * FROM alunos;</textarea>
+    <button id="btnExecutar" onclick="executarNoSupabase()">Executar SQL</button>
     <div class="status" id="status">Pronto</div>
     <div class="output" id="resultado"></div>
   </div>
@@ -57,38 +56,37 @@ async function executarNoSupabase() {
     const query = document.getElementById("sql").value.trim();
     const status = document.getElementById("status");
     const resultadoDiv = document.getElementById("resultado");
+    const btn = document.getElementById("btnExecutar");
     
-    status.innerText = "⏳ Executando...";
+    status.innerText = "⏳ Processando...";
+    btn.disabled = true;
     resultadoDiv.innerHTML = "";
 
     try {
-        // Agora usamos a função RPC para rodar QUALQUER comando SQL
-        if (query.toLowerCase().startsWith("select")) {
-            // Para SELECT, usamos o modo padrão para facilitar o mapeamento de colunas
-            const match = query.match(/from\s+(\w+)/i);
-            const tabela = match ? match[1] : 'alunos';
-            
-            const { data, error } = await supabaseClient.from(tabela).select('*');
-            if (error) throw error;
+        // Chamada única via RPC para qualquer comando
+        const { data, error } = await supabaseClient.rpc('executar_sql_estudante', { sql_query: query });
+
+        if (error) throw error;
+
+        // Se o retorno for um array, renderiza tabela. Se for objeto, mostra mensagem de sucesso.
+        if (Array.isArray(data)) {
             renderTabela(data);
+            status.innerText = "✅ Consulta concluída!";
         } else {
-            // Para INSERT, UPDATE, DELETE, usamos a função personalizada do banco
-            const { data, error } = await supabaseClient.rpc('executar_sql_estudante', { sql_query: query });
-            if (error) throw error;
-            
-            status.innerText = "✅ Comando executado com sucesso!";
-            resultadoDiv.innerHTML = `<p style="color: #22c55e;">O banco de dados foi atualizado.</p>`;
+            status.innerText = "✅ " + (data.status || "Comando executado!");
+            resultadoDiv.innerHTML = `<p style="color: #22c55e;">Operação realizada com sucesso no banco de dados.</p>`;
         }
-        status.innerText = "✅ Sucesso!";
     } catch (e) {
         status.innerText = "❌ Erro no SQL";
-        resultadoDiv.innerHTML = `<p style="color: #ef4444;">Erro: ${e.message}</p>`;
+        resultadoDiv.innerHTML = `<p style="color: #ef4444; font-family: monospace;">> ${e.message}</p>`;
+    } finally {
+        btn.disabled = false;
     }
 }
 
 function renderTabela(dados) {
     if (!dados || dados.length === 0) {
-        document.getElementById("resultado").innerHTML = "Tabela vazia ou sem resultados.";
+        document.getElementById("resultado").innerHTML = "A consulta não retornou dados.";
         return;
     }
     let html = "<table><thead><tr>";
@@ -97,19 +95,15 @@ function renderTabela(dados) {
     html += "</tr></thead><tbody>";
     dados.forEach(linha => {
         html += "<tr>";
-        colunas.forEach(col => html += `<td>${linha[col]}</td>`);
+        colunas.forEach(col => html += `<td>${linha[col] !== null ? linha[col] : ''}</td>`);
         html += "</tr>";
     });
     html += "</tbody></table>";
     document.getElementById("resultado").innerHTML = html;
 }
 
-function inserirExemplo() {
-    document.getElementById("sql").value = "INSERT INTO alunos (nome, nota) VALUES ('Novo Aluno', 10);";
-}
-
-function limparEditor() {
-    document.getElementById("sql").value = "";
+function setSQL(comando) {
+    document.getElementById("sql").value = comando;
 }
 </script>
 </body>
