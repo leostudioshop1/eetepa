@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Simulador SQL - Supabase | By Leomaster64</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+<script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    
+    // Carrega config.js
+    import('./config.js').then(config => {
+        window.supabase = createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+        initApp();
+    }).catch(err => {
+        alert("Erro ao carregar config.js. Verifique se o arquivo existe na mesma pasta.");
+        console.error(err);
+    });
+</script>
+
+<style>
+    /* Mesmo CSS da versão anterior (mantido igual) */
+    body { margin:0; font-family: Arial; background:#0f172a; color:#fff; display:flex; flex-direction:column; height:100vh; }
+    header { background:#020617; padding:15px; text-align:center; font-weight:bold; }
+    .main { display:flex; flex:1; overflow:hidden; }
+    .sidebar { width:280px; background:#020617; padding:10px; overflow-y:auto; border-right:1px solid #334155; }
+    .content { flex:1; padding:15px; display:flex; flex-direction:column; }
+    textarea { width:100%; height:180px; background:#020617; color:#22c55e; border:1px solid #334155; border-radius:10px; padding:12px; font-family:monospace; font-size:15px; }
+    button { margin-top:10px; padding:14px; background:#22c55e; color:black; border:none; border-radius:8px; cursor:pointer; font-weight:bold; }
+    button:hover { background:#86efac; }
+    .output { margin-top:15px; background:#020617; padding:15px; border-radius:10px; overflow:auto; flex:1; }
+    table { width:100%; border-collapse:collapse; margin:15px 0; }
+    th, td { border:1px solid #334155; padding:10px; text-align:left; }
+    th { background:#1e293b; }
+    .status { margin:8px 0; color:#38bdf8; font-weight:bold; }
+    .table-item { padding:10px; background:#1e293b; margin-bottom:6px; border-radius:6px; cursor:pointer; }
+    .table-item:hover { background:#334155; }
+</style>
+</head>
+<body>
+
+<header>🔥 Simulador SQL Supabase - By Leomaster64</header>
+
+<div class="main">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h3>📊 Tabelas do Supabase</h3>
+        <div id="tabelas"></div>
+        <br>
+        <button onclick="atualizarTabelas()" style="width:100%; background:#64748b;">Atualizar Lista</button>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+        <textarea id="sql" spellcheck="false">
+-- Exemplo de comandos:
+SELECT * FROM alunos;
+-- SELECT * FROM alunos WHERE nota > 8;
+-- INSERT INTO alunos (nome, nota, idade) VALUES ('Ana Costa', 9.5, 16);
+        </textarea>
+
+        <button onclick="executarSQL()">▶ Executar SQL</button>
+        
+        <div class="status" id="status">Pronto para conectar...</div>
+        <div class="output" id="resultado"></div>
+    </div>
+</div>
+
+<script>
+async function initApp() {
+    document.getElementById("status").innerText = "✅ Conectado ao Supabase!";
+    await atualizarTabelas();
+}
+
+async function atualizarTabelas() {
+    const div = document.getElementById("tabelas");
+    div.innerHTML = "<p>Carregando tabelas...</p>";
+
+    try {
+        const { data, error } = await window.supabase
+            .from('information_schema.tables')
+            .select('table_name')
+            .eq('table_schema', 'public')
+            .neq('table_type', 'VIEW');
+
+        div.innerHTML = "";
+        if (error) throw error;
+
+        data.forEach(t => {
+            const nome = t.table_name;
+            const el = document.createElement("div");
+            el.className = "table-item";
+            el.innerText = nome;
+            el.onclick = () => visualizarTabela(nome);
+            div.appendChild(el);
+        });
+
+        if (data.length === 0) {
+            div.innerHTML = "<p>Nenhuma tabela encontrada.</p>";
+        }
+    } catch (e) {
+        div.innerHTML = `<p style="color:#f87171;">Erro ao carregar tabelas: ${e.message}</p>`;
+    }
+}
+
+async function visualizarTabela(nome) {
+    const sql = `SELECT * FROM ${nome} LIMIT 100;`;
+    document.getElementById("sql").value = sql;
+    executarSQL();
+}
+
+async function executarSQL() {
+    const sqlTexto = document.getElementById("sql").value.trim();
+    const status = document.getElementById("status");
+    const resultadoDiv = document.getElementById("resultado");
+
+    resultadoDiv.innerHTML = "";
+    status.innerText = "Executando...";
+
+    try {
+        // Por segurança, usamos rpc ou query direta (Supabase permite SQL via postgres functions, mas aqui vamos usar uma abordagem simples)
+        // Para este simulador, vamos usar o método mais direto disponível
+
+        if (sqlTexto.toLowerCase().startsWith("select")) {
+            const { data, error } = await window.supabase.rpc('exec_sql', { query: sqlTexto });
+            
+            if (error) {
+                // Fallback: tentar com .from() se for select simples (mais limitado)
+                status.innerText = "Usando método alternativo...";
+                const tableName = sqlTexto.match(/from\s+(\w+)/i)?.[1];
+                if (tableName) {
+                    const { data: tableData, error: tableError } = await window.supabase
+                        .from(tableName)
+                        .select('*');
+                    
+                    if (tableError) throw tableError;
+                    renderTabelaHTML(tableData, Object.keys(tableData[0] || {}));
+                } else {
+                    throw error;
+                }
+            } else {
+                renderTabelaHTML(data);
+            }
+        } else {
+            // INSERT, UPDATE, DELETE
+            const { data, error } = await window.supabase.rpc('exec_sql', { query: sqlTexto });
+            if (error) throw error;
+            
+            resultadoDiv.innerHTML = `<p style="color:#4ade80;">✅ Comando executado com sucesso!</p>`;
+        }
+
+        status.innerText = "✅ Executado com sucesso!";
+        await atualizarTabelas();
+
+    } catch (e) {
+        status.innerText = "❌ Erro";
+        resultadoDiv.innerHTML = `<p style="color:#f87171;">Erro: ${e.message}</p>`;
+        console.error(e);
+    }
+}
+
+function renderTabelaHTML(data, columns = null) {
+    const resultadoDiv = document.getElementById("resultado");
+    if (!data || data.length === 0) {
+        resultadoDiv.innerHTML = "<p>Nenhum resultado encontrado.</p>";
+        return;
+    }
+
+    const cols = columns || Object.keys(data[0]);
+    let html = "<table><tr>";
+
+    cols.forEach(col => html += `<th>${col}</th>`);
+    html += "</tr>";
+
+    data.forEach(row => {
+        html += "<tr>";
+        cols.forEach(col => {
+            html += `<td>${row[col] !== null ? row[col] : 'NULL'}</td>`;
+        });
+        html += "</tr>";
+    });
+
+    html += "</table>";
+    resultadoDiv.innerHTML = html;
+}
+</script>
+
+</body>
+</html>
