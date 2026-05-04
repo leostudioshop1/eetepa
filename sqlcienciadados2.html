@@ -2,46 +2,46 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Simulador SQL Supabase - By LÉO CRUZ</title>
+<title>Simulador SQL Full - By LÉO CRUZ</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
 body { margin:0; font-family: Arial; background:#0f172a; color:#fff; display:flex; flex-direction:column; height:100vh; }
 header { background:#020617; padding:15px; text-align:center; font-weight:bold; color: #22c55e; border-bottom: 2px solid #22c55e; }
 .main { display:flex; flex:1; overflow:hidden; }
 .sidebar { width:250px; background:#020617; padding:10px; overflow-y:auto; border-right:1px solid #334155; }
-.table-item { padding:8px; background:#1e293b; margin-bottom:5px; border-radius:6px; cursor:pointer; transition: 0.3s; }
+.table-item { padding:8px; background:#1e293b; margin-bottom:5px; border-radius:6px; cursor:pointer; }
 .table-item:hover { background:#334155; color: #22c55e; }
 .content { flex:1; padding:10px; display:flex; flex-direction:column; }
-textarea { width:100%; height:150px; background:#020617; color:#22c55e; border:1px solid #334155; border-radius:10px; padding:10px; font-family:monospace; font-size: 14px; outline: none; }
+textarea { width:100%; height:180px; background:#020617; color:#22c55e; border:1px solid #334155; border-radius:10px; padding:15px; font-family:monospace; font-size: 14px; outline: none; }
 button { margin-top:10px; padding:12px; background:#22c55e; border:none; border-radius:8px; cursor:pointer; font-weight: bold; color: #020617; }
-button:disabled { background: #1e293b; color: #475569; cursor: not-allowed; }
+button:active { transform: scale(0.98); }
 .output { margin-top:10px; background:#020617; padding:10px; border-radius:10px; overflow:auto; flex:1; border: 1px solid #334155; }
-table { width:100%; border-collapse:collapse; margin-bottom:15px; }
+table { width:100%; border-collapse:collapse; }
 th, td { border:1px solid #334155; padding:10px; text-align: left; }
 th { background:#1e293b; color: #38bdf8; }
-.status { margin-top:5px; color:#38bdf8; font-size: 13px; font-weight: bold; }
-footer { background: #020617; padding: 10px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #334155; }
+.status { margin-top:5px; color:#38bdf8; font-size: 13px; font-weight: bold; min-height: 20px;}
+footer { background: #020617; padding: 10px; text-align: center; font-size: 11px; color: #94a3b8; }
 </style>
 </head>
 <body>
 
-<header>🚀 Simulador SQL Supabase - EETEPA-XINGUARA</header>
+<header>🔥 Simulador SQL Completo (EETEPA-XINGUARA)</header>
 
 <div class="main">
   <div class="sidebar">
-    <h3 style="color: #38bdf8;">📊 Tabelas</h3>
+    <h3 style="color: #38bdf8;">📊 Navegação</h3>
     <div id="tabelas">
-        <div class="table-item" onclick="visualizarTabela('alunos')">alunos</div>
+        <div class="table-item" onclick="limparEditor()">Limpar Editor</div>
+        <div class="table-item" onclick="inserirExemplo()">Exemplo: INSERT</div>
     </div>
   </div>
 
   <div class="content">
-    <textarea id="sql">SELECT * FROM alunos;</textarea>
-    <button id="btnExecutar" onclick="executarNoSupabase()">Executar via API Supabase</button>
-    <div class="status" id="status">Pronto para consulta</div>
+    <textarea id="sql">-- Tente SELECT, INSERT, UPDATE ou DELETE
+SELECT * FROM alunos;</textarea>
+    <button id="btnExecutar" onclick="executarNoSupabase()">Executar Comando SQL</button>
+    <div class="status" id="status">Pronto</div>
     <div class="output" id="resultado"></div>
   </div>
 </div>
@@ -49,83 +49,68 @@ footer { background: #020617; padding: 10px; text-align: center; font-size: 11px
 <footer>Desenvolvido por LÉO CRUZ - EETEPA-XINGUARA</footer>
 
 <script>
-// 1. Configurações de Conexão
 const SUPABASE_URL = 'https://osofdmgokrxdzsxozsrf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe';
-
-// 2. Inicialização correta do cliente
-// Usamos window.supabase para acessar a biblioteca carregada no head
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function executarNoSupabase() {
-    const sqlTexto = document.getElementById("sql").value.trim();
+    const query = document.getElementById("sql").value.trim();
     const status = document.getElementById("status");
     const resultadoDiv = document.getElementById("resultado");
-    const btn = document.getElementById("btnExecutar");
-
-    status.innerText = "⏳ Processando requisição...";
-    btn.disabled = true;
+    
+    status.innerText = "⏳ Executando...";
     resultadoDiv.innerHTML = "";
 
     try {
-        // O simulador via JS foca em comandos SELECT por questões de segurança da API
-        if (sqlTexto.toLowerCase().startsWith("select")) {
-            
-            // Lógica simples para identificar a tabela no comando SQL
-            const match = sqlTexto.match(/from\s+(\w+)/i);
+        // Agora usamos a função RPC para rodar QUALQUER comando SQL
+        if (query.toLowerCase().startsWith("select")) {
+            // Para SELECT, usamos o modo padrão para facilitar o mapeamento de colunas
+            const match = query.match(/from\s+(\w+)/i);
             const tabela = match ? match[1] : 'alunos';
-
-            // Execução via SDK do Supabase
-            const { data, error } = await supabaseClient
-                .from(tabela)
-                .select('*');
-
+            
+            const { data, error } = await supabaseClient.from(tabela).select('*');
+            if (error) throw error;
+            renderTabela(data);
+        } else {
+            // Para INSERT, UPDATE, DELETE, usamos a função personalizada do banco
+            const { data, error } = await supabaseClient.rpc('executar_sql_estudante', { sql_query: query });
             if (error) throw error;
             
-            renderTabela(data);
-            status.innerText = "✅ Consulta realizada com sucesso!";
-            status.style.color = "#22c55e";
-        } else {
-            status.innerText = "⚠️ Este simulador está configurado apenas para consultas (SELECT).";
-            status.style.color = "#fbbf24";
+            status.innerText = "✅ Comando executado com sucesso!";
+            resultadoDiv.innerHTML = `<p style="color: #22c55e;">O banco de dados foi atualizado.</p>`;
         }
+        status.innerText = "✅ Sucesso!";
     } catch (e) {
-        console.error("Erro Supabase:", e);
-        status.innerText = "❌ Erro na conexão ou na tabela!";
-        status.style.color = "#ef4444";
-        resultadoDiv.innerHTML = `<p style="color: #ef4444; font-family: monospace;">> Erro: ${e.message}</p>`;
-    } finally {
-        btn.disabled = false;
+        status.innerText = "❌ Erro no SQL";
+        resultadoDiv.innerHTML = `<p style="color: #ef4444;">Erro: ${e.message}</p>`;
     }
 }
 
 function renderTabela(dados) {
     if (!dados || dados.length === 0) {
-        document.getElementById("resultado").innerHTML = "Nenhum registro encontrado.";
+        document.getElementById("resultado").innerHTML = "Tabela vazia ou sem resultados.";
         return;
     }
-
     let html = "<table><thead><tr>";
     const colunas = Object.keys(dados[0]);
-    
     colunas.forEach(col => html += `<th>${col}</th>`);
     html += "</tr></thead><tbody>";
-
     dados.forEach(linha => {
         html += "<tr>";
-        colunas.forEach(col => html += `<td>${linha[col] !== null ? linha[col] : ''}</td>`);
+        colunas.forEach(col => html += `<td>${linha[col]}</td>`);
         html += "</tr>";
     });
-
     html += "</tbody></table>";
     document.getElementById("resultado").innerHTML = html;
 }
 
-function visualizarTabela(nome) {
-    document.getElementById("sql").value = `SELECT * FROM ${nome};`;
-    executarNoSupabase();
+function inserirExemplo() {
+    document.getElementById("sql").value = "INSERT INTO alunos (nome, nota) VALUES ('Novo Aluno', 10);";
+}
+
+function limparEditor() {
+    document.getElementById("sql").value = "";
 }
 </script>
-
 </body>
 </html>
