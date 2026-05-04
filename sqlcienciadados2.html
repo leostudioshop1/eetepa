@@ -5,26 +5,25 @@
 <title>Simulador SQL Supabase - By LÉO CRUZ</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Supabase JS Library -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 body { margin:0; font-family: Arial; background:#0f172a; color:#fff; display:flex; flex-direction:column; height:100vh; }
-header { background:#020617; padding:15px; text-align:center; font-weight:bold; color: #22c55e; }
+header { background:#020617; padding:15px; text-align:center; font-weight:bold; color: #22c55e; border-bottom: 2px solid #22c55e; }
 .main { display:flex; flex:1; overflow:hidden; }
 .sidebar { width:250px; background:#020617; padding:10px; overflow-y:auto; border-right:1px solid #334155; }
-.table-item { padding:8px; background:#1e293b; margin-bottom:5px; border-radius:6px; cursor:pointer; }
-.table-item:hover { background:#334155; }
+.table-item { padding:8px; background:#1e293b; margin-bottom:5px; border-radius:6px; cursor:pointer; transition: 0.3s; }
+.table-item:hover { background:#334155; color: #22c55e; }
 .content { flex:1; padding:10px; display:flex; flex-direction:column; }
-textarea { width:100%; height:150px; background:#020617; color:#22c55e; border:1px solid #334155; border-radius:10px; padding:10px; font-family:monospace; font-size: 14px; }
-button { margin-top:10px; padding:12px; background:#22c55e; border:none; border-radius:8px; cursor:pointer; font-weight: bold; }
-button:disabled { background: #1e293b; cursor: not-allowed; }
-.output { margin-top:10px; background:#020617; padding:10px; border-radius:10px; overflow:auto; flex:1; }
+textarea { width:100%; height:150px; background:#020617; color:#22c55e; border:1px solid #334155; border-radius:10px; padding:10px; font-family:monospace; font-size: 14px; outline: none; }
+button { margin-top:10px; padding:12px; background:#22c55e; border:none; border-radius:8px; cursor:pointer; font-weight: bold; color: #020617; }
+button:disabled { background: #1e293b; color: #475569; cursor: not-allowed; }
+.output { margin-top:10px; background:#020617; padding:10px; border-radius:10px; overflow:auto; flex:1; border: 1px solid #334155; }
 table { width:100%; border-collapse:collapse; margin-bottom:15px; }
-th, td { border:1px solid #334155; padding:8px; text-align: left; }
-th { background:#1e293b; }
-.status { margin-top:5px; color:#38bdf8; font-size: 12px; }
-footer { background: #020617; padding: 5px; text-align: center; font-size: 10px; color: #475569; }
+th, td { border:1px solid #334155; padding:10px; text-align: left; }
+th { background:#1e293b; color: #38bdf8; }
+.status { margin-top:5px; color:#38bdf8; font-size: 13px; font-weight: bold; }
+footer { background: #020617; padding: 10px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #334155; }
 </style>
 </head>
 <body>
@@ -33,7 +32,7 @@ footer { background: #020617; padding: 5px; text-align: center; font-size: 10px;
 
 <div class="main">
   <div class="sidebar">
-    <h3>📊 Tabelas Ativas</h3>
+    <h3 style="color: #38bdf8;">📊 Tabelas</h3>
     <div id="tabelas">
         <div class="table-item" onclick="visualizarTabela('alunos')">alunos</div>
     </div>
@@ -42,7 +41,7 @@ footer { background: #020617; padding: 5px; text-align: center; font-size: 10px;
   <div class="content">
     <textarea id="sql">SELECT * FROM alunos;</textarea>
     <button id="btnExecutar" onclick="executarNoSupabase()">Executar via API Supabase</button>
-    <div class="status" id="status">Conectado ao Supabase</div>
+    <div class="status" id="status">Pronto para consulta</div>
     <div class="output" id="resultado"></div>
   </div>
 </div>
@@ -50,12 +49,13 @@ footer { background: #020617; padding: 5px; text-align: center; font-size: 10px;
 <footer>Desenvolvido por LÉO CRUZ - EETEPA-XINGUARA</footer>
 
 <script>
-// CONFIGURAÇÕES DO SUPABASE
+// 1. Configurações de Conexão
 const SUPABASE_URL = 'https://osofdmgokrxdzsxozsrf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe';
 
-// Inicializa o cliente usando as variáveis acima
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// 2. Inicialização correta do cliente
+// Usamos window.supabase para acessar a biblioteca carregada no head
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function executarNoSupabase() {
     const sqlTexto = document.getElementById("sql").value.trim();
@@ -63,32 +63,37 @@ async function executarNoSupabase() {
     const resultadoDiv = document.getElementById("resultado");
     const btn = document.getElementById("btnExecutar");
 
-    status.innerText = "Processando...";
+    status.innerText = "⏳ Processando requisição...";
     btn.disabled = true;
     resultadoDiv.innerHTML = "";
 
     try {
-        // Nota: O Supabase via JS não executa comandos DDL (CREATE/DROP) por segurança.
-        // Usamos o .rpc() ou funções pré-definidas. Para este simulador, focaremos no SELECT.
-        
+        // O simulador via JS foca em comandos SELECT por questões de segurança da API
         if (sqlTexto.toLowerCase().startsWith("select")) {
-            // Extração simples do nome da tabela para o exemplo
+            
+            // Lógica simples para identificar a tabela no comando SQL
             const match = sqlTexto.match(/from\s+(\w+)/i);
             const tabela = match ? match[1] : 'alunos';
 
-            const { data, error } = await supabase
+            // Execução via SDK do Supabase
+            const { data, error } = await supabaseClient
                 .from(tabela)
                 .select('*');
 
             if (error) throw error;
+            
             renderTabela(data);
-            status.innerText = "Consulta realizada com sucesso!";
+            status.innerText = "✅ Consulta realizada com sucesso!";
+            status.style.color = "#22c55e";
         } else {
-            status.innerText = "Atenção: Comandos de escrita (INSERT/UPDATE) devem ser feitos via Dashboard ou funções RPC específicas.";
+            status.innerText = "⚠️ Este simulador está configurado apenas para consultas (SELECT).";
+            status.style.color = "#fbbf24";
         }
     } catch (e) {
-        status.innerText = "Erro: " + e.message;
-        resultadoDiv.innerHTML = `<p style="color: #ef4444;">${e.message}</p>`;
+        console.error("Erro Supabase:", e);
+        status.innerText = "❌ Erro na conexão ou na tabela!";
+        status.style.color = "#ef4444";
+        resultadoDiv.innerHTML = `<p style="color: #ef4444; font-family: monospace;">> Erro: ${e.message}</p>`;
     } finally {
         btn.disabled = false;
     }
@@ -100,19 +105,19 @@ function renderTabela(dados) {
         return;
     }
 
-    let html = "<table><tr>";
+    let html = "<table><thead><tr>";
     const colunas = Object.keys(dados[0]);
     
     colunas.forEach(col => html += `<th>${col}</th>`);
-    html += "</tr>";
+    html += "</tr></thead><tbody>";
 
     dados.forEach(linha => {
         html += "<tr>";
-        colunas.forEach(col => html += `<td>${linha[col]}</td>`);
+        colunas.forEach(col => html += `<td>${linha[col] !== null ? linha[col] : ''}</td>`);
         html += "</tr>";
     });
 
-    html += "</table>";
+    html += "</tbody></table>";
     document.getElementById("resultado").innerHTML = html;
 }
 
@@ -121,5 +126,6 @@ function visualizarTabela(nome) {
     executarNoSupabase();
 }
 </script>
+
 </body>
 </html>
