@@ -2,52 +2,197 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Simulador SQL Full - By LÉO CRUZ</title>
+<title>SQL Pro Simulator | LÉO CRUZ</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Supabase JS Library -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
-body { margin:0; font-family: Arial; background:#0f172a; color:#fff; display:flex; flex-direction:column; height:100vh; }
-header { background:#020617; padding:15px; text-align:center; font-weight:bold; color: #22c55e; border-bottom: 2px solid #22c55e; }
+:root {
+    --bg-dark: #020617;
+    --panel-bg: #0f172a;
+    --accent: #22c55e;
+    --text-main: #f8fafc;
+    --text-dim: #94a3b8;
+    --border: #334155;
+    --blue: #38bdf8;
+    --red: #ef4444;
+}
+
+body { 
+    margin:0; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background: var(--bg-dark); 
+    color: var(--text-main); 
+    display:flex; 
+    flex-direction:column; 
+    height:100vh; 
+}
+
+header { 
+    background: var(--bg-dark); 
+    padding: 12px 20px; 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--accent);
+}
+
+.brand { font-weight: bold; color: var(--accent); letter-spacing: 1px; }
+.school { font-size: 12px; color: var(--text-dim); }
+
 .main { display:flex; flex:1; overflow:hidden; }
-.sidebar { width:250px; background:#020617; padding:10px; overflow-y:auto; border-right:1px solid #334155; }
-.table-item { padding:8px; background:#1e293b; margin-bottom:5px; border-radius:6px; cursor:pointer; font-size: 14px; }
-.table-item:hover { background:#334155; color: #22c55e; }
-.content { flex:1; padding:10px; display:flex; flex-direction:column; }
-textarea { width:100%; height:180px; background:#020617; color:#22c55e; border:1px solid #334155; border-radius:10px; padding:15px; font-family:monospace; font-size: 14px; outline: none; }
-button { margin-top:10px; padding:12px; background:#22c55e; border:none; border-radius:8px; cursor:pointer; font-weight: bold; color: #020617; }
-.output { margin-top:10px; background:#020617; padding:10px; border-radius:10px; overflow:auto; flex:1; border: 1px solid #334155; }
-table { width:100%; border-collapse:collapse; }
-th, td { border:1px solid #334155; padding:10px; text-align: left; }
-th { background:#1e293b; color: #38bdf8; }
-.status { margin-top:5px; color:#38bdf8; font-size: 13px; font-weight: bold; }
-footer { background: #020617; padding: 10px; text-align: center; font-size: 11px; color: #94a3b8; }
+
+/* SIDEBAR */
+.sidebar { 
+    width:280px; 
+    background: var(--bg-dark); 
+    padding:15px; 
+    overflow-y:auto; 
+    border-right:1px solid var(--border); 
+}
+
+.category-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin: 15px 0 8px 5px;
+    font-weight: bold;
+    display: block;
+}
+
+.snippet-item { 
+    padding:10px; 
+    background: var(--panel-bg); 
+    margin-bottom:6px; 
+    border-radius:6px; 
+    cursor:pointer; 
+    font-size: 13px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.snippet-item:hover { 
+    border-color: var(--accent);
+    background: #1e293b;
+}
+
+/* EDITOR AREA */
+.content { flex:1; padding:15px; display:flex; flex-direction:column; gap: 10px; }
+
+.editor-container { position: relative; }
+
+textarea { 
+    width: 100%; 
+    height: 200px; 
+    background: #000; 
+    color: var(--accent); 
+    border: 1px solid var(--border); 
+    border-radius: 8px; 
+    padding: 15px; 
+    font-family: 'Fira Code', 'Courier New', monospace; 
+    font-size: 14px; 
+    resize: none;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.actions { display: flex; align-items: center; gap: 15px; }
+
+button { 
+    padding: 12px 24px; 
+    background: var(--accent); 
+    border: none; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    font-weight: bold; 
+    color: var(--bg-dark);
+    transition: opacity 0.2s;
+}
+
+button:hover { opacity: 0.9; }
+button:disabled { background: var(--border); color: var(--text-dim); }
+
+.status-badge {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: #1e293b;
+    color: var(--blue);
+}
+
+/* RESULTS */
+.output { 
+    background: #000; 
+    border-radius: 8px; 
+    border: 1px solid var(--border);
+    overflow: auto; 
+    flex: 1; 
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { background: #1e293b; color: var(--blue); text-align: left; padding: 12px; border-bottom: 1px solid var(--border); }
+td { padding: 10px 12px; border-bottom: 1px solid #1e293b; }
+tr:hover { background: #0f172a; }
+
+footer { 
+    background: var(--bg-dark); 
+    padding: 8px; 
+    text-align: center; 
+    font-size: 11px; 
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 </style>
 </head>
 <body>
 
-<header>🔥 Simulador SQL Interativo (EETEPA-XINGUARA)</header>
+<header>
+    <div class="brand">⚡ SQL SIMULATOR PRO</div>
+    <div class="school">EETEPA-XINGUARA | Análise de Sistemas</div>
+</header>
 
 <div class="main">
-  <div class="sidebar">
-    <h3 style="color: #38bdf8;">📊 Comandos</h3>
-    <div id="tabelas">
-        <div class="table-item" onclick="setSQL('SELECT * FROM alunos;')">Ver Alunos</div>
-        <div class="table-item" onclick="setSQL('INSERT INTO alunos (nome, nota) VALUES (\'Léo Cruz\', 10);')">Inserir Exemplo</div>
-        <div class="table-item" onclick="document.getElementById('sql').value = ''">Limpar Tudo</div>
-    </div>
-  </div>
+    <aside class="sidebar">
+        <span class="category-label">Consultas (DQL)</span>
+        <div class="snippet-item" onclick="setSQL('SELECT * FROM alunos ORDER BY nome ASC;')">📋 Listar todos (A-Z)</div>
+        <div class="snippet-item" onclick="setSQL('SELECT * FROM alunos WHERE nota >= 7;')">✅ Filtrar Aprovados</div>
+        <div class="snippet-item" onclick="setSQL('SELECT COUNT(*) as total, AVG(nota) as media FROM alunos;')">📊 Estatísticas Gerais</div>
 
-  <div class="content">
-    <textarea id="sql">SELECT * FROM alunos;</textarea>
-    <button id="btnExecutar" onclick="executarNoSupabase()">Executar SQL</button>
-    <div class="status" id="status">Pronto</div>
-    <div class="output" id="resultado"></div>
-  </div>
+        <span class="category-label">Manipulação (DML)</span>
+        <div class="snippet-item" onclick="setSQL('INSERT INTO alunos (nome, nota) \nVALUES (\'Novo Aluno\', 8.5);')">➕ Inserir Novo Aluno</div>
+        <div class="snippet-item" onclick="setSQL('UPDATE alunos SET nota = 10 \nWHERE nome = \'João\';')">📝 Atualizar Nota</div>
+        <div class="snippet-item" onclick="setSQL('DELETE FROM alunos WHERE nota < 5;')">❌ Remover Reprovados</div>
+
+        <span class="category-label">Sistema</span>
+        <div class="snippet-item" onclick="setSQL('-- ATENÇÃO: Apaga tudo\nTRUNCATE TABLE alunos;')">⚠️ Resetar Tabela</div>
+        <div class="snippet-item" onclick="document.getElementById('sql').value=''">🧹 Limpar Editor</div>
+    </aside>
+
+    <main class="content">
+        <div class="editor-container">
+            <textarea id="sql" spellcheck="false">SELECT * FROM alunos;</textarea>
+        </div>
+
+        <div class="actions">
+            <button id="btnExecutar" onclick="executarNoSupabase()">EXECUTAR SQL (F8)</button>
+            <div id="status" class="status-badge">Pronto para consulta</div>
+        </div>
+
+        <div class="output" id="resultado">
+            <!-- As tabelas aparecerão aqui -->
+        </div>
+    </main>
 </div>
 
 <footer>Desenvolvido por LÉO CRUZ - EETEPA-XINGUARA</footer>
 
 <script>
+// CONFIGURAÇÕES DO SUPABASE
 const SUPABASE_URL = 'https://osofdmgokrxdzsxozsrf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -58,27 +203,31 @@ async function executarNoSupabase() {
     const resultadoDiv = document.getElementById("resultado");
     const btn = document.getElementById("btnExecutar");
     
+    if(!query) return;
+
     status.innerText = "⏳ Processando...";
+    status.style.color = "var(--blue)";
     btn.disabled = true;
     resultadoDiv.innerHTML = "";
 
     try {
-        // Chamada única via RPC para qualquer comando
+        // Chamada via RPC para suportar múltiplos comandos
         const { data, error } = await supabaseClient.rpc('executar_sql_estudante', { sql_query: query });
 
         if (error) throw error;
 
-        // Se o retorno for um array, renderiza tabela. Se for objeto, mostra mensagem de sucesso.
+        // Verifica se o retorno é uma lista de dados (SELECT) ou objeto (DML)
         if (Array.isArray(data)) {
             renderTabela(data);
-            status.innerText = "✅ Consulta concluída!";
+            status.innerText = `✅ Sucesso: ${data.length} registros.`;
         } else {
-            status.innerText = "✅ " + (data.status || "Comando executado!");
-            resultadoDiv.innerHTML = `<p style="color: #22c55e;">Operação realizada com sucesso no banco de dados.</p>`;
+            status.innerText = "✅ Comando executado!";
+            resultadoDiv.innerHTML = `<div style="padding:20px; color:var(--accent)">Operação concluída com sucesso no servidor.</div>`;
         }
     } catch (e) {
         status.innerText = "❌ Erro no SQL";
-        resultadoDiv.innerHTML = `<p style="color: #ef4444; font-family: monospace;">> ${e.message}</p>`;
+        status.style.color = "var(--red)";
+        resultadoDiv.innerHTML = `<div style="padding:20px; color:var(--red); font-family:monospace;">> Erro: ${e.message}</div>`;
     } finally {
         btn.disabled = false;
     }
@@ -86,18 +235,25 @@ async function executarNoSupabase() {
 
 function renderTabela(dados) {
     if (!dados || dados.length === 0) {
-        document.getElementById("resultado").innerHTML = "A consulta não retornou dados.";
+        document.getElementById("resultado").innerHTML = "<div style='padding:20px'>Tabela vazia.</div>";
         return;
     }
+
     let html = "<table><thead><tr>";
     const colunas = Object.keys(dados[0]);
+    
     colunas.forEach(col => html += `<th>${col}</th>`);
     html += "</tr></thead><tbody>";
+
     dados.forEach(linha => {
         html += "<tr>";
-        colunas.forEach(col => html += `<td>${linha[col] !== null ? linha[col] : ''}</td>`);
+        colunas.forEach(col => {
+            let val = linha[col] === null ? '<i style="color:#444">null</i>' : linha[col];
+            html += `<td>${val}</td>`;
+        });
         html += "</tr>";
     });
+
     html += "</tbody></table>";
     document.getElementById("resultado").innerHTML = html;
 }
@@ -105,6 +261,14 @@ function renderTabela(dados) {
 function setSQL(comando) {
     document.getElementById("sql").value = comando;
 }
+
+// Atalho F8 para executar
+document.addEventListener('keydown', function(e) {
+    if(e.key === 'F8') {
+        e.preventDefault();
+        executarNoSupabase();
+    }
+});
 </script>
 </body>
 </html>
