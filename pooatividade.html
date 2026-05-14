@@ -1,233 +1,228 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastro de Projetos - Delphi + Firebird</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body { font-family: 'Segoe UI', system-ui, sans-serif; scroll-behavior: smooth; }
-    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Projetos Delphi 12</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 </head>
-<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white min-h-screen">
-  <div class="max-w-6xl mx-auto p-4 md:p-8">
-    
-    <header class="mb-12">
-        <h1 class="text-4xl font-extrabold mb-2 flex items-center gap-4 text-emerald-400">
-            📌 Gestão de Projetos
-        </h1>
-        <p class="text-slate-400">Ambiente de acompanhamento: Delphi + Firebird</p>
-    </header>
 
-    <!-- Formulário -->
-    <div class="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 shadow-2xl mb-12">
-      <h2 class="text-2xl font-semibold mb-6 flex items-center gap-2">
-          <span id="formStatus">✨ Novo Projeto</span>
-      </h2>
-      
-      <form id="projectForm" class="space-y-6">
-        <input type="hidden" id="projectId">
+<body class="bg-slate-900 text-white min-h-screen">
 
-        <div class="grid md:grid-cols-2 gap-6">
-            <div>
-                <label class="block text-slate-400 mb-2 font-medium text-sm uppercase tracking-wider">Nome do Projeto</label>
-                <input type="text" id="projectName" required
-                       class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition">
-            </div>
-            <div>
-                <label class="block text-slate-400 mb-2 font-medium text-sm uppercase tracking-wider">Link do Tutorial</label>
-                <input type="url" id="tutorialLink" required placeholder="https://youtube.com/..."
-                       class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 focus:border-emerald-500 outline-none transition">
-            </div>
+<div class="max-w-7xl mx-auto p-6">
+
+    <h1 class="text-4xl font-bold mb-8">
+        🎮 Projetos de Jogos - Delphi 12
+    </h1>
+
+    <!-- FORMULÁRIO -->
+    <div class="bg-slate-800 p-6 rounded-2xl shadow-lg mb-8">
+
+        <div class="grid md:grid-cols-2 gap-4">
+
+            <input id="nome_jogo"
+                   placeholder="Nome do jogo"
+                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+
+            <input id="aluno"
+                   placeholder="Aluno"
+                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+
+            <input id="turma"
+                   placeholder="Turma"
+                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+
+            <input id="professor"
+                   placeholder="Professor"
+                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+
+            <input id="genero"
+                   placeholder="Gênero do jogo"
+                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+
+            <input id="progresso"
+                   type="number"
+                   placeholder="Progresso (%)"
+                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+
+            <input id="data_entrega"
+                   type="date"
+                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+
+            <select id="status"
+                    class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+
+                <option>Planejamento</option>
+                <option>Desenvolvimento</option>
+                <option>Testes</option>
+                <option>Finalizado</option>
+
+            </select>
+
         </div>
 
-        <div>
-            <label class="block text-slate-400 mb-2 font-medium text-sm uppercase tracking-wider">Integrantes do Grupo</label>
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <input type="text" id="aluno1" placeholder="Aluno 1" required class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm">
-                <input type="text" id="aluno2" placeholder="Aluno 2" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm">
-                <input type="text" id="aluno3" placeholder="Aluno 3" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm">
-                <input type="text" id="aluno4" placeholder="Aluno 4" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm">
-                <input type="text" id="aluno5" placeholder="Aluno 5" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm">
-            </div>
+        <textarea id="descricao"
+                  placeholder="Descrição do projeto"
+                  class="w-full mt-4 p-4 rounded-xl bg-slate-900 border border-slate-700 h-32"></textarea>
+
+        <div class="grid md:grid-cols-2 gap-4 mt-4">
+
+            <input id="link_download"
+                   placeholder="Link para download"
+                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+
+            <input id="link_github"
+                   placeholder="Link GitHub"
+                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+
         </div>
 
-        <div class="grid md:grid-cols-4 gap-6">
-            <div class="md:col-span-3">
-                <label class="block text-slate-400 mb-2 font-medium text-sm uppercase tracking-wider">Descrição Curta</label>
-                <input type="text" id="description" placeholder="Ex: Sistema de PDV para padarias"
-                          class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 focus:border-emerald-500 outline-none transition">
-            </div>
-            <div>
-                <label class="block text-slate-400 mb-2 font-medium text-sm uppercase tracking-wider">Progresso (%)</label>
-                <input type="number" id="progress" min="0" max="100" value="0" required
-                       class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 text-2xl font-bold text-emerald-400">
-            </div>
-        </div>
+        <textarea id="observacoes"
+                  placeholder="Observações"
+                  class="w-full mt-4 p-4 rounded-xl bg-slate-900 border border-slate-700 h-24"></textarea>
 
-        <div class="flex gap-4">
-            <button type="submit" id="btnSubmit"
-                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 p-5 rounded-2xl font-bold text-xl shadow-lg transition-all transform active:scale-[0.98]">
-              💾 Salvar Projeto
-            </button>
-            <button type="button" onclick="resetForm()" id="btnCancel" class="hidden bg-slate-700 hover:bg-slate-600 px-8 rounded-2xl font-bold transition">
-              Cancelar
-            </button>
-        </div>
-      </form>
+        <button onclick="salvarProjeto()"
+                class="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 p-4 rounded-2xl font-bold text-lg">
+            💾 Salvar Projeto
+        </button>
+
+        <p id="msg" class="mt-4 text-center"></p>
+
     </div>
 
-    <!-- Lista de Projetos -->
-    <div class="flex justify-between items-end mb-8">
-        <h2 class="text-3xl font-bold">Projetos Ativos</h2>
-        <span id="counter" class="bg-emerald-500/20 text-emerald-400 px-4 py-1 rounded-full text-sm border border-emerald-500/30">0 Projetos</span>
-    </div>
+    <!-- LISTA -->
+    <div id="listaProjetos" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
 
-    <div id="projectsList" class="grid md:grid-cols-2 gap-6 pb-20">
-      <!-- Cards renderizados aqui -->
-       <div class="col-span-full text-center py-20 text-slate-500 animate-pulse">
-           Carregando dados do servidor...
-       </div>
-    </div>
-  </div>
+</div>
 
-  <script>
-    const supabase = Supabase.createClient(
-      'https://osofdmgokrxdzsxozsrf.supabase.co',
-      'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
-    );
+<script>
 
-    const TABLE = 'projetos_delphi';
-    const form = document.getElementById("projectForm");
-    const btnSubmit = document.getElementById("btnSubmit");
+const supabaseClient = supabase.createClient(
+    'https://osofdmgokrxdzsxozsrf.supabase.co',
+    'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
+);
 
-    // Carregar dados e atualizar a interface
-    async function loadProjects() {
-      const { data, error } = await supabase
-        .from(TABLE)
-        .select('*')
-        .order('updated_at', { ascending: false });
+async function salvarProjeto() {
 
-      if (error) {
-        console.error("Erro Supabase:", error.message);
-        document.getElementById('projectsList').innerHTML = `<p class="text-red-400">Erro ao carregar: ${error.message}</p>`;
-        return;
-      }
+    const dados = {
 
-      document.getElementById('counter').innerText = `${data.length} Projeto(s)`;
-      const container = document.getElementById('projectsList');
-      
-      if (data.length === 0) {
-          container.innerHTML = `<p class="col-span-full text-center text-slate-500 py-10">Nenhum projeto cadastrado ou acesso bloqueado pelo RLS.</p>`;
-          return;
-      }
+        nome_jogo: nome_jogo.value,
+        aluno: aluno.value,
+        turma: turma.value,
+        professor: professor.value,
+        genero: genero.value,
+        progresso: parseInt(progresso.value || 0),
+        status: status.value,
+        descricao: descricao.value,
+        data_entrega: data_entrega.value,
+        link_download: link_download.value,
+        link_github: link_github.value,
+        observacoes: observacoes.value
 
-      container.innerHTML = data.map(p => {
-        const progColor = p.progress >= 80 ? 'text-emerald-400' : p.progress >= 50 ? 'text-yellow-400' : 'text-rose-400';
-        const alunos = [p.aluno1, p.aluno2, p.aluno3, p.aluno4, p.aluno5].filter(a => a && a.trim() !== "").join(', ');
-
-        return `
-          <div class="bg-slate-800/80 border border-slate-700 rounded-3xl p-7 hover:border-emerald-500/50 transition-all group">
-            <div class="flex justify-between items-start mb-4">
-              <div class="max-w-[70%]">
-                <h3 class="text-xl font-bold text-white group-hover:text-emerald-400 transition">${p.project_name}</h3>
-                <p class="text-slate-400 text-sm mt-1 italic">${p.description || 'Sem descrição'}</p>
-              </div>
-              <div class="text-right">
-                <span class="text-4xl font-black ${progColor}">${p.progress}%</span>
-              </div>
-            </div>
-            
-            <div class="space-y-3 mb-6">
-              <div class="flex items-center gap-2 text-sm text-slate-300 bg-slate-900/50 p-3 rounded-xl">
-                <span class="text-emerald-500">👥</span>
-                <span class="truncate">${alunos}</span>
-              </div>
-              <a href="${p.tutorial_link}" target="_blank" class="inline-flex items-center gap-2 text-sm text-emerald-400 hover:underline">
-                🔗 Link do Tutorial/Repositório
-              </a>
-            </div>
-
-            <div class="flex justify-between items-center pt-4 border-t border-slate-700/50">
-              <span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-                Atualizado: ${new Date(p.updated_at).toLocaleDateString('pt-BR')}
-              </span>
-              <button onclick="editProject('${p.id}')" 
-                      class="bg-slate-700 hover:bg-emerald-600 px-5 py-2 rounded-xl text-xs font-bold transition-all active:scale-90">
-                EDITAR
-              </button>
-            </div>
-          </div>`;
-      }).join('');
-    }
-
-    // Evento de Salvar
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      btnSubmit.disabled = true;
-      btnSubmit.innerText = "Processando...";
-
-      const projectId = document.getElementById("projectId").value;
-      const projectData = {
-        project_name: document.getElementById("projectName").value,
-        tutorial_link: document.getElementById("tutorialLink").value,
-        aluno1: document.getElementById("aluno1").value,
-        aluno2: document.getElementById("aluno2").value,
-        aluno3: document.getElementById("aluno3").value,
-        aluno4: document.getElementById("aluno4").value,
-        aluno5: document.getElementById("aluno5").value,
-        description: document.getElementById("description").value,
-        progress: parseInt(document.getElementById("progress").value),
-        updated_at: new Date().toISOString()
-      };
-
-      const { error } = projectId 
-        ? await supabase.from(TABLE).update(projectData).eq('id', projectId)
-        : await supabase.from(TABLE).insert([projectData]);
-
-      if (error) {
-        alert("Erro ao salvar: " + error.message);
-      } else {
-        resetForm();
-        await loadProjects();
-      }
-      
-      btnSubmit.disabled = false;
-      btnSubmit.innerText = "💾 Salvar Projeto";
-    });
-
-    // Função Editar
-    window.editProject = async function(id) {
-      const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single();
-      if (error) return alert("Erro ao buscar dados");
-
-      document.getElementById("projectId").value = data.id;
-      document.getElementById("projectName").value = data.project_name;
-      document.getElementById("tutorialLink").value = data.tutorial_link;
-      document.getElementById("aluno1").value = data.aluno1;
-      document.getElementById("aluno2").value = data.aluno2;
-      document.getElementById("aluno3").value = data.aluno3;
-      document.getElementById("aluno4").value = data.aluno4;
-      document.getElementById("aluno5").value = data.aluno5;
-      document.getElementById("description").value = data.description || "";
-      document.getElementById("progress").value = data.progress;
-
-      document.getElementById("formStatus").innerText = "✏️ Editando Projeto";
-      document.getElementById("btnCancel").classList.remove('hidden');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    function resetForm() {
-      form.reset();
-      document.getElementById("projectId").value = "";
-      document.getElementById("formStatus").innerText = "✨ Novo Projeto";
-      document.getElementById("btnCancel").classList.add('hidden');
+    if (!dados.nome_jogo || !dados.aluno || !dados.turma) {
+
+        msg.innerText = "⚠️ Preencha os campos obrigatórios!";
+        msg.className = "text-red-400";
+        return;
+
     }
 
-    // Inicialização
-    loadProjects();
-  </script>
+    const { error } = await supabaseClient
+        .from('projetos_delphi')
+        .insert([dados]);
+
+    if (error) {
+
+        msg.innerText = "❌ Erro: " + error.message;
+        msg.className = "text-red-400";
+        return;
+
+    }
+
+    msg.innerText = "✅ Projeto salvo com sucesso!";
+    msg.className = "text-green-400";
+
+    document.querySelectorAll("input, textarea").forEach(el => el.value = "");
+
+    carregarProjetos();
+}
+
+async function carregarProjetos() {
+
+    const { data, error } = await supabaseClient
+        .from('projetos_delphi')
+        .select('*')
+        .order('id', { ascending: false });
+
+    if (error) return;
+
+    listaProjetos.innerHTML = "";
+
+    data.forEach(projeto => {
+
+        listaProjetos.innerHTML += `
+
+        <div class="bg-slate-800 rounded-2xl p-5 shadow-lg">
+
+            <h2 class="text-2xl font-bold mb-2">
+                🎮 ${projeto.nome_jogo}
+            </h2>
+
+            <p><strong>Aluno:</strong> ${projeto.aluno}</p>
+            <p><strong>Turma:</strong> ${projeto.turma}</p>
+            <p><strong>Professor:</strong> ${projeto.professor || '-'}</p>
+            <p><strong>Status:</strong> ${projeto.status}</p>
+            <p><strong>Progresso:</strong> ${projeto.progresso}%</p>
+
+            <div class="w-full bg-slate-700 rounded-full h-4 mt-3 mb-3">
+                <div class="bg-emerald-500 h-4 rounded-full"
+                     style="width:${projeto.progresso}%">
+                </div>
+            </div>
+
+            <p class="text-slate-300 text-sm">
+                ${projeto.descricao || ''}
+            </p>
+
+            <div class="mt-4 space-y-2">
+
+                ${projeto.link_download ?
+                    `<a href="${projeto.link_download}"
+                        target="_blank"
+                        class="block bg-blue-600 hover:bg-blue-700 p-2 rounded-xl text-center">
+                        ⬇ Download
+                    </a>`
+                    : ''
+                }
+
+                ${projeto.link_github ?
+                    `<a href="${projeto.link_github}"
+                        target="_blank"
+                        class="block bg-gray-700 hover:bg-gray-800 p-2 rounded-xl text-center">
+                        💻 GitHub
+                    </a>`
+                    : ''
+                }
+
+            </div>
+
+        </div>
+
+        `;
+
+    });
+
+}
+
+carregarProjetos();
+
+</script>
+
 </body>
 </html>
