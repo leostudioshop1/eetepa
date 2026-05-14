@@ -10,19 +10,26 @@
       font-family: Arial, sans-serif; 
       margin: 20px; 
       background: #f4f6f9; 
+      color: #333;
     }
     h1, h2 { color: #1e3a8a; }
-    .container { max-width: 1100px; margin: auto; }
+    .container { max-width: 1200px; margin: auto; }
     form { 
       background: white; 
       padding: 25px; 
       border-radius: 8px; 
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+      box-shadow: 0 2px 15px rgba(0,0,0,0.1); 
+      margin-bottom: 30px;
+    }
+    label { 
+      display: block; 
+      margin-top: 12px; 
+      font-weight: bold; 
     }
     input, textarea { 
       width: 100%; 
       padding: 10px; 
-      margin: 8px 0; 
+      margin: 6px 0 12px 0; 
       border: 1px solid #ccc; 
       border-radius: 4px; 
       box-sizing: border-box; 
@@ -40,8 +47,8 @@
     table { 
       width: 100%; 
       border-collapse: collapse; 
-      margin-top: 20px; 
       background: white; 
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
     th, td { 
       padding: 12px; 
@@ -49,14 +56,24 @@
       border-bottom: 1px solid #ddd; 
     }
     th { background: #1e3a8a; color: white; }
-    .progress { font-weight: bold; color: #16a34a; }
-    .actions button { margin-right: 5px; }
+    .progress { 
+      font-weight: bold; 
+      color: #16a34a; 
+      font-size: 1.1em;
+    }
+    .actions button { 
+      margin-right: 5px; 
+      padding: 6px 10px; 
+      font-size: 14px;
+    }
+    .success { color: green; }
+    .error { color: red; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>📌 Cadastro de Projetos - Delphi + Firebird</h1>
-    <p><strong>Controle de Projetos da Turma</strong></p>
+    <p><strong>Controle de Entrega dos Trabalhos</strong></p>
 
     <h2>Cadastrar / Atualizar Projeto</h2>
     <form id="projectForm">
@@ -65,8 +82,8 @@
       <label>Nome do Projeto:</label>
       <input type="text" id="projectName" required>
 
-      <label>Link do Tutorial (YouTube, GitHub, etc):</label>
-      <input type="url" id="tutorialLink" required placeholder="https://...">
+      <label>Link do Tutorial:</label>
+      <input type="url" id="tutorialLink" required placeholder="https://youtube.com/...">
 
       <label>Aluno 1 (Nome completo):</label>
       <input type="text" id="aluno1" required>
@@ -80,7 +97,7 @@
       <input type="text" id="aluno5" required>
 
       <label>Descrição breve do projeto:</label>
-      <textarea id="description" rows="3" placeholder="Ex: Sistema de Vendas com cadastro de clientes, produtos e relatório de estoque"></textarea>
+      <textarea id="description" rows="3" placeholder="Ex: Sistema de Vendas com cadastro de clientes, produtos e emissão de relatórios"></textarea>
 
       <label>Progresso atual (%):</label>
       <input type="number" id="progress" min="0" max="100" value="0" required>
@@ -105,12 +122,11 @@
   </div>
 
   <script>
-    // ================== SUAS CREDENCIAIS SUPABASE ==================
+    // ================== CONFIGURAÇÃO SUPABASE ==================
     const SUPABASE_URL = 'https://osofdmgokrxdzsxozsrf.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe';
 
     const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     const TABLE = 'projetos_delphi';
 
     // Carregar projetos
@@ -122,7 +138,7 @@
 
       if (error) {
         console.error('Erro ao carregar projetos:', error);
-        alert('Erro ao carregar projetos. Verifique o console.');
+        alert('Erro ao carregar projetos: ' + error.message);
         return;
       }
 
@@ -134,7 +150,7 @@
           <tr>
             <td><strong>${p.project_name}</strong></td>
             <td>${p.aluno1}<br>${p.aluno2}<br>${p.aluno3}<br>${p.aluno4}<br>${p.aluno5}</td>
-            <td><a href="${p.tutorial_link}" target="_blank" style="color:#1e3a8a;">🔗 Ver Tutorial</a></td>
+            <td><a href="${p.tutorial_link}" target="_blank">🔗 Ver Tutorial</a></td>
             <td class="progress">${p.progress}%</td>
             <td>${new Date(p.updated_at).toLocaleString('pt-BR')}</td>
             <td class="actions">
@@ -145,7 +161,7 @@
       });
     }
 
-    // Salvar / Atualizar
+    // Salvar ou Atualizar
     document.getElementById("projectForm").addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -164,30 +180,22 @@
         updated_at: new Date().toISOString()
       };
 
-      let error;
+      let result;
 
       if (projectId) {
-        const { error: updateError } = await supabase
-          .from(TABLE)
-          .update(projectData)
-          .eq('id', projectId);
-        error = updateError;
-        if (!error) alert("✅ Projeto atualizado com sucesso!");
+        result = await supabase.from(TABLE).update(projectData).eq('id', projectId);
       } else {
-        const { error: insertError } = await supabase
-          .from(TABLE)
-          .insert([projectData]);
-        error = insertError;
-        if (!error) alert("✅ Projeto cadastrado com sucesso!");
+        result = await supabase.from(TABLE).insert([projectData]);
       }
 
-      if (!error) {
+      if (result.error) {
+        console.error(result.error);
+        alert('❌ Erro ao salvar:\n' + result.error.message);
+      } else {
+        alert('✅ Projeto salvo com sucesso!');
         document.getElementById("projectForm").reset();
         document.getElementById("projectId").value = "";
         loadProjects();
-      } else {
-        console.error(error);
-        alert("Erro ao salvar. Verifique o console.");
       }
     });
 
@@ -200,7 +208,7 @@
         .single();
 
       if (error) {
-        alert("Erro ao carregar projeto para edição.");
+        alert("Erro ao carregar dados para edição.");
         console.error(error);
         return;
       }
@@ -217,7 +225,7 @@
       document.getElementById("progress").value = data.progress;
     };
 
-    // Carregar projetos ao iniciar
+    // Inicializar
     loadProjects();
   </script>
 </body>
