@@ -2,59 +2,122 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
-<title>Projetos Delphi 12</title>
+<title>Cyber Projects - Delphi 12</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+body {
+    font-family: 'Orbitron', sans-serif;
+    background: #020617;
+    overflow-x: hidden;
+}
+
+.cyber-card {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(0,255,255,0.2);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 20px rgba(0,255,255,0.15);
+}
+
+.cyber-input {
+    background: rgba(15,23,42,0.9);
+    border: 1px solid rgba(0,255,255,0.2);
+    color: white;
+}
+
+.cyber-input:focus {
+    outline: none;
+    border-color: #00ffff;
+    box-shadow: 0 0 12px #00ffff;
+}
+
+.neon-btn {
+    background: linear-gradient(90deg,#00ffff,#00ff99);
+    color: black;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.neon-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 25px #00ffff;
+}
+
+.glow-title {
+    text-shadow:
+        0 0 10px #00ffff,
+        0 0 20px #00ffff,
+        0 0 40px #00ffff;
+}
+
+.progress-glow {
+    box-shadow: 0 0 15px #00ff99;
+}
+
+</style>
+
 </head>
 
-<body class="bg-slate-900 text-white min-h-screen">
+<body class="text-white min-h-screen">
 
-<div class="max-w-7xl mx-auto p-6">
+<div class="max-w-7xl mx-auto p-3 sm:p-6">
 
-    <h1 class="text-4xl font-bold mb-8">
-        🎮 Projetos de Jogos - Delphi 12
-    </h1>
+    <div class="text-center mb-8">
+
+        <h1 class="text-3xl sm:text-5xl font-bold glow-title mb-4">
+            🎮 CYBER PROJECTS
+        </h1>
+
+        <p class="text-cyan-300 text-sm sm:text-lg">
+            Acompanhamento de Jogos em Delphi 12
+        </p>
+
+    </div>
 
     <!-- FORMULÁRIO -->
-    <div class="bg-slate-800 p-6 rounded-2xl shadow-lg mb-8">
+    <div class="cyber-card rounded-3xl p-4 sm:p-8 mb-8">
 
-        <div class="grid md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <input id="nome_jogo"
                    placeholder="Nome do jogo"
-                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+                   class="cyber-input p-4 rounded-2xl">
 
             <input id="aluno"
                    placeholder="Aluno"
-                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+                   class="cyber-input p-4 rounded-2xl">
 
             <input id="turma"
                    placeholder="Turma"
-                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+                   class="cyber-input p-4 rounded-2xl">
 
             <input id="professor"
                    placeholder="Professor"
-                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+                   class="cyber-input p-4 rounded-2xl">
 
             <input id="genero"
-                   placeholder="Gênero do jogo"
-                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+                   placeholder="Gênero"
+                   class="cyber-input p-4 rounded-2xl">
 
             <input id="progresso"
                    type="number"
                    placeholder="Progresso (%)"
-                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+                   class="cyber-input p-4 rounded-2xl">
 
             <input id="data_entrega"
                    type="date"
-                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+                   class="cyber-input p-4 rounded-2xl">
 
             <select id="status"
-                    class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+                    class="cyber-input p-4 rounded-2xl">
 
                 <option>Planejamento</option>
                 <option>Desenvolvimento</option>
@@ -67,35 +130,37 @@
 
         <textarea id="descricao"
                   placeholder="Descrição do projeto"
-                  class="w-full mt-4 p-4 rounded-xl bg-slate-900 border border-slate-700 h-32"></textarea>
+                  class="cyber-input w-full mt-4 p-4 rounded-2xl h-32"></textarea>
 
-        <div class="grid md:grid-cols-2 gap-4 mt-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
 
             <input id="link_download"
-                   placeholder="Link para download"
-                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+                   placeholder="Link download"
+                   class="cyber-input p-4 rounded-2xl">
 
             <input id="link_github"
-                   placeholder="Link GitHub"
-                   class="p-4 rounded-xl bg-slate-900 border border-slate-700">
+                   placeholder="GitHub"
+                   class="cyber-input p-4 rounded-2xl">
 
         </div>
 
         <textarea id="observacoes"
                   placeholder="Observações"
-                  class="w-full mt-4 p-4 rounded-xl bg-slate-900 border border-slate-700 h-24"></textarea>
+                  class="cyber-input w-full mt-4 p-4 rounded-2xl h-24"></textarea>
 
         <button onclick="salvarProjeto()"
-                class="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 p-4 rounded-2xl font-bold text-lg">
-            💾 Salvar Projeto
+                class="neon-btn w-full mt-6 p-4 rounded-2xl text-lg">
+            🚀 SALVAR PROJETO
         </button>
 
-        <p id="msg" class="mt-4 text-center font-bold"></p>
+        <p id="msg" class="mt-5 text-center font-bold text-lg"></p>
 
     </div>
 
-    <!-- LISTA -->
-    <div id="listaProjetos" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    <!-- PROJETOS -->
+    <div id="listaProjetos"
+         class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+    </div>
 
 </div>
 
@@ -106,14 +171,9 @@ const supabaseClient = supabase.createClient(
     'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
 );
 
-// =====================================
-// SALVAR PROJETO
-// =====================================
-
 async function salvarProjeto() {
 
     const dados = {
-
         nome_jogo: document.getElementById('nome_jogo').value,
         aluno: document.getElementById('aluno').value,
         turma: document.getElementById('turma').value,
@@ -126,49 +186,35 @@ async function salvarProjeto() {
         link_download: document.getElementById('link_download').value,
         link_github: document.getElementById('link_github').value,
         observacoes: document.getElementById('observacoes').value
-
     };
 
-    // VALIDAÇÃO
     if (!dados.nome_jogo || !dados.aluno || !dados.turma) {
 
-        document.getElementById('msg').innerText = '⚠️ Preencha Nome do Jogo, Aluno e Turma';
-        document.getElementById('msg').className = 'mt-4 text-center font-bold text-red-400';
+        document.getElementById('msg').innerHTML = '⚠️ Preencha Nome, Aluno e Turma';
+        document.getElementById('msg').className = 'mt-5 text-center font-bold text-red-400';
         return;
-
     }
 
-    // INSERIR NO BANCO
     const { error } = await supabaseClient
         .from('projetos_delphi')
         .insert([dados]);
 
-    // ERRO
     if (error) {
 
         console.log(error);
 
-        document.getElementById('msg').innerText = '❌ Erro: ' + error.message;
-        document.getElementById('msg').className = 'mt-4 text-center font-bold text-red-400';
-
+        document.getElementById('msg').innerHTML = '❌ ' + error.message;
+        document.getElementById('msg').className = 'mt-5 text-center font-bold text-red-400';
         return;
     }
 
-    // SUCESSO
-    document.getElementById('msg').innerText = '✅ Projeto salvo com sucesso!';
-    document.getElementById('msg').className = 'mt-4 text-center font-bold text-green-400';
+    document.getElementById('msg').innerHTML = '✅ Projeto salvo!';
+    document.getElementById('msg').className = 'mt-5 text-center font-bold text-green-400';
 
-    // LIMPAR FORMULÁRIO
     document.querySelectorAll('input, textarea').forEach(el => el.value = '');
-
-    document.getElementById('status').selectedIndex = 0;
 
     carregarProjetos();
 }
-
-// =====================================
-// CARREGAR PROJETOS
-// =====================================
 
 async function carregarProjetos() {
 
@@ -190,48 +236,58 @@ async function carregarProjetos() {
 
         lista.innerHTML += `
 
-        <div class="bg-slate-800 rounded-2xl p-5 shadow-lg border border-slate-700">
+        <div class="cyber-card rounded-3xl p-5">
 
-            <h2 class="text-2xl font-bold mb-4 text-emerald-400">
-                🎮 ${projeto.nome_jogo}
-            </h2>
+            <div class="flex justify-between items-start gap-3 mb-4">
 
-            <div class="space-y-2 text-sm">
+                <h2 class="text-xl sm:text-2xl font-bold text-cyan-300">
+                    🎮 ${projeto.nome_jogo}
+                </h2>
 
-                <p><strong>Aluno:</strong> ${projeto.aluno}</p>
-                <p><strong>Turma:</strong> ${projeto.turma}</p>
-                <p><strong>Professor:</strong> ${projeto.professor || '-'} </p>
-                <p><strong>Gênero:</strong> ${projeto.genero || '-'} </p>
-                <p><strong>Status:</strong> ${projeto.status}</p>
-                <p><strong>Progresso:</strong> ${projeto.progresso}%</p>
+                <span class="bg-cyan-500 text-black px-3 py-1 rounded-full text-xs font-bold">
+                    ${projeto.status}
+                </span>
 
             </div>
 
-            <div class="w-full bg-slate-700 rounded-full h-4 mt-4 mb-4 overflow-hidden">
-                <div class="bg-emerald-500 h-4 rounded-full"
+            <div class="space-y-2 text-sm text-slate-200">
+
+                <p>👨‍💻 <strong>Aluno:</strong> ${projeto.aluno}</p>
+                <p>🏫 <strong>Turma:</strong> ${projeto.turma}</p>
+                <p>🎯 <strong>Gênero:</strong> ${projeto.genero || '-'} </p>
+                <p>📈 <strong>Progresso:</strong> ${projeto.progresso}%</p>
+
+            </div>
+
+            <div class="w-full bg-slate-700 rounded-full h-5 mt-5 overflow-hidden">
+                <div class="bg-gradient-to-r from-cyan-400 to-green-400 h-5 rounded-full progress-glow"
                      style="width:${projeto.progresso}%">
                 </div>
             </div>
 
-            <p class="text-slate-300 text-sm mb-4">
+            <p class="text-slate-300 text-sm mt-5 leading-relaxed">
                 ${projeto.descricao || ''}
             </p>
 
-            ${projeto.link_download ? `
-                <a href="${projeto.link_download}"
-                   target="_blank"
-                   class="block bg-blue-600 hover:bg-blue-700 p-3 rounded-xl text-center mb-2">
-                   ⬇ Download
-                </a>
-            ` : ''}
+            <div class="grid grid-cols-1 gap-3 mt-5">
 
-            ${projeto.link_github ? `
-                <a href="${projeto.link_github}"
-                   target="_blank"
-                   class="block bg-gray-700 hover:bg-gray-800 p-3 rounded-xl text-center">
-                   💻 GitHub
-                </a>
-            ` : ''}
+                ${projeto.link_download ? `
+                    <a href="${projeto.link_download}"
+                       target="_blank"
+                       class="bg-blue-500 hover:bg-blue-600 p-3 rounded-2xl text-center font-bold transition">
+                       ⬇ DOWNLOAD
+                    </a>
+                ` : ''}
+
+                ${projeto.link_github ? `
+                    <a href="${projeto.link_github}"
+                       target="_blank"
+                       class="bg-slate-700 hover:bg-slate-600 p-3 rounded-2xl text-center font-bold transition">
+                       💻 GITHUB
+                    </a>
+                ` : ''}
+
+            </div>
 
         </div>
 
@@ -240,13 +296,9 @@ async function carregarProjetos() {
     });
 }
 
-// INICIALIZAR
 carregarProjetos();
 
 </script>
 
 </body>
 </html>
-
-
-Agora o salvamento funciona corretamente.
