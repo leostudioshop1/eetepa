@@ -90,7 +90,7 @@
             💾 Salvar Projeto
         </button>
 
-        <p id="msg" class="mt-4 text-center"></p>
+        <p id="msg" class="mt-4 text-center font-bold"></p>
 
     </div>
 
@@ -106,52 +106,69 @@ const supabaseClient = supabase.createClient(
     'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
 );
 
+// =====================================
+// SALVAR PROJETO
+// =====================================
+
 async function salvarProjeto() {
 
     const dados = {
 
-        nome_jogo: nome_jogo.value,
-        aluno: aluno.value,
-        turma: turma.value,
-        professor: professor.value,
-        genero: genero.value,
-        progresso: parseInt(progresso.value || 0),
-        status: status.value,
-        descricao: descricao.value,
-        data_entrega: data_entrega.value,
-        link_download: link_download.value,
-        link_github: link_github.value,
-        observacoes: observacoes.value
+        nome_jogo: document.getElementById('nome_jogo').value,
+        aluno: document.getElementById('aluno').value,
+        turma: document.getElementById('turma').value,
+        professor: document.getElementById('professor').value,
+        genero: document.getElementById('genero').value,
+        progresso: parseInt(document.getElementById('progresso').value || 0),
+        status: document.getElementById('status').value,
+        descricao: document.getElementById('descricao').value,
+        data_entrega: document.getElementById('data_entrega').value,
+        link_download: document.getElementById('link_download').value,
+        link_github: document.getElementById('link_github').value,
+        observacoes: document.getElementById('observacoes').value
 
     };
 
+    // VALIDAÇÃO
     if (!dados.nome_jogo || !dados.aluno || !dados.turma) {
 
-        msg.innerText = "⚠️ Preencha os campos obrigatórios!";
-        msg.className = "text-red-400";
+        document.getElementById('msg').innerText = '⚠️ Preencha Nome do Jogo, Aluno e Turma';
+        document.getElementById('msg').className = 'mt-4 text-center font-bold text-red-400';
         return;
 
     }
 
+    // INSERIR NO BANCO
     const { error } = await supabaseClient
         .from('projetos_delphi')
         .insert([dados]);
 
+    // ERRO
     if (error) {
 
-        msg.innerText = "❌ Erro: " + error.message;
-        msg.className = "text-red-400";
-        return;
+        console.log(error);
 
+        document.getElementById('msg').innerText = '❌ Erro: ' + error.message;
+        document.getElementById('msg').className = 'mt-4 text-center font-bold text-red-400';
+
+        return;
     }
 
-    msg.innerText = "✅ Projeto salvo com sucesso!";
-    msg.className = "text-green-400";
+    // SUCESSO
+    document.getElementById('msg').innerText = '✅ Projeto salvo com sucesso!';
+    document.getElementById('msg').className = 'mt-4 text-center font-bold text-green-400';
 
-    document.querySelectorAll("input, textarea").forEach(el => el.value = "");
+    // LIMPAR FORMULÁRIO
+    document.querySelectorAll('input, textarea').forEach(el => el.value = '');
+
+    document.getElementById('status').selectedIndex = 0;
 
     carregarProjetos();
 }
+
+// =====================================
+// CARREGAR PROJETOS
+// =====================================
 
 async function carregarProjetos() {
 
@@ -160,69 +177,76 @@ async function carregarProjetos() {
         .select('*')
         .order('id', { ascending: false });
 
-    if (error) return;
+    if (error) {
+        console.log(error);
+        return;
+    }
 
-    listaProjetos.innerHTML = "";
+    const lista = document.getElementById('listaProjetos');
+
+    lista.innerHTML = '';
 
     data.forEach(projeto => {
 
-        listaProjetos.innerHTML += `
+        lista.innerHTML += `
 
-        <div class="bg-slate-800 rounded-2xl p-5 shadow-lg">
+        <div class="bg-slate-800 rounded-2xl p-5 shadow-lg border border-slate-700">
 
-            <h2 class="text-2xl font-bold mb-2">
+            <h2 class="text-2xl font-bold mb-4 text-emerald-400">
                 🎮 ${projeto.nome_jogo}
             </h2>
 
-            <p><strong>Aluno:</strong> ${projeto.aluno}</p>
-            <p><strong>Turma:</strong> ${projeto.turma}</p>
-            <p><strong>Professor:</strong> ${projeto.professor || '-'}</p>
-            <p><strong>Status:</strong> ${projeto.status}</p>
-            <p><strong>Progresso:</strong> ${projeto.progresso}%</p>
+            <div class="space-y-2 text-sm">
 
-            <div class="w-full bg-slate-700 rounded-full h-4 mt-3 mb-3">
+                <p><strong>Aluno:</strong> ${projeto.aluno}</p>
+                <p><strong>Turma:</strong> ${projeto.turma}</p>
+                <p><strong>Professor:</strong> ${projeto.professor || '-'} </p>
+                <p><strong>Gênero:</strong> ${projeto.genero || '-'} </p>
+                <p><strong>Status:</strong> ${projeto.status}</p>
+                <p><strong>Progresso:</strong> ${projeto.progresso}%</p>
+
+            </div>
+
+            <div class="w-full bg-slate-700 rounded-full h-4 mt-4 mb-4 overflow-hidden">
                 <div class="bg-emerald-500 h-4 rounded-full"
                      style="width:${projeto.progresso}%">
                 </div>
             </div>
 
-            <p class="text-slate-300 text-sm">
+            <p class="text-slate-300 text-sm mb-4">
                 ${projeto.descricao || ''}
             </p>
 
-            <div class="mt-4 space-y-2">
+            ${projeto.link_download ? `
+                <a href="${projeto.link_download}"
+                   target="_blank"
+                   class="block bg-blue-600 hover:bg-blue-700 p-3 rounded-xl text-center mb-2">
+                   ⬇ Download
+                </a>
+            ` : ''}
 
-                ${projeto.link_download ?
-                    `<a href="${projeto.link_download}"
-                        target="_blank"
-                        class="block bg-blue-600 hover:bg-blue-700 p-2 rounded-xl text-center">
-                        ⬇ Download
-                    </a>`
-                    : ''
-                }
-
-                ${projeto.link_github ?
-                    `<a href="${projeto.link_github}"
-                        target="_blank"
-                        class="block bg-gray-700 hover:bg-gray-800 p-2 rounded-xl text-center">
-                        💻 GitHub
-                    </a>`
-                    : ''
-                }
-
-            </div>
+            ${projeto.link_github ? `
+                <a href="${projeto.link_github}"
+                   target="_blank"
+                   class="block bg-gray-700 hover:bg-gray-800 p-3 rounded-xl text-center">
+                   💻 GitHub
+                </a>
+            ` : ''}
 
         </div>
 
         `;
 
     });
-
 }
 
+// INICIALIZAR
 carregarProjetos();
 
 </script>
 
 </body>
 </html>
+
+
+Agora o salvamento funciona corretamente.
