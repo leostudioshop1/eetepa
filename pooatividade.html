@@ -9,57 +9,73 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<!-- CONFIG SUPABASE -->
+<script src="config.js"></script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
 
-body {
-    font-family: 'Orbitron', sans-serif;
-    background: #020617;
-    overflow-x: hidden;
+body{
+    font-family:'Orbitron',sans-serif;
+    background:#020617;
+    overflow-x:hidden;
 }
 
-.cyber-card {
-    background: rgba(15, 23, 42, 0.75);
-    border: 1px solid rgba(0,255,255,0.2);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 0 20px rgba(0,255,255,0.15);
+.cyber-card{
+    background:rgba(15,23,42,0.75);
+    border:1px solid rgba(0,255,255,0.2);
+    backdrop-filter:blur(10px);
+    box-shadow:0 0 20px rgba(0,255,255,0.15);
 }
 
-.cyber-input {
-    background: rgba(15,23,42,0.9);
-    border: 1px solid rgba(0,255,255,0.2);
-    color: white;
+.cyber-input{
+    background:rgba(15,23,42,0.9);
+    border:1px solid rgba(0,255,255,0.2);
+    color:white;
 }
 
-.cyber-input:focus {
-    outline: none;
-    border-color: #00ffff;
-    box-shadow: 0 0 12px #00ffff;
+.cyber-input:focus{
+    outline:none;
+    border-color:#00ffff;
+    box-shadow:0 0 12px #00ffff;
 }
 
-.neon-btn {
-    background: linear-gradient(90deg,#00ffff,#00ff99);
-    color: black;
-    font-weight: bold;
-    transition: 0.3s;
+.neon-btn{
+    background:linear-gradient(90deg,#00ffff,#00ff99);
+    color:black;
+    font-weight:bold;
+    transition:0.3s;
 }
 
-.neon-btn:hover {
-    transform: scale(1.02);
-    box-shadow: 0 0 25px #00ffff;
+.neon-btn:hover{
+    transform:scale(1.02);
+    box-shadow:0 0 25px #00ffff;
 }
 
-.glow-title {
+.glow-title{
     text-shadow:
         0 0 10px #00ffff,
         0 0 20px #00ffff,
         0 0 40px #00ffff;
 }
 
-.progress-glow {
-    box-shadow: 0 0 15px #00ff99;
+.progress-glow{
+    box-shadow:0 0 15px #00ff99;
+}
+
+::-webkit-scrollbar{
+    width:10px;
+}
+
+::-webkit-scrollbar-track{
+    background:#0f172a;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#00ffff;
+    border-radius:10px;
 }
 
 </style>
@@ -70,6 +86,7 @@ body {
 
 <div class="max-w-7xl mx-auto p-3 sm:p-6">
 
+    <!-- TOPO -->
     <div class="text-center mb-8">
 
         <h1 class="text-3xl sm:text-5xl font-bold glow-title mb-4">
@@ -104,7 +121,7 @@ body {
                    class="cyber-input p-4 rounded-2xl">
 
             <input id="genero"
-                   placeholder="Gênero"
+                   placeholder="Gênero do jogo"
                    class="cyber-input p-4 rounded-2xl">
 
             <input id="progresso"
@@ -157,7 +174,7 @@ body {
 
     </div>
 
-    <!-- PROJETOS -->
+    <!-- LISTAGEM -->
     <div id="listaProjetos"
          class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
     </div>
@@ -166,14 +183,34 @@ body {
 
 <script>
 
+// ========================================
+// VERIFICAR CONFIG
+// ========================================
+
+if (!window.SUPABASE_CONFIG) {
+
+    alert("Erro: config.js não encontrado!");
+    throw new Error("SUPABASE_CONFIG não encontrado");
+
+}
+
+// ========================================
+// CONEXÃO SUPABASE
+// ========================================
+
 const supabaseClient = supabase.createClient(
-    'https://osofdmgokrxdzsxozsrf.supabase.co',
-    'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
+    window.SUPABASE_CONFIG.url,
+    window.SUPABASE_CONFIG.key
 );
+
+// ========================================
+// SALVAR PROJETO
+// ========================================
 
 async function salvarProjeto() {
 
     const dados = {
+
         nome_jogo: document.getElementById('nome_jogo').value,
         aluno: document.getElementById('aluno').value,
         turma: document.getElementById('turma').value,
@@ -186,46 +223,78 @@ async function salvarProjeto() {
         link_download: document.getElementById('link_download').value,
         link_github: document.getElementById('link_github').value,
         observacoes: document.getElementById('observacoes').value
+
     };
+
+    // VALIDAÇÃO
 
     if (!dados.nome_jogo || !dados.aluno || !dados.turma) {
 
-        document.getElementById('msg').innerHTML = '⚠️ Preencha Nome, Aluno e Turma';
-        document.getElementById('msg').className = 'mt-5 text-center font-bold text-red-400';
+        document.getElementById('msg').innerHTML =
+            '⚠️ Preencha Nome do Jogo, Aluno e Turma';
+
+        document.getElementById('msg').className =
+            'mt-5 text-center font-bold text-red-400';
+
         return;
     }
+
+    // INSERIR
 
     const { error } = await supabaseClient
         .from('projetos_delphi')
         .insert([dados]);
 
+    // ERRO
+
     if (error) {
 
         console.log(error);
 
-        document.getElementById('msg').innerHTML = '❌ ' + error.message;
-        document.getElementById('msg').className = 'mt-5 text-center font-bold text-red-400';
+        document.getElementById('msg').innerHTML =
+            '❌ ' + error.message;
+
+        document.getElementById('msg').className =
+            'mt-5 text-center font-bold text-red-400';
+
         return;
     }
 
-    document.getElementById('msg').innerHTML = '✅ Projeto salvo!';
-    document.getElementById('msg').className = 'mt-5 text-center font-bold text-green-400';
+    // SUCESSO
 
-    document.querySelectorAll('input, textarea').forEach(el => el.value = '');
+    document.getElementById('msg').innerHTML =
+        '✅ Projeto salvo com sucesso!';
+
+    document.getElementById('msg').className =
+        'mt-5 text-center font-bold text-green-400';
+
+    // LIMPAR
+
+    document.querySelectorAll('input, textarea').forEach(el => {
+        el.value = '';
+    });
+
+    document.getElementById('status').selectedIndex = 0;
 
     carregarProjetos();
 }
+
+// ========================================
+// CARREGAR PROJETOS
+// ========================================
 
 async function carregarProjetos() {
 
     const { data, error } = await supabaseClient
         .from('projetos_delphi')
         .select('*')
-        .order('id', { ascending: false });
+        .order('id', { ascending:false });
 
     if (error) {
+
         console.log(error);
         return;
+
     }
 
     const lista = document.getElementById('listaProjetos');
@@ -254,15 +323,18 @@ async function carregarProjetos() {
 
                 <p>👨‍💻 <strong>Aluno:</strong> ${projeto.aluno}</p>
                 <p>🏫 <strong>Turma:</strong> ${projeto.turma}</p>
-                <p>🎯 <strong>Gênero:</strong> ${projeto.genero || '-'} </p>
+                <p>🎯 <strong>Gênero:</strong> ${projeto.genero || '-'}</p>
                 <p>📈 <strong>Progresso:</strong> ${projeto.progresso}%</p>
+                <p>👨‍🏫 <strong>Professor:</strong> ${projeto.professor || '-'}</p>
 
             </div>
 
             <div class="w-full bg-slate-700 rounded-full h-5 mt-5 overflow-hidden">
+
                 <div class="bg-gradient-to-r from-cyan-400 to-green-400 h-5 rounded-full progress-glow"
                      style="width:${projeto.progresso}%">
                 </div>
+
             </div>
 
             <p class="text-slate-300 text-sm mt-5 leading-relaxed">
@@ -275,7 +347,9 @@ async function carregarProjetos() {
                     <a href="${projeto.link_download}"
                        target="_blank"
                        class="bg-blue-500 hover:bg-blue-600 p-3 rounded-2xl text-center font-bold transition">
+
                        ⬇ DOWNLOAD
+
                     </a>
                 ` : ''}
 
@@ -283,7 +357,9 @@ async function carregarProjetos() {
                     <a href="${projeto.link_github}"
                        target="_blank"
                        class="bg-slate-700 hover:bg-slate-600 p-3 rounded-2xl text-center font-bold transition">
+
                        💻 GITHUB
+
                     </a>
                 ` : ''}
 
@@ -292,11 +368,16 @@ async function carregarProjetos() {
         </div>
 
         `;
-
     });
 }
 
+// ========================================
+// AUTO LOAD
+// ========================================
+
 carregarProjetos();
+
+setInterval(carregarProjetos, 30000);
 
 </script>
 
