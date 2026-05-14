@@ -7,94 +7,103 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; scroll-behavior: smooth; }
+    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); }
   </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white min-h-screen">
   <div class="max-w-6xl mx-auto p-4 md:p-8">
     
-    <h1 class="text-4xl font-bold mb-8 flex items-center gap-4">
-      📌 Cadastro de Projetos - Delphi + Firebird
-    </h1>
+    <header class="mb-12">
+        <h1 class="text-4xl font-extrabold mb-2 flex items-center gap-4 text-emerald-400">
+            📌 Gestão de Projetos
+        </h1>
+        <p class="text-slate-400">Ambiente de acompanhamento: Delphi + Firebird</p>
+    </header>
 
     <!-- Formulário -->
-    <div class="bg-slate-800 p-8 rounded-3xl shadow-xl mb-10">
-      <h2 class="text-2xl font-semibold mb-6">Novo Projeto / Atualizar</h2>
+    <div class="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 shadow-2xl mb-12">
+      <h2 class="text-2xl font-semibold mb-6 flex items-center gap-2">
+          <span id="formStatus">✨ Novo Projeto</span>
+      </h2>
       
       <form id="projectForm" class="space-y-6">
         <input type="hidden" id="projectId">
 
-        <div>
-          <label class="block text-slate-400 mb-2 font-medium">Nome do Projeto</label>
-          <input type="text" id="projectName" required
-                 class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 focus:border-emerald-500 outline-none text-lg">
+        <div class="grid md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-slate-400 mb-2 font-medium text-sm uppercase tracking-wider">Nome do Projeto</label>
+                <input type="text" id="projectName" required
+                       class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition">
+            </div>
+            <div>
+                <label class="block text-slate-400 mb-2 font-medium text-sm uppercase tracking-wider">Link do Tutorial</label>
+                <input type="url" id="tutorialLink" required placeholder="https://youtube.com/..."
+                       class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 focus:border-emerald-500 outline-none transition">
+            </div>
         </div>
 
         <div>
-          <label class="block text-slate-400 mb-2 font-medium">Link do Tutorial</label>
-          <input type="url" id="tutorialLink" required placeholder="https://youtube.com/..."
-                 class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 focus:border-emerald-500 outline-none">
+            <label class="block text-slate-400 mb-2 font-medium text-sm uppercase tracking-wider">Integrantes do Grupo</label>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <input type="text" id="aluno1" placeholder="Aluno 1" required class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm">
+                <input type="text" id="aluno2" placeholder="Aluno 2" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm">
+                <input type="text" id="aluno3" placeholder="Aluno 3" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm">
+                <input type="text" id="aluno4" placeholder="Aluno 4" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm">
+                <input type="text" id="aluno5" placeholder="Aluno 5" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm">
+            </div>
         </div>
 
-        <div class="grid md:grid-cols-5 gap-4">
-          <div>
-            <label class="block text-slate-400 mb-2">Aluno 1</label>
-            <input type="text" id="aluno1" required class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700">
-          </div>
-          <div>
-            <label class="block text-slate-400 mb-2">Aluno 2</label>
-            <input type="text" id="aluno2" required class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700">
-          </div>
-          <div>
-            <label class="block text-slate-400 mb-2">Aluno 3</label>
-            <input type="text" id="aluno3" required class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700">
-          </div>
-          <div>
-            <label class="block text-slate-400 mb-2">Aluno 4</label>
-            <input type="text" id="aluno4" required class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700">
-          </div>
-          <div>
-            <label class="block text-slate-400 mb-2">Aluno 5</label>
-            <input type="text" id="aluno5" required class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700">
-          </div>
+        <div class="grid md:grid-cols-4 gap-6">
+            <div class="md:col-span-3">
+                <label class="block text-slate-400 mb-2 font-medium text-sm uppercase tracking-wider">Descrição Curta</label>
+                <input type="text" id="description" placeholder="Ex: Sistema de PDV para padarias"
+                          class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 focus:border-emerald-500 outline-none transition">
+            </div>
+            <div>
+                <label class="block text-slate-400 mb-2 font-medium text-sm uppercase tracking-wider">Progresso (%)</label>
+                <input type="number" id="progress" min="0" max="100" value="0" required
+                       class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 text-2xl font-bold text-emerald-400">
+            </div>
         </div>
 
-        <div>
-          <label class="block text-slate-400 mb-2">Descrição do Projeto</label>
-          <textarea id="description" rows="4" placeholder="Descreva o sistema que será desenvolvido..."
-                    class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700"></textarea>
+        <div class="flex gap-4">
+            <button type="submit" id="btnSubmit"
+                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 p-5 rounded-2xl font-bold text-xl shadow-lg transition-all transform active:scale-[0.98]">
+              💾 Salvar Projeto
+            </button>
+            <button type="button" onclick="resetForm()" id="btnCancel" class="hidden bg-slate-700 hover:bg-slate-600 px-8 rounded-2xl font-bold transition">
+              Cancelar
+            </button>
         </div>
-
-        <div>
-          <label class="block text-slate-400 mb-2">Progresso Atual (%)</label>
-          <input type="number" id="progress" min="0" max="100" value="0" required
-                 class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 text-2xl font-bold">
-        </div>
-
-        <button type="submit"
-                class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 p-5 rounded-2xl font-bold text-xl shadow-lg transition">
-          💾 Salvar Projeto
-        </button>
       </form>
     </div>
 
     <!-- Lista de Projetos -->
-    <h2 class="text-2xl font-semibold mb-6">Projetos Cadastrados</h2>
-    <div id="projectsList" class="grid md:grid-cols-2 gap-6">
-      <!-- Cards são inseridos aqui via JavaScript -->
+    <div class="flex justify-between items-end mb-8">
+        <h2 class="text-3xl font-bold">Projetos Ativos</h2>
+        <span id="counter" class="bg-emerald-500/20 text-emerald-400 px-4 py-1 rounded-full text-sm border border-emerald-500/30">0 Projetos</span>
+    </div>
+
+    <div id="projectsList" class="grid md:grid-cols-2 gap-6 pb-20">
+      <!-- Cards renderizados aqui -->
+       <div class="col-span-full text-center py-20 text-slate-500 animate-pulse">
+           Carregando dados do servidor...
+       </div>
     </div>
   </div>
 
   <script>
-    // ================== CONEXÃO SUPABASE ==================
     const supabase = Supabase.createClient(
       'https://osofdmgokrxdzsxozsrf.supabase.co',
       'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
     );
 
     const TABLE = 'projetos_delphi';
+    const form = document.getElementById("projectForm");
+    const btnSubmit = document.getElementById("btnSubmit");
 
-    // Carregar projetos
+    // Carregar dados e atualizar a interface
     async function loadProjects() {
       const { data, error } = await supabase
         .from(TABLE)
@@ -102,84 +111,97 @@
         .order('updated_at', { ascending: false });
 
       if (error) {
-        console.error(error);
-        alert("Erro ao carregar projetos: " + error.message);
+        console.error("Erro Supabase:", error.message);
+        document.getElementById('projectsList').innerHTML = `<p class="text-red-400">Erro ao carregar: ${error.message}</p>`;
         return;
       }
 
+      document.getElementById('counter').innerText = `${data.length} Projeto(s)`;
       const container = document.getElementById('projectsList');
-      container.innerHTML = '';
+      
+      if (data.length === 0) {
+          container.innerHTML = `<p class="col-span-full text-center text-slate-500 py-10">Nenhum projeto cadastrado ou acesso bloqueado pelo RLS.</p>`;
+          return;
+      }
 
-      data.forEach(p => {
-        const progressoCor = p.progress >= 80 ? 'text-emerald-400' : 
-                           p.progress >= 50 ? 'text-yellow-400' : 'text-red-400';
+      container.innerHTML = data.map(p => {
+        const progColor = p.progress >= 80 ? 'text-emerald-400' : p.progress >= 50 ? 'text-yellow-400' : 'text-rose-400';
+        const alunos = [p.aluno1, p.aluno2, p.aluno3, p.aluno4, p.aluno5].filter(a => a && a.trim() !== "").join(', ');
 
-        const card = `
-          <div class="bg-slate-800 rounded-3xl p-7 shadow-xl hover:shadow-2xl transition">
+        return `
+          <div class="bg-slate-800/80 border border-slate-700 rounded-3xl p-7 hover:border-emerald-500/50 transition-all group">
             <div class="flex justify-between items-start mb-4">
-              <h3 class="text-xl font-semibold leading-tight">${p.project_name}</h3>
-              <span class="text-4xl font-bold ${progressoCor}">${p.progress}%</span>
+              <div class="max-w-[70%]">
+                <h3 class="text-xl font-bold text-white group-hover:text-emerald-400 transition">${p.project_name}</h3>
+                <p class="text-slate-400 text-sm mt-1 italic">${p.description || 'Sem descrição'}</p>
+              </div>
+              <div class="text-right">
+                <span class="text-4xl font-black ${progColor}">${p.progress}%</span>
+              </div>
             </div>
             
-            <div class="text-slate-400 text-sm space-y-1">
-              <p><strong>Grupo:</strong> ${p.aluno1}, ${p.aluno2}, ${p.aluno3}...</p>
-              <p><a href="${p.tutorial_link}" target="_blank" class="text-emerald-400 hover:underline">🔗 Acessar Tutorial</a></p>
+            <div class="space-y-3 mb-6">
+              <div class="flex items-center gap-2 text-sm text-slate-300 bg-slate-900/50 p-3 rounded-xl">
+                <span class="text-emerald-500">👥</span>
+                <span class="truncate">${alunos}</span>
+              </div>
+              <a href="${p.tutorial_link}" target="_blank" class="inline-flex items-center gap-2 text-sm text-emerald-400 hover:underline">
+                🔗 Link do Tutorial/Repositório
+              </a>
             </div>
 
-            <div class="mt-6 flex justify-between items-center">
-              <span class="text-xs text-slate-500">
-                Atualizado em: ${new Date(p.updated_at).toLocaleDateString('pt-BR')}
+            <div class="flex justify-between items-center pt-4 border-t border-slate-700/50">
+              <span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                Atualizado: ${new Date(p.updated_at).toLocaleDateString('pt-BR')}
               </span>
               <button onclick="editProject('${p.id}')" 
-                      class="bg-slate-700 hover:bg-slate-600 px-6 py-2.5 rounded-2xl text-sm font-medium transition">
-                ✏️ Editar
+                      class="bg-slate-700 hover:bg-emerald-600 px-5 py-2 rounded-xl text-xs font-bold transition-all active:scale-90">
+                EDITAR
               </button>
             </div>
           </div>`;
-        container.innerHTML += card;
-      });
+      }).join('');
     }
 
-    // Salvar projeto
-    document.getElementById("projectForm").addEventListener("submit", async (e) => {
+    // Evento de Salvar
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
+      btnSubmit.disabled = true;
+      btnSubmit.innerText = "Processando...";
 
       const projectId = document.getElementById("projectId").value;
-
       const projectData = {
-        project_name: document.getElementById("projectName").value.trim(),
-        tutorial_link: document.getElementById("tutorialLink").value.trim(),
-        aluno1: document.getElementById("aluno1").value.trim(),
-        aluno2: document.getElementById("aluno2").value.trim(),
-        aluno3: document.getElementById("aluno3").value.trim(),
-        aluno4: document.getElementById("aluno4").value.trim(),
-        aluno5: document.getElementById("aluno5").value.trim(),
-        description: document.getElementById("description").value.trim(),
+        project_name: document.getElementById("projectName").value,
+        tutorial_link: document.getElementById("tutorialLink").value,
+        aluno1: document.getElementById("aluno1").value,
+        aluno2: document.getElementById("aluno2").value,
+        aluno3: document.getElementById("aluno3").value,
+        aluno4: document.getElementById("aluno4").value,
+        aluno5: document.getElementById("aluno5").value,
+        description: document.getElementById("description").value,
         progress: parseInt(document.getElementById("progress").value),
         updated_at: new Date().toISOString()
       };
 
-      let result;
-      if (projectId) {
-        result = await supabase.from(TABLE).update(projectData).eq('id', projectId);
-      } else {
-        result = await supabase.from(TABLE).insert([projectData]);
-      }
+      const { error } = projectId 
+        ? await supabase.from(TABLE).update(projectData).eq('id', projectId)
+        : await supabase.from(TABLE).insert([projectData]);
 
-      if (result.error) {
-        alert("❌ Erro ao salvar:\n" + result.error.message);
+      if (error) {
+        alert("Erro ao salvar: " + error.message);
       } else {
-        alert("✅ Projeto salvo com sucesso!");
-        document.getElementById("projectForm").reset();
-        document.getElementById("projectId").value = "";
-        loadProjects();
+        resetForm();
+        await loadProjects();
       }
+      
+      btnSubmit.disabled = false;
+      btnSubmit.innerText = "💾 Salvar Projeto";
     });
 
-    // Editar projeto
+    // Função Editar
     window.editProject = async function(id) {
       const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single();
-      if (error) return alert("Erro ao carregar projeto");
+      if (error) return alert("Erro ao buscar dados");
 
       document.getElementById("projectId").value = data.id;
       document.getElementById("projectName").value = data.project_name;
@@ -191,9 +213,20 @@
       document.getElementById("aluno5").value = data.aluno5;
       document.getElementById("description").value = data.description || "";
       document.getElementById("progress").value = data.progress;
+
+      document.getElementById("formStatus").innerText = "✏️ Editando Projeto";
+      document.getElementById("btnCancel").classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // Inicializar página
+    function resetForm() {
+      form.reset();
+      document.getElementById("projectId").value = "";
+      document.getElementById("formStatus").innerText = "✨ Novo Projeto";
+      document.getElementById("btnCancel").classList.add('hidden');
+    }
+
+    // Inicialização
     loadProjects();
   </script>
 </body>
