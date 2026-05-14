@@ -4,129 +4,94 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cadastro de Projetos - Delphi + Firebird</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      margin: 20px; 
-      background: #f4f6f9; 
-      color: #333;
-    }
-    h1, h2 { color: #1e3a8a; }
-    .container { max-width: 1200px; margin: auto; }
-    form { 
-      background: white; 
-      padding: 25px; 
-      border-radius: 8px; 
-      box-shadow: 0 2px 15px rgba(0,0,0,0.1); 
-      margin-bottom: 30px;
-    }
-    label { 
-      display: block; 
-      margin-top: 12px; 
-      font-weight: bold; 
-    }
-    input, textarea { 
-      width: 100%; 
-      padding: 10px; 
-      margin: 6px 0 12px 0; 
-      border: 1px solid #ccc; 
-      border-radius: 4px; 
-      box-sizing: border-box; 
-    }
-    button { 
-      background: #1e3a8a; 
-      color: white; 
-      padding: 12px 20px; 
-      border: none; 
-      border-radius: 4px; 
-      cursor: pointer; 
-      font-size: 16px; 
-    }
-    button:hover { background: #2e5bcc; }
-    table { 
-      width: 100%; 
-      border-collapse: collapse; 
-      background: white; 
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    th, td { 
-      padding: 12px; 
-      text-align: left; 
-      border-bottom: 1px solid #ddd; 
-    }
-    th { background: #1e3a8a; color: white; }
-    .progress { 
-      font-weight: bold; 
-      color: #16a34a; 
-      font-size: 1.1em;
-    }
-    .actions button { 
-      margin-right: 5px; 
-      padding: 6px 10px; 
-      font-size: 14px;
-    }
-    .success { color: green; }
-    .error { color: red; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; }
   </style>
 </head>
-<body>
-  <div class="container">
-    <h1>📌 Cadastro de Projetos - Delphi + Firebird</h1>
-    <p><strong>Controle de Entrega dos Trabalhos</strong></p>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white min-h-screen">
+  <div class="max-w-6xl mx-auto p-4 md:p-8">
+    
+    <h1 class="text-4xl font-bold mb-8 flex items-center gap-4">
+      📌 Cadastro de Projetos - Delphi + Firebird
+    </h1>
 
-    <h2>Cadastrar / Atualizar Projeto</h2>
-    <form id="projectForm">
-      <input type="hidden" id="projectId">
+    <!-- Formulário -->
+    <div class="bg-slate-800 p-8 rounded-3xl shadow-xl mb-10">
+      <h2 class="text-2xl font-semibold mb-6">Novo Projeto / Atualizar</h2>
+      
+      <form id="projectForm" class="space-y-6">
+        <input type="hidden" id="projectId">
 
-      <label>Nome do Projeto:</label>
-      <input type="text" id="projectName" required>
+        <div>
+          <label class="block text-slate-400 mb-2 font-medium">Nome do Projeto</label>
+          <input type="text" id="projectName" required
+                 class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 focus:border-emerald-500 outline-none text-lg">
+        </div>
 
-      <label>Link do Tutorial:</label>
-      <input type="url" id="tutorialLink" required placeholder="https://youtube.com/...">
+        <div>
+          <label class="block text-slate-400 mb-2 font-medium">Link do Tutorial</label>
+          <input type="url" id="tutorialLink" required placeholder="https://youtube.com/..."
+                 class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 focus:border-emerald-500 outline-none">
+        </div>
 
-      <label>Aluno 1 (Nome completo):</label>
-      <input type="text" id="aluno1" required>
-      <label>Aluno 2:</label>
-      <input type="text" id="aluno2" required>
-      <label>Aluno 3:</label>
-      <input type="text" id="aluno3" required>
-      <label>Aluno 4:</label>
-      <input type="text" id="aluno4" required>
-      <label>Aluno 5:</label>
-      <input type="text" id="aluno5" required>
+        <div class="grid md:grid-cols-5 gap-4">
+          <div>
+            <label class="block text-slate-400 mb-2">Aluno 1</label>
+            <input type="text" id="aluno1" required class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-2">Aluno 2</label>
+            <input type="text" id="aluno2" required class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-2">Aluno 3</label>
+            <input type="text" id="aluno3" required class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-2">Aluno 4</label>
+            <input type="text" id="aluno4" required class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-2">Aluno 5</label>
+            <input type="text" id="aluno5" required class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700">
+          </div>
+        </div>
 
-      <label>Descrição breve do projeto:</label>
-      <textarea id="description" rows="3" placeholder="Ex: Sistema de Vendas com cadastro de clientes, produtos e emissão de relatórios"></textarea>
+        <div>
+          <label class="block text-slate-400 mb-2">Descrição do Projeto</label>
+          <textarea id="description" rows="4" placeholder="Descreva o sistema que será desenvolvido..."
+                    class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700"></textarea>
+        </div>
 
-      <label>Progresso atual (%):</label>
-      <input type="number" id="progress" min="0" max="100" value="0" required>
+        <div>
+          <label class="block text-slate-400 mb-2">Progresso Atual (%)</label>
+          <input type="number" id="progress" min="0" max="100" value="0" required
+                 class="w-full p-4 rounded-2xl bg-slate-900 border border-slate-700 text-2xl font-bold">
+        </div>
 
-      <button type="submit">💾 Salvar Projeto</button>
-    </form>
+        <button type="submit"
+                class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 p-5 rounded-2xl font-bold text-xl shadow-lg transition">
+          💾 Salvar Projeto
+        </button>
+      </form>
+    </div>
 
-    <h2>Projetos Cadastrados</h2>
-    <table id="projectsTable">
-      <thead>
-        <tr>
-          <th>Projeto</th>
-          <th>Grupo</th>
-          <th>Tutorial</th>
-          <th>Progresso</th>
-          <th>Última Atualização</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <!-- Lista de Projetos -->
+    <h2 class="text-2xl font-semibold mb-6">Projetos Cadastrados</h2>
+    <div id="projectsList" class="grid md:grid-cols-2 gap-6">
+      <!-- Cards são inseridos aqui via JavaScript -->
+    </div>
   </div>
 
   <script>
-    // ================== CONFIGURAÇÃO SUPABASE ==================
-    const SUPABASE_URL = 'https://osofdmgokrxdzsxozsrf.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe';
+    // ================== CONEXÃO SUPABASE ==================
+    const supabase = Supabase.createClient(
+      'https://osofdmgokrxdzsxozsrf.supabase.co',
+      'sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe'
+    );
 
-    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const TABLE = 'projetos_delphi';
 
     // Carregar projetos
@@ -137,31 +102,45 @@
         .order('updated_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao carregar projetos:', error);
-        alert('Erro ao carregar projetos: ' + error.message);
+        console.error(error);
+        alert("Erro ao carregar projetos: " + error.message);
         return;
       }
 
-      const tbody = document.querySelector("#projectsTable tbody");
-      tbody.innerHTML = "";
+      const container = document.getElementById('projectsList');
+      container.innerHTML = '';
 
       data.forEach(p => {
-        const row = `
-          <tr>
-            <td><strong>${p.project_name}</strong></td>
-            <td>${p.aluno1}<br>${p.aluno2}<br>${p.aluno3}<br>${p.aluno4}<br>${p.aluno5}</td>
-            <td><a href="${p.tutorial_link}" target="_blank">🔗 Ver Tutorial</a></td>
-            <td class="progress">${p.progress}%</td>
-            <td>${new Date(p.updated_at).toLocaleString('pt-BR')}</td>
-            <td class="actions">
-              <button onclick="editProject('${p.id}')">✏️ Editar</button>
-            </td>
-          </tr>`;
-        tbody.innerHTML += row;
+        const progressoCor = p.progress >= 80 ? 'text-emerald-400' : 
+                           p.progress >= 50 ? 'text-yellow-400' : 'text-red-400';
+
+        const card = `
+          <div class="bg-slate-800 rounded-3xl p-7 shadow-xl hover:shadow-2xl transition">
+            <div class="flex justify-between items-start mb-4">
+              <h3 class="text-xl font-semibold leading-tight">${p.project_name}</h3>
+              <span class="text-4xl font-bold ${progressoCor}">${p.progress}%</span>
+            </div>
+            
+            <div class="text-slate-400 text-sm space-y-1">
+              <p><strong>Grupo:</strong> ${p.aluno1}, ${p.aluno2}, ${p.aluno3}...</p>
+              <p><a href="${p.tutorial_link}" target="_blank" class="text-emerald-400 hover:underline">🔗 Acessar Tutorial</a></p>
+            </div>
+
+            <div class="mt-6 flex justify-between items-center">
+              <span class="text-xs text-slate-500">
+                Atualizado em: ${new Date(p.updated_at).toLocaleDateString('pt-BR')}
+              </span>
+              <button onclick="editProject('${p.id}')" 
+                      class="bg-slate-700 hover:bg-slate-600 px-6 py-2.5 rounded-2xl text-sm font-medium transition">
+                ✏️ Editar
+              </button>
+            </div>
+          </div>`;
+        container.innerHTML += card;
       });
     }
 
-    // Salvar ou Atualizar
+    // Salvar projeto
     document.getElementById("projectForm").addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -181,7 +160,6 @@
       };
 
       let result;
-
       if (projectId) {
         result = await supabase.from(TABLE).update(projectData).eq('id', projectId);
       } else {
@@ -189,10 +167,9 @@
       }
 
       if (result.error) {
-        console.error(result.error);
-        alert('❌ Erro ao salvar:\n' + result.error.message);
+        alert("❌ Erro ao salvar:\n" + result.error.message);
       } else {
-        alert('✅ Projeto salvo com sucesso!');
+        alert("✅ Projeto salvo com sucesso!");
         document.getElementById("projectForm").reset();
         document.getElementById("projectId").value = "";
         loadProjects();
@@ -201,17 +178,8 @@
 
     // Editar projeto
     window.editProject = async function(id) {
-      const { data, error } = await supabase
-        .from(TABLE)
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) {
-        alert("Erro ao carregar dados para edição.");
-        console.error(error);
-        return;
-      }
+      const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single();
+      if (error) return alert("Erro ao carregar projeto");
 
       document.getElementById("projectId").value = data.id;
       document.getElementById("projectName").value = data.project_name;
@@ -225,7 +193,7 @@
       document.getElementById("progress").value = data.progress;
     };
 
-    // Inicializar
+    // Inicializar página
     loadProjects();
   </script>
 </body>
