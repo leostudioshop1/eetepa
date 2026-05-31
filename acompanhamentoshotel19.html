@@ -9,7 +9,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-<!-- Configuração do Supabase -->
 <script src="config.js"></script>
 </head>
 
@@ -50,8 +49,8 @@
         <p id="saidas" class="text-2xl font-bold text-red-400"></p>
     </div>
     <div class="bg-slate-800 p-5 rounded-2xl">
-        <p class="text-slate-400">Saldo em Caixa</p>
-        <p id="caixa" class="text-xl font-bold text-blue-400"></p>
+        <p class="text-slate-400">Categoria Selecionada</p>
+        <p id="categoriaAtual" class="text-xl font-semibold text-indigo-400"></p>
     </div>
 </div>
 
@@ -77,15 +76,13 @@
 </div>
 
 <script>
-// Verificação de segurança da config
-if (!window.SUPABASE_CONFIG) {
-    alert("Erro: Configurações do Supabase não encontradas! Verifique o arquivo config.js");
-}
-
+// Configuração Supabase
 const supabaseClient = supabase.createClient(
     window.SUPABASE_CONFIG.url,
     window.SUPABASE_CONFIG.key
 );
+
+let todasCategorias = [];
 
 function setMesAtual() {
     const hoje = new Date();
@@ -102,26 +99,19 @@ function getIntervaloMes() {
     return { inicio: inicio.toISOString(), fim: fim.toISOString() };
 }
 
-// Função para carregar as categorias únicas
+// Carregar categorias únicas
 async function carregarCategorias() {
-    const select = document.getElementById("categoriaFiltro");
-    
-    const { data, error } = await supabaseClient
+    const { data } = await supabaseClient
         .from('gastos')
         .select('categoria')
-        .order('categoria');
+        .not('categoria', 'is', null);
 
-    if (error) {
-        console.error(error);
-        return;
-    }
-
-    const categoriasUnicas = [...new Set(data.map(item => item.categoria))].filter(Boolean);
+    todasCategorias = [...new Set(data.map(item => item.categoria))].sort();
     
-    // Limpa opções anteriores (exceto "Todas")
+    const select = document.getElementById("categoriaFiltro");
     select.innerHTML = '<option value="">Todas as Categorias</option>';
     
-    categoriasUnicas.forEach(cat => {
+    todasCategorias.forEach(cat => {
         const option = document.createElement('option');
         option.value = cat;
         option.textContent = cat;
@@ -140,7 +130,7 @@ async function carregar() {
         .lte('data_hora', fim)
         .order('data_hora', { ascending: false });
 
-    // Aplica filtro de categoria se selecionado
+    // Aplicar filtro de categoria
     if (categoriaSelecionada) {
         query = query.eq('categoria', categoriaSelecionada);
     }
@@ -192,14 +182,18 @@ async function carregar() {
     document.getElementById("saldo").className    = saldo >= 0 
         ? "text-3xl font-bold text-emerald-400" 
         : "text-3xl font-bold text-red-400";
-    document.getElementById("caixa").innerText    = caixa.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+    
+    // Atualiza nome da categoria selecionada
+    const categoriaAtualEl = document.getElementById("categoriaAtual");
+    categoriaAtualEl.textContent = categoriaSelecionada ? categoriaSelecionada : "Todas";
 }
 
 // Exportar PDF
 function exportarPDF() {
+    const categoria = document.getElementById("categoriaFiltro").value || "Todas";
     html2pdf().set({
         margin: 0.5,
-        filename: 'livro_caixa_hotel.pdf',
+        filename: `livro_caixa_${categoria.toLowerCase().replace(/ /g, '_')}.pdf`,
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
     }).from(document.getElementById("relatorio")).save();
@@ -207,8 +201,10 @@ function exportarPDF() {
 
 // Inicialização
 setMesAtual();
-carregarCategorias();     // Carrega as categorias no dropdown
+carregarCategorias();     // Carrega as categorias
 carregar();              // Carrega os dados iniciais
+
+// Atualiza automaticamente a cada 30 segundos
 setInterval(carregar, 30000);
 </script>
 </body>
