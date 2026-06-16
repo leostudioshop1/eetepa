@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>🚀 Quiz Shooter</title>
+    <title>NEON MATRIX QUIZ</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #000;
-            color: #0ff;
-            font-family: 'Arial', sans-serif;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
             overflow: hidden;
             touch-action: none;
             height: 100vh;
@@ -22,85 +22,92 @@
         }
         canvas {
             display: block;
-            background: #001122;
+            background: #000;
             touch-action: none;
         }
         #ui {
             position: absolute;
-            top: 12px;
+            top: 15px;
             left: 0;
             width: 100%;
-            padding: 0 15px;
+            padding: 0 20px;
             display: flex;
             justify-content: space-between;
             pointer-events: none;
             z-index: 10;
         }
         .stat {
-            background: rgba(0, 20, 40, 0.85);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 18px;
+            background: rgba(0, 30, 0, 0.8);
+            padding: 10px 20px;
+            border: 1px solid #0f0;
+            border-radius: 4px;
+            font-size: 20px;
             font-weight: bold;
-            backdrop-filter: blur(6px);
+            text-shadow: 0 0 10px #0f0;
+            backdrop-filter: blur(4px);
         }
         #question {
             position: absolute;
-            top: 70px;
+            top: 80px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 30, 60, 0.95);
-            padding: 14px 25px;
-            border-radius: 15px;
-            font-size: 18px;
+            background: rgba(0, 20, 0, 0.92);
+            padding: 16px 30px;
+            border: 2px solid #0f0;
+            border-radius: 6px;
+            font-size: 19px;
             text-align: center;
-            max-width: 92%;
-            border: 2px solid #0ff;
-            pointer-events: none;
+            max-width: 90%;
+            color: #0f0;
+            text-shadow: 0 0 12px #0f0;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.4);
             z-index: 20;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
         }
         #controls {
             position: absolute;
-            bottom: 25px;
+            bottom: 30px;
             left: 0;
             width: 100%;
             display: flex;
             justify-content: space-between;
             padding: 0 20px;
             z-index: 30;
-            gap: 15px;
+            gap: 12px;
         }
         button {
-            background: rgba(0, 255, 255, 0.15);
-            color: #0ff;
-            border: 2px solid #0ff;
-            padding: 16px 28px;
+            background: rgba(0, 40, 0, 0.7);
+            color: #0f0;
+            border: 2px solid #0f0;
+            padding: 16px 24px;
             font-size: 17px;
-            border-radius: 50px;
-            backdrop-filter: blur(8px);
+            font-weight: bold;
+            border-radius: 4px;
+            text-shadow: 0 0 8px #0f0;
             flex: 1;
         }
         #start-screen, #game-over {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 10, 30, 0.97);
+            background: rgba(0, 10, 0, 0.97);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 100;
-            color: #0ff;
+            color: #0f0;
+            text-align: center;
         }
         h1 { 
-            font-size: 46px; 
-            margin-bottom: 20px; 
-            text-shadow: 0 0 25px #0ff;
+            font-size: 52px; 
+            margin-bottom: 15px; 
+            text-shadow: 0 0 30px #0f0;
+            letter-spacing: 4px;
         }
         button.big {
-            font-size: 26px;
-            padding: 18px 50px;
+            font-size: 28px;
+            padding: 18px 60px;
             margin-top: 30px;
+            border: 3px solid #0f0;
         }
     </style>
 </head>
@@ -109,31 +116,32 @@
         <canvas id="canvas"></canvas>
         
         <div id="ui">
-            <div class="stat">Pontos: <span id="score">0</span></div>
-            <div class="stat">Vidas: <span id="lives">3</span></div>
+            <div class="stat">SCORE: <span id="score">00000</span></div>
+            <div class="stat">LIVES: <span id="lives">03</span></div>
         </div>
         
-        <div id="question">Toque em INICIAR</div>
+        <div id="question">CARREGANDO MATRIZ...</div>
         
         <div id="controls">
-            <button id="left-btn">← ESQUERDA</button>
-            <button id="shoot-btn">🔫 ATIRAR</button>
-            <button id="right-btn">DIREITA →</button>
+            <button id="left-btn">◀ ESQUERDA</button>
+            <button id="shoot-btn">◆ ATIRAR ◆</button>
+            <button id="right-btn">DIREITA ▶</button>
         </div>
     </div>
 
     <!-- Start Screen -->
     <div id="start-screen">
-        <h1>🚀 QUIZ SHOOTER</h1>
-        <p style="font-size: 24px; margin-bottom: 40px; text-align:center;">Destrua as respostas corretas!</p>
-        <button class="big" onclick="startGame()">INICIAR MISSÃO</button>
+        <h1>NEON MATRIX</h1>
+        <p style="font-size: 26px; margin: 20px 0; text-shadow: 0 0 15px #0f0;">QUIZ SHOOTER</p>
+        <p style="max-width: 80%; margin-bottom: 40px; opacity: 0.9;">Destrua as respostas corretas antes que alcancem o chão</p>
+        <button class="big" onclick="startGame()">INICIAR TRANSMISSÃO</button>
     </div>
 
     <!-- Game Over -->
     <div id="game-over" style="display: none;">
-        <h1>FIM DE MISSÃO</h1>
-        <p style="font-size: 32px; margin: 25px 0;">Pontuação: <span id="final-score">0</span></p>
-        <button class="big" onclick="restartGame()">JOGAR NOVAMENTE</button>
+        <h1>SINAL PERDIDO</h1>
+        <p style="font-size: 32px; margin: 20px 0;">SCORE FINAL<br><span id="final-score" style="font-size:48px; color:#0f0;">00000</span></p>
+        <button class="big" onclick="restartGame()">REINICIAR MATRIZ</button>
     </div>
 
     <script>
@@ -147,10 +155,70 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Variáveis do jogo
-        let ship = { x: canvas.width/2 - 30, y: canvas.height - 100, width: 60, height: 50, speed: 3.5 };
+        // Audio Context para sons cyberpunk
+        let audioCtx;
+        function initAudio() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playSound(type) {
+            if (!audioCtx) initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            switch(type) {
+                case 'shoot':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    gain.gain.value = 0.3;
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.15);
+                    break;
+                case 'correct':
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(1800, audioCtx.currentTime + 0.3);
+                    gain.gain.value = 0.4;
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.4);
+                    break;
+                case 'wrong':
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                    gain.gain.value = 0.5;
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.25);
+                    break;
+                case 'loseLife':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                    gain.gain.value = 0.6;
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.6);
+                    break;
+                case 'next':
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(1400, audioCtx.currentTime + 0.5);
+                    gain.gain.value = 0.35;
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.6);
+                    break;
+            }
+        }
+
+        // Variáveis
+        let ship = { x: canvas.width/2 - 35, y: canvas.height - 110, width: 70, height: 55, speed: 4.2 };
         let bullets = [];
         let answers = [];
+        let particles = [];
         let score = 0;
         let lives = 3;
         let gameRunning = false;
@@ -158,142 +226,76 @@
         let keys = {};
         let touchStartX = 0;
         let isDragging = false;
+        let difficulty = 1;
 
-        // NOVAS PERGUNTAS SOBRE PROGRAMAÇÃO
-        const questions = [
-            {
-                question: "Como se declara uma variável em JavaScript?",
-                answers: [
-                    { text: "var nome;", correct: false },
-                    { text: "let nome;", correct: true },
-                    { text: "int nome;", correct: false },
-                    { text: "variable nome;", correct: false }
-                ]
-            },
-            {
-                question: "O que é um dígito binário?",
-                answers: [
-                    { text: "Um número de 0 a 9", correct: false },
-                    { text: "Apenas o número 1", correct: false },
-                    { text: "0 ou 1", correct: true },
-                    { text: "Um caractere especial", correct: false }
-                ]
-            },
-            {
-                question: "JavaScript foi criado inicialmente para:",
-                answers: [
-                    { text: "Fazer aplicativos mobile", correct: false },
-                    { text: "Criar páginas interativas na internet", correct: true },
-                    { text: "Desenvolver bancos de dados", correct: false },
-                    { text: "Programar jogos em 3D", correct: false }
-                ]
-            },
-            {
-                question: "Qual a função de uma variável na programação?",
-                answers: [
-                    { text: "Armazenar dados que podem mudar", correct: true },
-                    { text: "Criar loops infinitos", correct: false },
-                    { text: "Exibir mensagens na tela", correct: false },
-                    { text: "Conectar ao banco de dados", correct: false }
-                ]
-            },
-            {
-                question: "Como declarar uma variável inteira em Portugol?",
-                answers: [
-                    { text: "var idade = 18", correct: false },
-                    { text: "inteiro idade", correct: true },
-                    { text: "int idade", correct: false },
-                    { text: "numero idade", correct: false }
-                ]
-            },
-            {
-                question: "Qual é a estrutura de decisão em Portugol?",
-                answers: [
-                    { text: "if-else", correct: false },
-                    { text: "se...entao...senao", correct: true },
-                    { text: "switch case", correct: false },
-                    { text: "para...faca", correct: false }
-                ]
-            },
-            {
-                question: "O que significa o comando 'idade < 19' em Portugol?",
-                answers: [
-                    { text: "Idade maior que 19", correct: false },
-                    { text: "Idade igual a 19", correct: false },
-                    { text: "Idade menor que 19", correct: true },
-                    { text: "Idade diferente de 19", correct: false }
-                ]
-            },
-            {
-                question: "O que é 'const' em JavaScript?",
-                answers: [
-                    { text: "Uma variável que não pode ser alterada", correct: true },
-                    { text: "Uma variável que pode ser alterada", correct: false },
-                    { text: "Um tipo de função", correct: false },
-                    { text: "Uma estrutura de repetição", correct: false }
-                ]
-            },
-            {
-                question: "Qual a diferença principal entre 'let' e 'const'?",
-                answers: [
-                    { text: "let pode ser alterado, const não", correct: true },
-                    { text: "const pode ser alterado, let não", correct: false },
-                    { text: "Não há diferença", correct: false },
-                    { text: "let é mais rápido", correct: false }
-                ]
-            },
-            {
-                question: "O que o operador '==' faz em JavaScript?",
-                answers: [
-                    { text: "Atribui um valor", correct: false },
-                    { text: "Compara valores (igualdade)", correct: true },
-                    { text: "Compara tipo e valor", correct: false },
-                    { text: "Faz uma subtração", correct: false }
-                ]
-            },
-            {
-                question: "O que é HTML?",
-                answers: [
-                    { text: "Uma linguagem de programação", correct: false },
-                    { text: "Linguagem de marcação para páginas web", correct: true },
-                    { text: "Um banco de dados", correct: false },
-                    { text: "Uma linguagem de estilização", correct: false }
-                ]
-            },
-            {
-                question: "Para que serve a tag <input> em HTML?",
-                answers: [
-                    { text: "Criar um rótulo", correct: false },
-                    { text: "Receber dados do usuário", correct: true },
-                    { text: "Formatar o texto", correct: false },
-                    { text: "Criar links", correct: false }
-                ]
-            },
-            {
-                question: "Para que serve a tag <label> em HTML?",
-                answers: [
-                    { text: "Criar um campo de entrada", correct: false },
-                    { text: "Associar um texto descritivo a um input", correct: true },
-                    { text: "Estilizar a página", correct: false },
-                    { text: "Enviar formulário", correct: false }
-                ]
-            }
+        // Perguntas (mantidas do anterior)
+        const questions = [ /* ... mesmas 13 perguntas do código anterior ... */ 
+            { question: "Como se declara uma variável em JavaScript?", answers: [
+                { text: "var nome;", correct: false }, { text: "let nome;", correct: true },
+                { text: "int nome;", correct: false }, { text: "variable nome;", correct: false }
+            ]},
+            { question: "O que é um dígito binário?", answers: [
+                { text: "Um número de 0 a 9", correct: false }, { text: "Apenas o número 1", correct: false },
+                { text: "0 ou 1", correct: true }, { text: "Um caractere especial", correct: false }
+            ]},
+            { question: "JavaScript foi criado inicialmente para:", answers: [
+                { text: "Fazer aplicativos mobile", correct: false }, { text: "Criar páginas interativas na internet", correct: true },
+                { text: "Desenvolver bancos de dados", correct: false }, { text: "Programar jogos em 3D", correct: false }
+            ]},
+            { question: "Qual a função de uma variável na programação?", answers: [
+                { text: "Armazenar dados que podem mudar", correct: true }, { text: "Criar loops infinitos", correct: false },
+                { text: "Exibir mensagens na tela", correct: false }, { text: "Conectar ao banco de dados", correct: false }
+            ]},
+            { question: "Como declarar uma variável inteira em Portugol?", answers: [
+                { text: "var idade = 18", correct: false }, { text: "inteiro idade", correct: true },
+                { text: "int idade", correct: false }, { text: "numero idade", correct: false }
+            ]},
+            { question: "Qual é a estrutura de decisão em Portugol?", answers: [
+                { text: "if-else", correct: false }, { text: "se...entao...senao", correct: true },
+                { text: "switch case", correct: false }, { text: "para...faca", correct: false }
+            ]},
+            { question: "O que significa o comando 'idade < 19' em Portugol?", answers: [
+                { text: "Idade maior que 19", correct: false }, { text: "Idade igual a 19", correct: false },
+                { text: "Idade menor que 19", correct: true }, { text: "Idade diferente de 19", correct: false }
+            ]},
+            { question: "O que é 'const' em JavaScript?", answers: [
+                { text: "Uma variável que não pode ser alterada", correct: true }, { text: "Uma variável que pode ser alterada", correct: false },
+                { text: "Um tipo de função", correct: false }, { text: "Uma estrutura de repetição", correct: false }
+            ]},
+            { question: "Qual a diferença principal entre 'let' e 'const'?", answers: [
+                { text: "let pode ser alterado, const não", correct: true }, { text: "const pode ser alterado, let não", correct: false },
+                { text: "Não há diferença", correct: false }, { text: "let é mais rápido", correct: false }
+            ]},
+            { question: "O que o operador '==' faz em JavaScript?", answers: [
+                { text: "Atribui um valor", correct: false }, { text: "Compara valores (igualdade)", correct: true },
+                { text: "Compara tipo e valor", correct: false }, { text: "Faz uma subtração", correct: false }
+            ]},
+            { question: "O que é HTML?", answers: [
+                { text: "Uma linguagem de programação", correct: false }, { text: "Linguagem de marcação para páginas web", correct: true },
+                { text: "Um banco de dados", correct: false }, { text: "Uma linguagem de estilização", correct: false }
+            ]},
+            { question: "Para que serve a tag <input> em HTML?", answers: [
+                { text: "Criar um rótulo", correct: false }, { text: "Receber dados do usuário", correct: true },
+                { text: "Formatar o texto", correct: false }, { text: "Criar links", correct: false }
+            ]},
+            { question: "Para que serve a tag <label> em HTML?", answers: [
+                { text: "Criar um campo de entrada", correct: false }, { text: "Associar um texto descritivo a um input", correct: true },
+                { text: "Estilizar a página", correct: false }, { text: "Enviar formulário", correct: false }
+            ]}
         ];
 
         class Bullet {
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.width = 8;
-                this.height = 22;
-                this.speed = 4.5;
+                this.speed = 6;
             }
             update() { this.y -= this.speed; }
             draw() {
-                ctx.fillStyle = '#0ff';
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = '#0ff';
-                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.fillStyle = '#0f0';
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = '#0f0';
+                ctx.fillRect(this.x - 3, this.y, 6, 28);
                 ctx.shadowBlur = 0;
             }
         }
@@ -301,61 +303,126 @@
         class Answer {
             constructor(x, text, correct) {
                 this.x = x;
-                this.y = 100;
-                this.width = 170;
-                this.height = 58;
+                this.y = 110;
+                this.width = 175;
+                this.height = 62;
                 this.text = text;
                 this.correct = correct;
-                this.speed = 0.9 + Math.random() * 0.6;
+                this.speed = 1.1 * difficulty + Math.random() * 0.5;
             }
             update() { this.y += this.speed; }
             draw() {
-                ctx.fillStyle = this.correct ? '#0f0' : '#f44';
-                ctx.strokeStyle = '#fff';
+                const color = this.correct ? '#00ff00' : '#ff0066';
+                ctx.fillStyle = 'rgba(0, 30, 0, 0.85)';
+                ctx.strokeStyle = color;
                 ctx.lineWidth = 4;
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = this.correct ? '#0f0' : '#f44';
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = color;
                 
                 ctx.fillRect(this.x - this.width/2, this.y, this.width, this.height);
                 ctx.strokeRect(this.x - this.width/2, this.y, this.width, this.height);
+                
                 ctx.shadowBlur = 0;
-
-                ctx.fillStyle = '#000';
-                ctx.font = 'bold 18px Arial';
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 17px Courier New';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(this.text, this.x, this.y + this.height/2);
             }
         }
 
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = Math.random() * 8 - 4;
+                this.vy = Math.random() * 8 - 6;
+                this.life = 35;
+                this.color = color;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life--;
+                this.vy += 0.2;
+            }
+            draw() {
+                ctx.globalAlpha = this.life / 35;
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, 5, 5);
+            }
+        }
+
+        // Matrix Rain Background
+        let matrixDrops = [];
+        function initMatrix() {
+            matrixDrops = [];
+            const columns = Math.floor(canvas.width / 18);
+            for (let i = 0; i < columns; i++) {
+                matrixDrops[i] = Math.random() * canvas.height;
+            }
+        }
+
+        function drawMatrixRain() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.07)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#00aa00';
+            ctx.font = '15px monospace';
+            
+            for (let i = 0; i < matrixDrops.length; i++) {
+                const text = String.fromCharCode(33 + Math.random() * 90);
+                ctx.fillText(text, i * 18, matrixDrops[i]);
+                
+                if (matrixDrops[i] > canvas.height && Math.random() > 0.975) {
+                    matrixDrops[i] = 0;
+                }
+                matrixDrops[i] += 18;
+            }
+        }
+
         function drawShip() {
             ctx.save();
-            ctx.translate(ship.x + 30, ship.y + 25);
-            ctx.fillStyle = '#0ff';
+            ctx.translate(ship.x + 35, ship.y + 28);
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = '#0f0';
+            
+            // Corpo da nave cyber
+            ctx.fillStyle = '#0f0';
             ctx.beginPath();
-            ctx.moveTo(0, -30);
-            ctx.lineTo(-25, 25);
-            ctx.lineTo(25, 25);
+            ctx.moveTo(0, -32);
+            ctx.lineTo(-28, 28);
+            ctx.lineTo(-12, 18);
+            ctx.lineTo(12, 18);
+            ctx.lineTo(28, 28);
             ctx.closePath();
             ctx.fill();
-            ctx.fillStyle = '#f80';
-            ctx.fillRect(-10, 8, 20, 14);
+            
+            ctx.fillStyle = '#00ff88';
+            ctx.fillRect(-8, 8, 16, 18);
             ctx.restore();
         }
 
         function spawnAnswers() {
             answers = [];
             const q = questions[currentQuestionIndex];
-            const positions = [canvas.width * 0.2, canvas.width * 0.45, canvas.width * 0.7, canvas.width * 0.9];
+            const positions = [canvas.width * 0.18, canvas.width * 0.4, canvas.width * 0.62, canvas.width * 0.82];
             
             const shuffled = [...q.answers].sort(() => Math.random() - 0.5);
             
             shuffled.forEach((ans, i) => {
                 if (i < 4) {
-                    const a = new Answer(positions[i], ans.text, ans.correct);
-                    answers.push(a);
+                    answers.push(new Answer(positions[i], ans.text, ans.correct));
                 }
             });
+        }
+
+        function createExplosion(x, y, isCorrect) {
+            const color = isCorrect ? '#00ff00' : '#ff0066';
+            for (let i = 0; i < 28; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+            playSound(isCorrect ? 'correct' : 'wrong');
         }
 
         function update() {
@@ -363,38 +430,41 @@
 
             if (keys['ArrowLeft'] || keys['a'] || keys['A']) ship.x -= ship.speed;
             if (keys['ArrowRight'] || keys['d'] || keys['D']) ship.x += ship.speed;
+            ship.x = Math.max(30, Math.min(canvas.width - 100, ship.x));
 
-            ship.x = Math.max(30, Math.min(canvas.width - 90, ship.x));
-
+            // Bullets
             for (let i = bullets.length - 1; i >= 0; i--) {
                 bullets[i].update();
-                if (bullets[i].y < -30) bullets.splice(i, 1);
+                if (bullets[i].y < -50) bullets.splice(i, 1);
             }
 
+            // Answers + Collision
             for (let i = answers.length - 1; i >= 0; i--) {
-                answers[i].update();
+                const a = answers[i];
+                a.update();
                 
-                if (answers[i].y + answers[i].height > canvas.height - 80) {
-                    if (answers[i].correct) lives--;
+                if (a.y + a.height > canvas.height - 90) {
+                    if (a.correct) lives--;
+                    if (a.correct) playSound('loseLife');
                     answers.splice(i, 1);
                     continue;
                 }
 
                 for (let j = bullets.length - 1; j >= 0; j--) {
                     const b = bullets[j];
-                    const a = answers[i];
                     if (b.x > a.x - a.width/2 && b.x < a.x + a.width/2 &&
                         b.y > a.y && b.y < a.y + a.height) {
                         
                         bullets.splice(j, 1);
+                        createExplosion(a.x, a.y + 30, a.correct);
                         
                         if (a.correct) {
                             score += 100;
-                            document.getElementById('score').textContent = score;
+                            document.getElementById('score').textContent = String(score).padStart(5, '0');
                             nextQuestion();
                         } else {
                             lives--;
-                            document.getElementById('lives').textContent = lives;
+                            document.getElementById('lives').textContent = String(lives).padStart(2, '0');
                         }
                         answers.splice(i, 1);
                         break;
@@ -402,25 +472,25 @@
                 }
             }
 
+            // Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                if (particles[i].life <= 0) particles.splice(i, 1);
+            }
+
             if (answers.length === 0) nextQuestion();
             if (lives <= 0) gameOver();
         }
 
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawMatrixRain();
             
-            ctx.fillStyle = '#fff';
-            for (let i = 0; i < 100; i++) {
-                const x = (i * 43) % canvas.width;
-                const y = (i * 29 + Date.now()/30) % canvas.height;
-                ctx.globalAlpha = 0.7;
-                ctx.fillRect(x, y, 2.5, 2.5);
-            }
-            ctx.globalAlpha = 1;
-
             drawShip();
             bullets.forEach(b => b.draw());
             answers.forEach(a => a.draw());
+            particles.forEach(p => p.draw());
+            
+            ctx.globalAlpha = 1;
         }
 
         function gameLoop() {
@@ -431,13 +501,16 @@
 
         function nextQuestion() {
             currentQuestionIndex = (currentQuestionIndex + 1) % questions.length;
+            difficulty = Math.min(2.2, difficulty + 0.08);
             document.getElementById('question').textContent = questions[currentQuestionIndex].question;
             spawnAnswers();
+            playSound('next');
         }
 
         function shoot() {
             if (!gameRunning) return;
-            bullets.push(new Bullet(ship.x + 26, ship.y - 10));
+            bullets.push(new Bullet(ship.x + 32, ship.y - 15));
+            playSound('shoot');
         }
 
         function startGame() {
@@ -446,18 +519,20 @@
             score = 0;
             lives = 3;
             currentQuestionIndex = 0;
+            difficulty = 1;
             bullets = [];
             answers = [];
+            particles = [];
             
-            document.getElementById('score').textContent = '0';
-            document.getElementById('lives').textContent = '3';
+            document.getElementById('score').textContent = '00000';
+            document.getElementById('lives').textContent = '03';
             document.getElementById('question').textContent = questions[0].question;
             spawnAnswers();
         }
 
         function gameOver() {
             gameRunning = false;
-            document.getElementById('final-score').textContent = score;
+            document.getElementById('final-score').textContent = String(score).padStart(5, '0');
             document.getElementById('game-over').style.display = 'flex';
         }
 
@@ -467,9 +542,9 @@
         }
 
         function setupControls() {
-            window.addEventListener('keydown', e => { 
-                keys[e.key] = true; 
-                if (e.key === ' ' || e.key === 'Enter') shoot(); 
+            window.addEventListener('keydown', e => {
+                keys[e.key] = true;
+                if ((e.key === ' ' || e.key === 'Enter') && gameRunning) shoot();
             });
             window.addEventListener('keyup', e => keys[e.key] = false);
 
@@ -493,15 +568,21 @@
                 if (!isDragging || !gameRunning) return;
                 e.preventDefault();
                 const delta = e.touches[0].clientX - touchStartX;
-                ship.x += delta * 0.9;
+                ship.x += delta * 1.1;
                 touchStartX = e.touches[0].clientX;
-                ship.x = Math.max(30, Math.min(canvas.width - 90, ship.x));
+                ship.x = Math.max(30, Math.min(canvas.width - 100, ship.x));
             });
 
             canvas.addEventListener('touchend', () => isDragging = false);
             canvas.addEventListener('click', () => { if (gameRunning) shoot(); });
         }
 
+        // Inicialização
+        initMatrix();
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            initMatrix();
+        });
         setupControls();
         gameLoop();
     </script>
