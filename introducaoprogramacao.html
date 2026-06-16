@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Core: Decodificador de Sintaxe</title>
+    <style>
+        :root {
+            --matrix-green: #00ff41;
+            --matrix-dark: #0d5114;
+            --cyber-blue: #00f0ff;
+            --cyber-bg: #03030a;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--cyber-bg);
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 1024px;
+            max-height: 768px;
+            background: radial-gradient(circle, #051a08 0%, #020803 100%);
+            border: 2px solid var(--matrix-green);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+
+        /* HUD Responsivo */
+        .hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 3.5vw;
+            font-weight: bold;
+            color: var(--matrix-green);
+            text-shadow: 0 0 8px rgba(0, 255, 65, 0.6);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        @media (min-width: 600px) {
+            .hud { font-size: 16px; }
+        }
+
+        #question-box {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            background: rgba(2, 8, 3, 0.9);
+            border: 1px solid var(--cyber-blue);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+            font-size: 3.8vw;
+            color: #fff;
+            pointer-events: none;
+            box-sizing: border-box;
+            z-index: 5;
+        }
+
+        @media (min-width: 600px) {
+            #question-box { font-size: 16px; padding: 12px; width: 90%; }
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 8, 3, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 10;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .screen h1 {
+            color: var(--matrix-green);
+            font-size: 8vw;
+            margin: 0 0 10px 0;
+            text-shadow: 0 0 15px var(--matrix-green);
+            letter-spacing: 2px;
+        }
+
+        @media (min-width: 600px) {
+            .screen h1 { font-size: 48px; }
+        }
+
+        .screen p {
+            color: #88b890;
+            font-size: 3.5vw;
+            max-width: 600px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        @media (min-width: 600px) {
+            .screen p { font-size: 15px; }
+        }
+
+        .btn-start {
+            padding: 12px 30px;
+            background: transparent;
+            border: 2px solid var(--matrix-green);
+            color: var(--matrix-green);
+            font-size: 5vw;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        @media (min-width: 600px) {
+            .btn-start { font-size: 18px; }
+        }
+
+        .btn-start:hover {
+            background: var(--matrix-green);
+            color: #000;
+            box-shadow: 0 0 20px var(--matrix-green);
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div class="hud">
+        <div>[SYS] CORE: <span id="hud-hp">100%</span></div>
+        <div>[KRN] CORES: <span id="hud-score">0</span></div>
+        <div>[NOD] BLOCK: <span id="hud-wave">1</span>/20</div>
+    </div>
+
+    <div id="question-box">
+        INICIALIZANDO PROTOCOLO DE CONEXÃO...
+    </div>
+
+    <div id="start-screen" class="screen">
+        <h1>MATRIX CORE v2.0</h1>
+        <p>
+            O mainframe foi interceptado por 20 anomalias severas de sintaxe.<br>
+            Mova seu cursor para guiar o decodificador e clique para disparar os patches.<br>
+            Cuidado: Após o bloco 10, a velocidade de varredura do firewall aumentará substancialmente!
+        </p>
+        <button class="btn-start" onclick="startGame()">CONECTAR À REVOLUÇÃO</button>
+    </div>
+
+    <div id="end-screen" class="screen" style="display: none;">
+        <h1 id="end-title">CONEXÃO ENCERRADA</h1>
+        <p id="end-body"></p>
+        <button class="btn-start" onclick="window.location.reload()">RECONECTAR</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+    const container = document.getElementById("game-container");
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let internalWidth = 800;
+    let internalHeight = 600;
+    canvas.width = internalWidth;
+    canvas.height = internalHeight;
+
+    // Banco de Dados Expandido e Duplicado (20 Questões no Total)
+    const bancoQuestoes = [
+        { q: "Qual comando exibe uma mensagem de texto secreta de debug no painel DevTools?", a: ["console.log()", "alert()", "document.write()"], c: 0 },
+        { q: "Qual palavra-chave cria uma constante que não pode ter o valor reatribuído?", a: ["let", "var", "const"], c: 2 },
+        { q: "Qual é o resultado da operação matemática com o operador resto: 5 % 2?", a: ["2.5", "1", "0"], c: 1 },
+        { q: "Na lógica booleana, qual operador exige que AMBAS as condições sejam verdadeiras?", a: ["|| (OU)", "! (NÃO)", "&& (E)"], c: 2 },
+        { q: "Qual tag HTML é usada nativamente para linkar arquivos ou códigos JavaScript?", a: ["<script>", "<style>", "<javascript>"], c: 0 },
+        { q: "O que a propriedade de texto '.value' captura dentro de uma função JS?", a: ["O estilo CSS", "O conteúdo de um input", "A cor do fundo"], c: 1 },
+        { q: "Se tentarmos fazer a conta '5' + 2 em JavaScript, qual será o retorno?", a: ["7", "Erro fatal", "'52' (Concatenação)"], c: 2 },
+        { q: "O que significa a sigla da estrutura da página conhecida como DOM?", a: ["Document Object Model", "Digital Output Master", "Data Operation Mode"], c: 0 },
+        { q: "Qual seletor moderno do JavaScript busca elementos usando regras idênticas ao CSS?", a: ["getElementById", "querySelector", "getElementsByTagName"], c: 1 },
+        { q: "Como geramos uma tela suspensa de aviso simples com um botão de OK na página?", a: ["alert()", "prompt()", "console.print()"], c: 0 },
+        { q: "Qual comando interrompe imediatamente a execução de um laço for ou while?", a: ["continue", "break", "exit"], c: 1 },
+        { q: "Qual símbolo representa o operador de negação lógica (inversor de booleano)?", a: ["!=", "==", "!"], c: 2 },
+        { q: "Qual tipo de dado primitivo é retornado quando criamos uma variável vazia sem valor?", a: ["null", "undefined", "NaN"], c: 1 },
+        { q: "Qual método remove o último elemento de uma estrutura de array no JavaScript?", a: ["pop()", "shift()", "push()"], c: 0 },
+        { q: "Qual propriedade CSS altera diretamente a cor do plano de fundo de um container?", a: ["color", "background-color", "border-color"], c: 1 },
+        { q: "Qual tag HTML estrutural é utilizada para criar o maior nível de título na página?", a: ["<h6>", "<head>", "<h1>"], c: 2 },
+        { q: "Como se chama o comportamento de 'puxar' declarações de funções para o topo no JS?", a: ["Hoisting", "Bubbling", "Scoping"], c: 0 },
+        { q: "Qual é o resultado da comparação estrita (valor e tipo): 10 === '10'?", a: ["true", "false", "undefined"], c: 1 },
+        { q: "Qual evento dispara quando o usuário digita e solta uma tecla dentro de um input?", a: ["onclick", "onkeyup", "onchange"], c: 1 },
+        { q: "Para injetar código dinâmico usando crases (Template Literals), qual padrão usamos?", a: ["${var}", "{{var}}", "#[var]"], c: 0 }
+    ];
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === 'laser') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(1200, now);
+            osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.1);
+            osc.start(now); osc.stop(now + 0.1);
+        } else if (type === 'explosion') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.linearRampToValueAtTime(30, now + 0.3);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.3);
+            osc.start(now); osc.stop(now + 0.3);
+        } else if (type === 'hurt') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(220, now);
+            osc.frequency.setValueAtTime(110, now + 0.1);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.2);
+            osc.start(now); osc.stop(now + 0.2);
+        }
+    }
+
+    let gameRunning = false;
+    let score = 0;
+    let hp = 100;
+    let currentWave = 0;
+    let screenShake = 0;
+
+    let player = { x: 400, y: 520, w: 36, h: 36 };
+    let lasers = [];
+    let enemies = [];
+    let matrixRain = [];
+    let particles = [];
+    let floatingTexts = [];
+
+    for (let i = 0; i < 40; i++) {
+        matrixRain.push({
+            x: Math.random() * internalWidth,
+            y: Math.random() * internalHeight,
+            speed: Math.random() * 4 + 2,
+            char: String.fromCharCode(33 + Math.floor(Math.random() * 93))
+        });
+    }
+
+    function getMousePos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = internalWidth / rect.width;
+        let clientX = e.clientX;
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+        }
+        return (clientX - rect.left) * scaleX;
+    }
+
+    function updatePlayerPos(posX) {
+        player.x = posX - player.w / 2;
+        if (player.x < 0) player.x = 0;
+        if (player.x > internalWidth - player.w) player.x = internalWidth - player.w;
+    }
+
+    window.addEventListener('mousemove', (e) => { if(gameRunning) updatePlayerPos(getMousePos(e)); });
+    window.addEventListener('touchmove', (e) => { if(gameRunning) updatePlayerPos(getMousePos(e)); e.preventDefault(); }, {passive: false});
+
+    function fireLaser() {
+        if (!gameRunning) return;
+        lasers.push({ x: player.x + player.w / 2 - 2, y: player.y, w: 4, h: 18, speed: 12 });
+        playSound('laser');
+    }
+
+    window.addEventListener('click', fireLaser);
+    window.addEventListener('touchstart', (e) => { fireLaser(); e.preventDefault(); }, {passive: false});
+
+    function startGame() {
+        document.getElementById("start-screen").style.display = "none";
+        gameRunning = true;
+        score = 0;
+        hp = 100;
+        currentWave = 0;
+        audioCtx.resume();
+        spawnWave();
+        gameLoop();
+    }
+
+    function spawnWave() {
+        enemies = [];
+        if (currentWave >= bancoQuestoes.length) {
+            endGame(true);
+            return;
+        }
+
+        document.getElementById("hud-wave").innerText = currentWave + 1;
+        const questao = bancoQuestoes[currentWave];
+        document.getElementById("question-box").innerHTML = `<strong>REQ_STRING [NOD_${currentWave + 1}]:</strong> ${questao.q}`;
+
+        const totalEnemies = questao.a.length;
+        const sectionWidth = internalWidth / totalEnemies;
+
+        // MULTIPLICADOR DE VELOCIDADE: Aumenta consideravelmente a partir do Node 11 (fase index >= 10)
+        let velocidadeBase = 0.9 + (currentWave * 0.12);
+        if (currentWave >= 10) {
+            velocidadeBase *= 1.65; // Aceleração extra Matrix
+        }
+
+        for (let i = 0; i < totalEnemies; i++) {
+            enemies.push({
+                x: i * sectionWidth + (sectionWidth / 2) - 55,
+                y: -60,
+                w: 110,
+                h: 40,
+                text: questao.a[i],
+                isCorrect: i === questao.c,
+                speed: velocidadeBase
+            });
+        }
+    }
+
+    function createExplosion(x, y, color) {
+        for (let i = 0; i < 12; i++) {
+            particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 6,
+                vy: (Math.random() - 0.5) * 6,
+                radius: Math.random() * 2 + 1,
+                alpha: 1, decay: 0.03, color: color
+            });
+        }
+    }
+
+    function createFloatingText(x, y, text, color) {
+        floatingTexts.push({ x: x, y: y, text: text, color: color, alpha: 1 });
+    }
+
+    function endGame(victory) {
+        gameRunning = false;
+        document.getElementById("end-screen").style.display = "flex";
+        const title = document.getElementById("end-title");
+        const body = document.getElementById("end-body");
+
+        if (victory) {
+            title.innerText = "NÚCLEO RESTAURADO";
+            title.style.color = "var(--matrix-green)";
+            body.innerHTML = `Todas as 20 partições foram consolidadas de forma impecável.<br><br><strong>CRÉDITOS: ${score} UNITS</strong>`;
+        } else {
+            title.innerText = "TERMINAL DESCONECTADO";
+            title.style.color = "#ff3333";
+            body.innerHTML = `O fluxo de dados sobrecarregou a memória do sistema de defesa.`;
+        }
+    }
+
+    function gameLoop() {
+        if (!gameRunning) return;
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function update() {
+        if (screenShake > 0) screenShake -= 1;
+
+        matrixRain.forEach(drop => {
+            drop.y += drop.speed;
+            if (drop.y > internalHeight) {
+                drop.y = 0;
+                drop.x = Math.random() * internalWidth;
+            }
+            if(Math.random() > 0.98) drop.char = String.fromCharCode(33 + Math.floor(Math.random() * 93));
+        });
+
+        for (let i = lasers.length - 1; i >= 0; i--) {
+            lasers[i].y -= lasers[i].speed;
+            if (lasers[i].y < 0) lasers.splice(i, 1);
+        }
+
+        let advanceWave = false;
+        let correctHit = false;
+
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            let enemy = enemies[i];
+            enemy.y += enemy.speed;
+
+            if (enemy.y > internalHeight) {
+                if (enemy.isCorrect) {
+                    hp -= 4; 
+                    screenShake = 8;
+                    playSound('hurt');
+                    createFloatingText(internalWidth / 2, 450, "MISSED_PATCH: -4%", "#ff3333");
+                }
+                advanceWave = true;
+            }
+
+            for (let j = lasers.length - 1; j >= 0; j--) {
+                let laser = lasers[j];
+                if (laser.x > enemy.x && laser.x < enemy.x + enemy.w &&
+                    laser.y > enemy.y && laser.y < enemy.y + enemy.h) {
+                    
+                    lasers.splice(j, 1);
+
+                    if (enemy.isCorrect) {
+                        score += 100;
+                        createExplosion(enemy.x + enemy.w/2, enemy.y + enemy.h/2, "var(--matrix-green)");
+                        createFloatingText(enemy.x + enemy.w/2, enemy.y, "[OK] COMPILED", "var(--matrix-green)");
+                        playSound('explosion');
+                        correctHit = true;
+                    } else {
+                        hp -= 2; 
+                        screenShake = 4;
+                        createExplosion(enemy.x + enemy.w/2, enemy.y + enemy.h/2, "#ff3333");
+                        createFloatingText(enemy.x + enemy.w/2, enemy.y, "[ERR] BAD_SNTX", "#ff3333");
+                        playSound('hurt');
+                    }
+                    break;
+                }
+            }
+        }
+
+        if (correctHit || advanceWave) {
+            currentWave++;
+            if (hp < 0) hp = 0;
+            document.getElementById("hud-hp").innerText = hp + "%";
+            document.getElementById("hud-score").innerText = score;
+            
+            if (hp <= 0) {
+                endGame(false);
+                return;
+            }
+            spawnWave();
+            return;
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            particles[i].x += particles[i].vx;
+            particles[i].y += particles[i].vy;
+            particles[i].alpha -= particles[i].decay;
+            if (particles[i].alpha <= 0) particles.splice(i, 1);
+        }
+
+        for (let i = floatingTexts.length - 1; i >= 0; i--) {
+            floatingTexts[i].y -= 0.8;
+            floatingTexts[i].alpha -= 0.02;
+            if (floatingTexts[i].alpha <= 0) floatingTexts.splice(i, 1);
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, internalWidth, internalHeight);
+        ctx.save();
+        
+        if (screenShake > 0) {
+            ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+        }
+
+        ctx.font = "10px monospace";
+        ctx.fillStyle = "rgba(0, 255, 65, 0.35)";
+        matrixRain.forEach(drop => {
+            ctx.fillText(drop.char, drop.x, drop.y);
+        });
+
+        ctx.fillStyle = "var(--cyber-blue)";
+        lasers.forEach(laser => {
+            ctx.fillRect(laser.x, laser.y, laser.w, laser.h);
+        });
+
+        enemies.forEach(enemy => {
+            ctx.fillStyle = "rgba(2, 8, 3, 0.95)";
+            ctx.strokeStyle = "var(--matrix-green)";
+            ctx.lineWidth = 1;
+            ctx.fillRect(enemy.x, enemy.y, enemy.w, enemy.h);
+            ctx.strokeRect(enemy.x, enemy.y, enemy.w, enemy.h);
+
+            ctx.strokeStyle = "rgba(0, 255, 65, 0.2)";
+            ctx.strokeRect(enemy.x + 3, enemy.y + 3, enemy.w - 6, enemy.h - 6);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 11px monospace";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            
+            let txt = enemy.text;
+            if (txt.length > 15) txt = txt.substring(0, 13) + "..";
+            ctx.fillText(txt, enemy.x + enemy.w / 2, enemy.y + enemy.h / 2);
+        });
+
+        ctx.fillStyle = "var(--cyber-blue)";
+        ctx.beginPath();
+        ctx.moveTo(player.x + player.w / 2, player.y);
+        ctx.lineTo(player.x, player.y + player.h);
+        ctx.lineTo(player.x + player.w, player.y + player.h);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(0, 240, 255, 0.4)";
+        ctx.fillRect(player.x + player.w / 2 - 3, player.y + player.h, 6, 6);
+
+        particles.forEach(p => {
+            ctx.globalAlpha = p.alpha;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, p.radius, p.radius);
+        });
+        ctx.globalAlpha = 1.0;
+
+        floatingTexts.forEach(ft => {
+            ctx.globalAlpha = ft.alpha;
+            ctx.fillStyle = ft.color;
+            ctx.font = "bold 13px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText(ft.text, ft.x, ft.y);
+        });
+        ctx.globalAlpha = 1.0;
+
+        ctx.restore();
+    }
+</script>
+
+</body>
+</html>
