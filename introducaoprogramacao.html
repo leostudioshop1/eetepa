@@ -52,7 +52,7 @@
             background: rgba(0, 30, 60, 0.95);
             padding: 14px 25px;
             border-radius: 15px;
-            font-size: 19px;
+            font-size: 18px;
             text-align: center;
             max-width: 92%;
             border: 2px solid #0ff;
@@ -93,7 +93,7 @@
             color: #0ff;
         }
         h1 { 
-            font-size: 48px; 
+            font-size: 46px; 
             margin-bottom: 20px; 
             text-shadow: 0 0 25px #0ff;
         }
@@ -148,7 +148,7 @@
         resizeCanvas();
 
         // Variáveis do jogo
-        let ship = { x: canvas.width/2 - 30, y: canvas.height - 100, width: 60, height: 50, speed: 3.5 }; // reduzido
+        let ship = { x: canvas.width/2 - 30, y: canvas.height - 100, width: 60, height: 50, speed: 3.5 };
         let bullets = [];
         let answers = [];
         let score = 0;
@@ -159,23 +159,125 @@
         let touchStartX = 0;
         let isDragging = false;
 
+        // NOVAS PERGUNTAS SOBRE PROGRAMAÇÃO
         const questions = [
-            { question: "Qual é a capital do Brasil?", answers: [
-                { text: "São Paulo", correct: false }, { text: "Brasília", correct: true },
-                { text: "Rio de Janeiro", correct: false }, { text: "Salvador", correct: false }
-            ]},
-            { question: "Quanto é 8 × 7?", answers: [
-                { text: "54", correct: false }, { text: "49", correct: false },
-                { text: "56", correct: true }, { text: "63", correct: false }
-            ]},
-            { question: "Qual planeta é o Vermelho?", answers: [
-                { text: "Vênus", correct: false }, { text: "Júpiter", correct: false },
-                { text: "Marte", correct: true }, { text: "Saturno", correct: false }
-            ]},
-            { question: "Quem pintou a Mona Lisa?", answers: [
-                { text: "Van Gogh", correct: false }, { text: "Picasso", correct: false },
-                { text: "Leonardo da Vinci", correct: true }, { text: "Michelangelo", correct: false }
-            ]}
+            {
+                question: "Como se declara uma variável em JavaScript?",
+                answers: [
+                    { text: "var nome;", correct: false },
+                    { text: "let nome;", correct: true },
+                    { text: "int nome;", correct: false },
+                    { text: "variable nome;", correct: false }
+                ]
+            },
+            {
+                question: "O que é um dígito binário?",
+                answers: [
+                    { text: "Um número de 0 a 9", correct: false },
+                    { text: "Apenas o número 1", correct: false },
+                    { text: "0 ou 1", correct: true },
+                    { text: "Um caractere especial", correct: false }
+                ]
+            },
+            {
+                question: "JavaScript foi criado inicialmente para:",
+                answers: [
+                    { text: "Fazer aplicativos mobile", correct: false },
+                    { text: "Criar páginas interativas na internet", correct: true },
+                    { text: "Desenvolver bancos de dados", correct: false },
+                    { text: "Programar jogos em 3D", correct: false }
+                ]
+            },
+            {
+                question: "Qual a função de uma variável na programação?",
+                answers: [
+                    { text: "Armazenar dados que podem mudar", correct: true },
+                    { text: "Criar loops infinitos", correct: false },
+                    { text: "Exibir mensagens na tela", correct: false },
+                    { text: "Conectar ao banco de dados", correct: false }
+                ]
+            },
+            {
+                question: "Como declarar uma variável inteira em Portugol?",
+                answers: [
+                    { text: "var idade = 18", correct: false },
+                    { text: "inteiro idade", correct: true },
+                    { text: "int idade", correct: false },
+                    { text: "numero idade", correct: false }
+                ]
+            },
+            {
+                question: "Qual é a estrutura de decisão em Portugol?",
+                answers: [
+                    { text: "if-else", correct: false },
+                    { text: "se...entao...senao", correct: true },
+                    { text: "switch case", correct: false },
+                    { text: "para...faca", correct: false }
+                ]
+            },
+            {
+                question: "O que significa o comando 'idade < 19' em Portugol?",
+                answers: [
+                    { text: "Idade maior que 19", correct: false },
+                    { text: "Idade igual a 19", correct: false },
+                    { text: "Idade menor que 19", correct: true },
+                    { text: "Idade diferente de 19", correct: false }
+                ]
+            },
+            {
+                question: "O que é 'const' em JavaScript?",
+                answers: [
+                    { text: "Uma variável que não pode ser alterada", correct: true },
+                    { text: "Uma variável que pode ser alterada", correct: false },
+                    { text: "Um tipo de função", correct: false },
+                    { text: "Uma estrutura de repetição", correct: false }
+                ]
+            },
+            {
+                question: "Qual a diferença principal entre 'let' e 'const'?",
+                answers: [
+                    { text: "let pode ser alterado, const não", correct: true },
+                    { text: "const pode ser alterado, let não", correct: false },
+                    { text: "Não há diferença", correct: false },
+                    { text: "let é mais rápido", correct: false }
+                ]
+            },
+            {
+                question: "O que o operador '==' faz em JavaScript?",
+                answers: [
+                    { text: "Atribui um valor", correct: false },
+                    { text: "Compara valores (igualdade)", correct: true },
+                    { text: "Compara tipo e valor", correct: false },
+                    { text: "Faz uma subtração", correct: false }
+                ]
+            },
+            {
+                question: "O que é HTML?",
+                answers: [
+                    { text: "Uma linguagem de programação", correct: false },
+                    { text: "Linguagem de marcação para páginas web", correct: true },
+                    { text: "Um banco de dados", correct: false },
+                    { text: "Uma linguagem de estilização", correct: false }
+                ]
+            },
+            {
+                question: "Para que serve a tag <input> em HTML?",
+                answers: [
+                    { text: "Criar um rótulo", correct: false },
+                    { text: "Receber dados do usuário", correct: true },
+                    { text: "Formatar o texto", correct: false },
+                    { text: "Criar links", correct: false }
+                ]
+            },
+            {
+                question: "Para que serve a tag <label> em HTML?",
+                answers: [
+                    { text: "Criar um campo de entrada", correct: false },
+                    { text: "Associar um texto descritivo a um input", correct: true },
+                    { text: "Estilizar a página", correct: false },
+                    { text: "Enviar formulário", correct: false }
+                ]
+            }
         ];
 
         class Bullet {
@@ -184,7 +286,7 @@
                 this.y = y;
                 this.width = 8;
                 this.height = 22;
-                this.speed = 4.5; // reduzido em ~80%
+                this.speed = 4.5;
             }
             update() { this.y -= this.speed; }
             draw() {
@@ -200,11 +302,11 @@
             constructor(x, text, correct) {
                 this.x = x;
                 this.y = 100;
-                this.width = 160;
+                this.width = 170;
                 this.height = 58;
                 this.text = text;
                 this.correct = correct;
-                this.speed = 0.9 + Math.random() * 0.6; // velocidade reduzida
+                this.speed = 0.9 + Math.random() * 0.6;
             }
             update() { this.y += this.speed; }
             draw() {
@@ -219,7 +321,7 @@
                 ctx.shadowBlur = 0;
 
                 ctx.fillStyle = '#000';
-                ctx.font = 'bold 19px Arial';
+                ctx.font = 'bold 18px Arial';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(this.text, this.x, this.y + this.height/2);
@@ -236,7 +338,6 @@
             ctx.lineTo(25, 25);
             ctx.closePath();
             ctx.fill();
-            
             ctx.fillStyle = '#f80';
             ctx.fillRect(-10, 8, 20, 14);
             ctx.restore();
@@ -265,13 +366,11 @@
 
             ship.x = Math.max(30, Math.min(canvas.width - 90, ship.x));
 
-            // Bullets
             for (let i = bullets.length - 1; i >= 0; i--) {
                 bullets[i].update();
                 if (bullets[i].y < -30) bullets.splice(i, 1);
             }
 
-            // Answers
             for (let i = answers.length - 1; i >= 0; i--) {
                 answers[i].update();
                 
@@ -281,7 +380,6 @@
                     continue;
                 }
 
-                // Colisão
                 for (let j = bullets.length - 1; j >= 0; j--) {
                     const b = bullets[j];
                     const a = answers[i];
@@ -311,7 +409,6 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Fundo estrelado
             ctx.fillStyle = '#fff';
             for (let i = 0; i < 100; i++) {
                 const x = (i * 43) % canvas.width;
@@ -369,9 +466,11 @@
             startGame();
         }
 
-        // Controles
         function setupControls() {
-            window.addEventListener('keydown', e => { keys[e.key] = true; if (e.key === ' ' || e.key === 'Enter') shoot(); });
+            window.addEventListener('keydown', e => { 
+                keys[e.key] = true; 
+                if (e.key === ' ' || e.key === 'Enter') shoot(); 
+            });
             window.addEventListener('keyup', e => keys[e.key] = false);
 
             document.getElementById('left-btn').addEventListener('touchstart', e => { e.preventDefault(); keys['ArrowLeft'] = true; });
@@ -384,7 +483,6 @@
             shootBtn.addEventListener('touchstart', e => { e.preventDefault(); shoot(); });
             shootBtn.addEventListener('click', shoot);
 
-            // Swipe para mover
             canvas.addEventListener('touchstart', e => {
                 if (!gameRunning) return;
                 touchStartX = e.touches[0].clientX;
