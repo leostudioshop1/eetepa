@@ -15,100 +15,38 @@
             height: 100vh;
             width: 100vw;
         }
-        #game-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-        canvas {
-            display: block;
-            background: #000;
-            touch-action: none;
-        }
+        canvas { display: block; background: #000; touch-action: none; }
         #ui {
-            position: absolute;
-            top: 15px;
-            left: 0;
-            width: 100%;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            pointer-events: none;
-            z-index: 10;
+            position: absolute; top: 15px; left: 0; width: 100%; padding: 0 20px;
+            display: flex; justify-content: space-between; pointer-events: none; z-index: 10;
         }
         .stat {
-            background: rgba(0, 30, 0, 0.8);
-            padding: 10px 20px;
-            border: 1px solid #0f0;
-            border-radius: 4px;
-            font-size: 20px;
-            font-weight: bold;
-            text-shadow: 0 0 10px #0f0;
-            backdrop-filter: blur(4px);
+            background: rgba(0, 30, 0, 0.8); padding: 10px 20px; border: 1px solid #0f0;
+            border-radius: 4px; font-size: 22px; font-weight: bold; text-shadow: 0 0 10px #0f0;
         }
         #question {
-            position: absolute;
-            top: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 20, 0, 0.92);
-            padding: 16px 30px;
-            border: 2px solid #0f0;
-            border-radius: 6px;
-            font-size: 19px;
-            text-align: center;
-            max-width: 90%;
-            color: #0f0;
-            text-shadow: 0 0 12px #0f0;
-            box-shadow: 0 0 25px rgba(0, 255, 0, 0.4);
-            z-index: 20;
+            position: absolute; top: 75px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 20, 0, 0.92); padding: 18px 30px; border: 2px solid #0f0;
+            border-radius: 6px; font-size: 23px; text-align: center; max-width: 94%;
+            color: #0f0; text-shadow: 0 0 12px #0f0; box-shadow: 0 0 25px rgba(0,255,0,0.4);
+            z-index: 20; line-height: 1.3;
         }
         #controls {
-            position: absolute;
-            bottom: 30px;
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 20px;
-            z-index: 30;
-            gap: 12px;
+            position: absolute; bottom: 30px; left: 0; width: 100%; display: flex;
+            justify-content: space-between; padding: 0 20px; z-index: 30; gap: 12px;
         }
         button {
-            background: rgba(0, 40, 0, 0.7);
-            color: #0f0;
-            border: 2px solid #0f0;
-            padding: 16px 24px;
-            font-size: 17px;
-            font-weight: bold;
-            border-radius: 4px;
-            text-shadow: 0 0 8px #0f0;
-            flex: 1;
+            background: rgba(0,40,0,0.7); color: #0f0; border: 2px solid #0f0;
+            padding: 16px 24px; font-size: 18px; font-weight: bold; border-radius: 4px;
+            text-shadow: 0 0 8px #0f0; flex: 1;
         }
         #start-screen, #game-over {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 10, 0, 0.97);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            color: #0f0;
-            text-align: center;
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,10,0,0.97); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 100; color: #0f0;
         }
-        h1 { 
-            font-size: 52px; 
-            margin-bottom: 15px; 
-            text-shadow: 0 0 30px #0f0;
-            letter-spacing: 4px;
-        }
-        button.big {
-            font-size: 28px;
-            padding: 18px 60px;
-            margin-top: 30px;
-            border: 3px solid #0f0;
-        }
+        h1 { font-size: 54px; margin-bottom: 15px; text-shadow: 0 0 30px #0f0; letter-spacing: 4px; }
+        button.big { font-size: 28px; padding: 18px 60px; margin-top: 30px; border: 3px solid #0f0; }
     </style>
 </head>
 <body>
@@ -129,18 +67,15 @@
         </div>
     </div>
 
-    <!-- Start Screen -->
     <div id="start-screen">
         <h1>NEON MATRIX</h1>
-        <p style="font-size: 26px; margin: 20px 0; text-shadow: 0 0 15px #0f0;">QUIZ SHOOTER</p>
-        <p style="max-width: 80%; margin-bottom: 40px; opacity: 0.9;">Destrua as respostas corretas antes que alcancem o chão</p>
+        <p style="font-size: 26px; margin: 20px 0;">QUIZ SHOOTER</p>
         <button class="big" onclick="startGame()">INICIAR TRANSMISSÃO</button>
     </div>
 
-    <!-- Game Over -->
     <div id="game-over" style="display: none;">
         <h1>SINAL PERDIDO</h1>
-        <p style="font-size: 32px; margin: 20px 0;">SCORE FINAL<br><span id="final-score" style="font-size:48px; color:#0f0;">00000</span></p>
+        <p style="font-size: 32px; margin: 20px 0;">SCORE FINAL<br><span id="final-score" style="font-size:48px;">00000</span></p>
         <button class="big" onclick="restartGame()">REINICIAR MATRIZ</button>
     </div>
 
@@ -155,7 +90,6 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Audio Context para sons cyberpunk
         let audioCtx;
         function initAudio() {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -214,7 +148,6 @@
             }
         }
 
-        // Variáveis
         let ship = { x: canvas.width/2 - 35, y: canvas.height - 110, width: 70, height: 55, speed: 4.2 };
         let bullets = [];
         let answers = [];
@@ -228,8 +161,7 @@
         let isDragging = false;
         let difficulty = 1;
 
-        // Perguntas (mantidas do anterior)
-        const questions = [ /* ... mesmas 13 perguntas do código anterior ... */ 
+        const questions = [
             { question: "Como se declara uma variável em JavaScript?", answers: [
                 { text: "var nome;", correct: false }, { text: "let nome;", correct: true },
                 { text: "int nome;", correct: false }, { text: "variable nome;", correct: false }
@@ -239,12 +171,16 @@
                 { text: "0 ou 1", correct: true }, { text: "Um caractere especial", correct: false }
             ]},
             { question: "JavaScript foi criado inicialmente para:", answers: [
-                { text: "Fazer aplicativos mobile", correct: false }, { text: "Criar páginas interativas na internet", correct: true },
-                { text: "Desenvolver bancos de dados", correct: false }, { text: "Programar jogos em 3D", correct: false }
+                { text: "Fazer aplicativos mobile", correct: false }, 
+                { text: "Criar páginas interativas na internet", correct: true },
+                { text: "Desenvolver bancos de dados", correct: false }, 
+                { text: "Programar jogos em 3D", correct: false }
             ]},
             { question: "Qual a função de uma variável na programação?", answers: [
-                { text: "Armazenar dados que podem mudar", correct: true }, { text: "Criar loops infinitos", correct: false },
-                { text: "Exibir mensagens na tela", correct: false }, { text: "Conectar ao banco de dados", correct: false }
+                { text: "Armazenar dados que podem mudar", correct: true }, 
+                { text: "Criar loops infinitos", correct: false },
+                { text: "Exibir mensagens na tela", correct: false }, 
+                { text: "Conectar ao banco de dados", correct: false }
             ]},
             { question: "Como declarar uma variável inteira em Portugol?", answers: [
                 { text: "var idade = 18", correct: false }, { text: "inteiro idade", correct: true },
@@ -259,28 +195,40 @@
                 { text: "Idade menor que 19", correct: true }, { text: "Idade diferente de 19", correct: false }
             ]},
             { question: "O que é 'const' em JavaScript?", answers: [
-                { text: "Uma variável que não pode ser alterada", correct: true }, { text: "Uma variável que pode ser alterada", correct: false },
-                { text: "Um tipo de função", correct: false }, { text: "Uma estrutura de repetição", correct: false }
+                { text: "Uma variável que não pode ser alterada", correct: true }, 
+                { text: "Uma variável que pode ser alterada", correct: false },
+                { text: "Um tipo de função", correct: false }, 
+                { text: "Uma estrutura de repetição", correct: false }
             ]},
             { question: "Qual a diferença principal entre 'let' e 'const'?", answers: [
-                { text: "let pode ser alterado, const não", correct: true }, { text: "const pode ser alterado, let não", correct: false },
-                { text: "Não há diferença", correct: false }, { text: "let é mais rápido", correct: false }
+                { text: "let pode ser alterado, const não", correct: true }, 
+                { text: "const pode ser alterado, let não", correct: false },
+                { text: "Não há diferença", correct: false }, 
+                { text: "let é mais rápido", correct: false }
             ]},
             { question: "O que o operador '==' faz em JavaScript?", answers: [
-                { text: "Atribui um valor", correct: false }, { text: "Compara valores (igualdade)", correct: true },
-                { text: "Compara tipo e valor", correct: false }, { text: "Faz uma subtração", correct: false }
+                { text: "Atribui um valor", correct: false }, 
+                { text: "Compara valores (igualdade)", correct: true },
+                { text: "Compara tipo e valor", correct: false }, 
+                { text: "Faz uma subtração", correct: false }
             ]},
             { question: "O que é HTML?", answers: [
-                { text: "Uma linguagem de programação", correct: false }, { text: "Linguagem de marcação para páginas web", correct: true },
-                { text: "Um banco de dados", correct: false }, { text: "Uma linguagem de estilização", correct: false }
+                { text: "Uma linguagem de programação", correct: false }, 
+                { text: "Linguagem de marcação para páginas web", correct: true },
+                { text: "Um banco de dados", correct: false }, 
+                { text: "Uma linguagem de estilização", correct: false }
             ]},
             { question: "Para que serve a tag <input> em HTML?", answers: [
-                { text: "Criar um rótulo", correct: false }, { text: "Receber dados do usuário", correct: true },
-                { text: "Formatar o texto", correct: false }, { text: "Criar links", correct: false }
+                { text: "Criar um rótulo", correct: false }, 
+                { text: "Receber dados do usuário", correct: true },
+                { text: "Formatar o texto", correct: false }, 
+                { text: "Criar links", correct: false }
             ]},
             { question: "Para que serve a tag <label> em HTML?", answers: [
-                { text: "Criar um campo de entrada", correct: false }, { text: "Associar um texto descritivo a um input", correct: true },
-                { text: "Estilizar a página", correct: false }, { text: "Enviar formulário", correct: false }
+                { text: "Criar um campo de entrada", correct: false }, 
+                { text: "Associar um texto descritivo a um input", correct: true },
+                { text: "Estilizar a página", correct: false }, 
+                { text: "Enviar formulário", correct: false }
             ]}
         ];
 
@@ -288,7 +236,7 @@
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.speed = 6;
+                this.speed = 7;
             }
             update() { this.y -= this.speed; }
             draw() {
@@ -304,37 +252,43 @@
             constructor(x, text, correct) {
                 this.x = x;
                 this.y = 110;
-                this.width = 175;
-                this.height = 62;
+                this.width = 260;
+                this.height = 118;
                 this.text = text;
                 this.correct = correct;
                 this.speed = 1.1 * difficulty + Math.random() * 0.5;
+                this.words = text.split(' ');
             }
             update() { this.y += this.speed; }
             draw() {
                 const color = this.correct ? '#00ff00' : '#ff0066';
-                ctx.fillStyle = 'rgba(0, 30, 0, 0.85)';
+                ctx.fillStyle = 'rgba(0, 30, 0, 0.92)';
                 ctx.strokeStyle = color;
-                ctx.lineWidth = 4;
-                ctx.shadowBlur = 20;
+                ctx.lineWidth = 5;
+                ctx.shadowBlur = 25;
                 ctx.shadowColor = color;
                 
                 ctx.fillRect(this.x - this.width/2, this.y, this.width, this.height);
                 ctx.strokeRect(this.x - this.width/2, this.y, this.width, this.height);
                 
                 ctx.shadowBlur = 0;
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 17px Courier New';
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 26px Courier New';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(this.text, this.x, this.y + this.height/2);
+
+                const lineHeight = 30;
+                const startY = this.y + 35;
+
+                this.words.forEach((word, i) => {
+                    ctx.fillText(word, this.x, startY + i * lineHeight);
+                });
             }
         }
 
         class Particle {
             constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
+                this.x = x; this.y = y;
                 this.vx = Math.random() * 8 - 4;
                 this.vy = Math.random() * 8 - 6;
                 this.life = 35;
@@ -349,34 +303,26 @@
             draw() {
                 ctx.globalAlpha = this.life / 35;
                 ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, 5, 5);
+                ctx.fillRect(this.x, this.y, 6, 6);
             }
         }
 
-        // Matrix Rain Background
         let matrixDrops = [];
         function initMatrix() {
             matrixDrops = [];
             const columns = Math.floor(canvas.width / 18);
-            for (let i = 0; i < columns; i++) {
-                matrixDrops[i] = Math.random() * canvas.height;
-            }
+            for (let i = 0; i < columns; i++) matrixDrops[i] = Math.random() * canvas.height;
         }
 
         function drawMatrixRain() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.07)';
+            ctx.fillStyle = 'rgba(0,0,0,0.08)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
             ctx.fillStyle = '#00aa00';
             ctx.font = '15px monospace';
-            
             for (let i = 0; i < matrixDrops.length; i++) {
                 const text = String.fromCharCode(33 + Math.random() * 90);
                 ctx.fillText(text, i * 18, matrixDrops[i]);
-                
-                if (matrixDrops[i] > canvas.height && Math.random() > 0.975) {
-                    matrixDrops[i] = 0;
-                }
+                if (matrixDrops[i] > canvas.height && Math.random() > 0.975) matrixDrops[i] = 0;
                 matrixDrops[i] += 18;
             }
         }
@@ -386,8 +332,6 @@
             ctx.translate(ship.x + 35, ship.y + 28);
             ctx.shadowBlur = 30;
             ctx.shadowColor = '#0f0';
-            
-            // Corpo da nave cyber
             ctx.fillStyle = '#0f0';
             ctx.beginPath();
             ctx.moveTo(0, -32);
@@ -397,7 +341,6 @@
             ctx.lineTo(28, 28);
             ctx.closePath();
             ctx.fill();
-            
             ctx.fillStyle = '#00ff88';
             ctx.fillRect(-8, 8, 16, 18);
             ctx.restore();
@@ -406,14 +349,11 @@
         function spawnAnswers() {
             answers = [];
             const q = questions[currentQuestionIndex];
-            const positions = [canvas.width * 0.18, canvas.width * 0.4, canvas.width * 0.62, canvas.width * 0.82];
+            const positions = [canvas.width * 0.16, canvas.width * 0.39, canvas.width * 0.61, canvas.width * 0.84];
             
             const shuffled = [...q.answers].sort(() => Math.random() - 0.5);
-            
             shuffled.forEach((ans, i) => {
-                if (i < 4) {
-                    answers.push(new Answer(positions[i], ans.text, ans.correct));
-                }
+                if (i < 4) answers.push(new Answer(positions[i], ans.text, ans.correct));
             });
         }
 
@@ -438,14 +378,16 @@
                 if (bullets[i].y < -50) bullets.splice(i, 1);
             }
 
-            // Answers + Collision
+            // Answers
             for (let i = answers.length - 1; i >= 0; i--) {
                 const a = answers[i];
                 a.update();
                 
-                if (a.y + a.height > canvas.height - 90) {
-                    if (a.correct) lives--;
-                    if (a.correct) playSound('loseLife');
+                if (a.y + a.height > canvas.height - 110) {
+                    if (a.correct) {
+                        lives--;
+                        playSound('loseLife');
+                    }
                     answers.splice(i, 1);
                     continue;
                 }
@@ -456,7 +398,7 @@
                         b.y > a.y && b.y < a.y + a.height) {
                         
                         bullets.splice(j, 1);
-                        createExplosion(a.x, a.y + 30, a.correct);
+                        createExplosion(a.x, a.y + 40, a.correct);
                         
                         if (a.correct) {
                             score += 100;
@@ -484,12 +426,10 @@
 
         function draw() {
             drawMatrixRain();
-            
             drawShip();
             bullets.forEach(b => b.draw());
             answers.forEach(a => a.draw());
             particles.forEach(p => p.draw());
-            
             ctx.globalAlpha = 1;
         }
 
@@ -501,7 +441,7 @@
 
         function nextQuestion() {
             currentQuestionIndex = (currentQuestionIndex + 1) % questions.length;
-            difficulty = Math.min(2.2, difficulty + 0.08);
+            difficulty = Math.min(2.5, difficulty + 0.1);
             document.getElementById('question').textContent = questions[currentQuestionIndex].question;
             spawnAnswers();
             playSound('next');
@@ -516,13 +456,8 @@
         function startGame() {
             document.getElementById('start-screen').style.display = 'none';
             gameRunning = true;
-            score = 0;
-            lives = 3;
-            currentQuestionIndex = 0;
-            difficulty = 1;
-            bullets = [];
-            answers = [];
-            particles = [];
+            score = 0; lives = 3; currentQuestionIndex = 0; difficulty = 1;
+            bullets = []; answers = []; particles = [];
             
             document.getElementById('score').textContent = '00000';
             document.getElementById('lives').textContent = '03';
@@ -550,7 +485,6 @@
 
             document.getElementById('left-btn').addEventListener('touchstart', e => { e.preventDefault(); keys['ArrowLeft'] = true; });
             document.getElementById('left-btn').addEventListener('touchend', e => { e.preventDefault(); keys['ArrowLeft'] = false; });
-
             document.getElementById('right-btn').addEventListener('touchstart', e => { e.preventDefault(); keys['ArrowRight'] = true; });
             document.getElementById('right-btn').addEventListener('touchend', e => { e.preventDefault(); keys['ArrowRight'] = false; });
 
@@ -579,10 +513,7 @@
 
         // Inicialização
         initMatrix();
-        window.addEventListener('resize', () => {
-            resizeCanvas();
-            initMatrix();
-        });
+        window.addEventListener('resize', () => { resizeCanvas(); initMatrix(); });
         setupControls();
         gameLoop();
     </script>
