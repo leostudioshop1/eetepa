@@ -2,12 +2,11 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matrix Core: Decodificador de Sintaxe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Matrix Core: Mobile Edition</title>
     <style>
         :root {
             --matrix-green: #00ff41;
-            --matrix-dark: #0d5114;
             --cyber-blue: #00f0ff;
             --cyber-bg: #03030a;
         }
@@ -23,6 +22,9 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            /* Previne gestos nativos do mobile de arrastar para atualizar */
+            overscroll-behavior-y: contain;
+            touch-action: none;
         }
 
         #game-container {
@@ -45,7 +47,7 @@
             background: transparent;
         }
 
-        /* HUD Responsivo */
+        /* HUD Responsivo e Otimizado para Dedos */
         .hud {
             position: absolute;
             top: 10px;
@@ -53,7 +55,7 @@
             right: 10px;
             display: flex;
             justify-content: space-between;
-            font-size: 3.5vw;
+            font-size: 3.8vw;
             font-weight: bold;
             color: var(--matrix-green);
             text-shadow: 0 0 8px rgba(0, 255, 65, 0.6);
@@ -67,25 +69,26 @@
 
         #question-box {
             position: absolute;
-            top: 50px;
+            top: 45px;
             left: 50%;
             transform: translateX(-50%);
             width: 95%;
-            background: rgba(2, 8, 3, 0.9);
+            background: rgba(2, 8, 3, 0.92);
             border: 1px solid var(--cyber-blue);
             box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
             border-radius: 4px;
-            padding: 10px;
+            padding: 8px;
             text-align: center;
-            font-size: 3.8vw;
+            font-size: 3.5vw;
             color: #fff;
             pointer-events: none;
             box-sizing: border-box;
             z-index: 5;
+            line-height: 1.3;
         }
 
         @media (min-width: 600px) {
-            #question-box { font-size: 16px; padding: 12px; width: 90%; }
+            #question-box { font-size: 15px; padding: 12px; width: 90%; }
         }
 
         .screen {
@@ -94,35 +97,35 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(2, 8, 3, 0.95);
+            background: rgba(2, 8, 3, 0.98);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
             z-index: 10;
-            padding: 20px;
+            padding: 24px;
             box-sizing: border-box;
         }
 
         .screen h1 {
             color: var(--matrix-green);
             font-size: 8vw;
-            margin: 0 0 10px 0;
+            margin: 0 0 15px 0;
             text-shadow: 0 0 15px var(--matrix-green);
-            letter-spacing: 2px;
+            letter-spacing: 1px;
         }
 
         @media (min-width: 600px) {
-            .screen h1 { font-size: 48px; }
+            .screen h1 { font-size: 44px; }
         }
 
         .screen p {
             color: #88b890;
-            font-size: 3.5vw;
+            font-size: 4vw;
             max-width: 600px;
-            line-height: 1.6;
-            margin-bottom: 20px;
+            line-height: 1.5;
+            margin-bottom: 25px;
         }
 
         @media (min-width: 600px) {
@@ -130,7 +133,7 @@
         }
 
         .btn-start {
-            padding: 12px 30px;
+            padding: 14px 35px;
             background: transparent;
             border: 2px solid var(--matrix-green);
             color: var(--matrix-green);
@@ -139,14 +142,15 @@
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
-            transition: all 0.2s ease;
+            border-radius: 4px;
+            -webkit-tap-highlight-color: transparent;
         }
 
         @media (min-width: 600px) {
             .btn-start { font-size: 18px; }
         }
 
-        .btn-start:hover {
+        .btn-start:active {
             background: var(--matrix-green);
             color: #000;
             box-shadow: 0 0 20px var(--matrix-green);
@@ -163,21 +167,21 @@
     </div>
 
     <div id="question-box">
-        INICIALIZANDO PROTOCOLO DE CONEXÃO...
+        AGUARDANDO AUTENTICAÇÃO DO OPERADOR...
     </div>
 
     <div id="start-screen" class="screen">
-        <h1>MATRIX CORE v2.0</h1>
+        <h1>MATRIX CORE</h1>
         <p>
-            O mainframe foi interceptado por 20 anomalias severas de sintaxe.<br>
-            Mova seu cursor para guiar o decodificador e clique para disparar os patches.<br>
-            Cuidado: Após o bloco 10, a velocidade de varredura do firewall aumentará substancialmente!
+            O mainframe móvel detetou 20 falhas críticas.<br><br>
+            <strong>COMO JOGAR:</strong><br>
+            Arraste o dedo ou o rato na parte inferior do ecrã para mover a nave. Os disparos são automáticos!
         </p>
-        <button class="btn-start" onclick="startGame()">CONECTAR À REVOLUÇÃO</button>
+        <button class="btn-start" id="btn-init">CONECTAR À REVOLUÇÃO</button>
     </div>
 
     <div id="end-screen" class="screen" style="display: none;">
-        <h1 id="end-title">CONEXÃO ENCERRADA</h1>
+        <h1 id="end-title">CONEXÃO TERMINADA</h1>
         <p id="end-body"></p>
         <button class="btn-start" onclick="window.location.reload()">RECONECTAR</button>
     </div>
@@ -186,16 +190,15 @@
 </div>
 
 <script>
-    const container = document.getElementById("game-container");
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
+    // Resolução virtual estável para proporção móvel
     let internalWidth = 800;
     let internalHeight = 600;
     canvas.width = internalWidth;
     canvas.height = internalHeight;
 
-    // Banco de Dados Expandido e Duplicado (20 Questões no Total)
     const bancoQuestoes = [
         { q: "Qual comando exibe uma mensagem de texto secreta de debug no painel DevTools?", a: ["console.log()", "alert()", "document.write()"], c: 0 },
         { q: "Qual palavra-chave cria uma constante que não pode ter o valor reatribuído?", a: ["let", "var", "const"], c: 2 },
@@ -219,38 +222,49 @@
         { q: "Para injetar código dinâmico usando crases (Template Literals), qual padrão usamos?", a: ["${var}", "{{var}}", "#[var]"], c: 0 }
     ];
 
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Configuração e inicialização segura de áudio para iOS/Android
+    let audioCtx = null;
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
 
     function playSound(type) {
-        if (!audioCtx) return;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        const now = audioCtx.currentTime;
+        if (!audioCtx || audioCtx.state === 'suspended') return;
+        try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
 
-        if (type === 'laser') {
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(1200, now);
-            osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
-            gain.gain.setValueAtTime(0.15, now);
-            gain.gain.linearRampToValueAtTime(0, now + 0.1);
-            osc.start(now); osc.stop(now + 0.1);
-        } else if (type === 'explosion') {
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(100, now);
-            osc.frequency.linearRampToValueAtTime(30, now + 0.3);
-            gain.gain.setValueAtTime(0.25, now);
-            gain.gain.linearRampToValueAtTime(0, now + 0.3);
-            osc.start(now); osc.stop(now + 0.3);
-        } else if (type === 'hurt') {
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(220, now);
-            osc.frequency.setValueAtTime(110, now + 0.1);
-            gain.gain.setValueAtTime(0.2, now);
-            gain.gain.linearRampToValueAtTime(0, now + 0.2);
-            osc.start(now); osc.stop(now + 0.2);
-        }
+            if (type === 'laser') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(1100, now);
+                osc.frequency.exponentialRampToValueAtTime(250, now + 0.08);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.08);
+                osc.start(now); osc.stop(now + 0.08);
+            } else if (type === 'explosion') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(90, now);
+                osc.frequency.linearRampToValueAtTime(25, now + 0.25);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.25);
+                osc.start(now); osc.stop(now + 0.25);
+            } else if (type === 'hurt') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.setValueAtTime(90, now + 0.08);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            }
+        } catch(e) { console.log("Audio Error context:", e); }
     }
 
     let gameRunning = false;
@@ -258,50 +272,60 @@
     let hp = 100;
     let currentWave = 0;
     let screenShake = 0;
+    let lastShotTime = 0;
 
-    let player = { x: 400, y: 520, w: 36, h: 36 };
+    let player = { x: 382, y: 510, w: 36, h: 36 };
     let lasers = [];
     let enemies = [];
     let matrixRain = [];
     let particles = [];
     let floatingTexts = [];
 
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 35; i++) {
         matrixRain.push({
             x: Math.random() * internalWidth,
             y: Math.random() * internalHeight,
-            speed: Math.random() * 4 + 2,
+            speed: Math.random() * 3 + 2,
             char: String.fromCharCode(33 + Math.floor(Math.random() * 93))
         });
     }
 
-    function getMousePos(e) {
+    // Tradução de coordenadas Mobile para o ambiente virtual interno do Canvas
+    function getTouchX(e) {
         const rect = canvas.getBoundingClientRect();
         const scaleX = internalWidth / rect.width;
         let clientX = e.clientX;
         if (e.touches && e.touches.length > 0) {
             clientX = e.touches[0].clientX;
+        } else if (e.changedTouches && e.changedTouches.length > 0) {
+            clientX = e.changedTouches[0].clientX;
         }
         return (clientX - rect.left) * scaleX;
     }
 
-    function updatePlayerPos(posX) {
-        player.x = posX - player.w / 2;
+    function movePlayer(targetX) {
+        player.x = targetX - player.w / 2;
         if (player.x < 0) player.x = 0;
         if (player.x > internalWidth - player.w) player.x = internalWidth - player.w;
     }
 
-    window.addEventListener('mousemove', (e) => { if(gameRunning) updatePlayerPos(getMousePos(e)); });
-    window.addEventListener('touchmove', (e) => { if(gameRunning) updatePlayerPos(getMousePos(e)); e.preventDefault(); }, {passive: false});
+    // Ouvintes de Eventos Unificados (Rato + Toque de Ecrã)
+    window.addEventListener('mousemove', (e) => { if(gameRunning) movePlayer(getTouchX(e)); });
+    window.addEventListener('touchmove', (e) => { 
+        if(gameRunning) {
+            movePlayer(getTouchX(e));
+        }
+    }, {passive: false});
 
-    function fireLaser() {
-        if (!gameRunning) return;
-        lasers.push({ x: player.x + player.w / 2 - 2, y: player.y, w: 4, h: 18, speed: 12 });
-        playSound('laser');
-    }
+    window.addEventListener('touchstart', (e) => {
+        if(gameRunning) movePlayer(getTouchX(e));
+    }, {passive: false});
 
-    window.addEventListener('click', fireLaser);
-    window.addEventListener('touchstart', (e) => { fireLaser(); e.preventDefault(); }, {passive: false});
+    // Vinculação obrigatória ao clique físico do botão de entrada do utilizador
+    document.getElementById("btn-start") || document.getElementById("btn-init").addEventListener('click', () => {
+        initAudio();
+        startGame();
+    });
 
     function startGame() {
         document.getElementById("start-screen").style.display = "none";
@@ -309,7 +333,8 @@
         score = 0;
         hp = 100;
         currentWave = 0;
-        audioCtx.resume();
+        lasers = [];
+        enemies = [];
         spawnWave();
         gameLoop();
     }
@@ -328,10 +353,10 @@
         const totalEnemies = questao.a.length;
         const sectionWidth = internalWidth / totalEnemies;
 
-        // MULTIPLICADOR DE VELOCIDADE: Aumenta consideravelmente a partir do Node 11 (fase index >= 10)
-        let velocidadeBase = 0.9 + (currentWave * 0.12);
+        // Gatilho de velocidade progressiva (Dobrada após o Node 10)
+        let velocidadeBase = 0.8 + (currentWave * 0.11);
         if (currentWave >= 10) {
-            velocidadeBase *= 1.65; // Aceleração extra Matrix
+            velocidadeBase *= 1.6;
         }
 
         for (let i = 0; i < totalEnemies; i++) {
@@ -348,13 +373,13 @@
     }
 
     function createExplosion(x, y, color) {
-        for (let i = 0; i < 12; i++) {
+        for (let i = 0; i < 10; i++) {
             particles.push({
                 x: x, y: y,
-                vx: (Math.random() - 0.5) * 6,
-                vy: (Math.random() - 0.5) * 6,
+                vx: (Math.random() - 0.5) * 5,
+                vy: (Math.random() - 0.5) * 5,
                 radius: Math.random() * 2 + 1,
-                alpha: 1, decay: 0.03, color: color
+                alpha: 1, decay: 0.04, color: color
             });
         }
     }
@@ -370,13 +395,13 @@
         const body = document.getElementById("end-body");
 
         if (victory) {
-            title.innerText = "NÚCLEO RESTAURADO";
+            title.innerText = "[SUCESSO]";
             title.style.color = "var(--matrix-green)";
-            body.innerHTML = `Todas as 20 partições foram consolidadas de forma impecável.<br><br><strong>CRÉDITOS: ${score} UNITS</strong>`;
+            body.innerHTML = `Todas as partições móveis foram reparadas com êxito.<br><br><strong>CRÉDITOS: ${score} UNITS</strong>`;
         } else {
-            title.innerText = "TERMINAL DESCONECTADO";
+            title.innerText = "[FALHA_CRÍTICA]";
             title.style.color = "#ff3333";
-            body.innerHTML = `O fluxo de dados sobrecarregou a memória do sistema de defesa.`;
+            body.innerHTML = `O fluxo de dados móvel corrompeu a integridade do terminal decodificador.`;
         }
     }
 
@@ -390,6 +415,15 @@
     function update() {
         if (screenShake > 0) screenShake -= 1;
 
+        // Disparo Automático Otimizado para Mobile (A cada 220 milissegundos)
+        let currentTime = Date.now();
+        if (currentTime - lastShotTime > 220) {
+            lasers.push({ x: player.x + player.w / 2 - 2, y: player.y, w: 4, h: 16, speed: 13 });
+            playSound('laser');
+            lastShotTime = currentTime;
+        }
+
+        // Chuva de Caracteres do Fundo
         matrixRain.forEach(drop => {
             drop.y += drop.speed;
             if (drop.y > internalHeight) {
@@ -399,6 +433,7 @@
             if(Math.random() > 0.98) drop.char = String.fromCharCode(33 + Math.floor(Math.random() * 93));
         });
 
+        // Movimento dos Lasers
         for (let i = lasers.length - 1; i >= 0; i--) {
             lasers[i].y -= lasers[i].speed;
             if (lasers[i].y < 0) lasers.splice(i, 1);
@@ -407,14 +442,15 @@
         let advanceWave = false;
         let correctHit = false;
 
+        // Verificação Lógica dos Blocos de Resposta
         for (let i = enemies.length - 1; i >= 0; i--) {
             let enemy = enemies[i];
             enemy.y += enemy.speed;
 
             if (enemy.y > internalHeight) {
                 if (enemy.isCorrect) {
-                    hp -= 4; 
-                    screenShake = 8;
+                    hp -= 4; // Perda suave de 4%
+                    screenShake = 6;
                     playSound('hurt');
                     createFloatingText(internalWidth / 2, 450, "MISSED_PATCH: -4%", "#ff3333");
                 }
@@ -431,12 +467,12 @@
                     if (enemy.isCorrect) {
                         score += 100;
                         createExplosion(enemy.x + enemy.w/2, enemy.y + enemy.h/2, "var(--matrix-green)");
-                        createFloatingText(enemy.x + enemy.w/2, enemy.y, "[OK] COMPILED", "var(--matrix-green)");
+                        createFloatingText(enemy.x + enemy.w/2, enemy.y, "[OK] FIXED", "var(--matrix-green)");
                         playSound('explosion');
                         correctHit = true;
                     } else {
-                        hp -= 2; 
-                        screenShake = 4;
+                        hp -= 2; // Perda suave de 2%
+                        screenShake = 3;
                         createExplosion(enemy.x + enemy.w/2, enemy.y + enemy.h/2, "#ff3333");
                         createFloatingText(enemy.x + enemy.w/2, enemy.y, "[ERR] BAD_SNTX", "#ff3333");
                         playSound('hurt');
@@ -460,6 +496,7 @@
             return;
         }
 
+        // Atualizar Partículas
         for (let i = particles.length - 1; i >= 0; i--) {
             particles[i].x += particles[i].vx;
             particles[i].y += particles[i].vy;
@@ -467,9 +504,10 @@
             if (particles[i].alpha <= 0) particles.splice(i, 1);
         }
 
+        // Atualizar Textos Flutuantes
         for (let i = floatingTexts.length - 1; i >= 0; i--) {
-            floatingTexts[i].y -= 0.8;
-            floatingTexts[i].alpha -= 0.02;
+            floatingTexts[i].y -= 0.6;
+            floatingTexts[i].alpha -= 0.025;
             if (floatingTexts[i].alpha <= 0) floatingTexts.splice(i, 1);
         }
     }
@@ -482,17 +520,20 @@
             ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
         }
 
+        // Desenhar Código de Fundo
         ctx.font = "10px monospace";
-        ctx.fillStyle = "rgba(0, 255, 65, 0.35)";
+        ctx.fillStyle = "rgba(0, 255, 65, 0.3)";
         matrixRain.forEach(drop => {
             ctx.fillText(drop.char, drop.x, drop.y);
         });
 
+        // Desenhar Lasers
         ctx.fillStyle = "var(--cyber-blue)";
         lasers.forEach(laser => {
             ctx.fillRect(laser.x, laser.y, laser.w, laser.h);
         });
 
+        // Desenhar Blocos de Resposta
         enemies.forEach(enemy => {
             ctx.fillStyle = "rgba(2, 8, 3, 0.95)";
             ctx.strokeStyle = "var(--matrix-green)";
@@ -500,7 +541,7 @@
             ctx.fillRect(enemy.x, enemy.y, enemy.w, enemy.h);
             ctx.strokeRect(enemy.x, enemy.y, enemy.w, enemy.h);
 
-            ctx.strokeStyle = "rgba(0, 255, 65, 0.2)";
+            ctx.strokeStyle = "rgba(0, 255, 65, 0.15)";
             ctx.strokeRect(enemy.x + 3, enemy.y + 3, enemy.w - 6, enemy.h - 6);
 
             ctx.fillStyle = "#ffffff";
@@ -513,6 +554,7 @@
             ctx.fillText(txt, enemy.x + enemy.w / 2, enemy.y + enemy.h / 2);
         });
 
+        // Desenhar Nave
         ctx.fillStyle = "var(--cyber-blue)";
         ctx.beginPath();
         ctx.moveTo(player.x + player.w / 2, player.y);
@@ -521,9 +563,7 @@
         ctx.closePath();
         ctx.fill();
 
-        ctx.fillStyle = "rgba(0, 240, 255, 0.4)";
-        ctx.fillRect(player.x + player.w / 2 - 3, player.y + player.h, 6, 6);
-
+        // Partículas de Impacto
         particles.forEach(p => {
             ctx.globalAlpha = p.alpha;
             ctx.fillStyle = p.color;
@@ -531,6 +571,7 @@
         });
         ctx.globalAlpha = 1.0;
 
+        // Textos Dinâmicos Flutuantes
         floatingTexts.forEach(ft => {
             ctx.globalAlpha = ft.alpha;
             ctx.fillStyle = ft.color;
