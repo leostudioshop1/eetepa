@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>🚀 Quiz Shooter</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -13,76 +13,78 @@
             overflow: hidden;
             touch-action: none;
             height: 100vh;
-            display: flex;
-            flex-direction: column;
+            width: 100vw;
         }
         #game-container {
             position: relative;
             width: 100%;
-            flex: 1;
+            height: 100%;
         }
         canvas {
             display: block;
-            margin: 0 auto;
             background: #001122;
             touch-action: none;
         }
         #ui {
             position: absolute;
-            top: 0;
+            top: 12px;
             left: 0;
             width: 100%;
-            padding: 10px;
+            padding: 0 15px;
             display: flex;
             justify-content: space-between;
             pointer-events: none;
             z-index: 10;
         }
         .stat {
-            background: rgba(0, 20, 40, 0.8);
-            padding: 8px 15px;
+            background: rgba(0, 20, 40, 0.85);
+            padding: 8px 16px;
             border-radius: 20px;
             font-size: 18px;
             font-weight: bold;
+            backdrop-filter: blur(6px);
         }
         #question {
             position: absolute;
-            top: 60px;
+            top: 70px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 30, 60, 0.95);
-            padding: 12px 25px;
+            padding: 14px 25px;
             border-radius: 15px;
-            font-size: 20px;
+            font-size: 19px;
             text-align: center;
-            max-width: 90%;
+            max-width: 92%;
             border: 2px solid #0ff;
             pointer-events: none;
             z-index: 20;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
         }
         #controls {
             position: absolute;
-            bottom: 20px;
+            bottom: 25px;
             left: 0;
             width: 100%;
             display: flex;
             justify-content: space-between;
             padding: 0 20px;
             z-index: 30;
+            gap: 15px;
         }
         button {
-            background: rgba(0, 255, 255, 0.2);
+            background: rgba(0, 255, 255, 0.15);
             color: #0ff;
             border: 2px solid #0ff;
-            padding: 15px 25px;
-            font-size: 18px;
+            padding: 16px 28px;
+            font-size: 17px;
             border-radius: 50px;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(8px);
+            flex: 1;
         }
         #start-screen, #game-over {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 10, 30, 0.95);
+            background: rgba(0, 10, 30, 0.97);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -90,24 +92,28 @@
             z-index: 100;
             color: #0ff;
         }
-        h1 { font-size: 42px; margin-bottom: 20px; text-shadow: 0 0 20px #0ff; }
+        h1 { 
+            font-size: 48px; 
+            margin-bottom: 20px; 
+            text-shadow: 0 0 25px #0ff;
+        }
         button.big {
-            font-size: 24px;
-            padding: 15px 40px;
-            margin-top: 20px;
+            font-size: 26px;
+            padding: 18px 50px;
+            margin-top: 30px;
         }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <canvas id="canvas" width="800" height="600"></canvas>
+        <canvas id="canvas"></canvas>
         
         <div id="ui">
             <div class="stat">Pontos: <span id="score">0</span></div>
             <div class="stat">Vidas: <span id="lives">3</span></div>
         </div>
         
-        <div id="question">Toque em INICIAR para começar</div>
+        <div id="question">Toque em INICIAR</div>
         
         <div id="controls">
             <button id="left-btn">← ESQUERDA</button>
@@ -119,15 +125,14 @@
     <!-- Start Screen -->
     <div id="start-screen">
         <h1>🚀 QUIZ SHOOTER</h1>
-        <p style="font-size: 22px; margin-bottom: 30px;">Destrua as respostas corretas!</p>
+        <p style="font-size: 24px; margin-bottom: 40px; text-align:center;">Destrua as respostas corretas!</p>
         <button class="big" onclick="startGame()">INICIAR MISSÃO</button>
-        <p style="margin-top: 40px; font-size: 16px; opacity: 0.8;">Funciona perfeitamente no iPhone e Android</p>
     </div>
 
     <!-- Game Over -->
     <div id="game-over" style="display: none;">
         <h1>FIM DE MISSÃO</h1>
-        <p style="font-size: 28px; margin: 20px 0;">Pontuação Final: <span id="final-score">0</span></p>
+        <p style="font-size: 32px; margin: 25px 0;">Pontuação: <span id="final-score">0</span></p>
         <button class="big" onclick="restartGame()">JOGAR NOVAMENTE</button>
     </div>
 
@@ -135,18 +140,15 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Ajustar tamanho do canvas para mobile
         function resizeCanvas() {
-            const maxWidth = Math.min(window.innerWidth, 800);
-            const maxHeight = Math.min(window.innerHeight - 120, 600);
-            canvas.width = maxWidth;
-            canvas.height = maxHeight;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
         // Variáveis do jogo
-        let ship = { x: canvas.width/2 - 25, y: canvas.height - 80, width: 50, height: 40, speed: 8 };
+        let ship = { x: canvas.width/2 - 30, y: canvas.height - 100, width: 60, height: 50, speed: 3.5 }; // reduzido
         let bullets = [];
         let answers = [];
         let score = 0;
@@ -157,60 +159,37 @@
         let touchStartX = 0;
         let isDragging = false;
 
-        // Perguntas (fácil de adicionar mais)
         const questions = [
-            {
-                question: "Qual é a capital do Brasil?",
-                answers: [
-                    { text: "São Paulo", correct: false },
-                    { text: "Brasília", correct: true },
-                    { text: "Rio de Janeiro", correct: false },
-                    { text: "Salvador", correct: false }
-                ]
-            },
-            {
-                question: "Quanto é 8 × 7?",
-                answers: [
-                    { text: "54", correct: false },
-                    { text: "49", correct: false },
-                    { text: "56", correct: true },
-                    { text: "63", correct: false }
-                ]
-            },
-            {
-                question: "Qual planeta é conhecido como o Vermelho?",
-                answers: [
-                    { text: "Vênus", correct: false },
-                    { text: "Júpiter", correct: false },
-                    { text: "Marte", correct: true },
-                    { text: "Saturno", correct: false }
-                ]
-            },
-            {
-                question: "Quem pintou a Mona Lisa?",
-                answers: [
-                    { text: "Van Gogh", correct: false },
-                    { text: "Picasso", correct: false },
-                    { text: "Leonardo da Vinci", correct: true },
-                    { text: "Michelangelo", correct: false }
-                ]
-            }
+            { question: "Qual é a capital do Brasil?", answers: [
+                { text: "São Paulo", correct: false }, { text: "Brasília", correct: true },
+                { text: "Rio de Janeiro", correct: false }, { text: "Salvador", correct: false }
+            ]},
+            { question: "Quanto é 8 × 7?", answers: [
+                { text: "54", correct: false }, { text: "49", correct: false },
+                { text: "56", correct: true }, { text: "63", correct: false }
+            ]},
+            { question: "Qual planeta é o Vermelho?", answers: [
+                { text: "Vênus", correct: false }, { text: "Júpiter", correct: false },
+                { text: "Marte", correct: true }, { text: "Saturno", correct: false }
+            ]},
+            { question: "Quem pintou a Mona Lisa?", answers: [
+                { text: "Van Gogh", correct: false }, { text: "Picasso", correct: false },
+                { text: "Leonardo da Vinci", correct: true }, { text: "Michelangelo", correct: false }
+            ]}
         ];
 
         class Bullet {
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.width = 6;
-                this.height = 20;
-                this.speed = 12;
+                this.width = 8;
+                this.height = 22;
+                this.speed = 4.5; // reduzido em ~80%
             }
-            update() {
-                this.y -= this.speed;
-            }
+            update() { this.y -= this.speed; }
             draw() {
                 ctx.fillStyle = '#0ff';
-                ctx.shadowBlur = 15;
+                ctx.shadowBlur = 20;
                 ctx.shadowColor = '#0ff';
                 ctx.fillRect(this.x, this.y, this.width, this.height);
                 ctx.shadowBlur = 0;
@@ -220,28 +199,27 @@
         class Answer {
             constructor(x, text, correct) {
                 this.x = x;
-                this.y = 80;
-                this.width = 140;
-                this.height = 50;
+                this.y = 100;
+                this.width = 160;
+                this.height = 58;
                 this.text = text;
                 this.correct = correct;
-                this.speed = 2.2 + Math.random() * 1.2;
+                this.speed = 0.9 + Math.random() * 0.6; // velocidade reduzida
             }
-            update() {
-                this.y += this.speed;
-            }
+            update() { this.y += this.speed; }
             draw() {
                 ctx.fillStyle = this.correct ? '#0f0' : '#f44';
                 ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 3;
-                ctx.shadowBlur = 10;
+                ctx.lineWidth = 4;
+                ctx.shadowBlur = 15;
                 ctx.shadowColor = this.correct ? '#0f0' : '#f44';
+                
                 ctx.fillRect(this.x - this.width/2, this.y, this.width, this.height);
                 ctx.strokeRect(this.x - this.width/2, this.y, this.width, this.height);
                 ctx.shadowBlur = 0;
 
                 ctx.fillStyle = '#000';
-                ctx.font = 'bold 18px Arial';
+                ctx.font = 'bold 19px Arial';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(this.text, this.x, this.y + this.height/2);
@@ -250,21 +228,17 @@
 
         function drawShip() {
             ctx.save();
-            ctx.translate(ship.x + 25, ship.y + 20);
-            
-            // Corpo da nave
+            ctx.translate(ship.x + 30, ship.y + 25);
             ctx.fillStyle = '#0ff';
             ctx.beginPath();
-            ctx.moveTo(0, -25);
-            ctx.lineTo(-20, 20);
-            ctx.lineTo(20, 20);
+            ctx.moveTo(0, -30);
+            ctx.lineTo(-25, 25);
+            ctx.lineTo(25, 25);
             ctx.closePath();
             ctx.fill();
             
-            // Detalhes
             ctx.fillStyle = '#f80';
-            ctx.fillRect(-8, 5, 16, 12);
-            
+            ctx.fillRect(-10, 8, 20, 14);
             ctx.restore();
         }
 
@@ -273,7 +247,6 @@
             const q = questions[currentQuestionIndex];
             const positions = [canvas.width * 0.2, canvas.width * 0.45, canvas.width * 0.7, canvas.width * 0.9];
             
-            // Embaralhar respostas
             const shuffled = [...q.answers].sort(() => Math.random() - 0.5);
             
             shuffled.forEach((ans, i) => {
@@ -287,40 +260,33 @@
         function update() {
             if (!gameRunning) return;
 
-            // Movimento da nave (teclado)
             if (keys['ArrowLeft'] || keys['a'] || keys['A']) ship.x -= ship.speed;
             if (keys['ArrowRight'] || keys['d'] || keys['D']) ship.x += ship.speed;
 
-            // Limites
-            ship.x = Math.max(20, Math.min(canvas.width - 70, ship.x));
+            ship.x = Math.max(30, Math.min(canvas.width - 90, ship.x));
 
-            // Atualizar tiros
+            // Bullets
             for (let i = bullets.length - 1; i >= 0; i--) {
                 bullets[i].update();
-                if (bullets[i].y < 0) bullets.splice(i, 1);
+                if (bullets[i].y < -30) bullets.splice(i, 1);
             }
 
-            // Atualizar respostas
+            // Answers
             for (let i = answers.length - 1; i >= 0; i--) {
                 answers[i].update();
                 
-                // Colisão com chão
-                if (answers[i].y + answers[i].height > canvas.height - 60) {
-                    if (answers[i].correct) {
-                        lives--;
-                    }
+                if (answers[i].y + answers[i].height > canvas.height - 80) {
+                    if (answers[i].correct) lives--;
                     answers.splice(i, 1);
                     continue;
                 }
 
-                // Colisão com tiros
+                // Colisão
                 for (let j = bullets.length - 1; j >= 0; j--) {
                     const b = bullets[j];
                     const a = answers[i];
-                    if (b.x > a.x - a.width/2 && 
-                        b.x < a.x + a.width/2 &&
-                        b.y > a.y && 
-                        b.y < a.y + a.height) {
+                    if (b.x > a.x - a.width/2 && b.x < a.x + a.width/2 &&
+                        b.y > a.y && b.y < a.y + a.height) {
                         
                         bullets.splice(j, 1);
                         
@@ -338,33 +304,24 @@
                 }
             }
 
-            // Verificar se todas as respostas foram destruídas
-            if (answers.length === 0) {
-                nextQuestion();
-            }
-
-            // Game Over
-            if (lives <= 0) {
-                gameOver();
-            }
+            if (answers.length === 0) nextQuestion();
+            if (lives <= 0) gameOver();
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Estrelas de fundo
+            // Fundo estrelado
             ctx.fillStyle = '#fff';
-            for (let i = 0; i < 80; i++) {
-                const x = (i * 37) % canvas.width;
-                const y = (i * 23) % (canvas.height - 100);
-                ctx.globalAlpha = 0.6 + Math.sin(Date.now()/300 + i) * 0.4;
-                ctx.fillRect(x, y, 2, 2);
+            for (let i = 0; i < 100; i++) {
+                const x = (i * 43) % canvas.width;
+                const y = (i * 29 + Date.now()/30) % canvas.height;
+                ctx.globalAlpha = 0.7;
+                ctx.fillRect(x, y, 2.5, 2.5);
             }
             ctx.globalAlpha = 1;
 
-            // Desenhar elementos
             drawShip();
-            
             bullets.forEach(b => b.draw());
             answers.forEach(a => a.draw());
         }
@@ -383,7 +340,7 @@
 
         function shoot() {
             if (!gameRunning) return;
-            bullets.push(new Bullet(ship.x + 22, ship.y - 10));
+            bullets.push(new Bullet(ship.x + 26, ship.y - 10));
         }
 
         function startGame() {
@@ -398,7 +355,6 @@
             document.getElementById('score').textContent = '0';
             document.getElementById('lives').textContent = '3';
             document.getElementById('question').textContent = questions[0].question;
-            
             spawnAnswers();
         }
 
@@ -415,40 +371,20 @@
 
         // Controles
         function setupControls() {
-            // Teclado
-            window.addEventListener('keydown', e => {
-                keys[e.key] = true;
-                if (e.key === ' ' || e.key === 'Enter') shoot();
-            });
+            window.addEventListener('keydown', e => { keys[e.key] = true; if (e.key === ' ' || e.key === 'Enter') shoot(); });
             window.addEventListener('keyup', e => keys[e.key] = false);
 
-            // Botões na tela
-            document.getElementById('left-btn').addEventListener('touchstart', e => {
-                e.preventDefault();
-                keys['ArrowLeft'] = true;
-            });
-            document.getElementById('left-btn').addEventListener('touchend', e => {
-                e.preventDefault();
-                keys['ArrowLeft'] = false;
-            });
+            document.getElementById('left-btn').addEventListener('touchstart', e => { e.preventDefault(); keys['ArrowLeft'] = true; });
+            document.getElementById('left-btn').addEventListener('touchend', e => { e.preventDefault(); keys['ArrowLeft'] = false; });
 
-            document.getElementById('right-btn').addEventListener('touchstart', e => {
-                e.preventDefault();
-                keys['ArrowRight'] = true;
-            });
-            document.getElementById('right-btn').addEventListener('touchend', e => {
-                e.preventDefault();
-                keys['ArrowRight'] = false;
-            });
+            document.getElementById('right-btn').addEventListener('touchstart', e => { e.preventDefault(); keys['ArrowRight'] = true; });
+            document.getElementById('right-btn').addEventListener('touchend', e => { e.preventDefault(); keys['ArrowRight'] = false; });
 
             const shootBtn = document.getElementById('shoot-btn');
-            shootBtn.addEventListener('touchstart', e => {
-                e.preventDefault();
-                shoot();
-            });
-            shootBtn.addEventListener('click', shoot); // também para desktop
+            shootBtn.addEventListener('touchstart', e => { e.preventDefault(); shoot(); });
+            shootBtn.addEventListener('click', shoot);
 
-            // Swipe na tela para mover nave (melhor experiência mobile)
+            // Swipe para mover
             canvas.addEventListener('touchstart', e => {
                 if (!gameRunning) return;
                 touchStartX = e.touches[0].clientX;
@@ -458,26 +394,16 @@
             canvas.addEventListener('touchmove', e => {
                 if (!isDragging || !gameRunning) return;
                 e.preventDefault();
-                const currentX = e.touches[0].clientX;
-                const delta = currentX - touchStartX;
-                
-                ship.x += delta * 0.8;
-                touchStartX = currentX;
-                
-                ship.x = Math.max(20, Math.min(canvas.width - 70, ship.x));
+                const delta = e.touches[0].clientX - touchStartX;
+                ship.x += delta * 0.9;
+                touchStartX = e.touches[0].clientX;
+                ship.x = Math.max(30, Math.min(canvas.width - 90, ship.x));
             });
 
-            canvas.addEventListener('touchend', () => {
-                isDragging = false;
-            });
-
-            // Clique/tap na tela também atira
-            canvas.addEventListener('click', () => {
-                if (gameRunning) shoot();
-            });
+            canvas.addEventListener('touchend', () => isDragging = false);
+            canvas.addEventListener('click', () => { if (gameRunning) shoot(); });
         }
 
-        // Iniciar
         setupControls();
         gameLoop();
     </script>
