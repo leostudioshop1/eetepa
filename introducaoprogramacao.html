@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>🚀 REVISÃO JS - EETEPA 26</title>
+    <title>==REVISÃO JS - EETEPA 26 - Por = Léo Cruz==</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
@@ -118,7 +118,7 @@
             box-shadow: 0 0 30px rgba(0, 240, 255, 0.6);
         }
 
-        /* RODAPÉ */
+     
         .footer {
             position: absolute;
             bottom: 12px;
@@ -165,7 +165,7 @@
         </div>
 
         <div id="start-screen" class="overlay">
-            <h1>REVISÃO JS-EETEPA-26</h1>
+            <h1>===REVISÃO JS-EETEPA-26=== Por = Léo Cruz</h1>
             <p>Arraste para mover • Toque duas vezes para atirar</p>
             <button class="big-btn" id="start-btn">INICIAR REVISÃO</button>
             <div class="footer">EETEPA-XINGUARA • desenvolvido por Léo Cruz</div>
@@ -187,7 +187,7 @@
     </div>
 
     <script>
-        // ==================== SOUND ====================
+      
         class SoundSynth {
             constructor() { this.ctx = null; this.muted = false; }
             init() {
@@ -221,25 +221,26 @@
 
         const audio = new SoundSynth();
 
-        // ==================== QUESTIONS ====================
+       
         const originalQuestions = [
             { question: "Como declarar variável em JavaScript?", category: "JavaScript", answers: [{ text: "int", correct: false }, { text: "define", correct: false }, { text: "let", correct: true }, { text: "inteiro", correct: false }] },
             { question: "Quais são os dígitos binários?", category: "Lógica", answers: [{ text: "2, 3, 4 e 5", correct: false }, { text: "Nenhuma das alternativas", correct: false }, { text: "Letras do alfabeto", correct: false }, { text: "Os valores 0 e 1", correct: true }] },
             { question: "O JavaScript foi criado para rodar em:", category: "JavaScript", answers: [{ text: "Bancos de dados", correct: false }, { text: "Sistemas operacionais", correct: false }, { text: "Navegadores web", correct: true }, { text: "Roteadores", correct: false }] },
             { question: "Qual a função de uma variável?", category: "Conceitos", answers: [{ text: "Armazenar dados alteráveis", correct: true }, { text: "Exibir valor fixo", correct: false }, { text: "Mostrar imagens", correct: false }, { text: "Conectar à internet", correct: false }] },
             { question: "No Portugol, como se declara a variável 'idade'?", category: "Portugol", answers: [{ text: "inteiro idade", correct: true }, { text: "var idade : float", correct: false }, { text: "idade = real", correct: false }, { text: "declare idade inteiro", correct: false }] },
-            { question: "Uma estrutura de decisão serve para:", category: "Lógica", answers: [{ text: "Repetir comandos", correct: false }, { text: "Decidir sob condições", correct: true }, { text: "Armazenar arquivos", correct: false }, { text: "Instalar programas", correct: false }] },
-            { question: "O que significa 'idade < 19' no Portugol?", category: "Portugol", answers: [{ text: "Verifica se idade é menor que 19", correct: true }, { text: "Atribui 15 à idade", correct: false }, { text: "Mostra 15 na tela", correct: false }, { text: "Apaga o valor de idade", correct: false }] },
+            { question: "Uma tomada de decisão serve para:", category: "Lógica", answers: [{ text: "Repetir comandos", correct: false }, { text: "Decidir sob condições", correct: true }, { text: "Armazenar arquivos", correct: false }, { text: "Instalar programas", correct: false }] },
+            { question: "O que significa 'idade < 22' no Portugol?", category: "Portugol", answers: [{ text: "Verifica se idade é menor que 22", correct: true }, { text: "Atribui 15 à idade", correct: false }, { text: "Mostra 15 na tela", correct: false }, { text: "Apaga o valor de idade", correct: false }] },
             { question: "Qual operador representa igualdade no JavaScript?", category: "JavaScript", answers: [{ text: "=", correct: false }, { text: ":=", correct: false }, { text: "<>", correct: false }, { text: "==", correct: true }] },
-            { question: "O que é e para que serve a variável booleana?", category: "Conceitos", answers: [{ text: "Guarda estados True ou False", correct: true }, { text: "Armazena textos longos", correct: false }, { text: "Guarda números decimais", correct: false }, { text: "Cria repetições no código", correct: false }] },
-            { question: "O que define a instrução 'const' no JavaScript?", category: "JavaScript", answers: [{ text: "Cria variável de valor fixo", correct: true }, { text: "Declara loops infinitos", correct: false }, { text: "Modifica tipos dinâmicos", correct: false }, { text: "Limpa a memória do app", correct: false }] },
+            { question: "O que é variável booleana?", category: "Conceitos", answers: [{ text: "Guarda estados True ou False", correct: true }, { text: "Armazena textos longos", correct: false }, { text: "Guarda números decimais", correct: false }, { text: "Cria repetições no código", correct: false }] },
+            { question: "O que 'const' no JavaScript?", category: "JavaScript", answers: [{ text: "Cria variável de valor fixo", correct: true }, { text: "Declara loops infinitos", correct: false }, { text: "Modifica tipos dinâmicos", correct: false }, { text: "Limpa a memória do app", correct: false }] },
             { question: "Qual comando exibe uma mensagem no console do JavaScript?", category: "JavaScript", answers: [{ text: "print()", correct: false }, { text: "console.log()", correct: true }, { text: "escreva()", correct: false }, { text: "alert.show()", correct: false }] },
             { question: "Qual das opções representa um tipo de dado Textual (String)?", category: "Conceitos", answers: [{ text: "'EETEPA 2026'", correct: true }, { text: "true", correct: false }, { text: "45.8", correct: false }, { text: "null", correct: false }] },
-            { question: "No Portugol, qual comando é usado para ler a entrada do teclado?", category: "Portugol", answers: [{ text: "leia()", correct: true }, { text: "input()", correct: false }, { text: "receber()", correct: false }, { text: "escreva()", correct: false }] },
+            { question: "No Portugol, qual comando é usado para ler dados?", category: "Portugol", answers: [{ text: "leia()", correct: true }, { text: "input()", correct: false }, { text: "receber()", correct: false }, { text: "escreva()", correct: false }] },
             { question: "Qual operador lógico representa o conectivo 'E' (AND) no JavaScript?", category: "JavaScript", answers: [{ text: "||", correct: false }, { text: "and", correct: false }, { text: "&&", correct: true }, { text: "!", correct: false }] },
             { question: "O que faz o laço de repetição 'for' na programação?", category: "Lógica", answers: [{ text: "Executa um bloco de código repetidas vezes", correct: true }, { text: "Para o programa imediatamente", correct: false }, { text: "Testa apenas uma condição falsa", correct: false }, { text: "Deleta variáveis duplicadas", correct: false }] },
             { question: "Qual o resultado de 10 % 3 (operador de resto) no JavaScript?", category: "JavaScript", answers: [{ text: "3", correct: false }, { text: "1", correct: true }, { text: "0", correct: false }, { text: "3.33", correct: false }] },
             { question: "Como comentar uma única linha de código no JavaScript?", category: "JavaScript", answers: [{ text: "# comentário", correct: false }, { text: "", correct: false }, { text: "// comentário", correct: true }, { text: "/* comentário */", correct: false }] },
+            { question: "Voce vai tirar 10 em programação?", category: "JavaScript", answers: [{ text: "# talvez", correct: false }, { text: "", correct: false }, { text: "Certamente", correct: true }, { text: "/* comentário */", correct: false }] },
             { question: "O que acontece se convertermos a String '30' para Número e somarmos com 5?", category: "Lógica", answers: [{ text: "O resultado será 35", correct: true }, { text: "O resultado será '305'", correct: false }, { text: "Gera um erro de sintaxe", correct: false }, { text: "O resultado será 30", correct: false }] },
             { question: "Qual estrutura do Portugol equivale ao 'if / else' do JavaScript?", category: "Portugol", answers: [{ text: "se / senao", correct: true }, { text: "caso / contrario", correct: false }, { text: "enquanto / faca", correct: false }, { text: "para / ate", correct: false }] },
             { question: "Qual operador lógico inverte o valor booleano (NÃO / NOT) no JS?", category: "JavaScript", answers: [{ text: "!=", correct: false }, { text: "not", correct: false }, { text: "!", correct: true }, { text: "~", correct: false }] }
