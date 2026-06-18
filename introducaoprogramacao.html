@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>🚀 REVISÃO JS - EETEPA 26 (MOBILE)</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>🚀 REVISÃO JS - EETEPA 26</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
@@ -24,7 +26,7 @@
             box-sizing: border-box;
             user-select: none;
             -webkit-user-select: none;
-            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -53,14 +55,15 @@
             width: 100%;
             height: 100%;
             z-index: 1;
+            touch-action: none;
         }
 
         #hud {
             position: absolute;
-            top: env(safe-area-inset-top, 10px);
+            top: 12px;
             left: 0;
             width: 100%;
-            padding: 0 12px;
+            padding: 0 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -69,191 +72,222 @@
         }
 
         .hud-panel {
-            background: rgba(3, 0, 30, 0.8);
-            border: 1px solid rgba(0, 240, 255, 0.3);
-            padding: 6px 12px;
-            border-radius: 8px;
+            background: rgba(3, 0, 30, 0.75);
+            border: 1px solid rgba(0, 240, 255, 0.4);
+            padding: 8px 16px;
+            border-radius: 12px;
             font-family: 'Orbitron', sans-serif;
-            font-size: clamp(10px, 3vw, 12px);
-            letter-spacing: 0.5px;
+            font-size: clamp(10px, 2.2vw, 14px);
+            letter-spacing: 1px;
             display: flex;
-            flex-direction: column;
-            gap: 2px;
+            gap: 12px;
             pointer-events: auto;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
         }
 
-        .stat-glow-blue { text-shadow: 0 0 8px var(--neon-blue); color: var(--neon-blue); font-weight: bold; }
-        .stat-glow-pink { text-shadow: 0 0 8px var(--neon-pink); color: var(--neon-pink); letter-spacing: 0.5px; word-break: break-all; }
+        .stat-glow-blue { text-shadow: 0 0 10px var(--neon-blue); color: var(--neon-blue); }
+        .stat-glow-pink { text-shadow: 0 0 10px var(--neon-pink); color: var(--neon-pink); font-size: clamp(9px, 2vw, 12px); letter-spacing: 1px; word-break: break-all; }
         
         .control-icon {
             cursor: pointer;
-            font-size: 16px;
+            transition: all 0.2s ease;
+            font-size: 20px;
+            padding: 4px;
         }
 
         #question-panel {
             position: absolute;
-            top: clamp(65px, 12vh, 85px);
+            top: 72px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(3, 0, 30, 0.85);
-            border: 1.5px solid var(--neon-blue);
-            padding: 8px 16px;
-            border-radius: 12px;
+            background: rgba(3, 0, 30, 0.9);
+            border: 2px solid var(--neon-blue);
+            padding: 10px 20px;
+            border-radius: 16px;
             text-align: center;
-            width: 90%;
-            max-width: 450px;
+            max-width: 92%;
+            width: 560px;
             pointer-events: none;
             z-index: 10;
-            backdrop-filter: blur(5px);
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.3);
         }
 
         #question-category {
-            font-size: 9px;
+            font-size: clamp(10px, 2.2vw, 12px);
             font-family: 'Orbitron', sans-serif;
             color: var(--neon-purple);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 2px;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
         }
 
         #question-text {
-            font-size: clamp(12px, 3.8vw, 14px);
+            font-size: clamp(13px, 3.8vw, 17px);
             font-weight: 500;
-            line-height: 1.2;
+            line-height: 1.35;
             color: #fff;
         }
 
         #mobile-controls {
             position: absolute;
-            bottom: calc(env(safe-area-inset-bottom, 10px) + 10px);
+            bottom: clamp(12px, 4vh, 28px);
             left: 0;
             width: 100%;
-            display: flex;
+            display: none;
             justify-content: space-between;
-            padding: 0 15px;
+            align-items: center;
+            padding: 0 16px;
             z-index: 20;
-            gap: 8px;
+            gap: 12px;
+        }
+
+        @media (pointer: coarse) {
+            #mobile-controls { display: flex; }
         }
 
         .game-btn {
-            background: rgba(0, 240, 255, 0.15);
+            background: rgba(0, 240, 255, 0.12);
             color: var(--neon-blue);
-            border: 2px solid var(--neon-blue);
+            border: 2.5px solid var(--neon-blue);
             font-family: 'Orbitron', sans-serif;
             font-weight: bold;
-            padding: 15px 0;
-            border-radius: 12px;
+            padding: clamp(14px, 4.5vw, 18px) 12px;
+            border-radius: 50px;
             outline: none;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(8px);
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 4px;
-            font-size: 13px;
-            text-shadow: 0 0 5px var(--neon-blue);
-            touch-action: manipulation;
+            gap: 8px;
+            font-size: clamp(13px, 3vw, 16px);
+            text-shadow: 0 0 6px var(--neon-blue);
+            min-height: 58px;
+            box-shadow: 0 4px 15px rgba(0, 240, 255, 0.2);
         }
 
         .game-btn:active {
-            background: rgba(0, 240, 255, 0.4);
-            box-shadow: 0 0 15px var(--neon-blue);
+            background: rgba(0, 240, 255, 0.45);
+            box-shadow: 0 0 25px var(--neon-blue);
+            transform: scale(0.95);
         }
 
         #shoot-btn {
-            background: rgba(255, 0, 127, 0.2);
+            background: rgba(255, 0, 127, 0.12);
             color: var(--neon-pink);
             border-color: var(--neon-pink);
-            text-shadow: 0 0 5px var(--neon-pink);
-            flex: 1.4;
+            text-shadow: 0 0 6px var(--neon-pink);
+            flex: 1.35;
+            box-shadow: 0 4px 15px rgba(255, 0, 127, 0.25);
         }
 
         #shoot-btn:active {
             background: rgba(255, 0, 127, 0.5);
-            box-shadow: 0 0 15px var(--neon-pink);
+            box-shadow: 0 0 25px var(--neon-pink);
         }
 
         .overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(2, 0, 10, 0.95);
+            background: rgba(2, 0, 10, 0.96);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 100;
-            padding: 24px;
+            padding: 20px;
             text-align: center;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
         }
 
         #start-screen {
-            background: linear-gradient(rgba(2, 0, 10, 0.8), rgba(2, 0, 10, 0.95));
+            background: linear-gradient(rgba(2, 0, 10, 0.65), rgba(2, 0, 10, 0.9)), url('eetepa-bg.png') no-repeat center center;
+            background-size: cover;
         }
 
         .overlay h1 {
             font-family: 'Orbitron', sans-serif;
-            font-size: clamp(22px, 7vw, 36px);
+            font-size: clamp(26px, 7vw, 52px);
             font-weight: 900;
-            letter-spacing: 1px;
-            text-shadow: 0 0 15px rgba(0, 240, 255, 0.7);
-            margin-bottom: 15px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(0, 240, 255, 0.9), 0 0 40px rgba(157, 0, 255, 0.7);
+            margin-bottom: 12px;
             color: #fff;
         }
 
         .overlay p {
-            font-size: clamp(12px, 4vw, 15px);
+            font-size: clamp(13px, 3.8vw, 18px);
             color: #d1cffd;
-            max-width: 400px;
-            margin-bottom: 40px;
-            line-height: 1.4;
+            max-width: 580px;
+            margin-bottom: 28px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
 
         .big-btn {
             background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
             color: #fff;
             border: none;
-            padding: 16px 40px;
+            padding: clamp(14px, 3vh, 22px) clamp(32px, 7vw, 52px);
             font-family: 'Orbitron', sans-serif;
-            font-size: 16px;
+            font-size: clamp(17px, 4.5vw, 26px);
             font-weight: bold;
-            border-radius: 30px;
+            border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
-            touch-action: manipulation;
+            box-shadow: 0 0 35px rgba(0, 240, 255, 0.6);
+            transition: all 0.3s ease;
         }
 
         .big-btn:active {
-            transform: scale(0.95);
+            transform: scale(0.96);
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.8);
         }
 
         .high-score-board {
-            margin-top: 20px;
+            margin-top: 24px;
             font-family: 'Orbitron', sans-serif;
             color: var(--neon-green);
-            font-size: 16px;
+            font-size: clamp(16px, 4vw, 20px);
         }
 
         .help-info {
-            margin-top: 30px;
+            margin-top: 32px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            max-width: 620px;
             width: 100%;
-            max-width: 400px;
         }
 
         .help-card {
-            background: rgba(3, 0, 30, 0.7);
-            border: 1px solid rgba(0, 240, 255, 0.2);
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 12px;
+            background: rgba(3, 0, 30, 0.75);
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            padding: 14px;
+            border-radius: 14px;
+            font-size: clamp(12px, 2.8vw, 14px);
+            backdrop-filter: blur(8px);
         }
 
         .help-card i {
-            font-size: 18px;
+            font-size: 24px;
             color: var(--neon-blue);
-            margin-bottom: 4px;
+            margin-bottom: 10px;
+        }
+
+        @media (max-height: 680px) {
+            #question-panel { top: 62px; padding: 8px 16px; }
+            #hud { top: 8px; }
+            .help-info { display: none; }
+            .overlay p { margin-bottom: 18px; }
+        }
+
+        /* Melhoria visual para botões em telas pequenas */
+        @media (max-width: 480px) {
+            .game-btn {
+                padding: 16px 10px;
+                min-height: 64px;
+            }
         }
     </style>
 </head>
@@ -264,15 +298,15 @@
         
         <div id="hud">
             <div class="hud-panel">
-                <div>PTS: <span id="score" class="stat-glow-blue">00000</span></div>
+                <div>SCORE: <span id="score" class="stat-glow-blue">00000</span></div>
                 <div>REC: <span id="highscore" style="color: #bbb;">00000</span></div>
             </div>
             
             <div class="hud-panel">
-                <div style="text-align: right;">
-                    VIdAS: <span id="lives" class="stat-glow-pink">||||||||||||||||||||||||</span>
+                <div>
+                    VIDAS: <span id="lives" class="stat-glow-pink">||||||||||||||||||||||||</span>
                 </div>
-                <div style="display: flex; gap: 16px; justify-content: flex-end; align-items: center; margin-top: 2px; pointer-events: auto;">
+                <div style="display: flex; gap: 12px; align-items: center;">
                     <i class="fa-solid fa-volume-high control-icon" id="audio-toggle"></i>
                     <i class="fa-solid fa-pause control-icon" id="pause-toggle"></i>
                 </div>
@@ -292,29 +326,34 @@
 
         <div id="start-screen" class="overlay">
             <h1>REVISÃO JS-EETEPA-26</h1>
-            <p>Use os botões inferiores para pilotar e atirar na resposta correta. Destrua os asteroides incorretos!</p>
-            <button class="big-btn" onclick="game.startGame()">INICIAR NO SMARTPHONE</button>
+            <p>Prepare sua nave, atire na resposta correta e destrua os asteroides incorretos!</p>
+            <button class="big-btn" onclick="game.startGame()">INICIAR REVISÃO</button>
             
             <div class="help-info">
                 <div class="help-card">
-                    <i class="fa-solid fa-mobile-screen-button"></i>
-                    <h4>Controles de Toque</h4>
-                    <p>Toque nos botões direcionais ou arraste o dedo diretamente na tela para guiar a nave.</p>
+                    <i class="fa-solid fa-keyboard"></i>
+                    <h4>Teclado</h4>
+                    <p>Setas ou A/D para mover. Espaço ou W para atirar.</p>
+                </div>
+                <div class="help-card">
+                    <i class="fa-solid fa-hand-pointer"></i>
+                    <h4>Touch / Mouse</h4>
+                    <p>Arraste para mover a nave.<br>Toque na tela para atirar.</p>
                 </div>
             </div>
         </div>
 
         <div id="game-over" class="overlay" style="display: none; opacity: 0;">
-            <h1 style="text-shadow: 0 0 20px var(--neon-pink);">FIM DE JOGO</h1>
-            <p style="font-size: 18px; margin-bottom: 5px;">Pontuação:</p>
-            <div style="font-size: 42px; font-weight: bold; font-family: 'Orbitron'; color: var(--neon-pink); margin-bottom: 20px;" id="final-score">0</div>
-            <button class="big-btn" onclick="game.restartGame()">REINICIAR</button>
+            <h1 style="text-shadow: 0 0 30px var(--neon-pink);">FIM DE JOGO</h1>
+            <p style="font-size: 24px; margin-bottom: 10px;">Pontuação Final:</p>
+            <div style="font-size: 52px; font-weight: bold; font-family: 'Orbitron'; color: var(--neon-pink); margin-bottom: 20px;" id="final-score">0</div>
+            <button class="big-btn" onclick="game.restartGame()">JOGAR NOVAMENTE</button>
             <div class="high-score-board" id="new-record-msg"></div>
         </div>
 
         <div id="pause-screen" class="overlay" style="display: none;">
             <h1>PAUSADO</h1>
-            <button class="big-btn" onclick="game.togglePause()">RETOMAR</button>
+            <button class="big-btn" onclick="game.togglePause()">RETOMAR JOGO</button>
         </div>
     </div>
 
@@ -324,228 +363,54 @@
                 this.ctx = null;
                 this.muted = false;
             }
-            init() { if (this.ctx) return; this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+            init() { 
+                if (this.ctx) return; 
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)(); 
+            }
             playLaser() {
-                if (this.muted) return; this.init(); if(!this.ctx) return;
+                if (this.muted || !this.ctx) return; this.init();
                 let osc = this.ctx.createOscillator(); let gain = this.ctx.createGain();
-                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.12);
-                gain.gain.setValueAtTime(0.15, this.ctx.currentTime); gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
-                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + 0.12);
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(820, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(90, this.ctx.currentTime + 0.14);
+                gain.gain.setValueAtTime(0.25, this.ctx.currentTime); gain.gain.linearRampToValueAtTime(0.008, this.ctx.currentTime + 0.14);
+                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + 0.14);
             }
             playExplosion(isCorrect) {
-                if (this.muted) return; this.init(); if(!this.ctx) return;
-                let dur = isCorrect ? 0.25 : 0.4; let osc = this.ctx.createOscillator(); let gain = this.ctx.createGain();
-                osc.type = 'triangle'; osc.frequency.setValueAtTime(isCorrect ? 250 : 100, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + dur);
-                gain.gain.setValueAtTime(isCorrect ? 0.15 : 0.3, this.ctx.currentTime); gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + dur);
+                if (this.muted || !this.ctx) return; this.init();
+                let dur = isCorrect ? 0.28 : 0.48; 
+                let osc = this.ctx.createOscillator(); let gain = this.ctx.createGain();
+                osc.type = 'triangle'; 
+                osc.frequency.setValueAtTime(isCorrect ? 420 : 140, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + dur);
+                gain.gain.setValueAtTime(isCorrect ? 0.25 : 0.45, this.ctx.currentTime); 
+                gain.gain.linearRampToValueAtTime(0.008, this.ctx.currentTime + dur);
                 osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + dur);
             }
         }
 
         const audio = new SoundSynth();
 
-        const originalQuestions = [
-            {
-                question: "Como declarar variável em JavaScript?",
-                category: "JavaScript",
-                answers: [
-                    { text: "int", correct: false },
-                    { text: "define", correct: false },
-                    { text: "let", correct: true },
-                    { text: "inteiro", correct: false }
-                ]
-            },
-            {
-                question: "Quais são os dígitos binários?",
-                category: "Lógica",
-                answers: [
-                    { text: "2, 3, 4 e 5", correct: false },
-                    { text: "Nenhuma das alternativas", correct: false },
-                    { text: "Letras", correct: false },
-                    { text: "Os valores 0 e 1", correct: true }
-                ]
-            },
-            {
-                question: "O JavaScript foi criado para rodar em:",
-                category: "JavaScript",
-                answers: [
-                    { text: "Bancos de dados", correct: false },
-                    { text: "Sistemas Op.", correct: false },
-                    { text: "Navegadores web", correct: true },
-                    { text: "Roteadores", correct: false }
-                ]
-            },
-            {
-                question: "Qual a função de uma variável?",
-                category: "Conceitos",
-                answers: [
-                    { text: "Armazenar dados alteráveis", correct: true },
-                    { text: "Exibir valor fixo", correct: false },
-                    { text: "Mostrar imagens", correct: false },
-                    { text: "Conectar à web", correct: false }
-                ]
-            },
-            {
-                question: "No Portugol, como se declara a variável 'idade'?",
-                category: "Portugol",
-                answers: [
-                    { text: "inteiro idade", correct: true },
-                    { text: "var idade : float", correct: false },
-                    { text: "idade = real", correct: false },
-                    { text: "declare idade", correct: false }
-                ]
-            },
-            {
-                question: "Uma estrutura de decisão serve para:",
-                category: "Lógica",
-                answers: [
-                    { text: "Repetir comandos", correct: false },
-                    { text: "Decidir sob condições", correct: true },
-                    { text: "Salvar arquivos", correct: false },
-                    { text: "Instalar apps", correct: false }
-                ]
-            },
-            {
-                question: "O que significa 'idade < 19' no Portugol?",
-                category: "Portugol",
-                answers: [
-                    { text: "Verifica se idade é menor que 19", correct: true },
-                    { text: "Atribui 15 à idade", correct: false },
-                    { text: "Mostra 15 na tela", correct: false },
-                    { text: "Apaga o valor", correct: false }
-                ]
-            },
-            {
-                question: "Qual operador representa igualdade no JavaScript?",
-                category: "JavaScript",
-                answers: [
-                    { text: "=", correct: false },
-                    { text: ":=", correct: false },
-                    { text: "<>", correct: false },
-                    { text: "==", correct: true }
-                ]
-            },
-            {
-                question: "O que é e para que serve a variável booleana?",
-                category: "Conceitos",
-                answers: [
-                    { text: "Guarda estados True ou False", correct: true },
-                    { text: "Armazena textos longos", correct: false },
-                    { text: "Guarda decimais", correct: false },
-                    { text: "Cria repetições", correct: false }
-                ]
-            },
-            {
-                question: "O que define a instrução 'const' no JavaScript?",
-                category: "JavaScript",
-                answers: [
-                    { text: "Cria variável de valor fixo", correct: true },
-                    { text: "Declara loops", correct: false },
-                    { text: "Modifica tipos", correct: false },
-                    { text: "Limpa a memória", correct: false }
-                ]
-            },
-            {
-                question: "Qual comando exibe uma mensagem no console do JavaScript?",
-                category: "JavaScript",
-                answers: [
-                    { text: "print()", correct: false },
-                    { text: "console.log()", correct: true },
-                    { text: "escreva()", correct: false },
-                    { text: "alert.show()", correct: false }
-                ]
-            },
-            {
-                question: "Qual das opções representa um tipo de dado Textual (String)?",
-                category: "Conceitos",
-                answers: [
-                    { text: "'EETEPA 2026'", correct: true },
-                    { text: "true", correct: false },
-                    { text: "45.8", correct: false },
-                    { text: "null", correct: false }
-                ]
-            },
-            {
-                question: "No Portugol, qual comando é usado para ler a entrada do teclado?",
-                category: "Portugol",
-                answers: [
-                    { text: "leia()", correct: true },
-                    { text: "input()", correct: false },
-                    { text: "receber()", correct: false },
-                    { text: "escreva()", correct: false }
-                ]
-            },
-            {
-                question: "Qual operador lógico representa o conectivo 'E' (AND) no JavaScript?",
-                category: "JavaScript",
-                answers: [
-                    { text: "||", correct: false },
-                    { text: "and", correct: false },
-                    { text: "&&", correct: true },
-                    { text: "!", correct: false }
-                ]
-            },
-            {
-                question: "O que faz o laço de repetição 'for' na programação?",
-                category: "Lógica",
-                answers: [
-                    { text: "Executa um bloco várias vezes", correct: true },
-                    { text: "Para o programa", correct: false },
-                    { text: "Testa erro falso", correct: false },
-                    { text: "Deleta variáveis", correct: false }
-                ]
-            },
-            {
-                question: "Qual o resultado de 10 % 3 (operador de resto) no JavaScript?",
-                category: "JavaScript",
-                answers: [
-                    { text: "3", correct: false },
-                    { text: "1", correct: true },
-                    { text: "0", correct: false },
-                    { text: "3.33", correct: false }
-                ]
-            },
-            {
-                question: "Como comentar uma única linha de código no JavaScript?",
-                category: "JavaScript",
-                answers: [
-                    { text: "# comentário", correct: false },
-                    { text: "", correct: false },
-                    { text: "// comentário", correct: true },
-                    { text: "/* comentário */", correct: false }
-                ]
-            },
-            {
-                question: "O que acontece se convertermos a String '30' para Número e somarmos com 5?",
-                category: "Lógica",
-                answers: [
-                    { text: "O resultado será 35", correct: true },
-                    { text: "O resultado será '305'", correct: false },
-                    { text: "Gera um erro", correct: false },
-                    { text: "O resultado será 30", correct: false }
-                ]
-            },
-            {
-                question: "Qual estrutura do Portugol equivale ao 'if / else' do JavaScript?",
-                category: "Portugol",
-                answers: [
-                    { text: "se / senao", correct: true },
-                    { text: "caso / contrario", correct: false },
-                    { text: "enquanto / faca", correct: false },
-                    { text: "para / ate", correct: false }
-                ]
-            },
-            {
-                question: "Qual operador lógico inverte o valor booleano (NÃO / NOT) no JS?",
-                category: "JavaScript",
-                answers: [
-                    { text: "!=", correct: false },
-                    { text: "not", correct: false },
-                    { text: "!", correct: true },
-                    { text: "~", correct: false }
-                ]
-            }
+        const originalQuestions = [ /* Mesmas 20 questões mantidas */ 
+            { question: "Como declarar variável em JavaScript?", category: "JavaScript", answers: [{ text: "int", correct: false }, { text: "define", correct: false }, { text: "let", correct: true }, { text: "inteiro", correct: false }] },
+            { question: "Quais são os dígitos binários?", category: "Lógica", answers: [{ text: "2, 3, 4 e 5", correct: false }, { text: "Nenhuma das alternativas", correct: false }, { text: "Letras do alfabeto", correct: false }, { text: "Os valores 0 e 1", correct: true }] },
+            { question: "O JavaScript foi criado para rodar em:", category: "JavaScript", answers: [{ text: "Bancos de dados", correct: false }, { text: "Sistemas operacionais", correct: false }, { text: "Navegadores web", correct: true }, { text: "Roteadores", correct: false }] },
+            { question: "Qual a função de uma variável?", category: "Conceitos", answers: [{ text: "Armazenar dados alteráveis", correct: true }, { text: "Exibir valor fixo", correct: false }, { text: "Mostrar imagens", correct: false }, { text: "Conectar à internet", correct: false }] },
+            { question: "No Portugol, como se declara a variável 'idade'?", category: "Portugol", answers: [{ text: "inteiro idade", correct: true }, { text: "var idade : float", correct: false }, { text: "idade = real", correct: false }, { text: "declare idade inteiro", correct: false }] },
+            { question: "Uma estrutura de decisão serve para:", category: "Lógica", answers: [{ text: "Repetir comandos", correct: false }, { text: "Decidir sob condições", correct: true }, { text: "Armazenar arquivos", correct: false }, { text: "Instalar programas", correct: false }] },
+            { question: "O que significa 'idade < 19' no Portugol?", category: "Portugol", answers: [{ text: "Verifica se idade é menor que 19", correct: true }, { text: "Atribui 15 à idade", correct: false }, { text: "Mostra 15 na tela", correct: false }, { text: "Apaga o valor de idade", correct: false }] },
+            { question: "Qual operador representa igualdade no JavaScript?", category: "JavaScript", answers: [{ text: "=", correct: false }, { text: ":=", correct: false }, { text: "<>", correct: false }, { text: "==", correct: true }] },
+            { question: "O que é e para que serve a variável booleana?", category: "Conceitos", answers: [{ text: "Guarda estados True ou False", correct: true }, { text: "Armazena textos longos", correct: false }, { text: "Guarda números decimais", correct: false }, { text: "Cria repetições no código", correct: false }] },
+            { question: "O que define a instrução 'const' no JavaScript?", category: "JavaScript", answers: [{ text: "Cria variável de valor fixo", correct: true }, { text: "Declara loops infinitos", correct: false }, { text: "Modifica tipos dinâmicos", correct: false }, { text: "Limpa a memória do app", correct: false }] },
+            { question: "Qual comando exibe uma mensagem no console do JavaScript?", category: "JavaScript", answers: [{ text: "print()", correct: false }, { text: "console.log()", correct: true }, { text: "escreva()", correct: false }, { text: "alert.show()", correct: false }] },
+            { question: "Qual das opções representa um tipo de dado Textual (String)?", category: "Conceitos", answers: [{ text: "'EETEPA 2026'", correct: true }, { text: "true", correct: false }, { text: "45.8", correct: false }, { text: "null", correct: false }] },
+            { question: "No Portugol, qual comando é usado para ler a entrada do teclado?", category: "Portugol", answers: [{ text: "leia()", correct: true }, { text: "input()", correct: false }, { text: "receber()", correct: false }, { text: "escreva()", correct: false }] },
+            { question: "Qual operador lógico representa o conectivo 'E' (AND) no JavaScript?", category: "JavaScript", answers: [{ text: "||", correct: false }, { text: "and", correct: false }, { text: "&&", correct: true }, { text: "!", correct: false }] },
+            { question: "O que faz o laço de repetição 'for' na programação?", category: "Lógica", answers: [{ text: "Executa um bloco de código repetidas vezes", correct: true }, { text: "Para o programa imediatamente", correct: false }, { text: "Testa apenas uma condição falsa", correct: false }, { text: "Deleta variáveis duplicadas", correct: false }] },
+            { question: "Qual o resultado de 10 % 3 (operador de resto) no JavaScript?", category: "JavaScript", answers: [{ text: "3", correct: false }, { text: "1", correct: true }, { text: "0", correct: false }, { text: "3.33", correct: false }] },
+            { question: "Como comentar uma única linha de código no JavaScript?", category: "JavaScript", answers: [{ text: "# comentário", correct: false }, { text: "", correct: false }, { text: "// comentário", correct: true }, { text: "/* comentário */", correct: false }] },
+            { question: "O que acontece se convertermos a String '30' para Número e somarmos com 5?", category: "Lógica", answers: [{ text: "O resultado será 35", correct: true }, { text: "O resultado será '305'", correct: false }, { text: "Gera um erro de sintaxe", correct: false }, { text: "O resultado será 30", correct: false }] },
+            { question: "Qual estrutura do Portugol equivale ao 'if / else' do JavaScript?", category: "Portugol", answers: [{ text: "se / senao", correct: true }, { text: "caso / contrario", correct: false }, { text: "enquanto / faca", correct: false }, { text: "para / ate", correct: false }] },
+            { question: "Qual operador lógico inverte o valor booleano (NÃO / NOT) no JS?", category: "JavaScript", answers: [{ text: "!=", correct: false }, { text: "not", correct: false }, { text: "!", correct: true }, { text: "~", correct: false }] }
         ];
 
         let questions = [];
@@ -553,53 +418,54 @@
         class Particle {
             constructor(x, y, color) {
                 this.x = x; this.y = y; this.color = color;
-                this.vx = (Math.random() - 0.5) * 5; this.vy = (Math.random() - 0.5) * 5;
-                this.alpha = 1; this.decay = 0.04 + Math.random() * 0.02;
+                this.vx = (Math.random() - 0.5) * 6.5; this.vy = (Math.random() - 0.5) * 6.5;
+                this.alpha = 1; this.decay = 0.028 + Math.random() * 0.022;
             }
             update() { this.x += this.vx; this.y += this.vy; this.alpha -= this.decay; }
             draw(ctx) {
                 ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
-                ctx.beginPath(); ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+                ctx.beginPath(); ctx.arc(this.x, this.y, 3.2, 0, Math.PI * 2); ctx.fill(); ctx.restore();
             }
         }
 
         class Bullet {
-            constructor(x, y) { this.x = x; this.y = y; this.radius = 3; this.speed = 16; }
+            constructor(x, y) { this.x = x; this.y = y; this.radius = 3.5; this.speed = 15; }
             update() { this.y -= this.speed; }
             draw(ctx) {
-                ctx.save(); ctx.fillStyle = '#fff'; ctx.shadowBlur = 8; ctx.shadowColor = '#00f0ff';
+                ctx.save(); ctx.fillStyle = '#fff'; ctx.shadowBlur = 12; ctx.shadowColor = '#00f0ff';
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore();
             }
         }
 
         class AsteroideAnswer {
-            constructor(x, y, text, correct, cellWidth) {
-                this.x = x; this.y = y; this.text = text; this.correct = correct;
-                this.width = cellWidth;
-                this.height = 48; 
-                this.speed = 0.6 + Math.random() * 0.25; 
+            constructor(x, text, correct, totalCols) {
+                this.x = x; this.y = -65; this.text = text; this.correct = correct;
+                this.width = Math.min(138, (window.innerWidth - 50) / Math.max(3, totalCols));
+                this.height = 58; 
+                this.speed = 0.65 + Math.random() * 0.35; 
             }
             update() { this.y += this.speed; }
             draw(ctx) {
                 ctx.save(); ctx.translate(this.x, this.y + this.height / 2);
-                ctx.shadowBlur = 8; ctx.shadowColor = this.correct ? '#39ff14' : '#ff007f';
+                ctx.shadowBlur = 12; ctx.shadowColor = this.correct ? '#39ff14' : '#ff007f';
                 ctx.strokeStyle = this.correct ? '#39ff14' : '#ff007f';
-                ctx.fillStyle = '#05021a'; ctx.lineWidth = 1.5;
+                ctx.fillStyle = '#05021a'; ctx.lineWidth = 2.5;
                 
-                ctx.beginPath(); ctx.rect(-this.width/2, -this.height/2, this.width, this.height);
+                ctx.beginPath(); ctx.roundRect(-this.width/2, -this.height/2, this.width, this.height, 8);
                 ctx.fill(); ctx.stroke();
                 
                 ctx.shadowBlur = 0; ctx.fillStyle = '#ffffff';
                 ctx.font = '500 11px "Space Grotesk", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                this.wrapText(ctx, this.text, 0, 0, this.width - 8, 12);
+                this.wrapText(ctx, this.text, 0, 0, this.width - 14, 13.5);
                 ctx.restore();
             }
             wrapText(ctx, text, x, y, maxWidth, lineHeight) {
                 let words = text.split(' '); let line = ''; let lines = [];
                 for (let n = 0; n < words.length; n++) {
                     let testLine = line + words[n] + ' ';
-                    if (ctx.measureText(testLine).width > maxWidth && n > 0) { lines.push(line); line = words[n] + ' '; }
-                    else { line = testLine; }
+                    if (ctx.measureText(testLine).width > maxWidth && n > 0) { 
+                        lines.push(line); line = words[n] + ' '; 
+                    } else { line = testLine; }
                 }
                 lines.push(line);
                 let startY = y - ((lines.length - 1) * lineHeight) / 2;
@@ -609,190 +475,331 @@
 
         class GameEngine {
             constructor() {
-                this.canvas = document.getElementById('canvas'); this.ctx = this.canvas.getContext('2d');
-                this.ship = { x: 0, y: 0, width: 38, height: 34, targetX: 0, speed: 10 };
+                this.canvas = document.getElementById('canvas'); 
+                this.ctx = this.canvas.getContext('2d', { alpha: true });
+                this.ship = { x: 0, y: 0, width: 48, height: 42, targetX: 0, speed: 15.5 };
                 this.bullets = []; this.answers = []; this.particles = []; this.starfield = [];
-                this.score = 0; this.lives = 24; this.currentQuestionIdx = 0;
+                this.score = 0; 
+                this.lives = 24; 
+                this.currentQuestionIdx = 0;
                 this.isPlaying = false; this.isPaused = false; this.screenShake = 0; this.keys = {};
-                this.initEvents(); this.resize();
+                this.lastTouchX = 0;
+                this.initEvents(); 
+                this.resize(); 
+                this.generateStars();
             }
+
             initEvents() {
                 window.addEventListener('resize', () => this.resize());
-                
-                const handleTouchMove = (e) => {
+
+                // Teclado
+                window.addEventListener('keydown', (e) => {
+                    this.keys[e.key] = true;
+                    if ((e.key === ' ' || e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') && this.isPlaying && !this.isPaused) {
+                        e.preventDefault();
+                        this.shootLaser();
+                    }
+                });
+                window.addEventListener('keyup', (e) => this.keys[e.key] = false);
+
+                // Mouse + Touch no canvas (movimento e tiro)
+                const handlePointerMove = (e) => {
                     if (!this.isPlaying || this.isPaused) return;
-                    const touchX = e.touches[0].clientX - this.canvas.getBoundingClientRect().left;
-                    this.ship.targetX = touchX - this.ship.width / 2;
+                    const rect = this.canvas.getBoundingClientRect();
+                    let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    this.ship.targetX = clientX - rect.left - this.ship.width / 2;
                 };
-                this.canvas.addEventListener('touchmove', handleTouchMove, { passive: true });
-                
+
+                this.canvas.addEventListener('mousemove', handlePointerMove);
+                this.canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    handlePointerMove(e);
+                }, { passive: false });
+
+                this.canvas.addEventListener('click', (e) => {
+                    if (this.isPlaying && !this.isPaused) this.shootLaser();
+                });
+
+                this.canvas.addEventListener('touchstart', (e) => {
+                    if (this.isPlaying && !this.isPaused) {
+                        e.preventDefault();
+                        this.shootLaser();
+                    }
+                }, { passive: false });
+
+                // Controles virtuais mobile
                 const leftBtn = document.getElementById('left-btn');
                 const rightBtn = document.getElementById('right-btn');
                 const shootBtn = document.getElementById('shoot-btn');
 
-                leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.keys['ArrowLeft'] = true; });
-                leftBtn.addEventListener('touchend', (e) => { e.preventDefault(); this.keys['ArrowLeft'] = false; });
-                rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.keys['ArrowRight'] = true; });
-                rightBtn.addEventListener('touchend', (e) => { e.preventDefault(); this.keys['ArrowRight'] = false; });
-                shootBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.shootLaser(); });
+                const setKey = (key, value) => { this.keys[key] = value; };
+
+                leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); setKey('ArrowLeft', true); });
+                leftBtn.addEventListener('touchend', (e) => { e.preventDefault(); setKey('ArrowLeft', false); });
                 
-                document.getElementById('audio-toggle').addEventListener('touchstart', (e) => {
-                    e.preventDefault(); e.stopPropagation(); audio.muted = !audio.muted;
-                    e.target.className = audio.muted ? "fa-solid fa-volume-xmark control-icon" : "fa-solid fa-volume-high control-icon";
+                rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); setKey('ArrowRight', true); });
+                rightBtn.addEventListener('touchend', (e) => { e.preventDefault(); setKey('ArrowRight', false); });
+
+                shootBtn.addEventListener('touchstart', (e) => { 
+                    e.preventDefault(); 
+                    this.shootLaser(); 
                 });
-                document.getElementById('pause-toggle').addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); this.togglePause(); });
+
+                // Áudio e Pause
+                document.getElementById('audio-toggle').addEventListener('click', (e) => {
+                    e.stopPropagation(); 
+                    audio.muted = !audio.muted;
+                    const icon = e.target;
+                    icon.className = audio.muted ? "fa-solid fa-volume-xmark control-icon" : "fa-solid fa-volume-high control-icon";
+                });
+
+                document.getElementById('pause-toggle').addEventListener('click', (e) => { 
+                    e.stopPropagation(); 
+                    this.togglePause(); 
+                });
             }
+
             resize() {
-                this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight;
-                this.ship.y = this.canvas.height - clamp(95, window.innerHeight * 0.16, 130);
-                if (!this.isPlaying) { this.ship.x = this.canvas.width / 2 - this.ship.width / 2; this.ship.targetX = this.ship.x; }
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                this.ship.y = this.canvas.height - 118;
+                if (!this.isPlaying) {
+                    this.ship.x = this.canvas.width / 2 - this.ship.width / 2;
+                    this.ship.targetX = this.ship.x;
+                }
                 this.generateStars();
             }
+
             generateStars() {
                 this.starfield = [];
-                for (let i = 0; i < 40; i++) {
-                    this.starfield.push({ x: Math.random() * this.canvas.width, y: Math.random() * this.canvas.height, size: Math.random() * 1.5, speed: Math.random() * 1.2 + 0.3 });
+                let count = window.innerWidth < 600 ? 45 : 85;
+                for (let i = 0; i < count; i++) {
+                    this.starfield.push({
+                        x: Math.random() * this.canvas.width, 
+                        y: Math.random() * this.canvas.height, 
+                        size: Math.random() * 2.2 + 0.6, 
+                        speed: Math.random() * 1.6 + 0.6
+                    });
                 }
             }
+
             startGame() {
                 audio.init();
                 document.getElementById('start-screen').style.display = 'none';
                 document.getElementById('game-over').style.display = 'none';
-                this.score = 0; this.lives = 24; this.currentQuestionIdx = 0;
+                this.score = 0; 
+                this.lives = 24; 
+                this.currentQuestionIdx = 0;
                 this.bullets = []; this.answers = []; this.particles = [];
                 this.isPlaying = true; this.isPaused = false;
+                
                 questions = [...originalQuestions].sort(() => Math.random() - 0.5);
-                this.ship.x = this.canvas.width / 2 - this.ship.width / 2; this.ship.targetX = this.ship.x;
-                this.updateHUD(); this.loadQuestion();
+                
+                this.ship.x = this.canvas.width / 2 - this.ship.width / 2; 
+                this.ship.targetX = this.ship.x;
+                this.updateHUD(); 
+                this.loadQuestion();
             }
+
             restartGame() { this.startGame(); }
+
             togglePause() {
-                if (!this.isPlaying) return; this.isPaused = !this.isPaused;
-                document.getElementById('pause-screen').style.display = this.isPaused ? 'flex' : 'none';
-                document.getElementById('pause-toggle').className = this.isPaused ? "fa-solid fa-play control-icon" : "fa-solid fa-pause control-icon";
+                if (!this.isPlaying) return; 
+                this.isPaused = !this.isPaused;
+                const pauseScreen = document.getElementById('pause-screen');
+                pauseScreen.style.display = this.isPaused ? 'flex' : 'none';
+                document.getElementById('pause-toggle').className = this.isPaused ? 
+                    "fa-solid fa-play control-icon" : "fa-solid fa-pause control-icon";
             }
+
             updateHUD() {
                 document.getElementById('score').textContent = String(this.score).padStart(5, '0');
                 let high = localStorage.getItem('qs_high_simple') || 0;
-                if (this.score > high) { localStorage.setItem('qs_high_simple', this.score); high = this.score; }
+                if (this.score > high) { 
+                    localStorage.setItem('qs_high_simple', this.score); 
+                    high = this.score; 
+                }
                 document.getElementById('highscore').textContent = String(high).padStart(5, '0');
                 
                 let lStr = ''; 
                 for (let i = 0; i < 24; i++) lStr += i < this.lives ? '|' : '·';
                 document.getElementById('lives').textContent = lStr;
             }
+
             loadQuestion() {
                 const q = questions[this.currentQuestionIdx];
                 document.getElementById('question-category').textContent = q.category;
                 document.getElementById('question-text').textContent = q.question;
                 this.spawnAnswers(q);
             }
+
             spawnAnswers(q) {
                 this.answers = [];
+                let padding = window.innerWidth < 600 ? 28 : 55;
+                let availableWidth = this.canvas.width - (padding * 2);
+                let colStep = availableWidth / (q.answers.length - 1);
+                
                 let shuffledAnswers = [...q.answers].sort(() => Math.random() - 0.5);
                 
-                // Otimização Mobile Extrema: Organização em Grid 2x2 Dinâmico
-                let cellWidth = (this.canvas.width - 40) / 2;
-                
                 shuffledAnswers.forEach((ans, idx) => {
-                    let col = idx % 2;
-                    let row = Math.floor(idx / 2);
-                    
-                    let colX = 20 + (col * cellWidth) + (cellWidth / 2);
-                    let rowY = -130 + (row * 60) - (Math.random() * 20);
-                    
-                    let obs = new AsteroideAnswer(colX, rowY, ans.text, ans.correct, cellWidth - 10);
+                    let colX = padding + (idx * colStep);
+                    let obs = new AsteroideAnswer(colX, ans.text, ans.correct, q.answers.length);
+                    obs.y = -70 - (Math.random() * 45);
                     this.answers.push(obs);
                 });
             }
+
             shootLaser() {
                 if (!this.isPlaying || this.isPaused) return;
-                this.bullets.push(new Bullet(this.ship.x + 4, this.ship.y));
-                this.bullets.push(new Bullet(this.ship.x + this.ship.width - 4, this.ship.y));
+                this.bullets.push(new Bullet(this.ship.x + 5, this.ship.y - 4));
+                this.bullets.push(new Bullet(this.ship.x + this.ship.width - 9, this.ship.y - 4));
                 audio.playLaser();
             }
+
             triggerExplosion(x, y, color) {
-                for (let i = 0; i < 15; i++) this.particles.push(new Particle(x, y, color));
+                for (let i = 0; i < 22; i++) this.particles.push(new Particle(x, y, color));
             }
+
             registerHit(ans) {
                 this.triggerExplosion(ans.x, ans.y + ans.height/2, ans.correct ? '#39ff14' : '#ff007f');
                 if (ans.correct) {
-                    this.score += 100; this.currentQuestionIdx++;
+                    this.score += 100;
+                    this.currentQuestionIdx++;
                     if(this.currentQuestionIdx >= questions.length) {
                         this.currentQuestionIdx = 0;
                         questions.sort(() => Math.random() - 0.5);
                     }
                     this.loadQuestion();
                 } else {
-                    this.lives--; this.screenShake = 8;
+                    this.lives--; 
+                    this.screenShake = 11;
                     if (this.lives > 0) this.spawnAnswers(questions[this.currentQuestionIdx]);
                 }
-                audio.playExplosion(ans.correct); this.updateHUD();
+                audio.playExplosion(ans.correct); 
+                this.updateHUD();
                 if (this.lives <= 0) this.endGame();
             }
+
             endGame() {
-                this.isPlaying = false; document.getElementById('final-score').textContent = this.score;
+                this.isPlaying = false; 
+                document.getElementById('final-score').textContent = this.score;
                 let prev = localStorage.getItem('qs_high_simple') || 0;
                 document.getElementById('new-record-msg').textContent = (this.score >= prev && this.score > 0) ? "🏆 NOVO RECORDE!" : "";
-                let go = document.getElementById('game-over'); go.style.display = 'flex'; setTimeout(() => { go.style.opacity = '1'; }, 50);
+                let go = document.getElementById('game-over'); 
+                go.style.display = 'flex'; 
+                setTimeout(() => { go.style.opacity = '1'; }, 80);
             }
+
             update() {
                 if (!this.isPlaying || this.isPaused) return;
-                if (this.keys['ArrowLeft']) this.ship.targetX -= this.ship.speed;
-                if (this.keys['ArrowRight']) this.ship.targetX += this.ship.speed;
+
+                // Movimento da nave
+                if (this.keys['ArrowLeft'] || this.keys['a'] || this.keys['A']) this.ship.targetX -= this.ship.speed;
+                if (this.keys['ArrowRight'] || this.keys['d'] || this.keys['D']) this.ship.targetX += this.ship.speed;
+
+                this.ship.x += (this.ship.targetX - this.ship.x) * 0.28;
+                this.ship.x = Math.max(12, Math.min(this.canvas.width - this.ship.width - 12, this.ship.x));
                 
-                this.ship.x += (this.ship.targetX - this.ship.x) * 0.3;
-                this.ship.x = Math.max(8, Math.min(this.canvas.width - this.ship.width - 8, this.ship.x));
-                
-                this.starfield.forEach(s => { s.y += s.speed; if (s.y > this.canvas.height) { s.y = -5; s.x = Math.random() * this.canvas.width; } });
-                for (let i = this.bullets.length - 1; i >= 0; i--) { this.bullets[i].update(); if (this.bullets[i].y < -20) this.bullets.splice(i, 1); }
+                // Estrelas
+                this.starfield.forEach(s => { 
+                    s.y += s.speed; 
+                    if (s.y > this.canvas.height) { 
+                        s.y = -8; 
+                        s.x = Math.random() * this.canvas.width; 
+                    } 
+                });
+
+                // Balas
+                for (let i = this.bullets.length - 1; i >= 0; i--) { 
+                    this.bullets[i].update(); 
+                    if (this.bullets[i].y < -30) this.bullets.splice(i, 1); 
+                }
                 
                 let missed = false;
-                let activeAsteroidsY = [];
-                
                 for (let i = this.answers.length - 1; i >= 0; i--) {
-                    this.answers[i].update();
-                    activeAsteroidsY.push(this.answers[i].y);
-                    
-                    if (this.answers[i].y > this.canvas.height) { 
-                        if (this.answers[i].correct) missed = true; 
+                    let a = this.answers[i];
+                    a.update();
+                    if (a.y > this.canvas.height) { 
+                        if (a.correct) missed = true; 
                         this.answers.splice(i, 1); 
                         continue; 
                     }
+
                     for (let j = this.bullets.length - 1; j >= 0; j--) {
-                        let b = this.bullets[j]; let a = this.answers[i];
-                        if (b.x > a.x - a.width/2 && b.x < a.x + a.width/2 && b.y > a.y && b.y < a.y + a.height) {
-                            this.bullets.splice(j, 1); this.registerHit(a); break;
+                        let b = this.bullets[j];
+                        if (b.x > a.x - a.width/2 && b.x < a.x + a.width/2 && 
+                            b.y > a.y && b.y < a.y + a.height) {
+                            this.bullets.splice(j, 1); 
+                            this.registerHit(a); 
+                            break;
                         }
                     }
                 }
-                
-                if (missed || (this.answers.length === 0 && this.isPlaying)) {
-                    this.lives--; this.screenShake = 8; this.updateHUD();
-                    if (this.lives <= 0) this.endGame(); else this.loadQuestion();
-                }
-                this.particles.forEach((p, idx) => { p.update(); if (p.alpha <= 0) this.particles.splice(idx, 1); });
-                if (this.screenShake > 0) this.screenShake *= 0.85;
-            }
-            draw() {
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.save();
-                if (this.screenShake > 0.4) this.ctx.translate((Math.random() - 0.5) * this.screenShake, (Math.random() - 0.5) * this.screenShake);
-                this.ctx.fillStyle = '#fff'; this.starfield.forEach(s => this.ctx.fillRect(s.x, s.y, s.size, s.size));
-                this.answers.forEach(a => a.draw(this.ctx)); this.bullets.forEach(b => b.draw(this.ctx));
-                this.particles.forEach(p => p.draw(this.ctx));
-                if (this.isPlaying) this.drawShip(); this.ctx.restore();
-            }
-            drawShip() {
-                this.ctx.save(); this.ctx.translate(this.ship.x + this.ship.width / 2, this.ship.y + this.ship.height / 2);
-                this.ctx.fillStyle = '#0a0d26'; this.ctx.strokeStyle = '#00f0ff'; this.ctx.lineWidth = 2.5;
-                this.ctx.shadowBlur = 8; this.ctx.shadowColor = '#00f0ff';
-                this.ctx.beginPath(); this.ctx.moveTo(0, -15); this.ctx.lineTo(15, 10); this.ctx.lineTo(0, 3); this.ctx.lineTo(-15, 10); this.ctx.closePath();
-                this.ctx.fill(); this.ctx.stroke(); this.ctx.restore();
-            }
-            loop() { this.update(); this.draw(); requestAnimationFrame(() => this.loop()); }
-        }
 
-        function clamp(min, val, max) { return Math.max(min, Math.min(max, val)); }
+                if (missed) {
+                    this.lives--; 
+                    this.screenShake = 11; 
+                    this.updateHUD();
+                    if (this.lives <= 0) this.endGame(); 
+                    else this.loadQuestion();
+                }
+
+                // Partículas
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    let p = this.particles[i];
+                    p.update(); 
+                    if (p.alpha <= 0) this.particles.splice(i, 1);
+                }
+
+                if (this.screenShake > 0.4) this.screenShake *= 0.88;
+            }
+
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); 
+                this.ctx.save();
+                
+                if (this.screenShake > 0.5) {
+                    this.ctx.translate((Math.random() - 0.5) * this.screenShake, (Math.random() - 0.5) * this.screenShake);
+                }
+
+                // Estrelas
+                this.ctx.fillStyle = '#fff';
+                this.starfield.forEach(s => this.ctx.fillRect(s.x, s.y, s.size, s.size));
+
+                this.answers.forEach(a => a.draw(this.ctx)); 
+                this.bullets.forEach(b => b.draw(this.ctx));
+                this.particles.forEach(p => p.draw(this.ctx));
+                
+                if (this.isPlaying) this.drawShip(); 
+                this.ctx.restore();
+            }
+
+            drawShip() {
+                this.ctx.save(); 
+                this.ctx.translate(this.ship.x + this.ship.width / 2, this.ship.y + this.ship.height / 2);
+                this.ctx.fillStyle = '#0a0d26'; 
+                this.ctx.strokeStyle = '#00f0ff'; 
+                this.ctx.lineWidth = 2.8;
+                this.ctx.shadowBlur = 14; 
+                this.ctx.shadowColor = '#00f0ff';
+                
+                this.ctx.beginPath(); 
+                this.ctx.moveTo(0, -20); 
+                this.ctx.lineTo(19, 14); 
+                this.ctx.lineTo(0, 6); 
+                this.ctx.lineTo(-19, 14); 
+                this.ctx.closePath();
+                this.ctx.fill(); 
+                this.ctx.stroke(); 
+                this.ctx.restore();
+            }
+
+            loop() { 
+                this.update(); 
+                this.draw(); 
+                requestAnimationFrame(() => this.loop()); 
+            }
+        }
 
         const game = new GameEngine();
         game.loop();
