@@ -6,7 +6,7 @@
     <title>🚀 REVISÃO JS - EETEPA 26</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@400;500;700&family=Courier+Prime&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
@@ -200,18 +200,14 @@
             background-size: cover;
         }
 
-        /* Estilo do letreiro feito em caracteres de teclado */
-        .ascii-title {
-            font-family: 'Courier Prime', 'Courier New', monospace;
-            font-size: clamp(7px, 1.2vw, 14px);
-            line-height: 1.2;
-            white-space: pre;
+        .overlay h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(24px, 6vw, 56px);
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(0, 240, 255, 0.8), 0 0 40px rgba(157, 0, 255, 0.6);
+            margin-bottom: 10px;
             color: #fff;
-            text-shadow: 0 0 12px var(--neon-blue), 0 0 25px var(--neon-purple);
-            margin-bottom: 25px;
-            font-weight: bold;
-            display: block;
-            text-align: center;
         }
 
         .overlay p {
@@ -277,7 +273,6 @@
             #question-text { font-size: 13px; }
             .help-info { display: none; }
             .overlay p { margin-bottom: 15px; }
-            .ascii-title { font-size: clamp(5px, 0.9vw, 9px); margin-bottom: 10px; }
         }
     </style>
 </head>
@@ -315,22 +310,7 @@
         </div>
 
         <div id="start-screen" class="overlay">
-            <div class="ascii-title">
- ___ ___ _____ ___ ___  _   
-| __| __|_   _| __| _ \/_\  
-| _|| _|  | | | _||  _/ _ \ 
-|___|___| |_| |___|_|/_/ \_\
-                            
- ___ _____   _____ ___ __ _  ___  
-| _ \ __\ \ / /_ _/ __/ _` |/ _ \ 
-|   / _| \ V / | |\__ \ (_| | (_) |
-|_|_\___| \_/ |___|___/\__,_|\___/ 
-                                   
-   _  _____   ___   ___  ___ ___ ___ _____ 
- _ | /_\ \ \ / /_\ / __|/ __| _ \_ _| _ \_ _|
-| ||/ _ \ \ V / _ \\__ \ (__|   /| ||  _/| | 
- \_/_/ \_\ \_/ /_ _\___/\___|_|_\___|_| |___|</div>
-
+            <h1>REVISÃO JS-EETEPA-26</h1>
             <p>Prepare sua nave, atire na resposta correta e destrua os asteroides incorretos!</p>
             <button class="big-btn" onclick="game.startGame()">INICIAR REVISÃO</button>
             
@@ -389,6 +369,7 @@
 
         const audio = new SoundSynth();
 
+        // Base de dados expandida para 20 questões
         const originalQuestions = [
             {
                 question: "Como declarar variável em JavaScript?",
@@ -490,6 +471,7 @@
                     { text: "Limpa a memória do app", correct: false }
                 ]
             },
+            // Novas 10 questões adicionadas abaixo:
             {
                 question: "Qual comando exibe uma mensagem no console do JavaScript?",
                 category: "JavaScript",
@@ -619,6 +601,7 @@
         class AsteroideAnswer {
             constructor(x, text, correct, totalCols) {
                 this.x = x; this.y = -60; this.text = text; this.correct = correct;
+                // Largura adaptativa dependendo do tamanho da tela do jogador
                 this.width = Math.min(130, (window.innerWidth - 40) / totalCols);
                 this.height = 55; 
                 this.speed = 0.6 + Math.random() * 0.3; 
@@ -713,6 +696,7 @@
                 this.bullets = []; this.answers = []; this.particles = [];
                 this.isPlaying = true; this.isPaused = false;
                 
+                // Randomização total das questões na inicialização
                 questions = [...originalQuestions].sort(() => Math.random() - 0.5);
                 
                 this.ship.x = this.canvas.width / 2 - this.ship.width / 2; this.ship.targetX = this.ship.x;
@@ -727,7 +711,7 @@
             updateHUD() {
                 document.getElementById('score').textContent = String(this.score).padStart(5, '0');
                 let high = localStorage.getItem('qs_high_simple') || 0;
-                if (this.score > high) { localStorage.setItem('setItem' in localStorage ? 'qs_high_simple' : '', this.score); high = this.score; }
+                if (this.score > high) { localStorage.setItem('qs_high_simple', this.score); high = this.score; }
                 document.getElementById('highscore').textContent = String(high).padStart(5, '0');
                 
                 let lStr = ''; 
@@ -746,6 +730,7 @@
                 let availableWidth = this.canvas.width - (padding * 2);
                 let colStep = availableWidth / (q.answers.length - 1);
                 
+                // Randomização das alternativas dentro dos asteroides
                 let shuffledAnswers = [...q.answers].sort(() => Math.random() - 0.5);
                 
                 shuffledAnswers.forEach((ans, idx) => {
@@ -770,6 +755,7 @@
                     this.score += 100;
                     this.currentQuestionIdx++;
                     
+                    // Se o jogador passar por todas as perguntas, elas são embaralhadas novamente
                     if(this.currentQuestionIdx >= questions.length) {
                         this.currentQuestionIdx = 0;
                         questions.sort(() => Math.random() - 0.5);
