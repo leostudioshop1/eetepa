@@ -1,476 +1,841 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>NEON MATRIX QUIZ</title>
+    <title>🚀 REVISÃO JS - EETEPA 26</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@400;500;700&family=Courier+Prime&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --neon-blue: #00f0ff;
+            --neon-green: #39ff14;
+            --neon-pink: #ff007f;
+            --neon-purple: #9d00ff;
+            --dark-bg: #03001e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
         body {
-            background: #000;
-            color: #0f0;
-            font-family: 'Courier New', monospace;
+            background-color: #000;
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
             overflow: hidden;
             touch-action: none;
             height: 100vh;
             width: 100vw;
         }
-        canvas { display: block; background: #000; touch-action: none; }
-        #ui {
-            position: absolute; top: 15px; left: 0; width: 100%; padding: 0 20px;
-            display: flex; justify-content: space-between; pointer-events: none; z-index: 10;
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle, #0c0822 0%, #02000a 100%);
         }
-        .stat {
-            background: rgba(0, 30, 0, 0.85); padding: 12px 22px; border: 2px solid #0f0;
-            border-radius: 6px; font-size: 24px; font-weight: bold; text-shadow: 0 0 12px #0f0;
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
         }
-        #question {
-            position: absolute; top: 80px; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 25, 0, 0.95); padding: 20px 30px; border: 3px solid #0f0;
-            border-radius: 8px; font-size: 24px; text-align: center; max-width: 92%;
-            color: #0f0; text-shadow: 0 0 15px #0f0; box-shadow: 0 0 30px rgba(0,255,0,0.5);
-            z-index: 20; line-height: 1.35;
+
+        #hud {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            width: 100%;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            z-index: 10;
         }
-        #controls {
-            position: absolute; bottom: 25px; left: 0; width: 100%; display: flex;
-            justify-content: space-between; padding: 0 20px; z-index: 30; gap: 15px;
+
+        .hud-panel {
+            background: rgba(3, 0, 30, 0.7);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(10px, 2vw, 14px);
+            letter-spacing: 1px;
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
         }
-        button {
-            background: rgba(0,40,0,0.8); color: #0f0; border: 3px solid #0f0;
-            padding: 18px 25px; font-size: 18px; font-weight: bold; border-radius: 6px;
-            text-shadow: 0 0 10px #0f0; flex: 1; box-shadow: 0 0 15px rgba(0,255,0,0.3);
+
+        .stat-glow-blue { text-shadow: 0 0 10px var(--neon-blue); color: var(--neon-blue); }
+        .stat-glow-pink { text-shadow: 0 0 10px var(--neon-pink); color: var(--neon-pink); font-size: clamp(9px, 1.8vw, 11px); letter-spacing: 1px; word-break: break-all; }
+        
+        .control-icon {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 18px;
         }
-        #start-screen, #game-over {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,10,0,0.98); display: flex; flex-direction: column;
-            align-items: center; justify-content: center; z-index: 100; color: #0f0;
+        .control-icon:hover {
+            transform: scale(1.1);
+            color: var(--neon-blue);
         }
-        h1 { font-size: 58px; margin-bottom: 10px; text-shadow: 0 0 40px #0f0; letter-spacing: 6px; }
-        button.big { font-size: 30px; padding: 20px 70px; margin-top: 30px; border: 4px solid #0f0; }
+
+        #question-panel {
+            position: absolute;
+            top: 85px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(3, 0, 30, 0.85);
+            border: 2px solid var(--neon-blue);
+            padding: 12px 25px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 95%;
+            width: 580px;
+            pointer-events: none;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.25);
+        }
+
+        #question-category {
+            font-size: 11px;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-purple);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 3px;
+        }
+
+        #question-text {
+            font-size: clamp(13px, 3.5vw, 16px);
+            font-weight: 500;
+            line-height: 1.3;
+            color: #fff;
+        }
+
+        #mobile-controls {
+            position: absolute;
+            bottom: clamp(15px, 4vh, 30px);
+            left: 0;
+            width: 100%;
+            display: none;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 20;
+            gap: 10px;
+        }
+
+        @media (pointer: coarse) {
+            #mobile-controls { display: flex; }
+        }
+
+        .game-btn {
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--neon-blue);
+            border: 2px solid var(--neon-blue);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            padding: clamp(10px, 3vw, 16px);
+            border-radius: 50px;
+            outline: none;
+            backdrop-filter: blur(5px);
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: clamp(12px, 2.5vw, 15px);
+            text-shadow: 0 0 5px var(--neon-blue);
+        }
+
+        .game-btn:active {
+            background: rgba(0, 240, 255, 0.4);
+            box-shadow: 0 0 20px var(--neon-blue);
+        }
+
+        #shoot-btn {
+            background: rgba(255, 0, 127, 0.1);
+            color: var(--neon-pink);
+            border-color: var(--neon-pink);
+            text-shadow: 0 0 5px var(--neon-pink);
+            flex: 1.5;
+        }
+
+        #shoot-btn:active {
+            background: rgba(255, 0, 127, 0.4);
+            box-shadow: 0 0 20px var(--neon-pink);
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 0, 10, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(15px);
+        }
+
+        #start-screen {
+            background: linear-gradient(rgba(2, 0, 10, 0.6), rgba(2, 0, 10, 0.85)), url('eetepa-bg.png') no-repeat center center;
+            background-size: cover;
+        }
+
+        /* Estilo do letreiro feito em caracteres de teclado */
+        .ascii-title {
+            font-family: 'Courier Prime', 'Courier New', monospace;
+            font-size: clamp(7px, 1.2vw, 14px);
+            line-height: 1.2;
+            white-space: pre;
+            color: #fff;
+            text-shadow: 0 0 12px var(--neon-blue), 0 0 25px var(--neon-purple);
+            margin-bottom: 25px;
+            font-weight: bold;
+            display: block;
+            text-align: center;
+        }
+
+        .overlay p {
+            font-size: clamp(12px, 3.5vw, 18px);
+            color: #d1cffd;
+            max-width: 600px;
+            margin-bottom: 30px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .big-btn {
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            color: #fff;
+            border: none;
+            padding: clamp(12px, 2.5vh, 20px) clamp(30px, 6vw, 50px);
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(16px, 4vw, 24px);
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .big-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 0 40px rgba(0, 240, 255, 0.8);
+        }
+
+        .high-score-board {
+            margin-top: 20px;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-green);
+            font-size: 18px;
+        }
+
+        .help-info {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .help-card {
+            background: rgba(3, 0, 30, 0.7);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            padding: 12px;
+            border-radius: 12px;
+            font-size: clamp(11px, 2.2vw, 13px);
+            backdrop-filter: blur(5px);
+        }
+
+        .help-card i {
+            font-size: 20px;
+            color: var(--neon-blue);
+            margin-bottom: 8px;
+        }
+
+        @media (max-height: 650px) {
+            #question-panel { top: 65px; padding: 6px 15px; }
+            #question-text { font-size: 13px; }
+            .help-info { display: none; }
+            .overlay p { margin-bottom: 15px; }
+            .ascii-title { font-size: clamp(5px, 0.9vw, 9px); margin-bottom: 10px; }
+        }
     </style>
 </head>
 <body>
+
     <div id="game-container">
         <canvas id="canvas"></canvas>
         
-        <div id="ui">
-            <div class="stat">SCORE: <span id="score">00000</span></div>
-            <div class="stat">LIVES: <span id="lives">03</span></div>
+        <div id="hud">
+            <div class="hud-panel">
+                <div>SCORE: <span id="score" class="stat-glow-blue">00000</span></div>
+                <div>REC: <span id="highscore" style="color: #bbb;">00000</span></div>
+            </div>
+            
+            <div class="hud-panel">
+                <div>
+                    VIDAS: <span id="lives" class="stat-glow-pink">||||||||||||||||||||||||</span>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <i class="fa-solid fa-volume-high control-icon" id="audio-toggle"></i>
+                    <i class="fa-solid fa-pause control-icon" id="pause-toggle"></i>
+                </div>
+            </div>
         </div>
         
-        <div id="question">CARREGANDO MATRIZ...</div>
-        
-        <div id="controls">
-            <button id="left-btn">◀ ESQUERDA</button>
-            <button id="shoot-btn">◆ ATIRAR ◆</button>
-            <button id="right-btn">DIREITA ▶</button>
+        <div id="question-panel">
+            <div id="question-category">JavaScript</div>
+            <div id="question-text">Carregando...</div>
         </div>
-    </div>
+        
+        <div id="mobile-controls">
+            <button class="game-btn" id="left-btn"><i class="fa-solid fa-caret-left"></i> ESQ</button>
+            <button class="game-btn" id="shoot-btn"><i class="fa-solid fa-crosshairs"></i> ATIRAR</button>
+            <button class="game-btn" id="right-btn">DIR <i class="fa-solid fa-caret-right"></i></button>
+        </div>
 
-    <div id="start-screen">
-        <h1>NEON MATRIX</h1>
-        <p style="font-size: 28px; margin: 20px 0;">QUIZ SHOOTER</p>
-        <button class="big" onclick="startGame()">INICIAR TRANSMISSÃO</button>
-    </div>
+        <div id="start-screen" class="overlay">
+            <div class="ascii-title">
+ ___ ___ _____ ___ ___  _   
+| __| __|_   _| __| _ \/_\  
+| _|| _|  | | | _||  _/ _ \ 
+|___|___| |_| |___|_|/_/ \_\
+                            
+ ___ _____   _____ ___ __ _  ___  
+| _ \ __\ \ / /_ _/ __/ _` |/ _ \ 
+|   / _| \ V / | |\__ \ (_| | (_) |
+|_|_\___| \_/ |___|___/\__,_|\___/ 
+                                   
+   _  _____   ___   ___  ___ ___ ___ _____ 
+ _ | /_\ \ \ / /_\ / __|/ __| _ \_ _| _ \_ _|
+| ||/ _ \ \ V / _ \\__ \ (__|   /| ||  _/| | 
+ \_/_/ \_\ \_/ /_ _\___/\___|_|_\___|_| |___|</div>
 
-    <div id="game-over" style="display: none;">
-        <h1>SINAL PERDIDO</h1>
-        <p style="font-size: 36px; margin: 25px 0;">SCORE FINAL<br><span id="final-score" style="font-size:58px;">00000</span></p>
-        <button class="big" onclick="restartGame()">REINICIAR MATRIZ</button>
+            <p>Prepare sua nave, atire na resposta correta e destrua os asteroides incorretos!</p>
+            <button class="big-btn" onclick="game.startGame()">INICIAR REVISÃO</button>
+            
+            <div class="help-info">
+                <div class="help-card">
+                    <i class="fa-solid fa-keyboard"></i>
+                    <h4>Teclado</h4>
+                    <p>Setas ou A/D para mover. Espaço ou W para atirar.</p>
+                </div>
+                <div class="help-card">
+                    <i class="fa-solid fa-hand-pointer"></i>
+                    <h4>Mouse / Touch</h4>
+                    <p>Arraste para mover. Clique ou toque na tela para atirar.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="game-over" class="overlay" style="display: none; opacity: 0;">
+            <h1 style="text-shadow: 0 0 30px var(--neon-pink);">FIM DE JOGO</h1>
+            <p style="font-size: 24px; margin-bottom: 10px;">Pontuação:</p>
+            <div style="font-size: 48px; font-weight: bold; font-family: 'Orbitron'; color: var(--neon-pink); margin-bottom: 20px;" id="final-score">0</div>
+            <button class="big-btn" onclick="game.restartGame()">REINICIAR</button>
+            <div class="high-score-board" id="new-record-msg"></div>
+        </div>
+
+        <div id="pause-screen" class="overlay" style="display: none;">
+            <h1>PAUSADO</h1>
+            <button class="big-btn" onclick="game.togglePause()">RETOMAR</button>
+        </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        let audioCtx;
-        function initAudio() {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-
-        function playSound(type) {
-            if (!audioCtx) initAudio();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-
-            switch(type) {
-                case 'shoot':
-                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(920, audioCtx.currentTime);
-                    gain.gain.value = 0.4; gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.12); break;
-                case 'correct':
-                    osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-                    osc.frequency.linearRampToValueAtTime(1600, audioCtx.currentTime + 0.4);
-                    gain.gain.value = 0.5; gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.45); break;
-                case 'wrong':
-                    osc.type = 'square'; osc.frequency.setValueAtTime(450, audioCtx.currentTime);
-                    gain.gain.value = 0.6; gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.3); break;
-                case 'loseLife':
-                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(280, audioCtx.currentTime);
-                    gain.gain.value = 0.7; gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.7);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.7); break;
-                case 'next':
-                    osc.type = 'triangle'; osc.frequency.setValueAtTime(700, audioCtx.currentTime);
-                    osc.frequency.linearRampToValueAtTime(1600, audioCtx.currentTime + 0.5);
-                    gain.gain.value = 0.4; gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.6); break;
+        class SoundSynth {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+            init() { if (this.ctx) return; this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+            playLaser() {
+                if (this.muted || !this.ctx) return; this.init();
+                let osc = this.ctx.createOscillator(); let gain = this.ctx.createGain();
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime); gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + 0.15);
+            }
+            playExplosion(isCorrect) {
+                if (this.muted || !this.ctx) return; this.init();
+                let dur = isCorrect ? 0.3 : 0.5; let osc = this.ctx.createOscillator(); let gain = this.ctx.createGain();
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(isCorrect ? 300 : 120, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + dur);
+                gain.gain.setValueAtTime(isCorrect ? 0.2 : 0.4, this.ctx.currentTime); gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + dur);
+                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + dur);
             }
         }
 
-        let ship = { x: 0, y: 0, width: 70, height: 55, speed: 5 };
-        let bullets = [], answers = [], particles = [];
-        let score = 0, lives = 3, gameRunning = false, currentQuestionIndex = 0;
-        let keys = {}, touchStartX = 0, isDragging = false, difficulty = 1;
+        const audio = new SoundSynth();
 
-        const questions = [
-            { question: "Como se declara uma variável em JavaScript?", answers: [
-                { text: "var nome;", correct: false }, { text: "let nome;", correct: true },
-                { text: "int nome;", correct: false }, { text: "variable nome;", correct: false }
-            ]},
-            { question: "O que é um dígito binário?", answers: [
-                { text: "Um número de 0 a 9", correct: false }, { text: "Apenas o número 1", correct: false },
-                { text: "0 ou 1", correct: true }, { text: "Um caractere especial", correct: false }
-            ]},
-            { question: "JavaScript foi criado inicialmente para:", answers: [
-                { text: "Fazer aplicativos mobile", correct: false }, 
-                { text: "Criar páginas interativas na internet", correct: true },
-                { text: "Desenvolver bancos de dados", correct: false }, 
-                { text: "Programar jogos em 3D", correct: false }
-            ]},
-            { question: "Qual a função de uma variável na programação?", answers: [
-                { text: "Armazenar dados que podem mudar", correct: true }, 
-                { text: "Criar loops infinitos", correct: false },
-                { text: "Exibir mensagens na tela", correct: false }, 
-                { text: "Conectar ao banco de dados", correct: false }
-            ]},
-            { question: "Como declarar uma variável inteira em Portugol?", answers: [
-                { text: "var idade = 18", correct: false }, { text: "inteiro idade", correct: true },
-                { text: "int idade", correct: false }, { text: "numero idade", correct: false }
-            ]},
-            { question: "Qual é a estrutura de decisão em Portugol?", answers: [
-                { text: "if-else", correct: false }, { text: "se...entao...senao", correct: true },
-                { text: "switch case", correct: false }, { text: "para...faca", correct: false }
-            ]},
-            { question: "O que significa o comando 'idade < 19' em Portugol?", answers: [
-                { text: "Idade maior que 19", correct: false }, { text: "Idade igual a 19", correct: false },
-                { text: "Idade menor que 19", correct: true }, { text: "Idade diferente de 19", correct: false }
-            ]},
-            { question: "O que é 'const' em JavaScript?", answers: [
-                { text: "Uma variável que não pode ser alterada", correct: true }, 
-                { text: "Uma variável que pode ser alterada", correct: false },
-                { text: "Um tipo de função", correct: false }, 
-                { text: "Uma estrutura de repetição", correct: false }
-            ]},
-            { question: "Qual a diferença principal entre 'let' e 'const'?", answers: [
-                { text: "let pode ser alterado, const não", correct: true }, 
-                { text: "const pode ser alterado, let não", correct: false },
-                { text: "Não há diferença", correct: false }, 
-                { text: "let é mais rápido", correct: false }
-            ]},
-            { question: "O que o operador '==' faz em JavaScript?", answers: [
-                { text: "Atribui um valor", correct: false }, 
-                { text: "Compara valores (igualdade)", correct: true },
-                { text: "Compara tipo e valor", correct: false }, 
-                { text: "Faz uma subtração", correct: false }
-            ]},
-            { question: "O que é HTML?", answers: [
-                { text: "Uma linguagem de programação", correct: false }, 
-                { text: "Linguagem de marcação para páginas web", correct: true },
-                { text: "Um banco de dados", correct: false }, 
-                { text: "Uma linguagem de estilização", correct: false }
-            ]},
-            { question: "Para que serve a tag <input> em HTML?", answers: [
-                { text: "Criar um rótulo", correct: false }, 
-                { text: "Receber dados do usuário", correct: true },
-                { text: "Formatar o texto", correct: false }, 
-                { text: "Criar links", correct: false }
-            ]},
-            { question: "Para que serve a tag <label> em HTML?", answers: [
-                { text: "Criar um campo de entrada", correct: false }, 
-                { text: "Associar um texto descritivo a um input", correct: true },
-                { text: "Estilizar a página", correct: false }, 
-                { text: "Enviar formulário", correct: false }
-            ]}
+        const originalQuestions = [
+            {
+                question: "Como declarar variável em JavaScript?",
+                category: "JavaScript",
+                answers: [
+                    { text: "int", correct: false },
+                    { text: "define", correct: false },
+                    { text: "let", correct: true },
+                    { text: "inteiro", correct: false }
+                ]
+            },
+            {
+                question: "Quais são os dígitos binários?",
+                category: "Lógica",
+                answers: [
+                    { text: "2, 3, 4 e 5", correct: false },
+                    { text: "Nenhuma das alternativas", correct: false },
+                    { text: "Letras do alfabeto", correct: false },
+                    { text: "Os valores 0 e 1", correct: true }
+                ]
+            },
+            {
+                question: "O JavaScript foi criado para rodar em:",
+                category: "JavaScript",
+                answers: [
+                    { text: "Bancos de dados", correct: false },
+                    { text: "Sistemas operacionais", correct: false },
+                    { text: "Navegadores web", correct: true },
+                    { text: "Roteadores", correct: false }
+                ]
+            },
+            {
+                question: "Qual a função de uma variável?",
+                category: "Conceitos",
+                answers: [
+                    { text: "Armazenar dados alteráveis", correct: true },
+                    { text: "Exibir valor fixo", correct: false },
+                    { text: "Mostrar imagens", correct: false },
+                    { text: "Conectar à internet", correct: false }
+                ]
+            },
+            {
+                question: "No Portugol, como se declara a variável 'idade'?",
+                category: "Portugol",
+                answers: [
+                    { text: "inteiro idade", correct: true },
+                    { text: "var idade : float", correct: false },
+                    { text: "idade = real", correct: false },
+                    { text: "declare idade inteiro", correct: false }
+                ]
+            },
+            {
+                question: "Uma estrutura de decisão serve para:",
+                category: "Lógica",
+                answers: [
+                    { text: "Repetir comandos", correct: false },
+                    { text: "Decidir sob condições", correct: true },
+                    { text: "Armazenar arquivos", correct: false },
+                    { text: "Instalar programas", correct: false }
+                ]
+            },
+            {
+                question: "O que significa 'idade < 19' no Portugol?",
+                category: "Portugol",
+                answers: [
+                    { text: "Verifica se idade é menor que 19", correct: true },
+                    { text: "Atribui 15 à idade", correct: false },
+                    { text: "Mostra 15 na tela", correct: false },
+                    { text: "Apaga o valor de idade", correct: false }
+                ]
+            },
+            {
+                question: "Qual operador representa igualdade no JavaScript?",
+                category: "JavaScript",
+                answers: [
+                    { text: "=", correct: false },
+                    { text: ":=", correct: false },
+                    { text: "<>", correct: false },
+                    { text: "==", correct: true }
+                ]
+            },
+            {
+                question: "O que é e para que serve a variável booleana?",
+                category: "Conceitos",
+                answers: [
+                    { text: "Guarda estados True ou False", correct: true },
+                    { text: "Armazena textos longos", correct: false },
+                    { text: "Guarda números decimais", correct: false },
+                    { text: "Cria repetições no código", correct: false }
+                ]
+            },
+            {
+                question: "O que define a instrução 'const' no JavaScript?",
+                category: "JavaScript",
+                answers: [
+                    { text: "Cria variável de valor fixo", correct: true },
+                    { text: "Declara loops infinitos", correct: false },
+                    { text: "Modifica tipos dinâmicos", correct: false },
+                    { text: "Limpa a memória do app", correct: false }
+                ]
+            },
+            {
+                question: "Qual comando exibe uma mensagem no console do JavaScript?",
+                category: "JavaScript",
+                answers: [
+                    { text: "print()", correct: false },
+                    { text: "console.log()", correct: true },
+                    { text: "escreva()", correct: false },
+                    { text: "alert.show()", correct: false }
+                ]
+            },
+            {
+                question: "Qual das opções representa um tipo de dado Textual (String)?",
+                category: "Conceitos",
+                answers: [
+                    { text: "'EETEPA 2026'", correct: true },
+                    { text: "true", correct: false },
+                    { text: "45.8", correct: false },
+                    { text: "null", correct: false }
+                ]
+            },
+            {
+                question: "No Portugol, qual comando é usado para ler a entrada do teclado?",
+                category: "Portugol",
+                answers: [
+                    { text: "leia()", correct: true },
+                    { text: "input()", correct: false },
+                    { text: "receber()", correct: false },
+                    { text: "escreva()", correct: false }
+                ]
+            },
+            {
+                question: "Qual operador lógico representa o conectivo 'E' (AND) no JavaScript?",
+                category: "JavaScript",
+                answers: [
+                    { text: "||", correct: false },
+                    { text: "and", correct: false },
+                    { text: "&&", correct: true },
+                    { text: "!", correct: false }
+                ]
+            },
+            {
+                question: "O que faz o laço de repetição 'for' na programação?",
+                category: "Lógica",
+                answers: [
+                    { text: "Executa um bloco de código repetidas vezes", correct: true },
+                    { text: "Para o programa imediatamente", correct: false },
+                    { text: "Testa apenas uma condição falsa", correct: false },
+                    { text: "Deleta variáveis duplicadas", correct: false }
+                ]
+            },
+            {
+                question: "Qual o resultado de 10 % 3 (operador de resto) no JavaScript?",
+                category: "JavaScript",
+                answers: [
+                    { text: "3", correct: false },
+                    { text: "1", correct: true },
+                    { text: "0", correct: false },
+                    { text: "3.33", correct: false }
+                ]
+            },
+            {
+                question: "Como comentar uma única linha de código no JavaScript?",
+                category: "JavaScript",
+                answers: [
+                    { text: "# comentário", correct: false },
+                    { text: "", correct: false },
+                    { text: "// comentário", correct: true },
+                    { text: "/* comentário */", correct: false }
+                ]
+            },
+            {
+                question: "O que acontece se convertermos a String '30' para Número e somarmos com 5?",
+                category: "Lógica",
+                answers: [
+                    { text: "O resultado será 35", correct: true },
+                    { text: "O resultado será '305'", correct: false },
+                    { text: "Gera um erro de sintaxe", correct: false },
+                    { text: "O resultado será 30", correct: false }
+                ]
+            },
+            {
+                question: "Qual estrutura do Portugol equivale ao 'if / else' do JavaScript?",
+                category: "Portugol",
+                answers: [
+                    { text: "se / senao", correct: true },
+                    { text: "caso / contrario", correct: false },
+                    { text: "enquanto / faca", correct: false },
+                    { text: "para / ate", correct: false }
+                ]
+            },
+            {
+                question: "Qual operador lógico inverte o valor booleano (NÃO / NOT) no JS?",
+                category: "JavaScript",
+                answers: [
+                    { text: "!=", correct: false },
+                    { text: "not", correct: false },
+                    { text: "!", correct: true },
+                    { text: "~", correct: false }
+                ]
+            }
         ];
 
-        class Bullet {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.speed = 9;
-            }
-            update() { this.y -= this.speed; }
-            draw() {
-                ctx.shadowBlur = 35;
-                ctx.shadowColor = '#0f0';
-                ctx.fillStyle = '#0f0';
-                ctx.fillRect(this.x - 4, this.y, 8, 35);
-                ctx.shadowBlur = 0;
-            }
-        }
-
-        // ... (classes Answer e Particle permanecem iguais)
-        class Answer {
-            constructor(x, text, correct) {
-                this.x = x; this.y = 110; this.width = 270; this.height = 125;
-                this.text = text; this.correct = correct;
-                this.speed = 1.15 * difficulty + Math.random() * 0.6;
-                this.words = text.split(' ');
-            }
-            update() { this.y += this.speed; }
-            draw() {
-                const color = this.correct ? '#00ff00' : '#ff0066';
-                ctx.fillStyle = 'rgba(0, 35, 0, 0.95)';
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 6;
-                ctx.shadowBlur = 30; ctx.shadowColor = color;
-                
-                ctx.fillRect(this.x - this.width/2, this.y, this.width, this.height);
-                ctx.strokeRect(this.x - this.width/2, this.y, this.width, this.height);
-                
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 27px Courier New';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-
-                const lineHeight = 31;
-                const startY = this.y + 38;
-                this.words.forEach((word, i) => {
-                    ctx.fillText(word, this.x, startY + i * lineHeight);
-                });
-            }
-        }
+        let questions = [];
 
         class Particle {
             constructor(x, y, color) {
-                this.x = x; this.y = y;
-                this.vx = Math.random() * 9 - 4.5;
-                this.vy = Math.random() * 8 - 7;
-                this.life = 40;
-                this.color = color;
+                this.x = x; this.y = y; this.color = color;
+                this.vx = (Math.random() - 0.5) * 6; this.vy = (Math.random() - 0.5) * 6;
+                this.alpha = 1; this.decay = 0.03 + Math.random() * 0.02;
             }
-            update() { this.x += this.vx; this.y += this.vy; this.life--; this.vy += 0.25; }
-            draw() {
-                ctx.globalAlpha = this.life / 40;
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, 7, 7);
+            update() { this.x += this.vx; this.y += this.vy; this.alpha -= this.decay; }
+            draw(ctx) {
+                ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI * 2); ctx.fill(); ctx.restore();
             }
         }
 
-        let matrixDrops = [];
-        function initMatrix() {
-            matrixDrops = [];
-            const cols = Math.floor(canvas.width / 16);
-            for (let i = 0; i < cols; i++) matrixDrops[i] = Math.random() * canvas.height * 1.5;
-        }
-
-        function drawMatrixRain() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#00cc00';
-            ctx.font = '16px monospace';
-            for (let i = 0; i < matrixDrops.length; i++) {
-                const char = String.fromCharCode(33 + Math.random() * 94);
-                ctx.fillText(char, i * 16, matrixDrops[i]);
-                if (matrixDrops[i] > canvas.height && Math.random() > 0.975) matrixDrops[i] = 0;
-                matrixDrops[i] += 16 + Math.random() * 4;
+        class Bullet {
+            constructor(x, y) { this.x = x; this.y = y; this.radius = 3; this.speed = 14; }
+            update() { this.y -= this.speed; }
+            draw(ctx) {
+                ctx.save(); ctx.fillStyle = '#fff'; ctx.shadowBlur = 10; ctx.shadowColor = '#00f0ff';
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore();
             }
         }
 
-        function drawShip() {
-            ctx.save();
-            ctx.translate(ship.x + 35, ship.y + 28);
-            ctx.shadowBlur = 35; ctx.shadowColor = '#0f0';
-            ctx.fillStyle = '#0f0';
-            ctx.beginPath();
-            ctx.moveTo(0, -35);
-            ctx.lineTo(-30, 30);
-            ctx.lineTo(-10, 20);
-            ctx.lineTo(10, 20);
-            ctx.lineTo(30, 30);
-            ctx.closePath();
-            ctx.fill();
-            ctx.fillStyle = '#22ff99';
-            ctx.fillRect(-10, 10, 20, 18);
-            ctx.restore();
-        }
-
-        function spawnAnswers() {
-            answers = [];
-            const q = questions[currentQuestionIndex];
-            const positions = [canvas.width*0.17, canvas.width*0.4, canvas.width*0.63, canvas.width*0.83];
-            const shuffled = [...q.answers].sort(() => Math.random() - 0.5);
-            shuffled.forEach((ans, i) => {
-                if (i < 4) answers.push(new Answer(positions[i], ans.text, ans.correct));
-            });
-        }
-
-        function createExplosion(x, y, isCorrect) {
-            const color = isCorrect ? '#00ff44' : '#ff0088';
-            for (let i = 0; i < 35; i++) particles.push(new Particle(x, y, color));
-            playSound(isCorrect ? 'correct' : 'wrong');
-        }
-
-        function update() {
-            if (!gameRunning) return;
-
-            if (keys['ArrowLeft'] || keys['a'] || keys['A']) ship.x -= ship.speed;
-            if (keys['ArrowRight'] || keys['d'] || keys['D']) ship.x += ship.speed;
-            ship.x = Math.max(20, Math.min(canvas.width - 90, ship.x));
-
-            // Atualiza tiros
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                bullets[i].update();
-                if (bullets[i].y < -50) bullets.splice(i, 1);
+        class AsteroideAnswer {
+            constructor(x, text, correct, totalCols) {
+                this.x = x; this.y = -60; this.text = text; this.correct = correct;
+                this.width = Math.min(130, (window.innerWidth - 40) / totalCols);
+                this.height = 55; 
+                this.speed = 0.6 + Math.random() * 0.3; 
             }
-
-            // Atualiza respostas e colisões
-            for (let i = answers.length - 1; i >= 0; i--) {
-                const a = answers[i];
-                a.update();
+            update() { this.y += this.speed; }
+            draw(ctx) {
+                ctx.save(); ctx.translate(this.x, this.y + this.height / 2);
+                ctx.shadowBlur = 10; ctx.shadowColor = this.correct ? '#39ff14' : '#ff007f';
+                ctx.strokeStyle = this.correct ? '#39ff14' : '#ff007f';
+                ctx.fillStyle = '#05021a'; ctx.lineWidth = 2;
                 
-                if (a.y + a.height > canvas.height - 100) {
-                    if (a.correct) { lives--; playSound('loseLife'); }
-                    answers.splice(i, 1);
-                    continue;
+                ctx.beginPath(); ctx.rect(-this.width/2, -this.height/2, this.width, this.height);
+                ctx.fill(); ctx.stroke();
+                
+                ctx.shadowBlur = 0; ctx.fillStyle = '#ffffff';
+                ctx.font = '500 clamp(9px, 2vw, 11px) "Space Grotesk", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                this.wrapText(ctx, this.text, 0, 0, this.width - 10, 13);
+                ctx.restore();
+            }
+            wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+                let words = text.split(' '); let line = ''; let lines = [];
+                for (let n = 0; n < words.length; n++) {
+                    let testLine = line + words[n] + ' ';
+                    if (ctx.measureText(testLine).width > maxWidth && n > 0) { lines.push(line); line = words[n] + ' '; }
+                    else { line = testLine; }
                 }
+                lines.push(line);
+                let startY = y - ((lines.length - 1) * lineHeight) / 2;
+                for (let i = 0; i < lines.length; i++) ctx.fillText(lines[i].trim(), x, startY + (i * lineHeight));
+            }
+        }
 
-                for (let j = bullets.length - 1; j >= 0; j--) {
-                    const b = bullets[j];
-                    if (b.x > a.x - a.width/2 && b.x < a.x + a.width/2 && 
-                        b.y > a.y && b.y < a.y + a.height) {
-                        
-                        bullets.splice(j, 1);
-                        createExplosion(a.x, a.y + 45, a.correct);
-                        
-                        if (a.correct) {
-                            score += 100;
-                            document.getElementById('score').textContent = String(score).padStart(5, '0');
-                            nextQuestion();
-                        } else {
-                            lives--;
-                            document.getElementById('lives').textContent = String(lives).padStart(2, '0');
+        class GameEngine {
+            constructor() {
+                this.canvas = document.getElementById('canvas'); this.ctx = this.canvas.getContext('2d');
+                this.ship = { x: 0, y: 0, width: 46, height: 40, targetX: 0, speed: 14 };
+                this.bullets = []; this.answers = []; this.particles = []; this.starfield = [];
+                this.score = 0; 
+                this.lives = 24; 
+                this.currentQuestionIdx = 0;
+                this.isPlaying = false; this.isPaused = false; this.screenShake = 0; this.keys = {};
+                this.initEvents(); this.resize(); this.generateStars();
+            }
+            initEvents() {
+                window.addEventListener('resize', () => this.resize());
+                window.addEventListener('keydown', (e) => {
+                    this.keys[e.key] = true;
+                    if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') this.shootLaser();
+                });
+                window.addEventListener('keyup', (e) => this.keys[e.key] = false);
+                this.canvas.addEventListener('mousemove', (e) => {
+                    if (!this.isPlaying || this.isPaused) return;
+                    this.ship.targetX = e.clientX - this.canvas.getBoundingClientRect().left - this.ship.width / 2;
+                });
+                this.canvas.addEventListener('touchmove', (e) => {
+                    if (!this.isPlaying || this.isPaused) return;
+                    this.ship.targetX = e.touches[0].clientX - this.canvas.getBoundingClientRect().left - this.ship.width / 2;
+                }, { passive: true });
+                this.canvas.addEventListener('click', () => { if (this.isPlaying && !this.isPaused) this.shootLaser(); });
+                
+                document.getElementById('left-btn').addEventListener('touchstart', (e) => { e.preventDefault(); this.keys['ArrowLeft'] = true; });
+                document.getElementById('left-btn').addEventListener('touchend', (e) => { e.preventDefault(); this.keys['ArrowLeft'] = false; });
+                document.getElementById('right-btn').addEventListener('touchstart', (e) => { e.preventDefault(); this.keys['ArrowRight'] = true; });
+                document.getElementById('right-btn').addEventListener('touchend', (e) => { e.preventDefault(); this.keys['ArrowRight'] = false; });
+                document.getElementById('shoot-btn').addEventListener('touchstart', (e) => { e.preventDefault(); this.shootLaser(); });
+                document.getElementById('audio-toggle').addEventListener('click', (e) => {
+                    e.stopPropagation(); audio.muted = !audio.muted;
+                    e.target.className = audio.muted ? "fa-solid fa-volume-xmark control-icon" : "fa-solid fa-volume-high control-icon";
+                });
+                document.getElementById('pause-toggle').addEventListener('click', (e) => { e.stopPropagation(); this.togglePause(); });
+            }
+            resize() {
+                this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight;
+                this.ship.y = this.canvas.height - 110;
+                if (!this.isPlaying) { this.ship.x = this.canvas.width / 2 - this.ship.width / 2; this.ship.targetX = this.ship.x; }
+                this.generateStars();
+            }
+            generateStars() {
+                this.starfield = [];
+                let count = window.innerWidth < 600 ? 40 : 80;
+                for (let i = 0; i < count; i++) {
+                    this.starfield.push({ x: Math.random() * this.canvas.width, y: Math.random() * this.canvas.height, size: Math.random() * 2, speed: Math.random() * 1.5 + 0.5 });
+                }
+            }
+            startGame() {
+                audio.init();
+                document.getElementById('start-screen').style.display = 'none';
+                document.getElementById('game-over').style.display = 'none';
+                this.score = 0; 
+                this.lives = 24; 
+                this.currentQuestionIdx = 0;
+                this.bullets = []; this.answers = []; this.particles = [];
+                this.isPlaying = true; this.isPaused = false;
+                
+                questions = [...originalQuestions].sort(() => Math.random() - 0.5);
+                
+                this.ship.x = this.canvas.width / 2 - this.ship.width / 2; this.ship.targetX = this.ship.x;
+                this.updateHUD(); this.loadQuestion();
+            }
+            restartGame() { this.startGame(); }
+            togglePause() {
+                if (!this.isPlaying) return; this.isPaused = !this.isPaused;
+                document.getElementById('pause-screen').style.display = this.isPaused ? 'flex' : 'none';
+                document.getElementById('pause-toggle').className = this.isPaused ? "fa-solid fa-play control-icon" : "fa-solid fa-pause control-icon";
+            }
+            updateHUD() {
+                document.getElementById('score').textContent = String(this.score).padStart(5, '0');
+                let high = localStorage.getItem('qs_high_simple') || 0;
+                if (this.score > high) { localStorage.setItem('setItem' in localStorage ? 'qs_high_simple' : '', this.score); high = this.score; }
+                document.getElementById('highscore').textContent = String(high).padStart(5, '0');
+                
+                let lStr = ''; 
+                for (let i = 0; i < 24; i++) lStr += i < this.lives ? '|' : '·';
+                document.getElementById('lives').textContent = lStr;
+            }
+            loadQuestion() {
+                const q = questions[this.currentQuestionIdx];
+                document.getElementById('question-category').textContent = q.category;
+                document.getElementById('question-text').textContent = q.question;
+                this.spawnAnswers(q);
+            }
+            spawnAnswers(q) {
+                this.answers = [];
+                let padding = window.innerWidth < 600 ? 30 : 60;
+                let availableWidth = this.canvas.width - (padding * 2);
+                let colStep = availableWidth / (q.answers.length - 1);
+                
+                let shuffledAnswers = [...q.answers].sort(() => Math.random() - 0.5);
+                
+                shuffledAnswers.forEach((ans, idx) => {
+                    let colX = padding + (idx * colStep);
+                    let obs = new AsteroideAnswer(colX, ans.text, ans.correct, q.answers.length);
+                    obs.y = -60 - (Math.random() * 40);
+                    this.answers.push(obs);
+                });
+            }
+            shootLaser() {
+                if (!this.isPlaying || this.isPaused) return;
+                this.bullets.push(new Bullet(this.ship.x + 4, this.ship.y));
+                this.bullets.push(new Bullet(this.ship.x + this.ship.width - 4, this.ship.y));
+                audio.playLaser();
+            }
+            triggerExplosion(x, y, color) {
+                for (let i = 0; i < 20; i++) this.particles.push(new Particle(x, y, color));
+            }
+            registerHit(ans) {
+                this.triggerExplosion(ans.x, ans.y + ans.height/2, ans.correct ? '#39ff14' : '#ff007f');
+                if (ans.correct) {
+                    this.score += 100;
+                    this.currentQuestionIdx++;
+                    
+                    if(this.currentQuestionIdx >= questions.length) {
+                        this.currentQuestionIdx = 0;
+                        questions.sort(() => Math.random() - 0.5);
+                    }
+                    this.loadQuestion();
+                } else {
+                    this.lives--; this.screenShake = 10;
+                    if (this.lives > 0) this.spawnAnswers(questions[this.currentQuestionIdx]);
+                }
+                audio.playExplosion(ans.correct); this.updateHUD();
+                if (this.lives <= 0) this.endGame();
+            }
+            endGame() {
+                this.isPlaying = false; document.getElementById('final-score').textContent = this.score;
+                let prev = localStorage.getItem('qs_high_simple') || 0;
+                document.getElementById('new-record-msg').textContent = (this.score >= prev && this.score > 0) ? "🏆 NOVO RECORDE!" : "";
+                let go = document.getElementById('game-over'); go.style.display = 'flex'; setTimeout(() => { go.style.opacity = '1'; }, 50);
+            }
+            update() {
+                if (!this.isPlaying || this.isPaused) return;
+                if (this.keys['ArrowLeft'] || this.keys['a'] || this.keys['A']) this.ship.targetX -= this.ship.speed;
+                if (this.keys['ArrowRight'] || this.keys['d'] || this.keys['D']) this.ship.targetX += this.ship.speed;
+                this.ship.x += (this.ship.targetX - this.ship.x) * 0.25;
+                this.ship.x = Math.max(10, Math.min(this.canvas.width - this.ship.width - 10, this.ship.x));
+                
+                this.starfield.forEach(s => { s.y += s.speed; if (s.y > this.canvas.height) { s.y = -5; s.x = Math.random() * this.canvas.width; } });
+                for (let i = this.bullets.length - 1; i >= 0; i--) { this.bullets[i].update(); if (this.bullets[i].y < -20) this.bullets.splice(i, 1); }
+                
+                let missed = false;
+                for (let i = this.answers.length - 1; i >= 0; i--) {
+                    this.answers[i].update();
+                    if (this.answers[i].y > this.canvas.height) { if (this.answers[i].correct) missed = true; this.answers.splice(i, 1); continue; }
+                    for (let j = this.bullets.length - 1; j >= 0; j--) {
+                        let b = this.bullets[j]; let a = this.answers[i];
+                        if (b.x > a.x - a.width/2 && b.x < a.x + a.width/2 && b.y > a.y && b.y < a.y + a.height) {
+                            this.bullets.splice(j, 1); this.registerHit(a); break;
                         }
-                        answers.splice(i, 1);
-                        break;
                     }
                 }
+                if (missed) {
+                    this.lives--; this.screenShake = 10; this.updateHUD();
+                    if (this.lives <= 0) this.endGame(); else this.loadQuestion();
+                }
+                this.particles.forEach((p, idx) => { p.update(); if (p.alpha <= 0) this.particles.splice(idx, 1); });
+                if (this.screenShake > 0) this.screenShake *= 0.9;
             }
-
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update();
-                if (particles[i].life <= 0) particles.splice(i, 1);
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.save();
+                if (this.screenShake > 0.5) this.ctx.translate((Math.random() - 0.5) * this.screenShake, (Math.random() - 0.5) * this.screenShake);
+                this.ctx.fillStyle = '#fff'; this.starfield.forEach(s => this.ctx.fillRect(s.x, s.y, s.size, s.size));
+                this.answers.forEach(a => a.draw(this.ctx)); this.bullets.forEach(b => b.draw(this.ctx));
+                this.particles.forEach(p => p.draw(this.ctx));
+                if (this.isPlaying) this.drawShip(); this.ctx.restore();
             }
-
-            if (answers.length === 0) nextQuestion();
-            if (lives <= 0) gameOver();
+            drawShip() {
+                this.ctx.save(); this.ctx.translate(this.ship.x + this.ship.width / 2, this.ship.y + this.ship.height / 2);
+                this.ctx.fillStyle = '#0a0d26'; this.ctx.strokeStyle = '#00f0ff'; this.ctx.lineWidth = 2.5;
+                this.ctx.shadowBlur = 10; this.ctx.shadowColor = '#00f0ff';
+                this.ctx.beginPath(); this.ctx.moveTo(0, -18); this.ctx.lineTo(18, 12); this.ctx.lineTo(0, 4); this.ctx.lineTo(-18, 12); this.ctx.closePath();
+                this.ctx.fill(); this.ctx.stroke(); this.ctx.restore();
+            }
+            loop() { this.update(); this.draw(); requestAnimationFrame(() => this.loop()); }
         }
 
-        function draw() {
-            drawMatrixRain();
-            drawShip();
-            bullets.forEach(b => b.draw());
-            answers.forEach(a => a.draw());
-            particles.forEach(p => p.draw());
-            ctx.globalAlpha = 1;
-        }
-
-        function gameLoop() {
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-
-        function nextQuestion() {
-            currentQuestionIndex = (currentQuestionIndex + 1) % questions.length;
-            difficulty = Math.min(2.8, difficulty + 0.12);
-            document.getElementById('question').textContent = questions[currentQuestionIndex].question;
-            spawnAnswers();
-            playSound('next');
-        }
-
-        function shoot() {
-            if (!gameRunning) return;
-            bullets.push(new Bullet(ship.x + 32, ship.y - 20));
-            playSound('shoot');
-        }
-
-        function startGame() {
-            document.getElementById('start-screen').style.display = 'none';
-            gameRunning = true;
-            score = 0; lives = 3; currentQuestionIndex = 0; difficulty = 1;
-            bullets = []; answers = []; particles = [];
-            ship.x = canvas.width / 2 - 35;
-            ship.y = canvas.height - 110;
-            
-            document.getElementById('score').textContent = '00000';
-            document.getElementById('lives').textContent = '03';
-            document.getElementById('question').textContent = questions[0].question;
-            spawnAnswers();
-        }
-
-        function gameOver() {
-            gameRunning = false;
-            document.getElementById('final-score').textContent = String(score).padStart(5, '0');
-            document.getElementById('game-over').style.display = 'flex';
-        }
-
-        function restartGame() {
-            document.getElementById('game-over').style.display = 'none';
-            startGame();
-        }
-
-        function setupControls() {
-            window.addEventListener('keydown', e => {
-                keys[e.key] = true;
-                if ((e.key === ' ' || e.key === 'Enter') && gameRunning) shoot();
-            });
-            window.addEventListener('keyup', e => keys[e.key] = false);
-
-            document.getElementById('left-btn').addEventListener('touchstart', e => { e.preventDefault(); keys['ArrowLeft'] = true; });
-            document.getElementById('left-btn').addEventListener('touchend', e => { e.preventDefault(); keys['ArrowLeft'] = false; });
-            document.getElementById('right-btn').addEventListener('touchstart', e => { e.preventDefault(); keys['ArrowRight'] = true; });
-            document.getElementById('right-btn').addEventListener('touchend', e => { e.preventDefault(); keys['ArrowRight'] = false; });
-
-            const shootBtn = document.getElementById('shoot-btn');
-            shootBtn.addEventListener('touchstart', e => { e.preventDefault(); shoot(); });
-            shootBtn.addEventListener('click', () => { if (gameRunning) shoot(); });
-
-            canvas.addEventListener('touchstart', e => {
-                if (!gameRunning) return;
-                touchStartX = e.touches[0].clientX;
-                isDragging = true;
-            });
-
-            canvas.addEventListener('touchmove', e => {
-                if (!isDragging || !gameRunning) return;
-                e.preventDefault();
-                const delta = e.touches[0].clientX - touchStartX;
-                ship.x += delta * 1.15;
-                touchStartX = e.touches[0].clientX;
-                ship.x = Math.max(20, Math.min(canvas.width - 90, ship.x));
-            });
-
-            canvas.addEventListener('touchend', () => isDragging = false);
-            canvas.addEventListener('click', () => { if (gameRunning) shoot(); });
-        }
-
-        initMatrix();
-        window.addEventListener('resize', () => { resizeCanvas(); initMatrix(); });
-        setupControls();
-        gameLoop();
+        const game = new GameEngine();
+        game.loop();
     </script>
 </body>
 </html>
