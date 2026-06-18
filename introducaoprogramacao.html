@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>🚀 REVISÃO JS - EETEPA 26</title>
+    <title>🚀 REVISÃO JS - EETEPA 26 (MOBILE)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
@@ -24,6 +24,7 @@
             box-sizing: border-box;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
         body {
@@ -34,6 +35,7 @@
             touch-action: none;
             height: 100vh;
             width: 100vw;
+            position: fixed;
         }
 
         #game-container {
@@ -55,10 +57,10 @@
 
         #hud {
             position: absolute;
-            top: 15px;
+            top: env(safe-area-inset-top, 10px);
             left: 0;
             width: 100%;
-            padding: 0 20px;
+            padding: 0 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -67,118 +69,110 @@
         }
 
         .hud-panel {
-            background: rgba(3, 0, 30, 0.7);
+            background: rgba(3, 0, 30, 0.8);
             border: 1px solid rgba(0, 240, 255, 0.3);
-            padding: 10px 20px;
-            border-radius: 12px;
+            padding: 6px 12px;
+            border-radius: 8px;
             font-family: 'Orbitron', sans-serif;
-            font-size: clamp(10px, 2vw, 14px);
-            letter-spacing: 1px;
+            font-size: clamp(10px, 3vw, 12px);
+            letter-spacing: 0.5px;
             display: flex;
-            gap: 15px;
+            flex-direction: column;
+            gap: 2px;
             pointer-events: auto;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
+            backdrop-filter: blur(5px);
         }
 
-        .stat-glow-blue { text-shadow: 0 0 10px var(--neon-blue); color: var(--neon-blue); }
-        .stat-glow-pink { text-shadow: 0 0 10px var(--neon-pink); color: var(--neon-pink); font-size: clamp(9px, 1.8vw, 11px); letter-spacing: 1px; word-break: break-all; }
+        .stat-glow-blue { text-shadow: 0 0 8px var(--neon-blue); color: var(--neon-blue); font-weight: bold; }
+        .stat-glow-pink { text-shadow: 0 0 8px var(--neon-pink); color: var(--neon-pink); letter-spacing: 0.5px; word-break: break-all; }
         
         .control-icon {
             cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 18px;
-        }
-        .control-icon:hover {
-            transform: scale(1.1);
-            color: var(--neon-blue);
+            font-size: 16px;
         }
 
         #question-panel {
             position: absolute;
-            top: 85px;
+            top: clamp(65px, 12vh, 85px);
             left: 50%;
             transform: translateX(-50%);
             background: rgba(3, 0, 30, 0.85);
-            border: 2px solid var(--neon-blue);
-            padding: 12px 25px;
-            border-radius: 16px;
+            border: 1.5px solid var(--neon-blue);
+            padding: 8px 16px;
+            border-radius: 12px;
             text-align: center;
-            max-width: 95%;
-            width: 580px;
+            width: 90%;
+            max-width: 450px;
             pointer-events: none;
             z-index: 10;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 0 25px rgba(0, 240, 255, 0.25);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
         }
 
         #question-category {
-            font-size: 11px;
+            font-size: 9px;
             font-family: 'Orbitron', sans-serif;
             color: var(--neon-purple);
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 3px;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
         }
 
         #question-text {
-            font-size: clamp(13px, 3.5vw, 16px);
+            font-size: clamp(12px, 3.8vw, 14px);
             font-weight: 500;
-            line-height: 1.3;
+            line-height: 1.2;
             color: #fff;
         }
 
         #mobile-controls {
             position: absolute;
-            bottom: clamp(15px, 4vh, 30px);
+            bottom: calc(env(safe-area-inset-bottom, 10px) + 10px);
             left: 0;
             width: 100%;
-            display: none;
+            display: flex;
             justify-content: space-between;
-            padding: 0 20px;
+            padding: 0 15px;
             z-index: 20;
-            gap: 10px;
-        }
-
-        @media (pointer: coarse) {
-            #mobile-controls { display: flex; }
+            gap: 8px;
         }
 
         .game-btn {
-            background: rgba(0, 240, 255, 0.1);
+            background: rgba(0, 240, 255, 0.15);
             color: var(--neon-blue);
             border: 2px solid var(--neon-blue);
             font-family: 'Orbitron', sans-serif;
             font-weight: bold;
-            padding: clamp(10px, 3vw, 16px);
-            border-radius: 50px;
+            padding: 15px 0;
+            border-radius: 12px;
             outline: none;
             backdrop-filter: blur(5px);
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            font-size: clamp(12px, 2.5vw, 15px);
+            gap: 4px;
+            font-size: 13px;
             text-shadow: 0 0 5px var(--neon-blue);
+            touch-action: manipulation;
         }
 
         .game-btn:active {
             background: rgba(0, 240, 255, 0.4);
-            box-shadow: 0 0 20px var(--neon-blue);
+            box-shadow: 0 0 15px var(--neon-blue);
         }
 
         #shoot-btn {
-            background: rgba(255, 0, 127, 0.1);
+            background: rgba(255, 0, 127, 0.2);
             color: var(--neon-pink);
             border-color: var(--neon-pink);
             text-shadow: 0 0 5px var(--neon-pink);
-            flex: 1.5;
+            flex: 1.4;
         }
 
         #shoot-btn:active {
-            background: rgba(255, 0, 127, 0.4);
-            box-shadow: 0 0 20px var(--neon-pink);
+            background: rgba(255, 0, 127, 0.5);
+            box-shadow: 0 0 15px var(--neon-pink);
         }
 
         .overlay {
@@ -190,67 +184,62 @@
             align-items: center;
             justify-content: center;
             z-index: 100;
-            padding: 20px;
+            padding: 24px;
             text-align: center;
-            backdrop-filter: blur(15px);
+            backdrop-filter: blur(10px);
         }
 
         #start-screen {
-            background: linear-gradient(rgba(2, 0, 10, 0.6), rgba(2, 0, 10, 0.85)), url('eetepa-bg.png') no-repeat center center;
-            background-size: cover;
+            background: linear-gradient(rgba(2, 0, 10, 0.8), rgba(2, 0, 10, 0.95));
         }
 
         .overlay h1 {
             font-family: 'Orbitron', sans-serif;
-            font-size: clamp(24px, 6vw, 56px);
+            font-size: clamp(22px, 7vw, 36px);
             font-weight: 900;
-            letter-spacing: 2px;
-            text-shadow: 0 0 20px rgba(0, 240, 255, 0.8), 0 0 40px rgba(157, 0, 255, 0.6);
-            margin-bottom: 10px;
+            letter-spacing: 1px;
+            text-shadow: 0 0 15px rgba(0, 240, 255, 0.7);
+            margin-bottom: 15px;
             color: #fff;
         }
 
         .overlay p {
-            font-size: clamp(12px, 3.5vw, 18px);
+            font-size: clamp(12px, 4vw, 15px);
             color: #d1cffd;
-            max-width: 600px;
-            margin-bottom: 30px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            max-width: 400px;
+            margin-bottom: 40px;
+            line-height: 1.4;
         }
 
         .big-btn {
             background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
             color: #fff;
             border: none;
-            padding: clamp(12px, 2.5vh, 20px) clamp(30px, 6vw, 50px);
+            padding: 16px 40px;
             font-family: 'Orbitron', sans-serif;
-            font-size: clamp(16px, 4vw, 24px);
+            font-size: 16px;
             font-weight: bold;
-            border-radius: 50px;
+            border-radius: 30px;
             cursor: pointer;
-            box-shadow: 0 0 30px rgba(0, 240, 255, 0.5);
-            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+            touch-action: manipulation;
         }
 
-        .big-btn:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 0 40px rgba(0, 240, 255, 0.8);
+        .big-btn:active {
+            transform: scale(0.95);
         }
 
         .high-score-board {
             margin-top: 20px;
             font-family: 'Orbitron', sans-serif;
             color: var(--neon-green);
-            font-size: 18px;
+            font-size: 16px;
         }
 
         .help-info {
             margin-top: 30px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            max-width: 600px;
             width: 100%;
+            max-width: 400px;
         }
 
         .help-card {
@@ -258,21 +247,13 @@
             border: 1px solid rgba(0, 240, 255, 0.2);
             padding: 12px;
             border-radius: 12px;
-            font-size: clamp(11px, 2.2vw, 13px);
-            backdrop-filter: blur(5px);
+            font-size: 12px;
         }
 
         .help-card i {
-            font-size: 20px;
+            font-size: 18px;
             color: var(--neon-blue);
-            margin-bottom: 8px;
-        }
-
-        @media (max-height: 650px) {
-            #question-panel { top: 65px; padding: 6px 15px; }
-            #question-text { font-size: 13px; }
-            .help-info { display: none; }
-            .overlay p { margin-bottom: 15px; }
+            margin-bottom: 4px;
         }
     </style>
 </head>
@@ -283,15 +264,15 @@
         
         <div id="hud">
             <div class="hud-panel">
-                <div>SCORE: <span id="score" class="stat-glow-blue">00000</span></div>
+                <div>PTS: <span id="score" class="stat-glow-blue">00000</span></div>
                 <div>REC: <span id="highscore" style="color: #bbb;">00000</span></div>
             </div>
             
             <div class="hud-panel">
-                <div>
-                    VIDAS: <span id="lives" class="stat-glow-pink">||||||||||||||||||||||||</span>
+                <div style="text-align: right;">
+                    VIdAS: <span id="lives" class="stat-glow-pink">||||||||||||||||||||||||</span>
                 </div>
-                <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="display: flex; gap: 16px; justify-content: flex-end; align-items: center; margin-top: 2px; pointer-events: auto;">
                     <i class="fa-solid fa-volume-high control-icon" id="audio-toggle"></i>
                     <i class="fa-solid fa-pause control-icon" id="pause-toggle"></i>
                 </div>
@@ -311,27 +292,22 @@
 
         <div id="start-screen" class="overlay">
             <h1>REVISÃO JS-EETEPA-26</h1>
-            <p>Prepare sua nave, atire na resposta correta e destrua os asteroides incorretos!</p>
-            <button class="big-btn" onclick="game.startGame()">INICIAR REVISÃO</button>
+            <p>Use os botões inferiores para pilotar e atirar na resposta correta. Destrua os asteroides incorretos!</p>
+            <button class="big-btn" onclick="game.startGame()">INICIAR NO SMARTPHONE</button>
             
             <div class="help-info">
                 <div class="help-card">
-                    <i class="fa-solid fa-keyboard"></i>
-                    <h4>Teclado</h4>
-                    <p>Setas ou A/D para mover. Espaço ou W para atirar.</p>
-                </div>
-                <div class="help-card">
-                    <i class="fa-solid fa-hand-pointer"></i>
-                    <h4>Mouse / Touch</h4>
-                    <p>Arraste para mover. Clique ou toque na tela para atirar.</p>
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                    <h4>Controles de Toque</h4>
+                    <p>Toque nos botões direcionais ou arraste o dedo diretamente na tela para guiar a nave.</p>
                 </div>
             </div>
         </div>
 
         <div id="game-over" class="overlay" style="display: none; opacity: 0;">
-            <h1 style="text-shadow: 0 0 30px var(--neon-pink);">FIM DE JOGO</h1>
-            <p style="font-size: 24px; margin-bottom: 10px;">Pontuação:</p>
-            <div style="font-size: 48px; font-weight: bold; font-family: 'Orbitron'; color: var(--neon-pink); margin-bottom: 20px;" id="final-score">0</div>
+            <h1 style="text-shadow: 0 0 20px var(--neon-pink);">FIM DE JOGO</h1>
+            <p style="font-size: 18px; margin-bottom: 5px;">Pontuação:</p>
+            <div style="font-size: 42px; font-weight: bold; font-family: 'Orbitron'; color: var(--neon-pink); margin-bottom: 20px;" id="final-score">0</div>
             <button class="big-btn" onclick="game.restartGame()">REINICIAR</button>
             <div class="high-score-board" id="new-record-msg"></div>
         </div>
@@ -350,26 +326,25 @@
             }
             init() { if (this.ctx) return; this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
             playLaser() {
-                if (this.muted || !this.ctx) return; this.init();
+                if (this.muted) return; this.init(); if(!this.ctx) return;
                 let osc = this.ctx.createOscillator(); let gain = this.ctx.createGain();
                 osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.15);
-                gain.gain.setValueAtTime(0.2, this.ctx.currentTime); gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
-                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + 0.15);
+                osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime); gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + 0.12);
             }
             playExplosion(isCorrect) {
-                if (this.muted || !this.ctx) return; this.init();
-                let dur = isCorrect ? 0.3 : 0.5; let osc = this.ctx.createOscillator(); let gain = this.ctx.createGain();
-                osc.type = 'triangle'; osc.frequency.setValueAtTime(isCorrect ? 300 : 120, this.ctx.currentTime);
+                if (this.muted) return; this.init(); if(!this.ctx) return;
+                let dur = isCorrect ? 0.25 : 0.4; let osc = this.ctx.createOscillator(); let gain = this.ctx.createGain();
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(isCorrect ? 250 : 100, this.ctx.currentTime);
                 osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + dur);
-                gain.gain.setValueAtTime(isCorrect ? 0.2 : 0.4, this.ctx.currentTime); gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + dur);
+                gain.gain.setValueAtTime(isCorrect ? 0.15 : 0.3, this.ctx.currentTime); gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + dur);
                 osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + dur);
             }
         }
 
         const audio = new SoundSynth();
 
-        // Base de dados expandida para 20 questões
         const originalQuestions = [
             {
                 question: "Como declarar variável em JavaScript?",
@@ -387,7 +362,7 @@
                 answers: [
                     { text: "2, 3, 4 e 5", correct: false },
                     { text: "Nenhuma das alternativas", correct: false },
-                    { text: "Letras do alfabeto", correct: false },
+                    { text: "Letras", correct: false },
                     { text: "Os valores 0 e 1", correct: true }
                 ]
             },
@@ -396,7 +371,7 @@
                 category: "JavaScript",
                 answers: [
                     { text: "Bancos de dados", correct: false },
-                    { text: "Sistemas operacionais", correct: false },
+                    { text: "Sistemas Op.", correct: false },
                     { text: "Navegadores web", correct: true },
                     { text: "Roteadores", correct: false }
                 ]
@@ -408,7 +383,7 @@
                     { text: "Armazenar dados alteráveis", correct: true },
                     { text: "Exibir valor fixo", correct: false },
                     { text: "Mostrar imagens", correct: false },
-                    { text: "Conectar à internet", correct: false }
+                    { text: "Conectar à web", correct: false }
                 ]
             },
             {
@@ -418,7 +393,7 @@
                     { text: "inteiro idade", correct: true },
                     { text: "var idade : float", correct: false },
                     { text: "idade = real", correct: false },
-                    { text: "declare idade inteiro", correct: false }
+                    { text: "declare idade", correct: false }
                 ]
             },
             {
@@ -427,8 +402,8 @@
                 answers: [
                     { text: "Repetir comandos", correct: false },
                     { text: "Decidir sob condições", correct: true },
-                    { text: "Armazenar arquivos", correct: false },
-                    { text: "Instalar programas", correct: false }
+                    { text: "Salvar arquivos", correct: false },
+                    { text: "Instalar apps", correct: false }
                 ]
             },
             {
@@ -438,7 +413,7 @@
                     { text: "Verifica se idade é menor que 19", correct: true },
                     { text: "Atribui 15 à idade", correct: false },
                     { text: "Mostra 15 na tela", correct: false },
-                    { text: "Apaga o valor de idade", correct: false }
+                    { text: "Apaga o valor", correct: false }
                 ]
             },
             {
@@ -457,8 +432,8 @@
                 answers: [
                     { text: "Guarda estados True ou False", correct: true },
                     { text: "Armazena textos longos", correct: false },
-                    { text: "Guarda números decimais", correct: false },
-                    { text: "Cria repetições no código", correct: false }
+                    { text: "Guarda decimais", correct: false },
+                    { text: "Cria repetições", correct: false }
                 ]
             },
             {
@@ -466,12 +441,11 @@
                 category: "JavaScript",
                 answers: [
                     { text: "Cria variável de valor fixo", correct: true },
-                    { text: "Declara loops infinitos", correct: false },
-                    { text: "Modifica tipos dinâmicos", correct: false },
-                    { text: "Limpa a memória do app", correct: false }
+                    { text: "Declara loops", correct: false },
+                    { text: "Modifica tipos", correct: false },
+                    { text: "Limpa a memória", correct: false }
                 ]
             },
-            // Novas 10 questões adicionadas abaixo:
             {
                 question: "Qual comando exibe uma mensagem no console do JavaScript?",
                 category: "JavaScript",
@@ -516,10 +490,10 @@
                 question: "O que faz o laço de repetição 'for' na programação?",
                 category: "Lógica",
                 answers: [
-                    { text: "Executa um bloco de código repetidas vezes", correct: true },
-                    { text: "Para o programa imediatamente", correct: false },
-                    { text: "Testa apenas uma condição falsa", correct: false },
-                    { text: "Deleta variáveis duplicadas", correct: false }
+                    { text: "Executa um bloco várias vezes", correct: true },
+                    { text: "Para o programa", correct: false },
+                    { text: "Testa erro falso", correct: false },
+                    { text: "Deleta variáveis", correct: false }
                 ]
             },
             {
@@ -548,7 +522,7 @@
                 answers: [
                     { text: "O resultado será 35", correct: true },
                     { text: "O resultado será '305'", correct: false },
-                    { text: "Gera um erro de sintaxe", correct: false },
+                    { text: "Gera um erro", correct: false },
                     { text: "O resultado será 30", correct: false }
                 ]
             },
@@ -579,46 +553,45 @@
         class Particle {
             constructor(x, y, color) {
                 this.x = x; this.y = y; this.color = color;
-                this.vx = (Math.random() - 0.5) * 6; this.vy = (Math.random() - 0.5) * 6;
-                this.alpha = 1; this.decay = 0.03 + Math.random() * 0.02;
+                this.vx = (Math.random() - 0.5) * 5; this.vy = (Math.random() - 0.5) * 5;
+                this.alpha = 1; this.decay = 0.04 + Math.random() * 0.02;
             }
             update() { this.x += this.vx; this.y += this.vy; this.alpha -= this.decay; }
             draw(ctx) {
                 ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
-                ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+                ctx.beginPath(); ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2); ctx.fill(); ctx.restore();
             }
         }
 
         class Bullet {
-            constructor(x, y) { this.x = x; this.y = y; this.radius = 3; this.speed = 14; }
+            constructor(x, y) { this.x = x; this.y = y; this.radius = 3; this.speed = 16; }
             update() { this.y -= this.speed; }
             draw(ctx) {
-                ctx.save(); ctx.fillStyle = '#fff'; ctx.shadowBlur = 10; ctx.shadowColor = '#00f0ff';
+                ctx.save(); ctx.fillStyle = '#fff'; ctx.shadowBlur = 8; ctx.shadowColor = '#00f0ff';
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore();
             }
         }
 
         class AsteroideAnswer {
-            constructor(x, text, correct, totalCols) {
-                this.x = x; this.y = -60; this.text = text; this.correct = correct;
-                // Largura adaptativa dependendo do tamanho da tela do jogador
-                this.width = Math.min(130, (window.innerWidth - 40) / totalCols);
-                this.height = 55; 
-                this.speed = 0.6 + Math.random() * 0.3; 
+            constructor(x, y, text, correct, cellWidth) {
+                this.x = x; this.y = y; this.text = text; this.correct = correct;
+                this.width = cellWidth;
+                this.height = 48; 
+                this.speed = 0.6 + Math.random() * 0.25; 
             }
             update() { this.y += this.speed; }
             draw(ctx) {
                 ctx.save(); ctx.translate(this.x, this.y + this.height / 2);
-                ctx.shadowBlur = 10; ctx.shadowColor = this.correct ? '#39ff14' : '#ff007f';
+                ctx.shadowBlur = 8; ctx.shadowColor = this.correct ? '#39ff14' : '#ff007f';
                 ctx.strokeStyle = this.correct ? '#39ff14' : '#ff007f';
-                ctx.fillStyle = '#05021a'; ctx.lineWidth = 2;
+                ctx.fillStyle = '#05021a'; ctx.lineWidth = 1.5;
                 
                 ctx.beginPath(); ctx.rect(-this.width/2, -this.height/2, this.width, this.height);
                 ctx.fill(); ctx.stroke();
                 
                 ctx.shadowBlur = 0; ctx.fillStyle = '#ffffff';
-                ctx.font = '500 clamp(9px, 2vw, 11px) "Space Grotesk", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                this.wrapText(ctx, this.text, 0, 0, this.width - 10, 13);
+                ctx.font = '500 11px "Space Grotesk", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                this.wrapText(ctx, this.text, 0, 0, this.width - 8, 12);
                 ctx.restore();
             }
             wrapText(ctx, text, x, y, maxWidth, lineHeight) {
@@ -637,68 +610,58 @@
         class GameEngine {
             constructor() {
                 this.canvas = document.getElementById('canvas'); this.ctx = this.canvas.getContext('2d');
-                this.ship = { x: 0, y: 0, width: 46, height: 40, targetX: 0, speed: 14 };
+                this.ship = { x: 0, y: 0, width: 38, height: 34, targetX: 0, speed: 10 };
                 this.bullets = []; this.answers = []; this.particles = []; this.starfield = [];
-                this.score = 0; 
-                this.lives = 24; 
-                this.currentQuestionIdx = 0;
+                this.score = 0; this.lives = 24; this.currentQuestionIdx = 0;
                 this.isPlaying = false; this.isPaused = false; this.screenShake = 0; this.keys = {};
-                this.initEvents(); this.resize(); this.generateStars();
+                this.initEvents(); this.resize();
             }
             initEvents() {
                 window.addEventListener('resize', () => this.resize());
-                window.addEventListener('keydown', (e) => {
-                    this.keys[e.key] = true;
-                    if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') this.shootLaser();
-                });
-                window.addEventListener('keyup', (e) => this.keys[e.key] = false);
-                this.canvas.addEventListener('mousemove', (e) => {
-                    if (!this.isPlaying || this.isPaused) return;
-                    this.ship.targetX = e.clientX - this.canvas.getBoundingClientRect().left - this.ship.width / 2;
-                });
-                this.canvas.addEventListener('touchmove', (e) => {
-                    if (!this.isPlaying || this.isPaused) return;
-                    this.ship.targetX = e.touches[0].clientX - this.canvas.getBoundingClientRect().left - this.ship.width / 2;
-                }, { passive: true });
-                this.canvas.addEventListener('click', () => { if (this.isPlaying && !this.isPaused) this.shootLaser(); });
                 
-                document.getElementById('left-btn').addEventListener('touchstart', (e) => { e.preventDefault(); this.keys['ArrowLeft'] = true; });
-                document.getElementById('left-btn').addEventListener('touchend', (e) => { e.preventDefault(); this.keys['ArrowLeft'] = false; });
-                document.getElementById('right-btn').addEventListener('touchstart', (e) => { e.preventDefault(); this.keys['ArrowRight'] = true; });
-                document.getElementById('right-btn').addEventListener('touchend', (e) => { e.preventDefault(); this.keys['ArrowRight'] = false; });
-                document.getElementById('shoot-btn').addEventListener('touchstart', (e) => { e.preventDefault(); this.shootLaser(); });
-                document.getElementById('audio-toggle').addEventListener('click', (e) => {
-                    e.stopPropagation(); audio.muted = !audio.muted;
+                const handleTouchMove = (e) => {
+                    if (!this.isPlaying || this.isPaused) return;
+                    const touchX = e.touches[0].clientX - this.canvas.getBoundingClientRect().left;
+                    this.ship.targetX = touchX - this.ship.width / 2;
+                };
+                this.canvas.addEventListener('touchmove', handleTouchMove, { passive: true });
+                
+                const leftBtn = document.getElementById('left-btn');
+                const rightBtn = document.getElementById('right-btn');
+                const shootBtn = document.getElementById('shoot-btn');
+
+                leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.keys['ArrowLeft'] = true; });
+                leftBtn.addEventListener('touchend', (e) => { e.preventDefault(); this.keys['ArrowLeft'] = false; });
+                rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.keys['ArrowRight'] = true; });
+                rightBtn.addEventListener('touchend', (e) => { e.preventDefault(); this.keys['ArrowRight'] = false; });
+                shootBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.shootLaser(); });
+                
+                document.getElementById('audio-toggle').addEventListener('touchstart', (e) => {
+                    e.preventDefault(); e.stopPropagation(); audio.muted = !audio.muted;
                     e.target.className = audio.muted ? "fa-solid fa-volume-xmark control-icon" : "fa-solid fa-volume-high control-icon";
                 });
-                document.getElementById('pause-toggle').addEventListener('click', (e) => { e.stopPropagation(); this.togglePause(); });
+                document.getElementById('pause-toggle').addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); this.togglePause(); });
             }
             resize() {
                 this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight;
-                this.ship.y = this.canvas.height - 110;
+                this.ship.y = this.canvas.height - clamp(95, window.innerHeight * 0.16, 130);
                 if (!this.isPlaying) { this.ship.x = this.canvas.width / 2 - this.ship.width / 2; this.ship.targetX = this.ship.x; }
                 this.generateStars();
             }
             generateStars() {
                 this.starfield = [];
-                let count = window.innerWidth < 600 ? 40 : 80;
-                for (let i = 0; i < count; i++) {
-                    this.starfield.push({ x: Math.random() * this.canvas.width, y: Math.random() * this.canvas.height, size: Math.random() * 2, speed: Math.random() * 1.5 + 0.5 });
+                for (let i = 0; i < 40; i++) {
+                    this.starfield.push({ x: Math.random() * this.canvas.width, y: Math.random() * this.canvas.height, size: Math.random() * 1.5, speed: Math.random() * 1.2 + 0.3 });
                 }
             }
             startGame() {
                 audio.init();
                 document.getElementById('start-screen').style.display = 'none';
                 document.getElementById('game-over').style.display = 'none';
-                this.score = 0; 
-                this.lives = 24; 
-                this.currentQuestionIdx = 0;
+                this.score = 0; this.lives = 24; this.currentQuestionIdx = 0;
                 this.bullets = []; this.answers = []; this.particles = [];
                 this.isPlaying = true; this.isPaused = false;
-                
-                // Randomização total das questões na inicialização
                 questions = [...originalQuestions].sort(() => Math.random() - 0.5);
-                
                 this.ship.x = this.canvas.width / 2 - this.ship.width / 2; this.ship.targetX = this.ship.x;
                 this.updateHUD(); this.loadQuestion();
             }
@@ -726,17 +689,19 @@
             }
             spawnAnswers(q) {
                 this.answers = [];
-                let padding = window.innerWidth < 600 ? 30 : 60;
-                let availableWidth = this.canvas.width - (padding * 2);
-                let colStep = availableWidth / (q.answers.length - 1);
-                
-                // Randomização das alternativas dentro dos asteroides
                 let shuffledAnswers = [...q.answers].sort(() => Math.random() - 0.5);
                 
+                // Otimização Mobile Extrema: Organização em Grid 2x2 Dinâmico
+                let cellWidth = (this.canvas.width - 40) / 2;
+                
                 shuffledAnswers.forEach((ans, idx) => {
-                    let colX = padding + (idx * colStep);
-                    let obs = new AsteroideAnswer(colX, ans.text, ans.correct, q.answers.length);
-                    obs.y = -60 - (Math.random() * 40);
+                    let col = idx % 2;
+                    let row = Math.floor(idx / 2);
+                    
+                    let colX = 20 + (col * cellWidth) + (cellWidth / 2);
+                    let rowY = -130 + (row * 60) - (Math.random() * 20);
+                    
+                    let obs = new AsteroideAnswer(colX, rowY, ans.text, ans.correct, cellWidth - 10);
                     this.answers.push(obs);
                 });
             }
@@ -747,22 +712,19 @@
                 audio.playLaser();
             }
             triggerExplosion(x, y, color) {
-                for (let i = 0; i < 20; i++) this.particles.push(new Particle(x, y, color));
+                for (let i = 0; i < 15; i++) this.particles.push(new Particle(x, y, color));
             }
             registerHit(ans) {
                 this.triggerExplosion(ans.x, ans.y + ans.height/2, ans.correct ? '#39ff14' : '#ff007f');
                 if (ans.correct) {
-                    this.score += 100;
-                    this.currentQuestionIdx++;
-                    
-                    // Se o jogador passar por todas as perguntas, elas são embaralhadas novamente
+                    this.score += 100; this.currentQuestionIdx++;
                     if(this.currentQuestionIdx >= questions.length) {
                         this.currentQuestionIdx = 0;
                         questions.sort(() => Math.random() - 0.5);
                     }
                     this.loadQuestion();
                 } else {
-                    this.lives--; this.screenShake = 10;
+                    this.lives--; this.screenShake = 8;
                     if (this.lives > 0) this.spawnAnswers(questions[this.currentQuestionIdx]);
                 }
                 audio.playExplosion(ans.correct); this.updateHUD();
@@ -776,18 +738,27 @@
             }
             update() {
                 if (!this.isPlaying || this.isPaused) return;
-                if (this.keys['ArrowLeft'] || this.keys['a'] || this.keys['A']) this.ship.targetX -= this.ship.speed;
-                if (this.keys['ArrowRight'] || this.keys['d'] || this.keys['D']) this.ship.targetX += this.ship.speed;
-                this.ship.x += (this.ship.targetX - this.ship.x) * 0.25;
-                this.ship.x = Math.max(10, Math.min(this.canvas.width - this.ship.width - 10, this.ship.x));
+                if (this.keys['ArrowLeft']) this.ship.targetX -= this.ship.speed;
+                if (this.keys['ArrowRight']) this.ship.targetX += this.ship.speed;
+                
+                this.ship.x += (this.ship.targetX - this.ship.x) * 0.3;
+                this.ship.x = Math.max(8, Math.min(this.canvas.width - this.ship.width - 8, this.ship.x));
                 
                 this.starfield.forEach(s => { s.y += s.speed; if (s.y > this.canvas.height) { s.y = -5; s.x = Math.random() * this.canvas.width; } });
                 for (let i = this.bullets.length - 1; i >= 0; i--) { this.bullets[i].update(); if (this.bullets[i].y < -20) this.bullets.splice(i, 1); }
                 
                 let missed = false;
+                let activeAsteroidsY = [];
+                
                 for (let i = this.answers.length - 1; i >= 0; i--) {
                     this.answers[i].update();
-                    if (this.answers[i].y > this.canvas.height) { if (this.answers[i].correct) missed = true; this.answers.splice(i, 1); continue; }
+                    activeAsteroidsY.push(this.answers[i].y);
+                    
+                    if (this.answers[i].y > this.canvas.height) { 
+                        if (this.answers[i].correct) missed = true; 
+                        this.answers.splice(i, 1); 
+                        continue; 
+                    }
                     for (let j = this.bullets.length - 1; j >= 0; j--) {
                         let b = this.bullets[j]; let a = this.answers[i];
                         if (b.x > a.x - a.width/2 && b.x < a.x + a.width/2 && b.y > a.y && b.y < a.y + a.height) {
@@ -795,16 +766,17 @@
                         }
                     }
                 }
-                if (missed) {
-                    this.lives--; this.screenShake = 10; this.updateHUD();
+                
+                if (missed || (this.answers.length === 0 && this.isPlaying)) {
+                    this.lives--; this.screenShake = 8; this.updateHUD();
                     if (this.lives <= 0) this.endGame(); else this.loadQuestion();
                 }
                 this.particles.forEach((p, idx) => { p.update(); if (p.alpha <= 0) this.particles.splice(idx, 1); });
-                if (this.screenShake > 0) this.screenShake *= 0.9;
+                if (this.screenShake > 0) this.screenShake *= 0.85;
             }
             draw() {
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.save();
-                if (this.screenShake > 0.5) this.ctx.translate((Math.random() - 0.5) * this.screenShake, (Math.random() - 0.5) * this.screenShake);
+                if (this.screenShake > 0.4) this.ctx.translate((Math.random() - 0.5) * this.screenShake, (Math.random() - 0.5) * this.screenShake);
                 this.ctx.fillStyle = '#fff'; this.starfield.forEach(s => this.ctx.fillRect(s.x, s.y, s.size, s.size));
                 this.answers.forEach(a => a.draw(this.ctx)); this.bullets.forEach(b => b.draw(this.ctx));
                 this.particles.forEach(p => p.draw(this.ctx));
@@ -813,12 +785,14 @@
             drawShip() {
                 this.ctx.save(); this.ctx.translate(this.ship.x + this.ship.width / 2, this.ship.y + this.ship.height / 2);
                 this.ctx.fillStyle = '#0a0d26'; this.ctx.strokeStyle = '#00f0ff'; this.ctx.lineWidth = 2.5;
-                this.ctx.shadowBlur = 10; this.ctx.shadowColor = '#00f0ff';
-                this.ctx.beginPath(); this.ctx.moveTo(0, -18); this.ctx.lineTo(18, 12); this.ctx.lineTo(0, 4); this.ctx.lineTo(-18, 12); this.ctx.closePath();
+                this.ctx.shadowBlur = 8; this.ctx.shadowColor = '#00f0ff';
+                this.ctx.beginPath(); this.ctx.moveTo(0, -15); this.ctx.lineTo(15, 10); this.ctx.lineTo(0, 3); this.ctx.lineTo(-15, 10); this.ctx.closePath();
                 this.ctx.fill(); this.ctx.stroke(); this.ctx.restore();
             }
             loop() { this.update(); this.draw(); requestAnimationFrame(() => this.loop()); }
         }
+
+        function clamp(min, val, max) { return Math.max(min, Math.min(max, val)); }
 
         const game = new GameEngine();
         game.loop();
