@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle da Sala Inteligente</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    body {
+      background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.5)), 
+                  url('salaaula.png') center/cover no-repeat;
+      height: 100vh;
+      font-family: system-ui;
+    }
+    .container {
+      background: rgba(0, 0, 0, 0.35);
+      box-shadow: 0 0 60px rgba(0,0,0,0.7);
+    }
+    .device {
+      transition: all 0.3s ease;
+      cursor: pointer;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+    .device:hover {
+      transform: scale(1.12);
+      filter: brightness(1.3);
+    }
+    .status-on { color: #22c55e; }
+    .status-off { color: #ef4444; }
+
+    .modal {
+      animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="text-white flex items-center justify-center">
+
+  <div class="relative w-full max-w-6xl h-[92vh] border-8 border-amber-900/80 rounded-3xl overflow-hidden shadow-2xl container">
+
+    <!-- Título -->
+    <div class="absolute top-6 left-1/2 transform -translate-x-1/2 bg-black/70 px-10 py-3 rounded-full text-2xl font-bold z-20 shadow-lg">
+      🏠 Controle da Sala
+    </div>
+
+    <!-- Botão SAIR -->
+    <button onclick="sairSistema()" 
+            class="absolute top-6 right-6 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-2xl font-bold text-lg flex items-center gap-2 z-30 shadow-lg transition-all">
+      <i class="fa-solid fa-right-from-bracket"></i>
+      SAIR
+    </button>
+
+    <!-- Ventilador -->
+    <div onclick="toggleDevice(this)" class="device absolute top-[48%] left-[22%] text-center w-28" data-status="off">
+      <i class="fa-solid fa-fan text-6xl text-teal-400"></i>
+      <p class="mt-2 font-semibold text-lg">Ventilador</p>
+      <p class="text-sm status-off">Desligado</p>
+    </div>
+
+    <!-- TV -->
+    <div onclick="toggleDevice(this)" class="device absolute top-[35%] left-[42%] text-center w-32" data-status="off">
+      <i class="fa-solid fa-tv text-7xl text-gray-200"></i>
+      <p class="mt-2 font-semibold text-lg">TV</p>
+      <p class="text-sm status-off">Desligada</p>
+    </div>
+
+    <!-- Luz de Teto -->
+    <div onclick="toggleDevice(this)" class="device absolute top-[8%] left-[48%] text-center" data-status="off">
+      <i class="fa-solid fa-lightbulb text-6xl text-yellow-300"></i>
+      <p class="mt-2 font-semibold">Luz Principal</p>
+      <p class="text-sm status-off">Desligada</p>
+    </div>
+
+    <!-- Computador -->
+    <div onclick="toggleDevice(this)" class="device absolute top-[62%] left-[68%] text-center w-28" data-status="off">
+      <i class="fa-solid fa-laptop text-5xl text-gray-300"></i>
+      <p class="mt-2 font-semibold">Computador</p>
+      <p class="text-sm status-off">Desligado</p>
+    </div>
+
+    <!-- Soundbar -->
+    <div onclick="toggleDevice(this)" class="device absolute top-[68%] left-[78%] text-center" data-status="off">
+      <i class="fa-solid fa-volume-high text-4xl text-purple-400"></i>
+      <p class="mt-1 font-semibold text-sm">Soundbar</p>
+      <p class="text-xs status-off">Desligado</p>
+    </div>
+
+    <!-- Legenda -->
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-black/70 px-8 py-3 rounded-2xl text-sm flex gap-8 z-20">
+      <div class="flex items-center gap-2">
+        <span class="text-green-400 text-xl">●</span> 
+        <span>Ligado</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-red-400 text-xl">●</span> 
+        <span>Desligado</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmação -->
+  <div id="modalSair" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+    <div class="modal bg-zinc-900 border border-red-500 rounded-3xl p-8 max-w-md text-center">
+      <i class="fa-solid fa-triangle-exclamation text-5xl text-red-500 mb-4"></i>
+      <h2 class="text-2xl font-bold mb-2">Deseja sair?</h2>
+      <p class="text-zinc-300 mb-6">
+        Isso irá desconectar o dispositivo da rede WiFi<br>
+        e esquecer a senha salva.
+      </p>
+      <div class="flex gap-4 justify-center">
+        <button onclick="confirmarSaida()" 
+                class="bg-red-600 hover:bg-red-700 px-8 py-3 rounded-2xl font-bold text-lg">
+          SIM, DESCONECTAR
+        </button>
+        <button onclick="fecharModal()" 
+                class="bg-zinc-700 hover:bg-zinc-600 px-8 py-3 rounded-2xl font-bold text-lg">
+          CANCELAR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleDevice(element) {
+      const status = element.getAttribute('data-status');
+      const statusText = element.querySelector('.text-sm, .text-xs');
+
+      if (status === 'off') {
+        element.setAttribute('data-status', 'on');
+        statusText.classList.remove('status-off');
+        statusText.classList.add('status-on');
+        statusText.textContent = 'Ligado';
+        console.log(element.textContent.trim() + " → LIGADO");
+      } else {
+        element.setAttribute('data-status', 'off');
+        statusText.classList.remove('status-on');
+        statusText.classList.add('status-off');
+        statusText.textContent = 'Desligado';
+        console.log(element.textContent.trim() + " → DESLIGADO");
+      }
+    }
+
+    function sairSistema() {
+      document.getElementById('modalSair').classList.remove('hidden');
+    }
+
+    function fecharModal() {
+      document.getElementById('modalSair').classList.add('hidden');
+    }
+
+    function confirmarSaida() {
+      fecharModal();
+      
+      // Animação de saída
+      const overlay = document.createElement('div');
+      overlay.className = "fixed inset-0 bg-black/90 flex items-center justify-center z-[100]";
+      overlay.innerHTML = `
+        <div class="text-center">
+          <i class="fa-solid fa-spinner fa-spin text-6xl text-red-500 mb-4"></i>
+          <p class="text-xl font-bold">Desconectando...</p>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      setTimeout(() => {
+        // Abre os sites em novas abas
+        window.open('https://www.google.com.br', '_blank');
+        window.open('https://www.eetepaxinguara.com.br', '_blank');
+        
+        // Tenta fechar a página atual
+        overlay.innerHTML = `
+          <div class="text-center">
+            <i class="fa-solid fa-check-circle text-6xl text-green-500 mb-4"></i>
+            <p class="text-2xl font-bold text-green-400">Desconectado com sucesso!</p>
+            <p class="text-zinc-400 mt-2">Redirecionando...</p>
+          </div>
+        `;
+
+        setTimeout(() => {
+          window.close(); // Tenta fechar a aba atual
+        }, 800);
+      }, 1500);
+    }
+  </script>
+</body>
+</html>
