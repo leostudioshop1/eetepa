@@ -8,141 +8,122 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <style>
     body {
-      background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.85)), 
-                  url('https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1920') center/cover no-repeat;
+      background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.5)), 
+                  url('salaaula.png') center/cover no-repeat;
       height: 100vh;
       font-family: system-ui;
     }
+    .container {
+      background: rgba(0, 0, 0, 0.35);
+      box-shadow: 0 0 60px rgba(0,0,0,0.7);
+    }
     .device {
-      transition: all 0.3s;
+      transition: all 0.3s ease;
       cursor: pointer;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
     }
     .device:hover {
       transform: scale(1.12);
-      filter: brightness(1.15);
+      filter: brightness(1.3);
     }
     .status-on { color: #22c55e; }
     .status-off { color: #ef4444; }
-    #ping-result {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: rgba(0,0,0,0.92);
-      padding: 14px 20px;
-      border-radius: 12px;
-      max-width: 340px;
-      font-size: 0.95rem;
-      box-shadow: 0 10px 15px rgba(0,0,0,0.5);
-      z-index: 50;
+
+    .modal {
+      animation: fadeIn 0.3s;
     }
-    .warning {
-      position: fixed;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #f59e0b;
-      color: black;
-      padding: 10px 20px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      z-index: 100;
-      max-width: 90%;
-      text-align: center;
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
   </style>
 </head>
 <body class="text-white flex items-center justify-center">
 
-  <!-- Aviso importante -->
-  <div class="warning">
-    ⚠️ Para ping funcionar na rede local, abra este arquivo localmente ou use um servidor local (não GitHub Pages)
-  </div>
+  <div class="relative w-full max-w-6xl h-[92vh] border-8 border-amber-900/80 rounded-3xl overflow-hidden shadow-2xl container">
 
-  <div class="relative w-full max-w-5xl h-[90vh] border-8 border-amber-900 rounded-3xl overflow-hidden shadow-2xl">
-
-    <div class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/70 px-8 py-2 rounded-full text-xl font-bold z-10">
+    <!-- Título -->
+    <div class="absolute top-6 left-1/2 transform -translate-x-1/2 bg-black/70 px-10 py-3 rounded-full text-2xl font-bold z-20 shadow-lg">
       🏠 Controle da Sala
     </div>
 
-    <!-- TV - Com Ping -->
-    <div onclick="pingTV()" class="device absolute top-[25%] left-[12%] text-center" id="tv-device">
-      <i class="fa-solid fa-tv text-7xl text-gray-300"></i>
-      <p class="mt-2 font-semibold">TV</p>
-      <p class="text-xs status-off" id="tv-status">Clique para testar conexão</p>
+    <!-- Botão SAIR -->
+    <button onclick="sairSistema()" 
+            class="absolute top-6 right-6 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-2xl font-bold text-lg flex items-center gap-2 z-30 shadow-lg transition-all">
+      <i class="fa-solid fa-right-from-bracket"></i>
+      SAIR
+    </button>
+
+    <!-- Dispositivos (mantidos iguais) -->
+    <div onclick="toggleDevice(this)" class="device absolute top-[48%] left-[22%] text-center w-28" data-status="off">
+      <i class="fa-solid fa-fan text-6xl text-teal-400"></i>
+      <p class="mt-2 font-semibold text-lg">Ventilador</p>
+      <p class="text-sm status-off">Desligado</p>
     </div>
 
-    <!-- Outros dispositivos -->
-    <div onclick="toggleDevice(this)" class="device absolute top-[18%] right-[15%] text-center" data-status="off">
-      <i class="fa-solid fa-snowflake text-6xl text-sky-400"></i>
-      <p class="mt-2 font-semibold">Ar Condicionado</p>
-      <p class="text-xs status-off">Desligado</p>
+    <div onclick="toggleDevice(this)" class="device absolute top-[35%] left-[42%] text-center w-32" data-status="off">
+      <i class="fa-solid fa-tv text-7xl text-gray-200"></i>
+      <p class="mt-2 font-semibold text-lg">TV</p>
+      <p class="text-sm status-off">Desligada</p>
     </div>
 
-    <div onclick="toggleDevice(this)" class="device absolute top-[12%] left-[45%] text-center" data-status="off">
-      <i class="fa-solid fa-lightbulb text-6xl text-yellow-400"></i>
+    <div onclick="toggleDevice(this)" class="device absolute top-[8%] left-[48%] text-center" data-status="off">
+      <i class="fa-solid fa-lightbulb text-6xl text-yellow-300"></i>
       <p class="mt-2 font-semibold">Luz Principal</p>
-      <p class="text-xs status-off">Desligada</p>
+      <p class="text-sm status-off">Desligada</p>
     </div>
 
-    <div onclick="toggleDevice(this)" class="device absolute bottom-[28%] left-[18%] text-center" data-status="off">
-      <i class="fa-solid fa-lamp text-5xl text-amber-400"></i>
-      <p class="mt-2 font-semibold">Abajur</p>
+    <div onclick="toggleDevice(this)" class="device absolute top-[62%] left-[68%] text-center w-28" data-status="off">
+      <i class="fa-solid fa-laptop text-5xl text-gray-300"></i>
+      <p class="mt-2 font-semibold">Computador</p>
+      <p class="text-sm status-off">Desligado</p>
+    </div>
+
+    <div onclick="toggleDevice(this)" class="device absolute top-[68%] left-[78%] text-center" data-status="off">
+      <i class="fa-solid fa-volume-high text-4xl text-purple-400"></i>
+      <p class="mt-1 font-semibold text-sm">Soundbar</p>
       <p class="text-xs status-off">Desligado</p>
     </div>
 
-    <!-- Resultado do Ping -->
-    <div id="ping-result" class="hidden"></div>
+    <!-- Legenda -->
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-black/70 px-8 py-3 rounded-2xl text-sm flex gap-8 z-20">
+      <div class="flex items-center gap-2">
+        <span class="text-green-400 text-xl">●</span> 
+        <span>Ligado</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-red-400 text-xl">●</span> 
+        <span>Desligado</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modalSair" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+    <div class="modal bg-zinc-900 border border-red-500 rounded-3xl p-8 max-w-md text-center">
+      <i class="fa-solid fa-triangle-exclamation text-5xl text-red-500 mb-4"></i>
+      <h2 class="text-2xl font-bold mb-2">Deseja sair?</h2>
+      <p class="text-zinc-300 mb-6">
+        Isso irá desconectar o dispositivo da rede WiFi<br>
+        e esquecer a senha salva.
+      </p>
+      <div class="flex gap-4 justify-center">
+        <button onclick="confirmarSaida()" 
+                class="bg-red-600 hover:bg-red-700 px-8 py-3 rounded-2xl font-bold text-lg">
+          SIM, DESCONECTAR
+        </button>
+        <button onclick="fecharModal()" 
+                class="bg-zinc-700 hover:bg-zinc-600 px-8 py-3 rounded-2xl font-bold text-lg">
+          CANCELAR
+        </button>
+      </div>
+    </div>
   </div>
 
   <script>
-    const ipTV = '10.0.0.100';
-
-    async function pingTV() {
-      const resultDiv = document.getElementById('ping-result');
-      const statusText = document.getElementById('tv-status');
-      
-      resultDiv.classList.remove('hidden');
-      resultDiv.innerHTML = `🔄 Testando conexão com TV (${ipTV})...`;
-      resultDiv.style.color = '#eab308';
-
-      const startTime = Date.now();
-
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        await fetch(`http://${ipTV}`, { 
-          mode: 'no-cors',
-          signal: controller.signal,
-          cache: 'no-store'
-        });
-
-        clearTimeout(timeoutId);
-        const latency = Date.now() - startTime;
-
-        resultDiv.innerHTML = `✅ <strong>TV Online</strong><br>Resposta em ${latency}ms`;
-        resultDiv.style.color = '#22c55e';
-        statusText.textContent = 'Online';
-        statusText.classList.add('status-on');
-        statusText.classList.remove('status-off');
-
-      } catch (error) {
-        resultDiv.innerHTML = `❌ <strong>TV Offline ou inacessível</strong><br>IP: ${ipTV}<br><small>Verifique se a TV está ligada e na mesma rede</small>`;
-        resultDiv.style.color = '#ef4444';
-        statusText.textContent = 'Offline';
-        statusText.classList.add('status-off');
-        statusText.classList.remove('status-on');
-      }
-
-      setTimeout(() => {
-        resultDiv.classList.add('hidden');
-      }, 7000);
-    }
-
     function toggleDevice(element) {
       const status = element.getAttribute('data-status');
-      const statusText = element.querySelector('.text-xs');
+      const statusText = element.querySelector('.text-sm, .text-xs');
 
       if (status === 'off') {
         element.setAttribute('data-status', 'on');
@@ -157,8 +138,46 @@
       }
     }
 
-    // Dica no console
-    console.log("%cPágina de Controle da Sala carregada! Use o IP 10.0.0.100 para a TV.", "color: #22c55e; font-weight: bold");
+    function sairSistema() {
+      document.getElementById('modalSair').classList.remove('hidden');
+    }
+
+    function fecharModal() {
+      document.getElementById('modalSair').classList.add('hidden');
+    }
+
+    function confirmarSaida() {
+      fecharModal();
+      
+      const overlay = document.createElement('div');
+      overlay.className = "fixed inset-0 bg-black/90 flex items-center justify-center z-[100]";
+      overlay.innerHTML = `
+        <div class="text-center">
+          <i class="fa-solid fa-spinner fa-spin text-6xl text-red-500 mb-4"></i>
+          <p class="text-xl font-bold">Desconectando da WiFi...</p>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      setTimeout(() => {
+        // Abre os dois sites em novas abas (melhor compatibilidade mobile)
+        window.open('https://www.google.com.br', '_blank');
+        window.open('https://www.eetepaxinguara.com.br', '_blank');
+
+        // Redireciona a página atual para o Google
+        overlay.innerHTML = `
+          <div class="text-center">
+            <i class="fa-solid fa-check-circle text-6xl text-green-500 mb-4"></i>
+            <p class="text-2xl font-bold text-green-400">Desconectado!</p>
+            <p class="text-zinc-400 mt-2">Redirecionando...</p>
+          </div>
+        `;
+
+        setTimeout(() => {
+          window.location.href = "https://www.google.com.br";
+        }, 1200);
+      }, 1500);
+    }
   </script>
 </body>
 </html>
