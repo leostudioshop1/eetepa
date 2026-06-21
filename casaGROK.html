@@ -27,16 +27,37 @@
       position: fixed;
       bottom: 20px;
       right: 20px;
-      background: rgba(0,0,0,0.9);
-      padding: 12px 20px;
+      background: rgba(0,0,0,0.92);
+      padding: 14px 20px;
       border-radius: 12px;
-      max-width: 320px;
+      max-width: 340px;
       font-size: 0.95rem;
-      display: none;
+      box-shadow: 0 10px 15px rgba(0,0,0,0.5);
+      z-index: 50;
+    }
+    .warning {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #f59e0b;
+      color: black;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      z-index: 100;
+      max-width: 90%;
+      text-align: center;
     }
   </style>
 </head>
 <body class="text-white flex items-center justify-center">
+
+  <!-- Aviso importante -->
+  <div class="warning">
+    ⚠️ Para ping funcionar na rede local, abra este arquivo localmente ou use um servidor local (não GitHub Pages)
+  </div>
 
   <div class="relative w-full max-w-5xl h-[90vh] border-8 border-amber-900 rounded-3xl overflow-hidden shadow-2xl">
 
@@ -48,10 +69,10 @@
     <div onclick="pingTV()" class="device absolute top-[25%] left-[12%] text-center" id="tv-device">
       <i class="fa-solid fa-tv text-7xl text-gray-300"></i>
       <p class="mt-2 font-semibold">TV</p>
-      <p class="text-xs status-off" id="tv-status">Desligada</p>
+      <p class="text-xs status-off" id="tv-status">Clique para testar conexão</p>
     </div>
 
-    <!-- Outros dispositivos (exemplo) -->
+    <!-- Outros dispositivos -->
     <div onclick="toggleDevice(this)" class="device absolute top-[18%] right-[15%] text-center" data-status="off">
       <i class="fa-solid fa-snowflake text-6xl text-sky-400"></i>
       <p class="mt-2 font-semibold">Ar Condicionado</p>
@@ -64,58 +85,61 @@
       <p class="text-xs status-off">Desligada</p>
     </div>
 
+    <div onclick="toggleDevice(this)" class="device absolute bottom-[28%] left-[18%] text-center" data-status="off">
+      <i class="fa-solid fa-lamp text-5xl text-amber-400"></i>
+      <p class="mt-2 font-semibold">Abajur</p>
+      <p class="text-xs status-off">Desligado</p>
+    </div>
+
     <!-- Resultado do Ping -->
-    <div id="ping-result" class="text-sm"></div>
+    <div id="ping-result" class="hidden"></div>
   </div>
 
   <script>
-    // Função para fazer ping na TV
+    const ipTV = '10.0.0.100';
+
     async function pingTV() {
       const resultDiv = document.getElementById('ping-result');
       const statusText = document.getElementById('tv-status');
-      const ip = '10.0.0.100';
-
-      resultDiv.style.display = 'block';
-      resultDiv.innerHTML = `🔄 Testando conexão com TV (${ip})...`;
+      
+      resultDiv.classList.remove('hidden');
+      resultDiv.innerHTML = `🔄 Testando conexão com TV (${ipTV})...`;
+      resultDiv.style.color = '#eab308';
 
       const startTime = Date.now();
 
       try {
-        // Tenta conectar na TV (timeout de 4 segundos)
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 4000);
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-        const response = await fetch(`http://${ip}`, { 
+        await fetch(`http://${ipTV}`, { 
           mode: 'no-cors',
           signal: controller.signal,
           cache: 'no-store'
         });
 
-        clearTimeout(timeout);
-        const time = Date.now() - startTime;
+        clearTimeout(timeoutId);
+        const latency = Date.now() - startTime;
 
-        resultDiv.innerHTML = `✅ <strong>TV Online</strong><br>Tempo de resposta: ${time}ms`;
+        resultDiv.innerHTML = `✅ <strong>TV Online</strong><br>Resposta em ${latency}ms`;
         resultDiv.style.color = '#22c55e';
         statusText.textContent = 'Online';
         statusText.classList.add('status-on');
         statusText.classList.remove('status-off');
 
       } catch (error) {
-        const time = Date.now() - startTime;
-        resultDiv.innerHTML = `❌ <strong>TV Offline</strong><br>Não foi possível conectar em ${ip}`;
+        resultDiv.innerHTML = `❌ <strong>TV Offline ou inacessível</strong><br>IP: ${ipTV}<br><small>Verifique se a TV está ligada e na mesma rede</small>`;
         resultDiv.style.color = '#ef4444';
         statusText.textContent = 'Offline';
         statusText.classList.add('status-off');
         statusText.classList.remove('status-on');
       }
 
-      // Esconde o resultado após 6 segundos
       setTimeout(() => {
-        resultDiv.style.display = 'none';
-      }, 6000);
+        resultDiv.classList.add('hidden');
+      }, 7000);
     }
 
-    // Função para outros dispositivos
     function toggleDevice(element) {
       const status = element.getAttribute('data-status');
       const statusText = element.querySelector('.text-xs');
@@ -132,6 +156,9 @@
         statusText.textContent = 'Desligado';
       }
     }
+
+    // Dica no console
+    console.log("%cPágina de Controle da Sala carregada! Use o IP 10.0.0.100 para a TV.", "color: #22c55e; font-weight: bold");
   </script>
 </body>
 </html>
