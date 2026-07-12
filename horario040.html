@@ -1,3 +1,10 @@
+**✅ Correção realizada!**
+
+O problema era que a verificação de disponibilidade não estava sendo aplicada corretamente. Agora o sistema **respeita** a disponibilidade cadastrada do professor (dias e horários).
+
+Aqui está o **arquivo atualizado e completo**:
+
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -248,7 +255,7 @@
       document.body.insertAdjacentHTML('beforeend', bloqueioHTML);
     }
 
-    // ==================== PROTEÇÕES ANTI-INSPEÇÃO ====================
+    // ==================== PROTEÇÕES ====================
     function ativarProtecoes() {
       document.addEventListener('contextmenu', e => e.preventDefault());
       document.addEventListener('keydown', function(e) {
@@ -450,7 +457,7 @@
       return horariosPorTurno[turma.turno][hIndex];
     }
 
-    // ==================== VALIDAÇÃO CORRIGIDA ====================
+    // ==================== VALIDAÇÃO CORRIGIDA DE DISPONIBILIDADE ====================
     function validarDisponibilidade() {
       const professorNome = document.getElementById("modal-professor").value;
       const aviso = document.getElementById("aviso-disponibilidade");
@@ -478,11 +485,16 @@
 
       let conflito = false;
       Object.values(horariosAlocados).forEach(aloc => {
-        if (aloc.professor === professorNome && aloc.dia === dia && aloc.horario === horarioAtual) conflito = true;
+        if (aloc.professor === professorNome && aloc.dia === dia && aloc.horario === horarioAtual) {
+          conflito = true;
+        }
       });
 
-      if (!diaDisponivel || !horarioDisponivel) {
-        aviso.innerHTML = `<span class="text-red-600">⚠️ Professor não disponível neste dia/horário</span>`;
+      if (!diaDisponivel) {
+        aviso.innerHTML = `<span class="text-red-600">⚠️ Professor não está disponível neste dia</span>`;
+        btn.disabled = true;
+      } else if (!horarioDisponivel) {
+        aviso.innerHTML = `<span class="text-red-600">⚠️ Professor não está disponível neste horário</span>`;
         btn.disabled = true;
       } else if (conflito) {
         aviso.innerHTML = `<span class="text-red-600">⚠️ Professor já alocado neste horário</span>`;
@@ -508,6 +520,13 @@
       const turmaObj = turmas.find(t => t.nome === turma);
       const horarioAtual = horariosPorTurno[turmaObj.turno][parseInt(hIndex)];
 
+      // Verificação final reforçada
+      const professor = professores.find(p => p.nome === professorNome);
+      if (!professor || !professor.diasDisponiveis.includes(dia) || !professor.horariosDisponiveis.includes(horarioAtual)) {
+        alert("❌ Professor não está disponível neste dia/horário!");
+        return;
+      }
+
       let conflito = false;
       Object.values(horariosAlocados).forEach(aloc => {
         if (aloc.professor === professorNome && aloc.dia === dia && aloc.horario === horarioAtual) conflito = true;
@@ -518,13 +537,12 @@
         return;
       }
 
-      const professor = professores.find(p => p.nome === professorNome);
       const key = `${turma}-${currentCellId}`;
 
       horariosAlocados[key] = {
         disciplina: disciplina,
         professor: professorNome,
-        cor: professor ? professor.cor : '#6366f1',
+        cor: professor.cor || '#6366f1',
         horario: horarioAtual,
         dia: dia
       };
@@ -576,6 +594,11 @@
       const diasSelecionados = Array.from(document.querySelectorAll('#dias-disponiveis input:checked')).map(cb => cb.value);
       const horariosSelecionados = Array.from(document.querySelectorAll('#horarios-disponiveis input:checked')).map(cb => cb.value);
 
+      if (diasSelecionados.length === 0 || horariosSelecionados.length === 0) {
+        alert("Selecione pelo menos um dia e um horário disponível para o professor.");
+        return;
+      }
+
       professores.push({
         nome: nome,
         cor: cor,
@@ -588,9 +611,93 @@
       renderAll();
     }
 
-    async function exportarImagem() { /* ... mantido ... */ }
-    async function gerarPDFCompleto() { /* ... mantido ... */ }
-    function limparGrade() { /* ... mantido ... */ }
+    async function exportarImagem() {
+      const turmaNome = turmaSelecionada || "Horário Escolar";
+      const container = document.getElementById("grade-container");
+      const exportContainer = document.createElement("div");
+      exportContainer.style.background = "white";
+      exportContainer.style.padding = "20px";
+      exportContainer.innerHTML = `
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h1 style="font-size: 28px; font-weight: bold; color: #4f46e5;">${turmaNome}</h1>
+          <p style="color: #6b7280;">Master Horário EETEPA</p>
+        </div>
+        ${container.querySelector("table").outerHTML}
+      `;
+      document.body.appendChild(exportContainer);
+      const canvas = await html2canvas(exportContainer, { scale: 2 });
+      const link = document.createElement("a");
+      link.download = `${turmaNome.replace(/[^a-zA-Z0-9]/g, '_')}_horario.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      document.body.removeChild(exportContainer);
+    }
+
+    async function gerarPDFCompleto() {
+      if (!isAuthorized) return alert("❌ Dispositivo não autorizado.");
+      if (turmas.length === 0) return alert("Nenhuma turma cadastrada.");
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('landscape', 'pt', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(22);
+      pdf.text("MASTER HORÁRIO EETEPA", pageWidth / 2, 40, { align: "center" });
+      let yPosition = 80;
+
+      for (let turma of turmas) {
+        if (yPosition > 450) { pdf.addPage(); yPosition = 60; }
+        pdf.setFontSize(16);
+        pdf.text(`${turma.nome} (${turma.turno.toUpperCase()})`, 40, yPosition);
+        yPosition += 25;
+
+        const tempContainer = document.createElement("div");
+        tempContainer.style.width = "1100px";
+        tempContainer.style.background = "white";
+        tempContainer.style.padding = "10px";
+
+        const horarios = horariosPorTurno[turma.turno] || horariosPorTurno.manha;
+        let tableHTML = `<table style="width:100%; border-collapse: collapse; font-family: Arial, sans-serif;">`;
+        tableHTML += `<thead><tr style="background:#f3f4f6;"><th style="border:1px solid #ddd; padding:10px;">Horário</th>`;
+        diasSemana.forEach(d => tableHTML += `<th style="border:1px solid #ddd; padding:10px;">${d.charAt(0).toUpperCase() + d.slice(1)}</th>`);
+        tableHTML += `</tr></thead><tbody>`;
+
+        horarios.forEach((horario, hIndex) => {
+          tableHTML += `<tr><td style="border:1px solid #ddd; padding:10px; font-weight:bold;">${horario}</td>`;
+          diasSemana.forEach(dia => {
+            const key = `${turma.nome}-${dia}-${hIndex}`;
+            const aloc = horariosAlocados[key];
+            tableHTML += `<td style="border:1px solid #ddd; padding:10px; vertical-align:top; ${aloc ? 'background:#f3e8ff;' : ''}">`;
+            if (aloc) tableHTML += `<div style="font-size:13px;">${aloc.disciplina}</div><div style="font-size:11px;color:#4f46e5;">${aloc.professor}</div>`;
+            tableHTML += `</td>`;
+          });
+          tableHTML += `</tr>`;
+        });
+        tableHTML += `</tbody></table>`;
+        tempContainer.innerHTML = tableHTML;
+        document.body.appendChild(tempContainer);
+
+        const canvas = await html2canvas(tempContainer, { scale: 1.6 });
+        const imgData = canvas.toDataURL("image/png");
+        const imgWidth = pageWidth - 80;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        pdf.addImage(imgData, 'PNG', 40, yPosition, imgWidth, Math.min(imgHeight, 260));
+        yPosition += Math.min(imgHeight, 260) + 35;
+        document.body.removeChild(tempContainer);
+      }
+      pdf.save("Master_Horario_EETEPA.pdf");
+    }
+
+    function limparGrade() {
+      if (!isAuthorized) return alert("❌ Dispositivo não autorizado.");
+      if (confirm("Limpar grade desta turma?")) {
+        Object.keys(horariosAlocados).forEach(key => {
+          if (key.startsWith(turmaSelecionada + "-")) delete horariosAlocados[key];
+        });
+        salvarDados();
+        renderGrade();
+      }
+    }
 
     window.onload = async () => {
       ativarProtecoes();
@@ -600,3 +707,11 @@
   </script>
 </body>
 </html>
+```
+
+**Teste agora:**
+1. Cadastre um professor marcando **apenas** determinados dias e horários.
+2. Tente alocar uma aula **fora** dessa disponibilidade → deve bloquear.
+3. Tente dentro da disponibilidade → deve permitir.
+
+Me avise se ainda estiver permitindo alocação indevida.
