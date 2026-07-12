@@ -195,13 +195,10 @@
 
     const diasSemana = ["segunda", "terca", "quarta", "quinta", "sexta"];
 
-    // ==================== SUPABASE ====================
+    // ==================== SUPABASE + DEVICE ID ====================
     if (!window.SUPABASE_CONFIG) alert("Erro: Configurações do Supabase não encontradas!");
 
-    const supabaseClient = supabase.createClient(
-      window.SUPABASE_CONFIG.url,
-      window.SUPABASE_CONFIG.key
-    );
+    const supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
 
     let deviceId = "";
     let isAuthorized = false;
@@ -220,12 +217,7 @@
       document.getElementById("device-info").innerHTML = `Dispositivo: <strong>${deviceId}</strong>`;
 
       try {
-        const { data, error } = await supabaseClient
-          .from('allowed_devices')
-          .select('id')
-          .eq('device_id', deviceId)
-          .single();
-
+        const { data, error } = await supabaseClient.from('allowed_devices').select('id').eq('device_id', deviceId).single();
         if (error || !data) {
           isAuthorized = false;
           bloquearSistema();
@@ -272,55 +264,6 @@
       });
     }
 
-    // ==================== VALIDAÇÃO NO SERVIDOR ====================
-    async function validarDisponibilidade() {
-      const professorNome = document.getElementById("modal-professor").value;
-      const aviso = document.getElementById("aviso-disponibilidade");
-      const btn = document.getElementById("btn-salvar");
-
-      if (!professorNome) {
-        aviso.innerHTML = "";
-        btn.disabled = true;
-        return;
-      }
-
-      const horarioAtual = getHorarioAtual();
-      const [dia] = currentCellId.split('-');
-
-      try {
-        const { data, error } = await supabaseClient.functions.invoke('check-professor-availability', {
-          body: { 
-            turma: turmaSelecionada, 
-            professor: professorNome, 
-            dia, 
-            horario: horarioAtual 
-          }
-        });
-
-        if (error) throw error;
-
-        if (data.available) {
-          aviso.innerHTML = `<span class="text-green-600">${data.message}</span>`;
-          btn.disabled = false;
-        } else {
-          aviso.innerHTML = `<span class="text-red-600">${data.message}</span>`;
-          btn.disabled = true;
-        }
-      } catch (err) {
-        aviso.innerHTML = `<span class="text-red-600">Erro ao validar no servidor</span>`;
-        btn.disabled = true;
-      }
-    }
-
-    function getHorarioAtual() {
-      const turmaNome = document.getElementById("modal-turma").value;
-      const turma = turmas.find(t => t.nome === turmaNome);
-      if (!turma || !currentCellId) return null;
-      const hIndex = parseInt(currentCellId.split('-')[1]);
-      return horariosPorTurno[turma.turno][hIndex];
-    }
-
-    // ==================== DADOS LOCAIS ====================
     function carregarDados() {
       const savedTurmas = localStorage.getItem('turmas');
       const savedDisciplinas = localStorage.getItem('disciplinasGerais');
@@ -499,8 +442,51 @@
     function atualizarDisciplinasModal() { popularModalDisciplinas(); }
     function atualizarProfessoresModal() { popularModalProfessores(); }
 
+    function getHorarioAtual() {
+      const turmaNome = document.getElementById("modal-turma").value;
+      const turma = turmas.find(t => t.nome === turmaNome);
+      if (!turma || !currentCellId) return null;
+      const hIndex = parseInt(currentCellId.split('-')[1]);
+      return horariosPorTurno[turma.turno][hIndex];
+    }
+
+    // ==================== LÓGICA CORRIGIDA DE CONFLITO ====================
+    function validarDisponibilidade() {
+      const professorNome = document.getElementById("modal-professor").value;
+      const aviso = document.getElementById("aviso-disponibilidade");
+      const btn = document.getElementById("btn-salvar");
+
+      if (!professorNome) {
+        aviso.innerHTML = "";
+        btn.disabled = true;
+        return;
+      }
+
+      const horarioAtual = getHorarioAtual();
+      const [dia] = currentCellId.split('-');
+
+      let conflito = false;
+      let conflitoDetalhe = "";
+
+      Object.values(horariosAlocados).forEach(aloc => {
+        if (aloc.professor === professorNome && aloc.dia === dia && aloc.horario === horarioAtual) {
+          conflito = true;
+          conflitoDetalhe = aloc.disciplina;
+        }
+      });
+
+      if (conflito) {
+        aviso.innerHTML = `<span class="text-red-600">⚠️ Professor já alocado neste dia e horário (${conflitoDetalhe})</span>`;
+        btn.disabled = true;
+      } else {
+        aviso.innerHTML = `<span class="text-green-600">✅ Professor disponível</span>`;
+        btn.disabled = false;
+      }
+    }
+
     function salvarAlocacao() {
       if (!isAuthorized) return alert("❌ Dispositivo não autorizado.");
+
       const turma = document.getElementById("modal-turma").value;
       const disciplina = document.getElementById("modal-disciplina").value;
       const professorNome = document.getElementById("modal-professor").value;
@@ -513,6 +499,19 @@
       const [dia, hIndex] = currentCellId.split('-');
       const turmaObj = turmas.find(t => t.nome === turma);
       const horarioAtual = horariosPorTurno[turmaObj.turno][parseInt(hIndex)];
+
+      // Verificação reforçada antes de salvar
+      let conflito = false;
+      Object.values(horariosAlocados).forEach(aloc => {
+        if (aloc.professor === professorNome && aloc.dia === dia && aloc.horario === horarioAtual) {
+          conflito = true;
+        }
+      });
+
+      if (conflito) {
+        alert("❌ Conflito detectado! Professor já está alocado neste horário.");
+        return;
+      }
 
       const professor = professores.find(p => p.nome === professorNome);
       const key = `${turma}-${currentCellId}`;
