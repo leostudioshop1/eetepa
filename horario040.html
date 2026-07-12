@@ -18,6 +18,7 @@
     .title-animation { animation: slideTitle 8s infinite alternate ease-in-out; }
     @keyframes slideTitle { 0% { transform: translateX(-10px); } 100% { transform: translateX(10px); } }
     .blocked { filter: grayscale(1); pointer-events: none; opacity: 0.7; }
+    .delete-btn { color: #ef4444; cursor: pointer; }
   </style>
 </head>
 <body class="bg-gray-50 font-sans flex flex-col h-screen" oncontextmenu="return false;">
@@ -248,7 +249,6 @@
       document.body.insertAdjacentHTML('beforeend', bloqueioHTML);
     }
 
-    // ==================== PROTEÇÕES ====================
     function ativarProtecoes() {
       document.addEventListener('contextmenu', e => e.preventDefault());
       document.addEventListener('keydown', function(e) {
@@ -290,27 +290,57 @@
       localStorage.setItem('horariosAlocados', JSON.stringify(horariosAlocados));
     }
 
-    function renderAll() {
-      renderTurmas();
-      renderDisciplinasGerais();
-      renderDisciplinasProfessor();
-      renderDisciplinasTurma();
-      renderProfessores();
-      renderLegenda();
-      renderDiasDisponiveis();
-      renderHorariosDisponiveis();
+    // ==================== EXCLUSÃO ====================
+    function deleteTurma(nome) {
+      if (!confirm(`Excluir a turma ${nome}?`)) return;
+      turmas = turmas.filter(t => t.nome !== nome);
+      salvarDados();
+      renderAll();
       updateFiltroTurma();
-      showTab(0);
+    }
+
+    function deleteDisciplina(nome) {
+      if (!confirm(`Excluir a disciplina ${nome}?`)) return;
+      disciplinasGerais = disciplinasGerais.filter(d => d !== nome);
+      salvarDados();
+      renderAll();
+    }
+
+    function deleteProfessor(nome) {
+      if (!confirm(`Excluir o professor ${nome}?`)) return;
+      professores = professores.filter(p => p.nome !== nome);
+      salvarDados();
+      renderAll();
     }
 
     function renderTurmas() {
       const ul = document.getElementById("lista-turmas");
-      ul.innerHTML = turmas.map(t => `<li class="bg-gray-50 p-4 rounded-xl"><strong>${t.nome}</strong> <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">${t.turno}</span></li>`).join("");
+      ul.innerHTML = turmas.map(t => `
+        <li class="bg-gray-50 p-4 rounded-xl flex justify-between items-center">
+          <div><strong>${t.nome}</strong> <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">${t.turno}</span></div>
+          <span onclick="deleteTurma('${t.nome}')" class="delete-btn text-xl">🗑</span>
+        </li>
+      `).join("");
     }
 
     function renderDisciplinasGerais() {
       const ul = document.getElementById("lista-disciplinas");
-      ul.innerHTML = disciplinasGerais.map(d => `<li class="bg-gray-50 p-3 rounded-lg">${d}</li>`).join("");
+      ul.innerHTML = disciplinasGerais.map(d => `
+        <li class="bg-gray-50 p-3 rounded-lg flex justify-between items-center">
+          <span>${d}</span>
+          <span onclick="deleteDisciplina('${d}')" class="delete-btn text-xl">🗑</span>
+        </li>
+      `).join("");
+    }
+
+    function renderProfessores() {
+      const ul = document.getElementById("lista-professores");
+      ul.innerHTML = professores.map(p => `
+        <li class="bg-gray-50 p-4 rounded-xl flex justify-between items-center">
+          <span>${p.nome}</span>
+          <span onclick="deleteProfessor('${p.nome}')" class="delete-btn text-xl">🗑</span>
+        </li>
+      `).join("");
     }
 
     function renderDisciplinasProfessor() {
@@ -321,11 +351,6 @@
     function renderDisciplinasTurma() {
       const container = document.getElementById("disciplinas-turma");
       container.innerHTML = disciplinasGerais.map(d => `<label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100"><input type="checkbox" value="${d}" class="w-4 h-4"><span>${d}</span></label>`).join("");
-    }
-
-    function renderProfessores() {
-      const ul = document.getElementById("lista-professores");
-      ul.innerHTML = professores.map(p => `<li class="bg-gray-50 p-4 rounded-xl">${p.nome}</li>`).join("");
     }
 
     function renderLegenda() {
@@ -450,7 +475,6 @@
       return horariosPorTurno[turma.turno][hIndex];
     }
 
-    // ==================== VALIDAÇÃO CORRIGIDA DE DISPONIBILIDADE ====================
     function validarDisponibilidade() {
       const professorNome = document.getElementById("modal-professor").value;
       const aviso = document.getElementById("aviso-disponibilidade");
@@ -478,16 +502,14 @@
 
       let conflito = false;
       Object.values(horariosAlocados).forEach(aloc => {
-        if (aloc.professor === professorNome && aloc.dia === dia && aloc.horario === horarioAtual) {
-          conflito = true;
-        }
+        if (aloc.professor === professorNome && aloc.dia === dia && aloc.horario === horarioAtual) conflito = true;
       });
 
       if (!diaDisponivel) {
-        aviso.innerHTML = `<span class="text-red-600">⚠️ Professor não está disponível neste dia</span>`;
+        aviso.innerHTML = `<span class="text-red-600">⚠️ Professor não disponível neste dia</span>`;
         btn.disabled = true;
       } else if (!horarioDisponivel) {
-        aviso.innerHTML = `<span class="text-red-600">⚠️ Professor não está disponível neste horário</span>`;
+        aviso.innerHTML = `<span class="text-red-600">⚠️ Professor não disponível neste horário</span>`;
         btn.disabled = true;
       } else if (conflito) {
         aviso.innerHTML = `<span class="text-red-600">⚠️ Professor já alocado neste horário</span>`;
@@ -513,7 +535,6 @@
       const turmaObj = turmas.find(t => t.nome === turma);
       const horarioAtual = horariosPorTurno[turmaObj.turno][parseInt(hIndex)];
 
-      // Verificação final reforçada
       const professor = professores.find(p => p.nome === professorNome);
       if (!professor || !professor.diasDisponiveis.includes(dia) || !professor.horariosDisponiveis.includes(horarioAtual)) {
         alert("❌ Professor não está disponível neste dia/horário!");
@@ -588,7 +609,7 @@
       const horariosSelecionados = Array.from(document.querySelectorAll('#horarios-disponiveis input:checked')).map(cb => cb.value);
 
       if (diasSelecionados.length === 0 || horariosSelecionados.length === 0) {
-        alert("Selecione pelo menos um dia e um horário disponível para o professor.");
+        alert("Selecione pelo menos um dia e um horário disponível.");
         return;
       }
 
@@ -700,5 +721,3 @@
   </script>
 </body>
 </html>
-
-Me avise se ainda estiver permitindo alocação indevida.
