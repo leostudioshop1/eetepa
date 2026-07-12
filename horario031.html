@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -489,7 +488,7 @@
       document.body.removeChild(exportContainer);
     }
 
-    // Novo: Gerar PDF com todas as turmas
+    // Gerar PDF com todas as turmas (corrigido)
     async function gerarPDFCompleto() {
       if (turmas.length === 0) {
         alert("Nenhuma turma cadastrada.");
@@ -499,41 +498,69 @@
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF('landscape', 'pt', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
-      let yPosition = 40;
 
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(22);
-      pdf.text("HORÁRIO ESCOLAR COMPLETO", pageWidth / 2, yPosition, { align: "center" });
-      yPosition += 40;
+      pdf.text("HORÁRIO ESCOLAR COMPLETO", pageWidth / 2, 40, { align: "center" });
+      let yPosition = 80;
 
-      for (let i = 0; i < turmas.length; i++) {
-        const turma = turmas[i];
-        if (yPosition > 500) {
+      for (let turma of turmas) {
+        if (yPosition > 450) {
           pdf.addPage();
-          yPosition = 40;
+          yPosition = 60;
         }
 
         pdf.setFontSize(16);
         pdf.text(`${turma.nome} (${turma.turno.toUpperCase()})`, 40, yPosition);
         yPosition += 25;
 
-        // Criar tabela temporária para esta turma
-        const tempDiv = document.createElement("div");
-        tempDiv.style.width = "1000px";
-        tempDiv.style.background = "white";
-        tempDiv.innerHTML = document.getElementById("grade-horarios").outerHTML;
-        document.body.appendChild(tempDiv);
+        // Criar grade temporária para esta turma
+        const tempContainer = document.createElement("div");
+        tempContainer.style.width = "1100px";
+        tempContainer.style.background = "white";
+        tempContainer.style.padding = "10px";
 
-        const canvas = await html2canvas(tempDiv, { scale: 1.5 });
+        const horarios = horariosPorTurno[turma.turno] || horariosPorTurno.manha;
+
+        let tableHTML = `
+          <table style="width:100%; border-collapse: collapse; font-family: Arial;">
+            <thead>
+              <tr style="background: #f3f4f6;">
+                <th style="border: 1px solid #ddd; padding: 8px;">Horário</th>
+        `;
+        diasSemana.forEach(dia => {
+          tableHTML += `<th style="border: 1px solid #ddd; padding: 8px;">${dia.charAt(0).toUpperCase() + dia.slice(1)}</th>`;
+        });
+        tableHTML += `</tr></thead><tbody>`;
+
+        horarios.forEach((horario, hIndex) => {
+          tableHTML += `<tr><td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${horario}</td>`;
+          diasSemana.forEach(dia => {
+            const cellId = `${dia}-${hIndex}`;
+            const key = `${turma.nome}-${cellId}`;
+            const aloc = horariosAlocados[key];
+            tableHTML += `<td style="border: 1px solid #ddd; padding: 8px; vertical-align: top; ${aloc ? 'background: #f3e8ff;' : ''}">`;
+            if (aloc) {
+              tableHTML += `<div style="font-size: 12px;">${aloc.disciplina}</div><div style="font-size: 11px; color: #4f46e5;">${aloc.professor}</div>`;
+            }
+            tableHTML += `</td>`;
+          });
+          tableHTML += `</tr>`;
+        });
+
+        tableHTML += `</tbody></table>`;
+        tempContainer.innerHTML = tableHTML;
+        document.body.appendChild(tempContainer);
+
+        const canvas = await html2canvas(tempContainer, { scale: 1.8 });
         const imgData = canvas.toDataURL("image/png");
-
         const imgWidth = pageWidth - 80;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-        pdf.addImage(imgData, 'PNG', 40, yPosition, imgWidth, Math.min(imgHeight, 300));
-        yPosition += Math.min(imgHeight, 300) + 30;
+        pdf.addImage(imgData, 'PNG', 40, yPosition, imgWidth, Math.min(imgHeight, 280));
+        yPosition += Math.min(imgHeight, 280) + 40;
 
-        document.body.removeChild(tempDiv);
+        document.body.removeChild(tempContainer);
       }
 
       pdf.save("horario_escolar_completo.pdf");
