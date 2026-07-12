@@ -34,7 +34,7 @@
         <button onclick="showTab(2)" class="tab-button flex-1 py-3 font-medium">Professores</button>
       </div>
 
-      <!-- TURMAS, DISCIPLINAS, PROFESSORES (mesmo conteúdo) -->
+      <!-- TURMAS -->
       <div id="tab-0" class="tab-content p-6">
         <div class="space-y-4">
           <input id="nova-turma" type="text" placeholder="Nome da Turma" class="w-full border rounded-lg px-4 py-2">
@@ -57,6 +57,7 @@
         <ul id="lista-turmas" class="space-y-3 mt-8"></ul>
       </div>
 
+      <!-- DISCIPLINAS -->
       <div id="tab-1" class="tab-content p-6 hidden">
         <div class="flex gap-2 mb-4">
           <input id="nova-disciplina" type="text" placeholder="Nova Disciplina" class="flex-1 border rounded-lg px-4 py-2">
@@ -67,6 +68,7 @@
         <ul id="lista-disciplinas" class="space-y-2"></ul>
       </div>
 
+      <!-- PROFESSORES -->
       <div id="tab-2" class="tab-content p-6 hidden">
         <div class="space-y-5">
           <input id="nome-professor" type="text" placeholder="Nome do Professor" class="w-full border rounded-lg px-4 py-2">
@@ -358,28 +360,26 @@
         return;
       }
 
-      const turma = document.getElementById("modal-turma").value;
-      if (!turma) {
-        aviso.innerHTML = `<span class="text-amber-600">Selecione uma turma primeiro</span>`;
-        btn.disabled = true;
-        return;
-      }
-
       const [dia, hIndex] = currentCellId.split('-');
-      const slotKey = `${dia}-${hIndex}`;
+      const turma = document.getElementById("modal-turma").value;
+      const horarioAtual = document.getElementById("filtro-turma").value ? 
+        horariosPorTurno[turmas.find(t => t.nome === document.getElementById("filtro-turma").value).turno][hIndex] : '';
+
       let conflito = false;
 
       Object.keys(horariosAlocados).forEach(key => {
-        if (key.includes(slotKey) && horariosAlocados[key].professor === professorNome) {
-          conflito = true;
+        if (key.startsWith(dia + "-") && horariosAlocados[key].professor === professorNome) {
+          const aloc = horariosAlocados[key];
+          // Comparar pelo horário exato (melhor que índice)
+          if (aloc.horario === horarioAtual) conflito = true;
         }
       });
 
       if (conflito) {
-        aviso.innerHTML = `<span class="text-red-600">⚠️ Professor já alocado neste horário em outra turma!</span>`;
+        aviso.innerHTML = `<span class="text-red-600">⚠️ Professor já alocado neste dia e horário!</span>`;
         btn.disabled = true;
       } else {
-        aviso.innerHTML = `<span class="text-green-600">✅ Professor disponível neste horário</span>`;
+        aviso.innerHTML = `<span class="text-green-600">✅ Professor disponível</span>`;
         btn.disabled = false;
       }
     }
@@ -395,17 +395,19 @@
       }
 
       const [dia, hIndex] = currentCellId.split('-');
-      const slotKey = `${dia}-${hIndex}`;
+      const turmaObj = turmas.find(t => t.nome === turma);
+      const horarioAtual = horariosPorTurno[turmaObj.turno][hIndex];
+
       let conflito = false;
 
       Object.keys(horariosAlocados).forEach(key => {
-        if (key.includes(slotKey) && horariosAlocados[key].professor === professorNome) {
+        if (key.includes(dia + "-") && horariosAlocados[key].professor === professorNome && horariosAlocados[key].horario === horarioAtual) {
           conflito = true;
         }
       });
 
       if (conflito) {
-        alert("❌ Conflito detectado! Este professor já está alocado neste mesmo dia e horário em outra turma.");
+        alert("❌ Conflito detectado! Este professor já está alocado neste mesmo dia e horário.");
         return;
       }
 
@@ -415,7 +417,9 @@
       horariosAlocados[key] = {
         disciplina: disciplina,
         professor: professorNome,
-        cor: professor ? professor.cor : '#6366f1'
+        cor: professor ? professor.cor : '#6366f1',
+        horario: horarioAtual,
+        dia: dia
       };
 
       salvarDados();
@@ -464,6 +468,7 @@
     }
 
     function exportarImagem() { alert("Exportar PNG em desenvolvimento."); }
+
     function limparGrade() {
       if (confirm("Limpar grade desta turma?")) {
         Object.keys(horariosAlocados).forEach(key => {
