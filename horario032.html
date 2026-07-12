@@ -54,7 +54,6 @@
         <button onclick="showTab(2)" class="tab-button flex-1 py-3 font-medium">Professores</button>
       </div>
 
-      <!-- TURMAS, DISCIPLINAS, PROFESSORES (mantido igual) -->
       <div id="tab-0" class="tab-content p-6">
         <div class="space-y-4">
           <input id="nova-turma" type="text" placeholder="Nome da Turma" class="w-full border rounded-lg px-4 py-2">
@@ -160,7 +159,7 @@
     </div>
   </footer>
 
-  <!-- Modal (mantido igual) -->
+  <!-- Modal -->
   <div id="modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
     <div class="bg-white rounded-2xl p-8 w-full max-w-md mx-4">
       <h2 class="text-xl font-bold mb-6" id="modal-title">Alocar Aula</h2>
@@ -187,7 +186,6 @@
   </div>
 
   <script>
-    // (Todo o script anterior mantido - sem alterações nas funcionalidades)
     let turmas = [];
     let disciplinasGerais = [];
     let professores = [];
@@ -241,6 +239,7 @@
       showTab(0);
     }
 
+    // ... (demais funções de render permanecem iguais) ...
     function renderTurmas() {
       const ul = document.getElementById("lista-turmas");
       ul.innerHTML = turmas.map(t => `<li class="bg-gray-50 p-4 rounded-xl"><strong>${t.nome}</strong> <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">${t.turno}</span></li>`).join("");
@@ -379,6 +378,16 @@
     function atualizarDisciplinasModal() { popularModalDisciplinas(); }
     function atualizarProfessoresModal() { popularModalProfessores(); }
 
+    // ==================== CORREÇÃO PRINCIPAL ====================
+    function getHorarioAtual() {
+      const turmaNome = document.getElementById("modal-turma").value;
+      const turma = turmas.find(t => t.nome === turmaNome);
+      if (!turma || !currentCellId) return null;
+      
+      const hIndex = parseInt(currentCellId.split('-')[1]);
+      return horariosPorTurno[turma.turno][hIndex];
+    }
+
     function validarDisponibilidade() {
       const professorNome = document.getElementById("modal-professor").value;
       const aviso = document.getElementById("aviso-disponibilidade");
@@ -390,11 +399,14 @@
         return;
       }
 
+      const horarioAtual = getHorarioAtual();
       const [dia] = currentCellId.split('-');
       let conflito = false;
 
-      Object.keys(horariosAlocados).forEach(key => {
-        if (key.includes(dia + "-") && horariosAlocados[key].professor === professorNome) {
+      Object.values(horariosAlocados).forEach(aloc => {
+        if (aloc.professor === professorNome && 
+            aloc.dia === dia && 
+            aloc.horario === horarioAtual) {
           conflito = true;
         }
       });
@@ -420,11 +432,14 @@
 
       const [dia, hIndex] = currentCellId.split('-');
       const turmaObj = turmas.find(t => t.nome === turma);
-      const horarioAtual = horariosPorTurno[turmaObj.turno][hIndex];
+      const horarioAtual = horariosPorTurno[turmaObj.turno][parseInt(hIndex)];
 
+      // Verifica conflito
       let conflito = false;
-      Object.keys(horariosAlocados).forEach(key => {
-        if (key.includes(dia + "-") && horariosAlocados[key].professor === professorNome && horariosAlocados[key].horario === horarioAtual) {
+      Object.values(horariosAlocados).forEach(aloc => {
+        if (aloc.professor === professorNome && 
+            aloc.dia === dia && 
+            aloc.horario === horarioAtual) {
           conflito = true;
         }
       });
@@ -490,6 +505,7 @@
       renderAll();
     }
 
+    // Funções de exportação (mantidas iguais)
     async function exportarImagem() {
       const turmaNome = turmaSelecionada || "Horário Escolar";
       const container = document.getElementById("grade-container");
