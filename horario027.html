@@ -223,7 +223,44 @@
       `).join("");
     }
 
-    // Renderizações básicas
+    async function addTurma() {
+      const nome = document.getElementById("nova-turma").value.trim();
+      if (!nome) return alert("Digite o nome da turma");
+      const turno = document.getElementById("turno-turma").value;
+      const { error } = await supabaseClient.from('turmas').insert({ nome, turno });
+      if (error) alert("Erro: " + error.message);
+      else {
+        document.getElementById("nova-turma").value = "";
+        alert("Turma adicionada!");
+        await carregarDados();
+      }
+    }
+
+    async function addDisciplina() {
+      const nome = document.getElementById("nova-disciplina").value.trim();
+      if (!nome) return alert("Digite o nome da disciplina");
+      const { error } = await supabaseClient.from('disciplinas').insert({ nome });
+      if (error) alert("Erro: " + error.message);
+      else {
+        document.getElementById("nova-disciplina").value = "";
+        alert("Disciplina adicionada!");
+        await carregarDados();
+      }
+    }
+
+    async function addProfessor() {
+      const nome = document.getElementById("nome-professor").value.trim();
+      const cor = document.getElementById("cor-professor").value;
+      if (!nome) return alert("Digite o nome do professor");
+      const { error } = await supabaseClient.from('professores').insert({ nome, cor });
+      if (error) alert("Erro: " + error.message);
+      else {
+        document.getElementById("nome-professor").value = "";
+        alert("Professor adicionado!");
+        await carregarDados();
+      }
+    }
+
     function renderTurmas() {
       const ul = document.getElementById("lista-turmas");
       ul.innerHTML = turmas.map(t => `
@@ -233,14 +270,9 @@
       `).join("");
     }
 
-    function renderDisciplinasTurma() {
-      const container = document.getElementById("disciplinas-turma");
-      container.innerHTML = disciplinasGerais.map(d => `
-        <label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100">
-          <input type="checkbox" value="${d}" class="w-4 h-4">
-          <span>${d}</span>
-        </label>
-      `).join("");
+    function renderDisciplinasGerais() {
+      const ul = document.getElementById("lista-disciplinas");
+      ul.innerHTML = disciplinasGerais.map(d => `<li class="bg-gray-50 p-3 rounded-lg">${d}</li>`).join("");
     }
 
     function renderDisciplinasProfessor() {
@@ -252,9 +284,14 @@
       `).join("");
     }
 
-    function renderDisciplinasGerais() {
-      const ul = document.getElementById("lista-disciplinas");
-      ul.innerHTML = disciplinasGerais.map(d => `<li class="bg-gray-50 p-3 rounded-lg">${d}</li>`).join("");
+    function renderDisciplinasTurma() {
+      const container = document.getElementById("disciplinas-turma");
+      container.innerHTML = disciplinasGerais.map(d => `
+        <label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100">
+          <input type="checkbox" value="${d}" class="w-4 h-4">
+          <span>${d}</span>
+        </label>
+      `).join("");
     }
 
     function renderProfessores() {
@@ -271,8 +308,7 @@
 
     function updateFiltroTurma() {
       const select = document.getElementById("filtro-turma");
-      select.innerHTML = `<option value="">Selecione uma Turma</option>` + 
-        turmas.map(t => `<option value="${t.nome}">${t.nome} (${t.turno})</option>`).join('');
+      select.innerHTML = `<option value="">Selecione uma Turma</option>` + turmas.map(t => `<option value="${t.nome}">${t.nome} (${t.turno})</option>`).join('');
     }
 
     function showTab(n) {
@@ -280,19 +316,15 @@
       document.getElementById(`tab-${n}`).classList.remove("hidden");
     }
 
-    // Funções placeholder (vamos completar depois)
     function renderGrade() {
       const turmaSelecionada = document.getElementById("filtro-turma").value;
       const tbody = document.getElementById("corpo-grade");
       if (!turmaSelecionada) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-gray-400">Selecione uma turma para ver a grade</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-gray-400">Selecione uma turma</td></tr>`;
         return;
       }
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12">Grade da turma ${turmaSelecionada} (em desenvolvimento)</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12">Grade carregada para ${turmaSelecionada} (em desenvolvimento)</td></tr>`;
     }
-
-    function exportarImagem() { alert("Exportar PNG em desenvolvimento"); }
-    function limparGrade() { alert("Limpar grade em desenvolvimento"); }
 
     window.onload = () => {
       carregarDados();
