@@ -34,7 +34,7 @@
         <button onclick="showTab(2)" class="tab-button flex-1 py-3 font-medium">Professores</button>
       </div>
 
-      <!-- TURMAS -->
+      <!-- TURMAS, DISCIPLINAS, PROFESSORES (mesmo conteúdo) -->
       <div id="tab-0" class="tab-content p-6">
         <div class="space-y-4">
           <input id="nova-turma" type="text" placeholder="Nome da Turma" class="w-full border rounded-lg px-4 py-2">
@@ -57,7 +57,6 @@
         <ul id="lista-turmas" class="space-y-3 mt-8"></ul>
       </div>
 
-      <!-- DISCIPLINAS -->
       <div id="tab-1" class="tab-content p-6 hidden">
         <div class="flex gap-2 mb-4">
           <input id="nova-disciplina" type="text" placeholder="Nova Disciplina" class="flex-1 border rounded-lg px-4 py-2">
@@ -68,7 +67,6 @@
         <ul id="lista-disciplinas" class="space-y-2"></ul>
       </div>
 
-      <!-- PROFESSORES -->
       <div id="tab-2" class="tab-content p-6 hidden">
         <div class="space-y-5">
           <input id="nome-professor" type="text" placeholder="Nome do Professor" class="w-full border rounded-lg px-4 py-2">
@@ -161,7 +159,7 @@
     let turmas = [];
     let disciplinasGerais = [];
     let professores = [];
-    let horariosAlocados = {}; // chave: "turma-dia-hindex"
+    let horariosAlocados = {};
     let currentCellId = null;
     let turmaSelecionada = null;
 
@@ -211,15 +209,9 @@
       showTab(0);
     }
 
-    // ... (outras funções de render mantidas iguais) ...
-
     function renderTurmas() {
       const ul = document.getElementById("lista-turmas");
-      ul.innerHTML = turmas.map(t => `
-        <li class="bg-gray-50 p-4 rounded-xl">
-          <strong>${t.nome}</strong> <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">${t.turno}</span>
-        </li>
-      `).join("");
+      ul.innerHTML = turmas.map(t => `<li class="bg-gray-50 p-4 rounded-xl"><strong>${t.nome}</strong> <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">${t.turno}</span></li>`).join("");
     }
 
     function renderDisciplinasGerais() {
@@ -229,21 +221,12 @@
 
     function renderDisciplinasProfessor() {
       const container = document.getElementById("disciplinas-professor");
-      container.innerHTML = disciplinasGerais.map(d => `
-        <label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100">
-          <input type="checkbox" value="${d}" class="w-4 h-4"> <span>${d}</span>
-        </label>
-      `).join("");
+      container.innerHTML = disciplinasGerais.map(d => `<label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100"><input type="checkbox" value="${d}" class="w-4 h-4"> <span>${d}</span></label>`).join("");
     }
 
     function renderDisciplinasTurma() {
       const container = document.getElementById("disciplinas-turma");
-      container.innerHTML = disciplinasGerais.map(d => `
-        <label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100">
-          <input type="checkbox" value="${d}" class="w-4 h-4">
-          <span>${d}</span>
-        </label>
-      `).join("");
+      container.innerHTML = disciplinasGerais.map(d => `<label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100"><input type="checkbox" value="${d}" class="w-4 h-4"><span>${d}</span></label>`).join("");
     }
 
     function renderProfessores() {
@@ -253,35 +236,23 @@
 
     function renderLegenda() {
       const div = document.getElementById("legenda-professores");
-      div.innerHTML = professores.map(p => `
-        <div class="flex items-center gap-2"><div class="w-5 h-5 rounded" style="background-color:${p.cor || '#4f46e5'}"></div><span>${p.nome}</span></div>
-      `).join("");
+      div.innerHTML = professores.map(p => `<div class="flex items-center gap-2"><div class="w-5 h-5 rounded" style="background-color:${p.cor || '#4f46e5'}"></div><span>${p.nome}</span></div>`).join("");
     }
 
     function renderDiasDisponiveis() {
       const container = document.getElementById("dias-disponiveis");
-      container.innerHTML = diasSemana.map(d => `
-        <label class="cursor-pointer">
-          <input type="checkbox" value="${d}" checked class="hidden peer">
-          <div class="peer-checked:bg-indigo-600 peer-checked:text-white text-xs py-2 px-3 rounded-lg border text-center">${d.substring(0,3).toUpperCase()}</div>
-        </label>
-      `).join("");
+      container.innerHTML = diasSemana.map(d => `<label class="cursor-pointer"><input type="checkbox" value="${d}" checked class="hidden peer"><div class="peer-checked:bg-indigo-600 peer-checked:text-white text-xs py-2 px-3 rounded-lg border text-center">${d.substring(0,3).toUpperCase()}</div></label>`).join("");
     }
 
     function renderHorariosDisponiveis() {
       const container = document.getElementById("horarios-disponiveis");
       const horariosFixos = Object.values(horariosPorTurno).flat();
-      container.innerHTML = horariosFixos.map(h => `
-        <label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100">
-          <input type="checkbox" value="${h}" checked class="w-4 h-4"><span class="text-sm">${h}</span>
-        </label>
-      `).join("");
+      container.innerHTML = horariosFixos.map(h => `<label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100"><input type="checkbox" value="${h}" checked class="w-4 h-4"><span class="text-sm">${h}</span></label>`).join("");
     }
 
     function updateFiltroTurma() {
       const select = document.getElementById("filtro-turma");
-      select.innerHTML = `<option value="">Selecione uma Turma</option>` + 
-        turmas.map(t => `<option value="${t.nome}">${t.nome} (${t.turno})</option>`).join('');
+      select.innerHTML = `<option value="">Selecione uma Turma</option>` + turmas.map(t => `<option value="${t.nome}">${t.nome} (${t.turno})</option>`).join('');
     }
 
     function renderGrade() {
@@ -377,14 +348,39 @@
     function atualizarProfessoresModal() { popularModalProfessores(); }
 
     function validarDisponibilidade() {
+      const professorNome = document.getElementById("modal-professor").value;
       const aviso = document.getElementById("aviso-disponibilidade");
       const btn = document.getElementById("btn-salvar");
-      if (document.getElementById("modal-professor").value) {
-        aviso.innerHTML = `<span class="text-green-600">✅ Pronto para salvar</span>`;
-        btn.disabled = false;
-      } else {
+
+      if (!professorNome) {
         aviso.innerHTML = "";
         btn.disabled = true;
+        return;
+      }
+
+      const turma = document.getElementById("modal-turma").value;
+      if (!turma) {
+        aviso.innerHTML = `<span class="text-amber-600">Selecione uma turma primeiro</span>`;
+        btn.disabled = true;
+        return;
+      }
+
+      const [dia, hIndex] = currentCellId.split('-');
+      const slotKey = `${dia}-${hIndex}`;
+      let conflito = false;
+
+      Object.keys(horariosAlocados).forEach(key => {
+        if (key.includes(slotKey) && horariosAlocados[key].professor === professorNome) {
+          conflito = true;
+        }
+      });
+
+      if (conflito) {
+        aviso.innerHTML = `<span class="text-red-600">⚠️ Professor já alocado neste horário em outra turma!</span>`;
+        btn.disabled = true;
+      } else {
+        aviso.innerHTML = `<span class="text-green-600">✅ Professor disponível neste horário</span>`;
+        btn.disabled = false;
       }
     }
 
@@ -395,6 +391,21 @@
 
       if (!turma || !disciplina || !professorNome) {
         alert("Preencha todos os campos.");
+        return;
+      }
+
+      const [dia, hIndex] = currentCellId.split('-');
+      const slotKey = `${dia}-${hIndex}`;
+      let conflito = false;
+
+      Object.keys(horariosAlocados).forEach(key => {
+        if (key.includes(slotKey) && horariosAlocados[key].professor === professorNome) {
+          conflito = true;
+        }
+      });
+
+      if (conflito) {
+        alert("❌ Conflito detectado! Este professor já está alocado neste mesmo dia e horário em outra turma.");
         return;
       }
 
@@ -410,7 +421,6 @@
       salvarDados();
       fecharModal();
       renderGrade();
-
       alert(`✅ Aula alocada com sucesso!`);
     }
 
@@ -453,12 +463,9 @@
       renderAll();
     }
 
-    function exportarImagem() {
-      alert("Funcionalidade de exportar PNG em desenvolvimento.");
-    }
-
+    function exportarImagem() { alert("Exportar PNG em desenvolvimento."); }
     function limparGrade() {
-      if (confirm("Deseja limpar toda a grade desta turma?")) {
+      if (confirm("Limpar grade desta turma?")) {
         Object.keys(horariosAlocados).forEach(key => {
           if (key.startsWith(turmaSelecionada + "-")) delete horariosAlocados[key];
         });
@@ -467,9 +474,7 @@
       }
     }
 
-    window.onload = () => {
-      carregarDados();
-    };
+    window.onload = () => carregarDados();
   </script>
 </body>
 </html>
