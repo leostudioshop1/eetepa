@@ -17,9 +17,79 @@
 </head>
 <body class="bg-gray-50 font-sans">
   <div class="flex h-screen">
-    <!-- Sidebar (mantido) -->
+    <!-- Sidebar -->
     <div class="w-96 bg-white shadow-xl overflow-y-auto">
-      <!-- ... (todo o sidebar igual ao anterior) ... -->
+      <div class="p-6 border-b">
+        <h1 class="text-2xl font-bold text-indigo-700 flex items-center gap-2">
+          <i class="fas fa-calendar-alt"></i> Montador de Horários
+        </h1>
+      </div>
+      <div class="flex border-b">
+        <button onclick="showTab(0)" class="tab-button flex-1 py-3 font-medium tab-active">Turmas</button>
+        <button onclick="showTab(1)" class="tab-button flex-1 py-3 font-medium">Disciplinas</button>
+        <button onclick="showTab(2)" class="tab-button flex-1 py-3 font-medium">Professores</button>
+      </div>
+
+      <!-- TURMAS -->
+      <div id="tab-0" class="tab-content p-6">
+        <div class="space-y-4">
+          <input id="nova-turma" type="text" placeholder="Nome da Turma" class="w-full border rounded-lg px-4 py-2">
+          <div>
+            <label class="block text-sm font-medium mb-2">Turno</label>
+            <select id="turno-turma" class="w-full border rounded-lg px-4 py-2">
+              <option value="manha">Manhã</option>
+              <option value="tarde">Tarde</option>
+              <option value="noite">Noite</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Disciplinas da Turma</label>
+            <div id="disciplinas-turma" class="grid grid-cols-2 gap-2 text-sm max-h-60 overflow-y-auto border p-3 rounded-lg"></div>
+          </div>
+          <button onclick="addTurma()" class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 font-medium">
+            Adicionar Turma
+          </button>
+        </div>
+        <ul id="lista-turmas" class="space-y-3 mt-8"></ul>
+      </div>
+
+      <!-- DISCIPLINAS -->
+      <div id="tab-1" class="tab-content p-6 hidden">
+        <div class="flex gap-2 mb-4">
+          <input id="nova-disciplina" type="text" placeholder="Nova Disciplina" class="flex-1 border rounded-lg px-4 py-2">
+          <button onclick="addDisciplina()" class="bg-indigo-600 text-white px-5 rounded-lg hover:bg-indigo-700">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+        <ul id="lista-disciplinas" class="space-y-2"></ul>
+      </div>
+
+      <!-- PROFESSORES -->
+      <div id="tab-2" class="tab-content p-6 hidden">
+        <div class="space-y-5">
+          <input id="nome-professor" type="text" placeholder="Nome do Professor" class="w-full border rounded-lg px-4 py-2">
+          <div>
+            <label class="block text-sm font-medium mb-1">Cor</label>
+            <input id="cor-professor" type="color" value="#4f46e5" class="w-full h-10 border rounded-lg p-1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Disciplinas que leciona</label>
+            <div id="disciplinas-professor" class="grid grid-cols-2 gap-2 text-sm max-h-60 overflow-y-auto"></div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Dias disponíveis</label>
+            <div id="dias-disponiveis" class="grid grid-cols-5 gap-3 text-center"></div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Horários disponíveis</label>
+            <div id="horarios-disponiveis" class="grid grid-cols-2 gap-2 text-sm max-h-80 overflow-y-auto"></div>
+          </div>
+          <button onclick="addProfessor()" class="w-full bg-emerald-600 text-white py-3 rounded-lg hover:bg-emerald-700 font-medium">
+            Adicionar Professor
+          </button>
+        </div>
+        <ul id="lista-professores" class="mt-8 space-y-3"></ul>
+      </div>
     </div>
 
     <!-- Área Principal -->
@@ -92,7 +162,6 @@
     let turmas = [];
     let disciplinasGerais = [];
     let professores = [];
-    let alocacoesPorTurma = {}; // turma_id -> { cellId: data }
     let currentCellId = null;
 
     const horariosPorTurno = {
@@ -117,6 +186,7 @@
         renderAll();
       } catch (error) {
         console.error(error);
+        alert("Erro ao carregar dados: " + error.message);
       }
     }
 
@@ -133,7 +203,6 @@
       showTab(0);
     }
 
-    // Render Dias e Horários
     function renderDiasDisponiveis() {
       const container = document.getElementById("dias-disponiveis");
       container.innerHTML = diasSemana.map(d => `
@@ -154,16 +223,72 @@
       `).join("");
     }
 
-    // Grade de Horários
+    function renderTurmas() {
+      const ul = document.getElementById("lista-turmas");
+      ul.innerHTML = turmas.map(t => `
+        <li class="bg-gray-50 p-4 rounded-xl">
+          <strong>${t.nome}</strong> <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">${t.turno}</span>
+        </li>
+      `).join("");
+    }
+
+    function renderDisciplinasGerais() {
+      const ul = document.getElementById("lista-disciplinas");
+      ul.innerHTML = disciplinasGerais.map(d => `<li class="bg-gray-50 p-3 rounded-lg">${d}</li>`).join("");
+    }
+
+    function renderDisciplinasProfessor() {
+      const container = document.getElementById("disciplinas-professor");
+      container.innerHTML = disciplinasGerais.map(d => `
+        <label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100">
+          <input type="checkbox" value="${d}" class="w-4 h-4"> <span>${d}</span>
+        </label>
+      `).join("");
+    }
+
+    function renderDisciplinasTurma() {
+      const container = document.getElementById("disciplinas-turma");
+      container.innerHTML = disciplinasGerais.map(d => `
+        <label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100">
+          <input type="checkbox" value="${d}" class="w-4 h-4">
+          <span>${d}</span>
+        </label>
+      `).join("");
+    }
+
+    function renderProfessores() {
+      const ul = document.getElementById("lista-professores");
+      ul.innerHTML = professores.map(p => `<li class="bg-gray-50 p-4 rounded-xl">${p.nome}</li>`).join("");
+    }
+
+    function renderLegenda() {
+      const div = document.getElementById("legenda-professores");
+      div.innerHTML = professores.map(p => `
+        <div class="flex items-center gap-2"><div class="w-5 h-5 rounded" style="background-color:${p.cor || '#4f46e5'}"></div><span>${p.nome}</span></div>
+      `).join("");
+    }
+
+    function updateFiltroTurma() {
+      const select = document.getElementById("filtro-turma");
+      select.innerHTML = `<option value="">Selecione uma Turma</option>` + 
+        turmas.map(t => `<option value="${t.nome}">${t.nome} (${t.turno})</option>`).join('');
+    }
+
     function renderGrade() {
       const turmaNome = document.getElementById("filtro-turma").value;
       const tbody = document.getElementById("corpo-grade");
+
       if (!turmaNome) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-gray-400">Selecione uma turma</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-gray-400">Selecione uma turma para ver a grade</td></tr>`;
         return;
       }
 
       const turma = turmas.find(t => t.nome === turmaNome);
+      if (!turma) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-red-500">Turma não encontrada</td></tr>`;
+        return;
+      }
+
       const horariosDoTurno = horariosPorTurno[turma.turno] || horariosPorTurno.manha;
 
       tbody.innerHTML = "";
@@ -176,8 +301,8 @@
           const cellId = `${dia}-${hIndex}`;
           const td = document.createElement("td");
           td.className = `border p-4 horario-cell min-h-28 align-top cursor-pointer text-sm`;
-          td.onclick = () => abrirModal(cellId);
           td.innerHTML = `<div class="h-20 flex items-center justify-center text-4xl text-gray-200 hover:text-gray-400">+</div>`;
+          td.onclick = () => abrirModal(cellId);
           tr.appendChild(td);
         });
         tbody.appendChild(tr);
@@ -187,39 +312,52 @@
     function abrirModal(cellId) {
       currentCellId = cellId;
       document.getElementById("modal").classList.remove("hidden");
-      atualizarDisciplinasModal();
     }
 
     function fecharModal() {
       document.getElementById("modal").classList.add("hidden");
     }
 
-    function atualizarDisciplinasModal() {
-      // Implementação básica
-      const select = document.getElementById("modal-disciplina");
-      select.innerHTML = '<option value="">Selecione a Disciplina</option>' + disciplinasGerais.map(d => `<option value="${d}">${d}</option>`).join('');
+    function showTab(n) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+      document.getElementById(`tab-${n}`).classList.remove("hidden");
     }
 
-    function atualizarProfessoresModal() {
-      // Implementação básica
+    // Funções de cadastro
+    async function addTurma() {
+      const nome = document.getElementById("nova-turma").value.trim();
+      if (!nome) return alert("Digite o nome da turma");
+      const turno = document.getElementById("turno-turma").value;
+      const { error } = await supabaseClient.from('turmas').insert({ nome, turno });
+      if (error) alert("Erro: " + error.message);
+      else {
+        document.getElementById("nova-turma").value = "";
+        await carregarDados();
+      }
     }
 
-    function validarDisponibilidade() {
-      // Implementação básica
+    async function addDisciplina() {
+      const nome = document.getElementById("nova-disciplina").value.trim();
+      if (!nome) return alert("Digite o nome da disciplina");
+      const { error } = await supabaseClient.from('disciplinas').insert({ nome });
+      if (error) alert("Erro: " + error.message);
+      else {
+        document.getElementById("nova-disciplina").value = "";
+        await carregarDados();
+      }
     }
 
-    function salvarAlocacao() {
-      alert("Alocação salva! (em desenvolvimento completo)");
-      fecharModal();
-      renderGrade();
+    async function addProfessor() {
+      const nome = document.getElementById("nome-professor").value.trim();
+      const cor = document.getElementById("cor-professor").value;
+      if (!nome) return alert("Digite o nome do professor");
+      const { error } = await supabaseClient.from('professores').insert({ nome, cor });
+      if (error) alert("Erro: " + error.message);
+      else {
+        document.getElementById("nome-professor").value = "";
+        await carregarDados();
+      }
     }
-
-    // Funções de cadastro (mantidas)
-    async function addTurma() { /* ... */ }
-    async function addDisciplina() { /* ... */ }
-    async function addProfessor() { /* ... */ }
-
-    function showTab(n) { /* ... */ }
 
     window.onload = () => {
       carregarDados();
