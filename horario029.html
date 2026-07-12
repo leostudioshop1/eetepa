@@ -13,6 +13,10 @@
     .horario-cell { transition: all 0.2s; }
     .horario-cell:hover { transform: scale(1.02); z-index: 10; }
     .professor-tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 9999px; }
+    .aula-alocada { 
+      background: linear-gradient(135deg, #f3e8ff, #e0f2fe); 
+      border-left: 4px solid #6366f1; 
+    }
   </style>
 </head>
 <body class="bg-gray-50 font-sans">
@@ -157,7 +161,9 @@
     let turmas = [];
     let disciplinasGerais = [];
     let professores = [];
+    let horariosAlocados = {}; // chave: "turma-dia-hindex"
     let currentCellId = null;
+    let turmaSelecionada = null;
 
     const horariosPorTurno = {
       manha: ["07:00 - 07:45", "07:45 - 08:30", "08:30 - 09:15", "09:30 - 10:15", "10:15 - 11:00", "11:00 - 11:45"],
@@ -167,41 +173,29 @@
 
     const diasSemana = ["segunda", "terca", "quarta", "quinta", "sexta"];
 
-    // Carregar dados do localStorage
     function carregarDados() {
       const savedTurmas = localStorage.getItem('turmas');
       const savedDisciplinas = localStorage.getItem('disciplinasGerais');
       const savedProfessores = localStorage.getItem('professores');
+      const savedHorarios = localStorage.getItem('horariosAlocados');
 
       if (savedTurmas) turmas = JSON.parse(savedTurmas);
       if (savedDisciplinas) disciplinasGerais = JSON.parse(savedDisciplinas);
       if (savedProfessores) professores = JSON.parse(savedProfessores);
+      if (savedHorarios) horariosAlocados = JSON.parse(savedHorarios);
 
-      // Dados iniciais caso esteja vazio
-      if (disciplinasGerais.length === 0) {
-        disciplinasGerais = ["Matemática", "Português", "História", "Geografia", "Ciências", "Inglês", "Educação Física"];
-      }
-      if (turmas.length === 0) {
-        turmas = [
-          { nome: "7º A", turno: "manha" },
-          { nome: "8º B", turno: "tarde" }
-        ];
-      }
-      if (professores.length === 0) {
-        professores = [
-          { nome: "João Silva", cor: "#4f46e5" },
-          { nome: "Maria Oliveira", cor: "#10b981" }
-        ];
-      }
+      if (disciplinasGerais.length === 0) disciplinasGerais = ["Matemática", "Português", "História", "Geografia", "Ciências", "Inglês", "Educação Física"];
+      if (turmas.length === 0) turmas = [{ nome: "7º A", turno: "manha" }, { nome: "8º B", turno: "tarde" }];
+      if (professores.length === 0) professores = [{ nome: "João Silva", cor: "#4f46e5" }, { nome: "Maria Oliveira", cor: "#10b981" }];
 
       renderAll();
     }
 
-    // Salvar no localStorage
     function salvarDados() {
       localStorage.setItem('turmas', JSON.stringify(turmas));
       localStorage.setItem('disciplinasGerais', JSON.stringify(disciplinasGerais));
       localStorage.setItem('professores', JSON.stringify(professores));
+      localStorage.setItem('horariosAlocados', JSON.stringify(horariosAlocados));
     }
 
     function renderAll() {
@@ -217,25 +211,7 @@
       showTab(0);
     }
 
-    function renderDiasDisponiveis() {
-      const container = document.getElementById("dias-disponiveis");
-      container.innerHTML = diasSemana.map(d => `
-        <label class="cursor-pointer">
-          <input type="checkbox" value="${d}" checked class="hidden peer">
-          <div class="peer-checked:bg-indigo-600 peer-checked:text-white text-xs py-2 px-3 rounded-lg border text-center">${d.substring(0,3).toUpperCase()}</div>
-        </label>
-      `).join("");
-    }
-
-    function renderHorariosDisponiveis() {
-      const container = document.getElementById("horarios-disponiveis");
-      const horariosFixos = Object.values(horariosPorTurno).flat();
-      container.innerHTML = horariosFixos.map(h => `
-        <label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100">
-          <input type="checkbox" value="${h}" checked class="w-4 h-4"><span class="text-sm">${h}</span>
-        </label>
-      `).join("");
-    }
+    // ... (outras funções de render mantidas iguais) ...
 
     function renderTurmas() {
       const ul = document.getElementById("lista-turmas");
@@ -282,6 +258,26 @@
       `).join("");
     }
 
+    function renderDiasDisponiveis() {
+      const container = document.getElementById("dias-disponiveis");
+      container.innerHTML = diasSemana.map(d => `
+        <label class="cursor-pointer">
+          <input type="checkbox" value="${d}" checked class="hidden peer">
+          <div class="peer-checked:bg-indigo-600 peer-checked:text-white text-xs py-2 px-3 rounded-lg border text-center">${d.substring(0,3).toUpperCase()}</div>
+        </label>
+      `).join("");
+    }
+
+    function renderHorariosDisponiveis() {
+      const container = document.getElementById("horarios-disponiveis");
+      const horariosFixos = Object.values(horariosPorTurno).flat();
+      container.innerHTML = horariosFixos.map(h => `
+        <label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100">
+          <input type="checkbox" value="${h}" checked class="w-4 h-4"><span class="text-sm">${h}</span>
+        </label>
+      `).join("");
+    }
+
     function updateFiltroTurma() {
       const select = document.getElementById("filtro-turma");
       select.innerHTML = `<option value="">Selecione uma Turma</option>` + 
@@ -289,15 +285,15 @@
     }
 
     function renderGrade() {
-      const turmaNome = document.getElementById("filtro-turma").value;
+      turmaSelecionada = document.getElementById("filtro-turma").value;
       const tbody = document.getElementById("corpo-grade");
 
-      if (!turmaNome) {
+      if (!turmaSelecionada) {
         tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-gray-400">Selecione uma turma para ver a grade</td></tr>`;
         return;
       }
 
-      const turma = turmas.find(t => t.nome === turmaNome);
+      const turma = turmas.find(t => t.nome === turmaSelecionada);
       if (!turma) return;
 
       const horariosDoTurno = horariosPorTurno[turma.turno] || horariosPorTurno.manha;
@@ -309,9 +305,23 @@
 
         diasSemana.forEach(dia => {
           const cellId = `${dia}-${hIndex}`;
+          const key = `${turmaSelecionada}-${cellId}`;
+          const alocacao = horariosAlocados[key];
+
           const td = document.createElement("td");
-          td.className = `border p-4 horario-cell min-h-28 align-top cursor-pointer text-sm`;
-          td.innerHTML = `<div class="h-20 flex items-center justify-center text-4xl text-gray-200 hover:text-gray-400">+</div>`;
+          td.className = `border p-4 horario-cell min-h-28 align-top cursor-pointer text-sm ${alocacao ? 'aula-alocada' : ''}`;
+          
+          if (alocacao) {
+            td.innerHTML = `
+              <div class="text-xs font-medium">${alocacao.disciplina}</div>
+              <div class="professor-tag mt-1 inline-block" style="background-color: ${alocacao.cor || '#6366f1'}; color: white;">
+                ${alocacao.professor}
+              </div>
+            `;
+          } else {
+            td.innerHTML = `<div class="h-20 flex items-center justify-center text-4xl text-gray-200 hover:text-gray-400">+</div>`;
+          }
+          
           td.onclick = () => abrirModal(cellId);
           tr.appendChild(td);
         });
@@ -319,7 +329,6 @@
       });
     }
 
-    // Modal functions (mantidas do anterior)
     function abrirModal(cellId) {
       currentCellId = cellId;
       popularModalTurmas();
@@ -339,6 +348,7 @@
         opt.textContent = `${turma.nome} (${turma.turno})`;
         select.appendChild(opt);
       });
+      if (turmaSelecionada) select.value = turmaSelecionada;
     }
 
     function popularModalDisciplinas() {
@@ -370,7 +380,7 @@
       const aviso = document.getElementById("aviso-disponibilidade");
       const btn = document.getElementById("btn-salvar");
       if (document.getElementById("modal-professor").value) {
-        aviso.innerHTML = `<span class="text-green-600">✅ Professor selecionado</span>`;
+        aviso.innerHTML = `<span class="text-green-600">✅ Pronto para salvar</span>`;
         btn.disabled = false;
       } else {
         aviso.innerHTML = "";
@@ -381,16 +391,27 @@
     function salvarAlocacao() {
       const turma = document.getElementById("modal-turma").value;
       const disciplina = document.getElementById("modal-disciplina").value;
-      const professor = document.getElementById("modal-professor").value;
-      
-      if (!turma || !disciplina || !professor) {
-        alert("Por favor, preencha todos os campos.");
+      const professorNome = document.getElementById("modal-professor").value;
+
+      if (!turma || !disciplina || !professorNome) {
+        alert("Preencha todos os campos.");
         return;
       }
 
-      alert(`✅ Aula salva com sucesso!\n\nTurma: ${turma}\nDisciplina: ${disciplina}\nProfessor: ${professor}`);
+      const professor = professores.find(p => p.nome === professorNome);
+      const key = `${turma}-${currentCellId}`;
+
+      horariosAlocados[key] = {
+        disciplina: disciplina,
+        professor: professorNome,
+        cor: professor ? professor.cor : '#6366f1'
+      };
+
+      salvarDados();
       fecharModal();
       renderGrade();
+
+      alert(`✅ Aula alocada com sucesso!`);
     }
 
     function fecharModal() {
@@ -402,7 +423,6 @@
       document.getElementById(`tab-${n}`).classList.remove("hidden");
     }
 
-    // Funções de cadastro com salvamento
     function addTurma() {
       const nome = document.getElementById("nova-turma").value.trim();
       if (!nome) return alert("Digite o nome da turma");
@@ -438,8 +458,11 @@
     }
 
     function limparGrade() {
-      if (confirm("Deseja limpar toda a grade?")) {
-        alert("Grade limpa!");
+      if (confirm("Deseja limpar toda a grade desta turma?")) {
+        Object.keys(horariosAlocados).forEach(key => {
+          if (key.startsWith(turmaSelecionada + "-")) delete horariosAlocados[key];
+        });
+        salvarDados();
         renderGrade();
       }
     }
