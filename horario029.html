@@ -154,11 +154,6 @@
   </div>
 
   <script>
-    const supabaseClient = supabase.createClient(
-      window.SUPABASE_CONFIG ? window.SUPABASE_CONFIG.url : '',
-      window.SUPABASE_CONFIG ? window.SUPABASE_CONFIG.key : ''
-    );
-
     let turmas = [];
     let disciplinasGerais = [];
     let professores = [];
@@ -172,30 +167,41 @@
 
     const diasSemana = ["segunda", "terca", "quarta", "quinta", "sexta"];
 
-    async function carregarDados() {
-      try {
-        // Fallback para dados locais caso Supabase falhe
-        if (disciplinasGerais.length === 0) {
-          disciplinasGerais = ["Matemática", "Português", "História", "Geografia", "Ciências", "Inglês"];
-        }
-        if (turmas.length === 0) {
-          turmas = [
-            { nome: "7º A", turno: "manha" },
-            { nome: "8º B", turno: "tarde" }
-          ];
-        }
-        if (professores.length === 0) {
-          professores = [
-            { nome: "João Silva", cor: "#4f46e5" },
-            { nome: "Maria Oliveira", cor: "#10b981" }
-          ];
-        }
+    // Carregar dados do localStorage
+    function carregarDados() {
+      const savedTurmas = localStorage.getItem('turmas');
+      const savedDisciplinas = localStorage.getItem('disciplinasGerais');
+      const savedProfessores = localStorage.getItem('professores');
 
-        renderAll();
-      } catch (error) {
-        console.error(error);
-        renderAll();
+      if (savedTurmas) turmas = JSON.parse(savedTurmas);
+      if (savedDisciplinas) disciplinasGerais = JSON.parse(savedDisciplinas);
+      if (savedProfessores) professores = JSON.parse(savedProfessores);
+
+      // Dados iniciais caso esteja vazio
+      if (disciplinasGerais.length === 0) {
+        disciplinasGerais = ["Matemática", "Português", "História", "Geografia", "Ciências", "Inglês", "Educação Física"];
       }
+      if (turmas.length === 0) {
+        turmas = [
+          { nome: "7º A", turno: "manha" },
+          { nome: "8º B", turno: "tarde" }
+        ];
+      }
+      if (professores.length === 0) {
+        professores = [
+          { nome: "João Silva", cor: "#4f46e5" },
+          { nome: "Maria Oliveira", cor: "#10b981" }
+        ];
+      }
+
+      renderAll();
+    }
+
+    // Salvar no localStorage
+    function salvarDados() {
+      localStorage.setItem('turmas', JSON.stringify(turmas));
+      localStorage.setItem('disciplinasGerais', JSON.stringify(disciplinasGerais));
+      localStorage.setItem('professores', JSON.stringify(professores));
     }
 
     function renderAll() {
@@ -292,13 +298,9 @@
       }
 
       const turma = turmas.find(t => t.nome === turmaNome);
-      if (!turma) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-red-500">Turma não encontrada</td></tr>`;
-        return;
-      }
+      if (!turma) return;
 
       const horariosDoTurno = horariosPorTurno[turma.turno] || horariosPorTurno.manha;
-
       tbody.innerHTML = "";
 
       horariosDoTurno.forEach((horario, hIndex) => {
@@ -317,13 +319,12 @@
       });
     }
 
+    // Modal functions (mantidas do anterior)
     function abrirModal(cellId) {
       currentCellId = cellId;
-      
       popularModalTurmas();
       popularModalDisciplinas();
       popularModalProfessores();
-      
       document.getElementById("modal").classList.remove("hidden");
       document.getElementById("btn-salvar").disabled = true;
       document.getElementById("aviso-disponibilidade").innerHTML = "";
@@ -362,18 +363,12 @@
       });
     }
 
-    function atualizarDisciplinasModal() {
-      popularModalDisciplinas();
-    }
-
-    function atualizarProfessoresModal() {
-      popularModalProfessores();
-    }
+    function atualizarDisciplinasModal() { popularModalDisciplinas(); }
+    function atualizarProfessoresModal() { popularModalProfessores(); }
 
     function validarDisponibilidade() {
       const aviso = document.getElementById("aviso-disponibilidade");
       const btn = document.getElementById("btn-salvar");
-      
       if (document.getElementById("modal-professor").value) {
         aviso.innerHTML = `<span class="text-green-600">✅ Professor selecionado</span>`;
         btn.disabled = false;
@@ -407,31 +402,34 @@
       document.getElementById(`tab-${n}`).classList.remove("hidden");
     }
 
-    // Funções de cadastro
-    async function addTurma() {
+    // Funções de cadastro com salvamento
+    function addTurma() {
       const nome = document.getElementById("nova-turma").value.trim();
       if (!nome) return alert("Digite o nome da turma");
       const turno = document.getElementById("turno-turma").value;
       turmas.push({ nome, turno });
       document.getElementById("nova-turma").value = "";
+      salvarDados();
       renderAll();
       updateFiltroTurma();
     }
 
-    async function addDisciplina() {
+    function addDisciplina() {
       const nome = document.getElementById("nova-disciplina").value.trim();
       if (!nome) return alert("Digite o nome da disciplina");
       disciplinasGerais.push(nome);
       document.getElementById("nova-disciplina").value = "";
+      salvarDados();
       renderAll();
     }
 
-    async function addProfessor() {
+    function addProfessor() {
       const nome = document.getElementById("nome-professor").value.trim();
       const cor = document.getElementById("cor-professor").value;
       if (!nome) return alert("Digite o nome do professor");
       professores.push({ nome, cor });
       document.getElementById("nome-professor").value = "";
+      salvarDados();
       renderAll();
     }
 
