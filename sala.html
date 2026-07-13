@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sala de Aula Virtual Ultra Moderna</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Segoe UI,Arial,sans-serif;
+}
+
+body{
+    background:linear-gradient(135deg,#07111d,#102d4c,#163d5f);
+    overflow:hidden;
+}
+
+#particles{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    opacity:.35;
+}
+
+h1{
+    position:absolute;
+    top:20px;
+    width:100%;
+    text-align:center;
+    color:white;
+    font-size:34px;
+    letter-spacing:2px;
+    text-shadow:0 0 15px cyan;
+    z-index:5;
+}
+
+.sala{
+    position:relative;
+    width:100vw;
+    height:100vh;
+}
+
+/* chão */
+
+.chao{
+    position:absolute;
+    bottom:0;
+    width:100%;
+    height:28%;
+    background:linear-gradient(#50361d,#8c5b32);
+}
+
+.parede{
+    position:absolute;
+    width:100%;
+    height:72%;
+    background:linear-gradient(#163553,#20496e,#1d2f44);
+}
+
+/* iluminação */
+
+#luz{
+    position:absolute;
+    width:100%;
+    height:100%;
+    background:radial-gradient(circle,#ffffff33,#ffffff00 65%);
+    opacity:0;
+    transition:.4s;
+    pointer-events:none;
+}
+
+.ligada{
+    opacity:1!important;
+}
+
+/* TV */
+
+.tv{
+    position:absolute;
+    top:110px;
+    left:70%;
+    width:240px;
+    height:150px;
+    border:8px solid #222;
+    border-radius:10px;
+    background:#000;
+    cursor:pointer;
+    transition:.3s;
+    box-shadow:0 0 20px #000;
+}
+
+.tv::after{
+    content:"TV";
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    color:#555;
+    font-size:28px;
+}
+
+.tv.on{
+    background:linear-gradient(45deg,#00d2ff,#3affc8,#8dff00);
+    box-shadow:0 0 35px cyan;
+}
+
+.tv.on::after{
+    color:white;
+}
+
+/* Notebook */
+
+.notebook{
+    position:absolute;
+    bottom:120px;
+    left:50%;
+    transform:translateX(-50%);
+    width:170px;
+    height:110px;
+    cursor:pointer;
+}
+
+.tela{
+    width:170px;
+    height:100px;
+    background:#111;
+    border:6px solid #444;
+    border-radius:8px 8px 0 0;
+    transition:.3s;
+}
+
+.base{
+    width:190px;
+    height:12px;
+    background:#aaa;
+    margin-left:-10px;
+    border-radius:0 0 10px 10px;
+}
+
+.notebook.on .tela{
+    background:linear-gradient(45deg,#0099ff,#0ff,#0033ff);
+    box-shadow:0 0 20px cyan;
+}
+
+/* Lâmpada */
+
+.lampada{
+    position:absolute;
+    left:50%;
+    top:0;
+    transform:translateX(-50%);
+    width:12px;
+    height:140px;
+    background:#333;
+}
+
+.bulbo{
+    position:absolute;
+    top:130px;
+    left:50%;
+    transform:translateX(-50%);
+    width:50px;
+    height:50px;
+    background:#999;
+    border-radius:50%;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.bulbo.on{
+    background:#ffe95d;
+    box-shadow:0 0 50px yellow;
+}
+
+/* Ventilador */
+
+.ventilador{
+    position:absolute;
+    left:120px;
+    top:170px;
+    width:130px;
+    height:130px;
+    cursor:pointer;
+}
+
+.centro{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    width:24px;
+    height:24px;
+    background:#ddd;
+    border-radius:50%;
+    z-index:2;
+}
+
+.helice{
+    position:absolute;
+    width:120px;
+    height:120px;
+    left:5px;
+    top:5px;
+}
+
+.helice::before,
+.helice::after{
+    content:"";
+    position:absolute;
+    background:#ddd;
+    border-radius:50px;
+}
+
+.helice::before{
+    width:18px;
+    height:110px;
+    left:51px;
+    top:5px;
+}
+
+.helice::after{
+    width:110px;
+    height:18px;
+    left:5px;
+    top:51px;
+}
+
+.girando{
+    animation:spin .15s linear infinite;
+}
+
+@keyframes spin{
+    from{transform:rotate(0deg);}
+    to{transform:rotate(360deg);}
+}
+
+/* mesa */
+
+.mesa{
+    position:absolute;
+    width:360px;
+    height:18px;
+    background:#4d2e12;
+    left:50%;
+    bottom:110px;
+    transform:translateX(-50%);
+}
+
+.mesa::before,
+.mesa::after{
+    content:"";
+    position:absolute;
+    width:10px;
+    height:100px;
+    background:#3a220d;
+    bottom:-100px;
+}
+
+.mesa::before{left:20px;}
+.mesa::after{right:20px;}
+
+/* legenda */
+
+.info{
+    position:absolute;
+    bottom:15px;
+    width:100%;
+    text-align:center;
+    color:white;
+    font-size:18px;
+    z-index:10;
+}
+
+.item{
+    user-select:none;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="particles"></canvas>
+
+<div class="sala">
+
+<div class="parede"></div>
+<div class="chao"></div>
+
+<div id="luz"></div>
+
+<h1>🏫 Sala de Aula Virtual Ultra Moderna</h1>
+
+<!-- Lampada -->
+<div class="lampada"></div>
+<div class="bulbo item" id="lampada" title="Clique para ligar/desligar"></div>
+
+<!-- Ventilador -->
+<div class="ventilador item" id="fan" title="Clique para ligar/desligar">
+<div class="helice" id="helice"></div>
+<div class="centro"></div>
+</div>
+
+<!-- TV -->
+<div class="tv item" id="tv" title="Clique para ligar/desligar"></div>
+
+<!-- Mesa -->
+<div class="mesa"></div>
+
+<!-- Notebook -->
+<div class="notebook item" id="notebook" title="Clique para ligar/desligar">
+<div class="tela"></div>
+<div class="base"></div>
+</div>
+
+<div class="info">
+💡 Clique nos equipamentos para ligar ou desligar.
+</div>
+
+</div>
+
+<script>
+
+/* ---------- Notebook ---------- */
+
+document.getElementById("notebook").onclick=function(){
+    this.classList.toggle("on");
+}
+
+/* ---------- TV ---------- */
+
+document.getElementById("tv").onclick=function(){
+    this.classList.toggle("on");
+}
+
+/* ---------- Lampada ---------- */
+
+document.getElementById("lampada").onclick=function(){
+
+    this.classList.toggle("on");
+
+    document.getElementById("luz").classList.toggle("ligada");
+
+}
+
+/* ---------- Ventilador ---------- */
+
+document.getElementById("fan").onclick=function(){
+
+    document.getElementById("helice").classList.toggle("girando");
+
+}
+
+/* ---------- Fundo animado ---------- */
+
+const canvas=document.getElementById("particles");
+const ctx=canvas.getContext("2d");
+
+function resize(){
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+}
+resize();
+window.onresize=resize;
+
+const pts=[];
+
+for(let i=0;i<80;i++){
+pts.push({
+x:Math.random()*canvas.width,
+y:Math.random()*canvas.height,
+r:Math.random()*2+1,
+dx:(Math.random()-.5)*0.5,
+dy:(Math.random()-.5)*0.5
+});
+}
+
+function draw(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+pts.forEach(p=>{
+
+ctx.beginPath();
+ctx.fillStyle="cyan";
+ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+ctx.fill();
+
+p.x+=p.dx;
+p.y+=p.dy;
+
+if(p.x<0||p.x>canvas.width)p.dx*=-1;
+if(p.y<0||p.y>canvas.height)p.dy*=-1;
+
+});
+
+requestAnimationFrame(draw);
+
+}
+
+draw();
+
+</script>
+
+</body>
+</html>
