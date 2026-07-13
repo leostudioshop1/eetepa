@@ -478,6 +478,8 @@
 
       const horarioAtual = getHorarioAtual();
       const [dia] = currentCellId.split('-');
+
+      // Verificação de dia disponível (simples - todos os dias por enquanto)
       let conflito = temConflito(professorNome, dia, horarioAtual);
 
       if (conflito) {
