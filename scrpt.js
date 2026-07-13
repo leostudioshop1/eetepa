@@ -14,8 +14,10 @@ const horariosPorTurno = {
 const diasSemana = ["segunda", "terca", "quarta", "quinta", "sexta"];
 
 const supabaseClient = supabase.createClient(
-  window.SUPABASE_CONFIG ? window.SUPABASE_CONFIG.url : "",
-  window.SUPABASE_CONFIG ? window.SUPABASE_CONFIG.key : ""
+  window.SUPABASE_CONFIG ? window.SUPABASE_CONFIG.url : "https://osofdmgokrxdzsxozsrf.supabase.co",
+  window.SUPABASE_CONFIG ? window.SUPABASE_CONFIG.key : "sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe"
+  
+  
 );
 
 let deviceId = "";
