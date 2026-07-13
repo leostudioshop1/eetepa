@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Master Horário EETEPA</title>
+  <title>Master Horário EETEPA - Corrigido</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -59,10 +59,6 @@
               <option value="noite">Noite</option>
             </select>
           </div>
-          <div>
-            <label class="block text-sm font-medium mb-2">Disciplinas da Turma</label>
-            <div id="disciplinas-turma" class="grid grid-cols-2 gap-2 text-sm max-h-60 overflow-y-auto border p-3 rounded-lg"></div>
-          </div>
           <button onclick="addTurma()" class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 font-medium">
             Adicionar Turma
           </button>
@@ -86,18 +82,6 @@
           <div>
             <label class="block text-sm font-medium mb-1">Cor</label>
             <input id="cor-professor" type="color" value="#4f46e5" class="w-full h-10 border rounded-lg p-1">
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-2">Disciplinas que leciona</label>
-            <div id="disciplinas-professor" class="grid grid-cols-2 gap-2 text-sm max-h-60 overflow-y-auto"></div>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-2">Dias disponíveis</label>
-            <div id="dias-disponiveis" class="grid grid-cols-5 gap-3 text-center"></div>
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-2">Horários disponíveis</label>
-            <div id="horarios-disponiveis" class="grid grid-cols-2 gap-2 text-sm max-h-80 overflow-y-auto"></div>
           </div>
           <button onclick="addProfessor()" class="w-full bg-emerald-600 text-white py-3 rounded-lg hover:bg-emerald-700 font-medium">
             Adicionar Professor
@@ -249,7 +233,6 @@
 
     function ativarProtecoes() {
       document.addEventListener('contextmenu', e => e.preventDefault());
-
       document.addEventListener('keydown', function(e) {
         if (e.key === "F12" || 
             (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "C" || e.key === "J")) ||
@@ -261,7 +244,6 @@
           return false;
         }
       });
-
       let devtoolsOpen = false;
       setInterval(() => {
         if (window.outerWidth - window.innerWidth > 160 || window.outerHeight - window.innerHeight > 160) {
@@ -302,12 +284,8 @@
     function renderAll() {
       renderTurmas();
       renderDisciplinasGerais();
-      renderDisciplinasProfessor();
-      renderDisciplinasTurma();
       renderProfessores();
       renderLegenda();
-      renderDiasDisponiveis();
-      renderHorariosDisponiveis();
       updateFiltroTurma();
       showTab(0);
     }
@@ -335,16 +313,6 @@
       `).join("");
     }
 
-    function renderDisciplinasProfessor() {
-      const container = document.getElementById("disciplinas-professor");
-      container.innerHTML = disciplinasGerais.map(d => `<label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100"><input type="checkbox" value="${d}" class="w-4 h-4"> <span>${d}</span></label>`).join("");
-    }
-
-    function renderDisciplinasTurma() {
-      const container = document.getElementById("disciplinas-turma");
-      container.innerHTML = disciplinasGerais.map(d => `<label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100"><input type="checkbox" value="${d}" class="w-4 h-4"><span>${d}</span></label>`).join("");
-    }
-
     function renderProfessores() {
       const ul = document.getElementById("lista-professores");
       ul.innerHTML = professores.map((p, index) => `
@@ -358,17 +326,6 @@
     function renderLegenda() {
       const div = document.getElementById("legenda-professores");
       div.innerHTML = professores.map(p => `<div class="flex items-center gap-2"><div class="w-5 h-5 rounded" style="background-color:${p.cor || '#4f46e5'}"></div><span>${p.nome}</span></div>`).join("");
-    }
-
-    function renderDiasDisponiveis() {
-      const container = document.getElementById("dias-disponiveis");
-      container.innerHTML = diasSemana.map(d => `<label class="cursor-pointer"><input type="checkbox" value="${d}" checked class="hidden peer"><div class="peer-checked:bg-indigo-600 peer-checked:text-white text-xs py-2 px-3 rounded-lg border text-center">${d.substring(0,3).toUpperCase()}</div></label>`).join("");
-    }
-
-    function renderHorariosDisponiveis() {
-      const container = document.getElementById("horarios-disponiveis");
-      const horariosFixos = Object.values(horariosPorTurno).flat();
-      container.innerHTML = horariosFixos.map(h => `<label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100"><input type="checkbox" value="${h}" checked class="w-4 h-4"><span class="text-sm">${h}</span></label>`).join("");
     }
 
     function updateFiltroTurma() {
@@ -477,6 +434,16 @@
       return horariosPorTurno[turma.turno][hIndex];
     }
 
+    function temConflito(professorNome, dia, horario) {
+      for (let key in horariosAlocados) {
+        const aloc = horariosAlocados[key];
+        if (aloc.professor === professorNome && aloc.dia === dia && aloc.horario === horario) {
+          return true;
+        }
+      }
+      return false;
+    }
+
     function validarDisponibilidade() {
       const professorNome = document.getElementById("modal-professor").value;
       const aviso = document.getElementById("aviso-disponibilidade");
@@ -490,11 +457,7 @@
 
       const horarioAtual = getHorarioAtual();
       const [dia] = currentCellId.split('-');
-      let conflito = false;
-
-      Object.values(horariosAlocados).forEach(aloc => {
-        if (aloc.professor === professorNome && aloc.dia === dia && aloc.horario === horarioAtual) conflito = true;
-      });
+      let conflito = temConflito(professorNome, dia, horarioAtual);
 
       if (conflito) {
         aviso.innerHTML = `<span class="text-red-600">⚠️ Professor já alocado neste dia e horário!</span>`;
@@ -520,12 +483,7 @@
       const turmaObj = turmas.find(t => t.nome === turma);
       const horarioAtual = horariosPorTurno[turmaObj.turno][parseInt(hIndex)];
 
-      let conflito = false;
-      Object.values(horariosAlocados).forEach(aloc => {
-        if (aloc.professor === professorNome && aloc.dia === dia && aloc.horario === horarioAtual) conflito = true;
-      });
-
-      if (conflito) {
+      if (temConflito(professorNome, dia, horarioAtual)) {
         alert("❌ Conflito detectado! Professor já está alocado neste horário.");
         return;
       }
@@ -589,7 +547,6 @@
       renderAll();
     }
 
-    // Funções de exclusão
     function deletarTurma(index) {
       if (!isAuthorized) return alert("❌ Dispositivo não autorizado.");
       if (confirm(`Excluir a turma "${turmas[index].nome}" e todas as aulas relacionadas?`)) {
