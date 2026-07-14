@@ -20,7 +20,6 @@ function carregarDados() {
   professores = JSON.parse(localStorage.getItem('professores') || '[]');
   horariosAlocados = JSON.parse(localStorage.getItem('horariosAlocados') || '{}');
 
-  // Dados iniciais
   if (disciplinasGerais.length === 0) disciplinasGerais = ["Matemática", "Português", "História", "Geografia", "Inglês", "Educação Física"];
   if (turmas.length === 0) turmas = [{ nome: "7º A", turno: "manha" }];
   if (professores.length === 0) professores = [{ nome: "João Silva", cor: "#4f46e5" }];
@@ -115,7 +114,7 @@ function renderGrade() {
 
       if (aloc) {
         td.style.backgroundColor = aloc.cor;
-        td.style.color = "#ffffff";
+        td.style.color = "white";
         td.innerHTML = `
           <div class="text-sm font-semibold">${aloc.disciplina}</div>
           <div class="text-xs mt-1 opacity-90">${aloc.professor}</div>
@@ -173,6 +172,15 @@ function popularModalProfessores() {
   });
 }
 
+// Funções exigidas pelo HTML (para evitar erros)
+function atualizarDisciplinasModal() {}
+function atualizarProfessoresModal() {}
+function validarDisponibilidade() {
+  const btn = document.getElementById("btn-salvar");
+  if (btn) btn.disabled = false;
+}
+
+// ==================== SALVAR ====================
 function salvarAlocacao() {
   const turma = document.getElementById("modal-turma").value;
   const disciplina = document.getElementById("modal-disciplina").value;
@@ -192,7 +200,7 @@ function salvarAlocacao() {
   fecharModal();
   renderGrade();
 
-  alert(`✅ Aula alocada com sucesso!\n${disciplina} - ${professor}`);
+  alert(`✅ Aula alocada!\n${disciplina} - ${professor}`);
 }
 
 function fecharModal() {
@@ -244,7 +252,7 @@ async function exportarImagem() {
 }
 
 async function gerarPDFCompleto() {
-  alert("PDF em manutenção - use a tela para testar primeiro.");
+  alert("PDF em manutenção.");
 }
 
 // ==================== INICIALIZAÇÃO ====================
