@@ -187,6 +187,12 @@ function popularModalDisciplinas() {
 function popularModalProfessores() {
   const select = document.getElementById("modal-professor");
   select.innerHTML = `<option value="">Selecione Professor</option>`;
+  
+  if (professores.length === 0) {
+    select.innerHTML = `<option value="">Nenhum professor cadastrado</option>`;
+    return;
+  }
+
   professores.forEach(p => {
     const opt = document.createElement("option");
     opt.value = p.nome;
@@ -200,18 +206,25 @@ function salvarAlocacao() {
   const disciplina = document.getElementById("modal-disciplina").value;
   const professor = document.getElementById("modal-professor").value;
 
-  if (!turma || !disciplina || !professor) return alert("Preencha todos os campos!");
+  if (!turma) return alert("Selecione a Turma!");
+  if (!disciplina) return alert("Selecione a Disciplina!");
+  if (!professor) return alert("Selecione o Professor!");
 
   const key = `${turma}-${currentCellId}`;
   const profObj = professores.find(p => p.nome === professor);
   const cor = profObj ? profObj.cor : "#4f46e5";
 
-  horariosAlocados[key] = { disciplina, professor, cor };
+  horariosAlocados[key] = { 
+    disciplina, 
+    professor, 
+    cor 
+  };
 
   salvarDados();
   fecharModal();
   renderGrade();
-  alert("✅ Aula salva com sucesso!");
+  
+  alert(`✅ Aula alocada com sucesso!\n${disciplina} - ${professor}`);
 }
 
 function fecharModal() {
@@ -269,7 +282,7 @@ async function exportarImagem() {
     link.click();
     alert("✅ Imagem baixada!");
   } catch (e) {
-    alert("Erro ao exportar imagem. Tente novamente.");
+    alert("Erro ao exportar imagem.");
   }
 }
 
@@ -282,7 +295,7 @@ async function gerarPDFCompleto() {
 
     for (let i = 0; i < turmas.length; i++) {
       const turma = turmas[i];
-      renderGrade(turma.nome); // Renderiza cada turma
+      renderGrade(turma.nome);
 
       await new Promise(resolve => setTimeout(resolve, 300));
 
