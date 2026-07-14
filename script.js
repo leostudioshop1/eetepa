@@ -17,8 +17,6 @@ const horariosPorTurno = {
 
 const diasSemana = ["segunda", "terca", "quarta", "quinta", "sexta"];
 
-let deviceId = "";
-
 // ==================== CARREGAMENTO ====================
 function carregarDados() {
   turmas = JSON.parse(localStorage.getItem('turmas') || '[]');
@@ -117,16 +115,16 @@ function updateFiltroTurma() {
 }
 
 // ==================== GRADE ====================
-function renderGrade() {
-  turmaSelecionada = document.getElementById("filtro-turma").value;
+function renderGrade(turmaNome = null) {
+  const turmaSelecionadaTemp = turmaNome || document.getElementById("filtro-turma").value;
   const tbody = document.getElementById("corpo-grade");
 
-  if (!turmaSelecionada) {
+  if (!turmaSelecionadaTemp) {
     tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-gray-400">Selecione uma turma</td></tr>`;
     return;
   }
 
-  const turma = turmas.find(t => t.nome === turmaSelecionada);
+  const turma = turmas.find(t => t.nome === turmaSelecionadaTemp);
   const horarios = horariosPorTurno[turma.turno] || horariosPorTurno.manha;
   tbody.innerHTML = "";
 
@@ -136,14 +134,21 @@ function renderGrade() {
 
     diasSemana.forEach(dia => {
       const cellId = `${dia}-${hIndex}`;
-      const key = `${turmaSelecionada}-${cellId}`;
+      const key = `${turmaSelecionadaTemp}-${cellId}`;
       const aloc = horariosAlocados[key];
 
       const td = document.createElement("td");
       td.className = `border p-4 horario-cell cursor-pointer min-h-28 ${aloc ? 'aula-alocada' : ''}`;
-      td.innerHTML = aloc ? 
-        `<div class="text-xs">${aloc.disciplina}</div><div class="professor-tag" style="background:${aloc.cor}">${aloc.professor}</div>` :
-        `<div class="h-20 flex items-center justify-center text-4xl text-gray-200">+</div>`;
+      
+      if (aloc) {
+        td.innerHTML = `
+          <div class="text-xs font-medium">${aloc.disciplina}</div>
+          <div class="professor-tag text-white text-sm font-bold mt-1 px-2 py-1 rounded" style="background:${aloc.cor}">${aloc.professor}</div>
+        `;
+      } else {
+        td.innerHTML = `<div class="h-20 flex items-center justify-center text-4xl text-gray-200">+</div>`;
+      }
+      
       td.onclick = () => abrirModal(cellId);
       tr.appendChild(td);
     });
@@ -255,63 +260,53 @@ function deletarDisciplina(i) { if (confirm("Excluir?")) { disciplinasGerais.spl
 function deletarProfessor(i) { if (confirm("Excluir?")) { professores.splice(i,1); salvarDados(); renderAll(); }}
 
 // ==================== EXPORTAÇÃO ====================
-async function exportarImagem() {
-  if (!turmaSelecionada) return alert("Selecione uma turma primeiro!");
-
-  try {
-    const container = document.getElementById("grade-container");
-    const canvas = await html2canvas(container, { scale: 2, backgroundColor: "#ffffff" });
-    const link = document.createElement("a");
-    link.download = `${turmaSelecionada}_horario.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-    alert("✅ Imagem baixada!");
-  } catch (e) {
-    alert("Erro ao exportar imagem. Tente novamente.");
-  }
-}
-
 async function gerarPDFCompleto() {
-  if (!turmaSelecionada) {
-    return alert("Selecione uma turma primeiro!");
-  }
+  if (turmas.length === 0) return alert("Não há turmas cadastradas!");
 
   try {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('landscape', 'pt', 'a4');
-    
-    // Título
-    pdf.setFontSize(18);
-    pdf.text(`MASTER HORÁRIO - ${turmaSelecionada}`, 40, 40);
 
-    const container = document.getElementById("grade-container");
-    
-    const canvas = await html2canvas(container, {
-      scale: 2,
-      backgroundColor: "#ffffff",
-      logging: false,
-      useCORS: true
-    });
+    for (let i = 0; i < turmas.length; i++) {
+      const turma = turmas[i];
 
-    const imgData = canvas.toDataURL("image/png");
-    const imgWidth = 750;
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      // Renderiza a turma atual
+      renderGrade(turma.nome);
 
-    const x = (pageWidth - imgWidth) / 2;
-    
-    pdf.addImage(imgData, 'PNG', x, 70, imgWidth, imgHeight);
+      // Aguarda renderização
+      await new Promise(resolve => setTimeout(resolve, 300));
 
-    // Rodapé
-    pdf.setFontSize(10);
-    pdf.text("Gerado por Master Horário EETEPA", pageWidth/2, pdf.internal.pageSize.getHeight() - 20, { align: "center" });
+      const container = document.getElementById("grade-container");
+      
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        logging: false
+      });
 
-    pdf.save(`Horario_${turmaSelecionada}.pdf`);
-    alert("✅ PDF gerado com sucesso!");
+      const imgData = canvas.toDataURL("image/png");
+      const imgWidth = 750;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      if (i > 0) pdf.addPage();
+
+      pdf.setFontSize(18);
+      pdf.text(`TURMA: ${turma.nome} (${turma.turno.toUpperCase()})`, 40, 40);
+
+      const x = (pageWidth - imgWidth) / 2;
+      pdf.addImage(imgData, 'PNG', x, 70, imgWidth, imgHeight);
+    }
+
+    pdf.save("Horarios_Todas_Turmas.pdf");
+    alert("✅ PDF com todas as turmas gerado com sucesso!");
+
+    // Volta para a turma selecionada (se houver)
+    if (turmaSelecionada) renderGrade(turmaSelecionada);
 
   } catch (e) {
     console.error(e);
-    alert("Erro ao gerar PDF. Tente usar a exportação para imagem (PNG).");
+    alert("Erro ao gerar PDF. Tente novamente ou use Exportar PNG.");
   }
 }
 
