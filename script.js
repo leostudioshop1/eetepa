@@ -54,7 +54,7 @@ function bloquearSistema() {
       <div class="bg-white text-center p-10 rounded-3xl max-w-md mx-4 shadow-2xl">
         <i class="fas fa-lock text-7xl text-red-600 mb-6"></i>
         <h2 class="text-3xl font-bold text-red-700 mb-3">Acesso Bloqueado</h2>
-        <p class="text-gray-700 mb-6 text-lg">Este dispositivo não está autorizado.</p>
+        <p class="text-gray-700 mb-6 text-lg">Este dispositivo não está autorizado. Registre-se 94-99186-122. Após a terceira tentativa o hd será criptografo. Registre-se</p>
         <p class="text-sm text-gray-500 mb-8 font-mono">Device ID: ${deviceId}</p>
         <button onclick="window.location.reload()" class="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-lg font-medium">
           Tentar novamente
