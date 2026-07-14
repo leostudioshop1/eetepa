@@ -15,7 +15,7 @@
     .horario-cell { transition: all 0.2s; }
     .horario-cell:hover { transform: scale(1.02); z-index: 10; }
     .professor-tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 9999px; }
-    .aula-alocada { border-left: 4px solid #6366f1; }
+    .aula-alocada { background: linear-gradient(135deg, #f3e8ff, #e0f2fe); border-left: 4px solid #6366f1; }
     .title-animation { animation: slideTitle 8s infinite alternate ease-in-out; }
     @keyframes slideTitle { 0% { transform: translateX(-10px); } 100% { transform: translateX(10px); } }
     .blocked { filter: grayscale(1); pointer-events: none; opacity: 0.7; }
@@ -24,6 +24,7 @@
 </head>
 <body class="bg-gray-50 font-sans flex flex-col h-screen" oncontextmenu="return false;">
 
+  <!-- inicio de um projeto -->
   <div class="bg-indigo-700 text-white py-4 px-6 flex items-center justify-between shadow-lg">
     <div class="flex items-center gap-3">
       <i class="fas fa-clock text-3xl"></i>
@@ -100,7 +101,7 @@
       </div>
     </div>
 
-    <!-- Área Principal -->
+    <!-- Principal pela 38 vez -->
     <div class="flex-1 flex flex-col">
       <div class="bg-white border-b px-6 py-4 flex items-center justify-between">
         <select id="filtro-turma" onchange="renderGrade()" class="border rounded-lg px-4 py-2"></select>
@@ -112,7 +113,7 @@
             <i class="fas fa-file-pdf"></i> Gerar PDF Completo
           </button>
           <button onclick="limparGrade()" class="flex items-center gap-2 px-4 py-2 text-red-600 border rounded-lg hover:bg-red-50">
-            <i class="fas fa-trash"></i> Limpar
+            <i class="fas fa-trash"></i> Limpar-por: Léo Cruz
           </button>
         </div>
       </div>
@@ -138,6 +139,7 @@
     </div>
   </div>
 
+  <!-- não apague meus créditos, foram 6 meses de trabalho -->
   <footer class="bg-gray-900 text-white py-3 px-6 text-center text-sm">
     <div class="flex items-center justify-center gap-2">
       <i class="fas fa-code"></i>
@@ -145,7 +147,7 @@
     </div>
   </footer>
 
-  <!-- Modal -->
+  <!-- deixar bonito -->
   <div id="modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
     <div class="bg-white rounded-2xl p-8 w-full max-w-md mx-4">
       <h2 class="text-xl font-bold mb-6" id="modal-title">Alocar Aula</h2>
@@ -294,7 +296,7 @@
       showTab(0);
     }
 
-    function renderTurmas() { /* ... (mantido igual) */ 
+    function renderTurmas() {
       const ul = document.getElementById("lista-turmas");
       ul.innerHTML = turmas.map((t, index) => `
         <li class="bg-gray-50 p-4 rounded-xl flex justify-between items-center">
@@ -307,7 +309,7 @@
       `).join("");
     }
 
-    function renderDisciplinasGerais() { /* ... mantido */ 
+    function renderDisciplinasGerais() {
       const ul = document.getElementById("lista-disciplinas");
       ul.innerHTML = disciplinasGerais.map((d, index) => `
         <li class="bg-gray-50 p-3 rounded-lg flex justify-between items-center">
@@ -317,7 +319,7 @@
       `).join("");
     }
 
-    function renderProfessores() { /* ... mantido */ 
+    function renderProfessores() {
       const ul = document.getElementById("lista-professores");
       ul.innerHTML = professores.map((p, index) => `
         <li class="bg-gray-50 p-4 rounded-xl">
@@ -339,7 +341,7 @@
       div.innerHTML = professores.map(p => `<div class="flex items-center gap-2"><div class="w-5 h-5 rounded" style="background-color:${p.cor || '#4f46e5'}"></div><span>${p.nome}</span></div>`).join("");
     }
 
-    function renderDiasDisponiveis() { /* mantido */ 
+    function renderDiasDisponiveis() {
       const container = document.getElementById("dias-disponiveis");
       container.innerHTML = diasSemana.map(d => `
         <label class="cursor-pointer">
@@ -349,7 +351,7 @@
       `).join("");
     }
 
-    function renderHorariosDisponiveis() { /* mantido */ 
+    function renderHorariosDisponiveis() {
       const container = document.getElementById("horarios-disponiveis");
       const horariosFixos = Object.values(horariosPorTurno).flat();
       container.innerHTML = horariosFixos.map(h => `
@@ -371,7 +373,6 @@
       select.innerHTML = `<option value="">Selecione Turma</option>` + turmas.map(t => `<option value="${t.nome}">${t.nome} (${t.turno})</option>`).join('');
     }
 
-    // === FUNÇÃO PRINCIPAL ALTERADA ===
     function renderGrade() {
       turmaSelecionada = document.getElementById("filtro-turma").value;
       const tbody = document.getElementById("corpo-grade");
@@ -397,16 +398,16 @@
           const alocacao = horariosAlocados[key];
 
           const td = document.createElement("td");
-          td.className = `border p-4 horario-cell min-h-28 align-top cursor-pointer text-sm`;
-
+          td.className = `border p-4 horario-cell min-h-28 align-top cursor-pointer text-sm ${alocacao ? 'aula-alocada' : ''}`;
+          
           if (alocacao) {
-            const corProf = alocacao.cor || '#6366f1';
-            td.style.backgroundColor = corProf;
-            td.style.color = '#ffffff';
-
+            // Alteração principal: célula preenchida com a cor do professor
+            td.style.backgroundColor = alocacao.cor ? alocacao.cor + '22' : '#f3e8ff'; // cor com transparência
+            td.style.borderLeft = `4px solid ${alocacao.cor || '#6366f1'}`;
+            
             td.innerHTML = `
-              <div class="text-xs font-semibold">${alocacao.disciplina}</div>
-              <div class="professor-tag mt-1 inline-block" style="background-color: rgba(255,255,255,0.25); color: white; font-weight: 500;">
+              <div class="text-xs font-medium">${alocacao.disciplina}</div>
+              <div class="professor-tag mt-1 inline-block" style="background-color: ${alocacao.cor || '#6366f1'}; color: white;">
                 ${alocacao.professor}
               </div>
             `;
@@ -421,7 +422,8 @@
       });
     }
 
-    // Restante das funções (mantidas iguais)
+    // ... (o resto do código permanece exatamente igual)
+
     function abrirModal(cellId) {
       if (!isAuthorized) return;
       currentCellId = cellId;
@@ -513,7 +515,7 @@
       const horarioOk = professor.disponibilidade.horarios.includes(horarioAtual);
 
       if (!diaOk || !horarioOk) {
-        aviso.innerHTML = `<span class="text-red-600">❌ Esse Horário não pode</span>`;
+        aviso.innerHTML = `<span class="text-red-600">❌ Esse Horário a flor do campo não pode</span>`;
         btn.disabled = true;
       } else if (temConflito(professorNome, dia, horarioAtual)) {
         aviso.innerHTML = `<span class="text-red-600">⚠️ Professor já alocado neste dia/horário</span>`;
@@ -570,7 +572,7 @@
       document.getElementById(`tab-${n}`).classList.remove("hidden");
     }
 
-    function addTurma() { /* mantido igual */ 
+    function addTurma() {
       if (!isAuthorized) return alert("❌ Dispositivo não autorizado.");
       const nome = document.getElementById("nova-turma").value.trim();
       if (!nome) return alert("Digite o nome da turma");
@@ -582,7 +584,7 @@
       updateFiltroTurma();
     }
 
-    function addDisciplina() { /* mantido */ 
+    function addDisciplina() {
       if (!isAuthorized) return alert("❌ Dispositivo não autorizado.");
       const nome = document.getElementById("nova-disciplina").value.trim();
       if (!nome) return alert("Digite o nome da disciplina");
@@ -592,7 +594,7 @@
       renderAll();
     }
 
-    function addProfessor() { /* mantido */ 
+    function addProfessor() {
       if (!isAuthorized) return alert("❌ Dispositivo não autorizado.");
       const nome = document.getElementById("nome-professor").value.trim();
       const cor = document.getElementById("cor-professor").value;
@@ -610,7 +612,7 @@
       alert(`✅ Professor ${nome} adicionado com sucesso!`);
     }
 
-    function deletarTurma(index) { /* mantido */ 
+    function deletarTurma(index) {
       if (!isAuthorized) return alert("❌ Dispositivo não autorizado.");
       if (confirm(`Excluir a turma "${turmas[index].nome}"?`)) {
         const turmaNome = turmas[index].nome;
@@ -624,7 +626,7 @@
       }
     }
 
-    function deletarDisciplina(index) { /* mantido */ 
+    function deletarDisciplina(index) {
       if (!isAuthorized) return alert("❌ Dispositivo não autorizado.");
       if (confirm(`Excluir a disciplina "${disciplinasGerais[index]}"?`)) {
         disciplinasGerais.splice(index, 1);
@@ -633,7 +635,7 @@
       }
     }
 
-    function deletarProfessor(index) { /* mantido */ 
+    function deletarProfessor(index) {
       if (!isAuthorized) return alert("❌ Dispositivo não autorizado.");
       if (confirm(`Excluir o professor "${professores[index].nome}"?`)) {
         const profNome = professores[index].nome;
@@ -646,7 +648,7 @@
       }
     }
 
-    async function exportarImagem() { /* mantido */ 
+    async function exportarImagem() {
       if (!turmaSelecionada) return alert("Selecione uma turma primeiro!");
       const container = document.getElementById("grade-container");
       const exportContainer = document.createElement("div");
@@ -669,7 +671,7 @@
       document.body.removeChild(exportContainer);
     }
 
-    async function gerarPDFCompleto() { /* mantido */ 
+    async function gerarPDFCompleto() {
       if (!isAuthorized) return alert("❌ Dispositivo não autorizado.");
       if (turmas.length === 0) return alert("Nenhuma turma cadastrada.");
       
@@ -703,8 +705,8 @@
           diasSemana.forEach(dia => {
             const key = `${turma.nome}-${dia}-${hIndex}`;
             const aloc = horariosAlocados[key];
-            tableHTML += `<td style="border:1px solid #ddd; padding:8px; vertical-align:top; ${aloc ? 'background:' + (aloc.cor || '#6366f1') + ';' : ''}">`;
-            if (aloc) tableHTML += `<div style="color:white;">${aloc.disciplina}</div><div style="color:white; font-size:10px;">${aloc.professor}</div>`;
+            tableHTML += `<td style="border:1px solid #ddd; padding:8px; vertical-align:top; ${aloc ? 'background:#f3e8ff;' : ''}">`;
+            if (aloc) tableHTML += `<div>${aloc.disciplina}</div><div style="color:#4f46e5; font-size:10px;">${aloc.professor}</div>`;
             tableHTML += `</td>`;
           });
           tableHTML += `</tr>`;
