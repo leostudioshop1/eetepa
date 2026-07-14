@@ -1,3 +1,7 @@
+// =============================================
+// script.js - MASTER HORÁRIO EETEPA (FINAL)
+// =============================================
+
 let turmas = [];
 let disciplinasGerais = [];
 let professores = [];
@@ -197,7 +201,10 @@ function salvarAlocacao() {
   if (!turma || !disciplina || !professor) return alert("Preencha todos os campos!");
 
   const key = `${turma}-${currentCellId}`;
-  horariosAlocados[key] = { disciplina, professor, cor: "#4f46e5" };
+  const profObj = professores.find(p => p.nome === professor);
+  const cor = profObj ? profObj.cor : "#4f46e5";
+
+  horariosAlocados[key] = { disciplina, professor, cor };
 
   salvarDados();
   fecharModal();
@@ -265,14 +272,46 @@ async function exportarImagem() {
 }
 
 async function gerarPDFCompleto() {
+  if (!turmaSelecionada) {
+    return alert("Selecione uma turma primeiro!");
+  }
+
   try {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('landscape', 'pt', 'a4');
-    pdf.text("MASTER HORÁRIO EETEPA", 150, 50);
-    pdf.save("Master_Horario_EETEPA.pdf");
-    alert("✅ PDF gerado!");
+    
+    // Título
+    pdf.setFontSize(18);
+    pdf.text(`MASTER HORÁRIO - ${turmaSelecionada}`, 40, 40);
+
+    const container = document.getElementById("grade-container");
+    
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      logging: false,
+      useCORS: true
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+    const imgWidth = 750;
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    const x = (pageWidth - imgWidth) / 2;
+    
+    pdf.addImage(imgData, 'PNG', x, 70, imgWidth, imgHeight);
+
+    // Rodapé
+    pdf.setFontSize(10);
+    pdf.text("Gerado por Master Horário EETEPA", pageWidth/2, pdf.internal.pageSize.getHeight() - 20, { align: "center" });
+
+    pdf.save(`Horario_${turmaSelecionada}.pdf`);
+    alert("✅ PDF gerado com sucesso!");
+
   } catch (e) {
-    alert("Erro no PDF. Use Exportar PNG.");
+    console.error(e);
+    alert("Erro ao gerar PDF. Tente usar a exportação para imagem (PNG).");
   }
 }
 
