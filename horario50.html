@@ -15,7 +15,6 @@
     .horario-cell { transition: all 0.2s; }
     .horario-cell:hover { transform: scale(1.02); z-index: 10; }
     .professor-tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 9999px; }
-    .aula-alocada { background: linear-gradient(135deg, #f3e8ff, #e0f2fe); border-left: 4px solid #6366f1; }
     .title-animation { animation: slideTitle 8s infinite alternate ease-in-out; }
     @keyframes slideTitle { 0% { transform: translateX(-10px); } 100% { transform: translateX(10px); } }
     .blocked { filter: grayscale(1); pointer-events: none; opacity: 0.7; }
@@ -101,7 +100,7 @@
       </div>
     </div>
 
-    <!-- Principal pela 38 vez -->
+    <!-- Principal -->
     <div class="flex-1 flex flex-col">
       <div class="bg-white border-b px-6 py-4 flex items-center justify-between">
         <select id="filtro-turma" onchange="renderGrade()" class="border rounded-lg px-4 py-2"></select>
@@ -147,7 +146,7 @@
     </div>
   </footer>
 
-  <!-- deixar bonito -->
+  <!-- Modal -->
   <div id="modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
     <div class="bg-white rounded-2xl p-8 w-full max-w-md mx-4">
       <h2 class="text-xl font-bold mb-6" id="modal-title">Alocar Aula</h2>
@@ -398,12 +397,12 @@
           const alocacao = horariosAlocados[key];
 
           const td = document.createElement("td");
-          td.className = `border p-4 horario-cell min-h-28 align-top cursor-pointer text-sm ${alocacao ? 'aula-alocada' : ''}`;
-          
+          td.className = `border p-4 horario-cell min-h-28 align-top cursor-pointer text-sm`;
+
           if (alocacao) {
-            // Alteração principal: célula preenchida com a cor do professor
-            td.style.backgroundColor = alocacao.cor ? alocacao.cor + '22' : '#f3e8ff'; // cor com transparência
-            td.style.borderLeft = `4px solid ${alocacao.cor || '#6366f1'}`;
+            // ALTERAÇÃO SOLICITADA: célula toda preenchida com a cor do professor
+            td.style.backgroundColor = alocacao.cor ? alocacao.cor + '44' : '#f3e8ff';
+            td.style.borderLeft = `6px solid ${alocacao.cor || '#6366f1'}`;
             
             td.innerHTML = `
               <div class="text-xs font-medium">${alocacao.disciplina}</div>
@@ -421,8 +420,6 @@
         tbody.appendChild(tr);
       });
     }
-
-    // ... (o resto do código permanece exatamente igual)
 
     function abrirModal(cellId) {
       if (!isAuthorized) return;
