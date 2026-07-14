@@ -1,3 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Master Horário EETEPA</title>
+  <link rel="icon" type="image/png" href="icone.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <style>
+    .horario-cell { transition: all 0.2s; }
+    .horario-cell:hover { transform: scale(1.02); z-index: 10; }
+    .professor-tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 9999px; }
+    .title-animation { animation: slideTitle 8s infinite alternate ease-in-out; }
+    @keyframes slideTitle { 0% { transform: translateX(-10px); } 100% { transform: translateX(10px); } }
+    .blocked { filter: grayscale(1); pointer-events: none; opacity: 0.7; }
+    .disponibilidade-tag { font-size: 0.7rem; padding: 1px 6px; border-radius: 9999px; }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans flex flex-col h-screen" oncontextmenu="return false;">
+
+  <div class="bg-indigo-700 text-white py-4 px-6 flex items-center justify-between shadow-lg">
+    <div class="flex items-center gap-3">
+      <i class="fas fa-clock text-3xl"></i>
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight title-animation">Master Horário EETEPA</h1>
+        <p class="text-indigo-200 text-sm">Sistema de Gerenciamento de Horários</p>
+      </div>
+    </div>
+    <div class="text-right">
+      <div id="device-info" class="text-sm opacity-90"></div>
+    </div>
+  </div>
+
+  <div class="flex flex-1 overflow-hidden" id="main-content">
+    <div class="w-96 bg-white shadow-xl overflow-y-auto">
+      <div class="p-6 border-b">
+        <h2 class="text-xl font-semibold text-gray-800">Controles</h2>
+      </div>
+      <div class="flex border-b">
+        <button onclick="showTab(0)" class="tab-button flex-1 py-3 font-medium tab-active">Turmas</button>
+        <button onclick="showTab(1)" class="tab-button flex-1 py-3 font-medium">Disciplinas</button>
+        <button onclick="showTab(2)" class="tab-button flex-1 py-3 font-medium">Professores</button>
+      </div>
+
+      <div id="tab-0" class="tab-content p-6">
+        <div class="space-y-4">
+          <input id="nova-turma" type="text" placeholder="Nome da Turma" class="w-full border rounded-lg px-4 py-2">
+          <div>
+            <label class="block text-sm font-medium mb-2">Turno</label>
+            <select id="turno-turma" class="w-full border rounded-lg px-4 py-2">
+              <option value="manha">Manhã</option>
+              <option value="tarde">Tarde</option>
+              <option value="noite">Noite</option>
+            </select>
+          </div>
+          <button onclick="addTurma()" class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 font-medium">
+            Adicionar Turma
+          </button>
+        </div>
+        <ul id="lista-turmas" class="space-y-3 mt-8"></ul>
+      </div>
+
+      <div id="tab-1" class="tab-content p-6 hidden">
+        <div class="flex gap-2 mb-4">
+          <input id="nova-disciplina" type="text" placeholder="Nova Disciplina" class="flex-1 border rounded-lg px-4 py-2">
+          <button onclick="addDisciplina()" class="bg-indigo-600 text-white px-5 rounded-lg hover:bg-indigo-700">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+        <ul id="lista-disciplinas" class="space-y-2"></ul>
+      </div>
+
+      <div id="tab-2" class="tab-content p-6 hidden">
+        <div class="space-y-5">
+          <input id="nome-professor" type="text" placeholder="Nome do Professor" class="w-full border rounded-lg px-4 py-2">
+          <div>
+            <label class="block text-sm font-medium mb-1">Cor</label>
+            <input id="cor-professor" type="color" value="#4f46e5" class="w-full h-10 border rounded-lg p-1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Dias disponíveis</label>
+            <div id="dias-disponiveis" class="grid grid-cols-5 gap-3 text-center"></div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Horários disponíveis</label>
+            <div id="horarios-disponiveis" class="grid grid-cols-2 gap-2 text-sm max-h-80 overflow-y-auto"></div>
+          </div>
+          <button onclick="addProfessor()" class="w-full bg-emerald-600 text-white py-3 rounded-lg hover:bg-emerald-700 font-medium">
+            Adicionar Professor
+          </button>
+        </div>
+        <ul id="lista-professores" class="mt-8 space-y-3"></ul>
+      </div>
+    </div>
+
+    <div class="flex-1 flex flex-col">
+      <div class="bg-white border-b px-6 py-4 flex items-center justify-between">
+        <select id="filtro-turma" onchange="renderGrade()" class="border rounded-lg px-4 py-2"></select>
+        <div class="flex gap-3">
+          <button onclick="exportarImagem()" class="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50">
+            <i class="fas fa-image"></i> Exportar PNG
+          </button>
+          <button onclick="gerarPDFCompleto()" class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
+            <i class="fas fa-file-pdf"></i> Gerar PDF Completo
+          </button>
+          <button onclick="limparGrade()" class="flex items-center gap-2 px-4 py-2 text-red-600 border rounded-lg hover:bg-red-50">
+            <i class="fas fa-trash"></i> Limpar
+          </button>
+        </div>
+      </div>
+      <div class="flex-1 overflow-auto p-6" id="grade-container">
+        <table id="grade-horarios" class="w-full border-collapse bg-white shadow-lg rounded-xl overflow-hidden">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="border p-3 w-36">Horário</th>
+              <th class="border p-3">Segunda</th>
+              <th class="border p-3">Terça</th>
+              <th class="border p-3">Quarta</th>
+              <th class="border p-3">Quinta</th>
+              <th class="border p-3">Sexta</th>
+            </tr>
+          </thead>
+          <tbody id="corpo-grade"></tbody>
+        </table>
+      </div>
+      <div class="bg-white border-t p-4">
+        <h3 class="font-medium mb-2 text-sm text-gray-600">Legenda de Professores</h3>
+        <div id="legenda-professores" class="flex flex-wrap gap-4"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-gray-900 text-white py-3 px-6 text-center text-sm">
+    <div class="flex items-center justify-center gap-2">
+      <i class="fas fa-code"></i>
+      <span>Desenvolvido por: <strong>Léo Cruz</strong> - Engenheiro de Software</span>
+    </div>
+  </footer>
+
+  <div id="modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-8 w-full max-w-md mx-4">
+      <h2 class="text-xl font-bold mb-6" id="modal-title">Alocar Aula</h2>
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium mb-1">Turma</label>
+          <select id="modal-turma" class="w-full border rounded-lg px-4 py-3" onchange="atualizarDisciplinasModal()"></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Disciplina</label>
+          <select id="modal-disciplina" class="w-full border rounded-lg px-4 py-3" onchange="atualizarProfessoresModal()"></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Professor</label>
+          <select id="modal-professor" class="w-full border rounded-lg px-4 py-3" onchange="validarDisponibilidade()"></select>
+        </div>
+      </div>
+      <div id="aviso-disponibilidade" class="mt-4 text-sm p-3 rounded-lg"></div>
+      <div class="flex gap-3 mt-8">
+        <button onclick="fecharModal()" class="flex-1 py-3 border rounded-xl font-medium hover:bg-gray-50">Cancelar</button>
+        <button onclick="salvarAlocacao()" id="btn-salvar" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-medium disabled:opacity-50" disabled>Salvar Alocação</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+```
+
+---
+
+### 2. Arquivo: `script.js` (completo)
+
+```javascript
 let turmas = [];
 let disciplinasGerais = [];
 let professores = [];
@@ -91,11 +270,7 @@ function carregarDados() {
   if (disciplinasGerais.length === 0) disciplinasGerais = ["Matemática", "Português", "História", "Geografia", "Inglês", "Educação Física"];
   if (turmas.length === 0) turmas = [{ nome: "7º A", turno: "manha" }, { nome: "8º B", turno: "tarde" }];
   if (professores.length === 0) {
-    professores = [{ 
-      nome: "João Silva", 
-      cor: "#4f46e5", 
-      disponibilidade: { dias: [...diasSemana], horarios: Object.values(horariosPorTurno).flat() } 
-    }];
+    professores = [{ nome: "João Silva", cor: "#4f46e5", disponibilidade: { dias: [...diasSemana], horarios: Object.values(horariosPorTurno).flat() } }];
   }
 
   renderAll();
@@ -124,10 +299,7 @@ function renderTurmas() {
   const ul = document.getElementById("lista-turmas");
   ul.innerHTML = turmas.map((t, index) => `
     <li class="bg-gray-50 p-4 rounded-xl flex justify-between items-center">
-      <div>
-        <strong>${t.nome}</strong> 
-        <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">${t.turno}</span>
-      </div>
+      <div><strong>${t.nome}</strong> <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">${t.turno}</span></div>
       <button onclick="deletarTurma(${index})" class="text-red-600 hover:text-red-700 px-3 py-1 text-sm font-medium rounded hover:bg-red-50">Excluir</button>
     </li>
   `).join("");
@@ -148,12 +320,7 @@ function renderProfessores() {
   ul.innerHTML = professores.map((p, index) => `
     <li class="bg-gray-50 p-4 rounded-xl">
       <div class="flex justify-between items-start">
-        <div>
-          <strong>${p.nome}</strong>
-          <div class="flex flex-wrap gap-1 mt-2">
-            ${p.disponibilidade ? p.disponibilidade.dias.map(d => `<span class="disponibilidade-tag bg-indigo-100 text-indigo-700">${d.substring(0,3).toUpperCase()}</span>`).join('') : ''}
-          </div>
-        </div>
+        <div><strong>${p.nome}</strong></div>
         <button onclick="deletarProfessor(${index})" class="text-red-600 hover:text-red-700 px-3 py-1 text-sm font-medium rounded hover:bg-red-50">Excluir</button>
       </div>
     </li>
@@ -222,9 +389,11 @@ function renderGrade() {
       const alocacao = horariosAlocados[key];
 
       const td = document.createElement("td");
-      td.className = `border p-4 horario-cell min-h-28 align-top cursor-pointer text-sm ${alocacao ? 'aula-alocada' : ''}`;
-      
+      td.className = `border p-4 horario-cell min-h-28 align-top cursor-pointer text-sm`;
+
       if (alocacao) {
+        td.style.backgroundColor = alocacao.cor ? alocacao.cor + '44' : '#f3e8ff';
+        td.style.borderLeft = `6px solid ${alocacao.cor || '#6366f1'}`;
         td.innerHTML = `
           <div class="text-xs font-medium">${alocacao.disciplina}</div>
           <div class="professor-tag mt-1 inline-block" style="background-color: ${alocacao.cor || '#6366f1'}; color: white;">
@@ -234,7 +403,6 @@ function renderGrade() {
       } else {
         td.innerHTML = `<div class="h-20 flex items-center justify-center text-4xl text-gray-200 hover:text-gray-400">+</div>`;
       }
-      
       td.onclick = () => abrirModal(cellId);
       tr.appendChild(td);
     });
@@ -333,13 +501,13 @@ function validarDisponibilidade() {
   const horarioOk = professor.disponibilidade.horarios.includes(horarioAtual);
 
   if (!diaOk || !horarioOk) {
-    aviso.innerHTML = `<span class="text-red-600">❌ Esse Horário a flor do campo não pode</span>`;
+    aviso.innerHTML = `<span class="text-red-600">❌ Esse Horário não pode</span>`;
     btn.disabled = true;
   } else if (temConflito(professorNome, dia, horarioAtual)) {
-    aviso.innerHTML = `<span class="text-red-600">⚠️ Professor já alocado neste dia/horário</span>`;
+    aviso.innerHTML = `<span class="text-red-600">⚠️ Professor já alocado</span>`;
     btn.disabled = true;
   } else {
-    aviso.innerHTML = `<span class="text-green-600">✅ Disponível para alocação</span>`;
+    aviso.innerHTML = `<span class="text-green-600">✅ Disponível</span>`;
     btn.disabled = false;
   }
 }
@@ -350,29 +518,20 @@ function salvarAlocacao() {
   const disciplina = document.getElementById("modal-disciplina").value;
   const professorNome = document.getElementById("modal-professor").value;
 
-  if (!turma || !disciplina || !professorNome) {
-    alert("Preencha todos os campos.");
-    return;
-  }
+  if (!turma || !disciplina || !professorNome) return alert("Preencha todos os campos.");
 
   const [dia, hIndex] = currentCellId.split('-');
   const turmaObj = turmas.find(t => t.nome === turma);
   const horarioAtual = horariosPorTurno[turmaObj.turno][parseInt(hIndex)];
 
-  if (temConflito(professorNome, dia, horarioAtual)) {
-    alert("❌ Conflito detectado!");
-    return;
-  }
+  if (temConflito(professorNome, dia, horarioAtual)) return alert("❌ Conflito detectado!");
 
   const professor = professores.find(p => p.nome === professorNome);
   const key = `${turma}-${currentCellId}`;
 
   horariosAlocados[key] = {
-    disciplina: disciplina,
-    professor: professorNome,
-    cor: professor ? professor.cor : '#6366f1',
-    horario: horarioAtual,
-    dia: dia
+    disciplina, professor: professorNome, cor: professor ? professor.cor : '#6366f1',
+    horario: horarioAtual, dia
   };
 
   salvarDados();
@@ -420,22 +579,22 @@ function addProfessor() {
 
   const disponibilidade = getDisponibilidadeSelecionada();
   if (disponibilidade.dias.length === 0 || disponibilidade.horarios.length === 0) {
-    return alert("Selecione pelo menos um dia e um horário de disponibilidade.");
+    return alert("Selecione pelo menos um dia e um horário.");
   }
 
   professores.push({ nome, cor, disponibilidade });
   document.getElementById("nome-professor").value = "";
   salvarDados();
   renderAll();
-  alert(`✅ Professor ${nome} adicionado com sucesso!`);
+  alert(`✅ Professor ${nome} adicionado!`);
 }
 
 function deletarTurma(index) {
   if (!isAuthorized) return alert("❌ Dispositivo não autorizado.");
-  if (confirm(`Excluir a turma "${turmas[index].nome}"?`)) {
-    const turmaNome = turmas[index].nome;
+  if (confirm(`Excluir "${turmas[index].nome}"?`)) {
+    const nome = turmas[index].nome;
     Object.keys(horariosAlocados).forEach(key => {
-      if (key.startsWith(turmaNome + "-")) delete horariosAlocados[key];
+      if (key.startsWith(nome + "-")) delete horariosAlocados[key];
     });
     turmas.splice(index, 1);
     salvarDados();
@@ -446,7 +605,7 @@ function deletarTurma(index) {
 
 function deletarDisciplina(index) {
   if (!isAuthorized) return alert("❌ Dispositivo não autorizado.");
-  if (confirm(`Excluir a disciplina "${disciplinasGerais[index]}"?`)) {
+  if (confirm(`Excluir "${disciplinasGerais[index]}"?`)) {
     disciplinasGerais.splice(index, 1);
     salvarDados();
     renderAll();
@@ -455,10 +614,10 @@ function deletarDisciplina(index) {
 
 function deletarProfessor(index) {
   if (!isAuthorized) return alert("❌ Dispositivo não autorizado.");
-  if (confirm(`Excluir o professor "${professores[index].nome}"?`)) {
-    const profNome = professores[index].nome;
+  if (confirm(`Excluir "${professores[index].nome}"?`)) {
+    const nome = professores[index].nome;
     Object.keys(horariosAlocados).forEach(key => {
-      if (horariosAlocados[key].professor === profNome) delete horariosAlocados[key];
+      if (horariosAlocados[key].professor === nome) delete horariosAlocados[key];
     });
     professores.splice(index, 1);
     salvarDados();
@@ -523,8 +682,9 @@ async function gerarPDFCompleto() {
       diasSemana.forEach(dia => {
         const key = `${turma.nome}-${dia}-${hIndex}`;
         const aloc = horariosAlocados[key];
-        tableHTML += `<td style="border:1px solid #ddd; padding:8px; vertical-align:top; ${aloc ? 'background:#f3e8ff;' : ''}">`;
-        if (aloc) tableHTML += `<div>${aloc.disciplina}</div><div style="color:#4f46e5; font-size:10px;">${aloc.professor}</div>`;
+        let bgStyle = aloc && aloc.cor ? `background-color: ${aloc.cor}44; border-left: 6px solid ${aloc.cor};` : '';
+        tableHTML += `<td style="border:1px solid #ddd; padding:8px; vertical-align:top; ${bgStyle}">`;
+        if (aloc) tableHTML += `<div>${aloc.disciplina}</div><div style="font-weight:600;">${aloc.professor}</div>`;
         tableHTML += `</td>`;
       });
       tableHTML += `</tr>`;
