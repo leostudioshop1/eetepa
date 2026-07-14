@@ -20,11 +20,10 @@ function carregarDados() {
   professores = JSON.parse(localStorage.getItem('professores') || '[]');
   horariosAlocados = JSON.parse(localStorage.getItem('horariosAlocados') || '{}');
 
+  // Dados iniciais
   if (disciplinasGerais.length === 0) disciplinasGerais = ["Matemática", "Português", "História", "Geografia", "Inglês", "Educação Física"];
-  if (turmas.length === 0) turmas = [{ nome: "7º A", turno: "manha" }, { nome: "8º B", turno: "tarde" }];
-  if (professores.length === 0) {
-    professores = [{ nome: "João Silva", cor: "#4f46e5" }];
-  }
+  if (turmas.length === 0) turmas = [{ nome: "7º A", turno: "manha" }];
+  if (professores.length === 0) professores = [{ nome: "João Silva", cor: "#4f46e5" }];
 
   renderAll();
 }
@@ -41,8 +40,6 @@ function renderAll() {
   renderDisciplinasGerais();
   renderProfessores();
   renderLegenda();
-  renderDiasDisponiveis();
-  renderHorariosDisponiveis();
   updateFiltroTurma();
   showTab(0);
 }
@@ -85,26 +82,6 @@ function renderLegenda() {
   `).join("");
 }
 
-function renderDiasDisponiveis() {
-  const container = document.getElementById("dias-disponiveis");
-  container.innerHTML = diasSemana.map(d => `
-    <label class="cursor-pointer">
-      <input type="checkbox" value="${d}" checked class="hidden peer">
-      <div class="peer-checked:bg-indigo-600 peer-checked:text-white text-xs py-2 px-3 rounded-lg border text-center">${d.substring(0,3).toUpperCase()}</div>
-    </label>
-  `).join("");
-}
-
-function renderHorariosDisponiveis() {
-  const container = document.getElementById("horarios-disponiveis");
-  const horarios = Object.values(horariosPorTurno).flat();
-  container.innerHTML = horarios.map(h => `
-    <label class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-gray-100">
-      <input type="checkbox" value="${h}" checked class="w-4 h-4"> <span>${h}</span>
-    </label>
-  `).join("");
-}
-
 function updateFiltroTurma() {
   const select = document.getElementById("filtro-turma");
   select.innerHTML = `<option value="">Selecione Turma</option>` + turmas.map(t => `<option value="${t.nome}">${t.nome} (${t.turno})</option>`).join('');
@@ -138,9 +115,10 @@ function renderGrade() {
 
       if (aloc) {
         td.style.backgroundColor = aloc.cor;
+        td.style.color = "#ffffff";
         td.innerHTML = `
-          <div class="text-sm font-medium">${aloc.disciplina}</div>
-          <div class="professor-tag mt-2">${aloc.professor}</div>
+          <div class="text-sm font-semibold">${aloc.disciplina}</div>
+          <div class="text-xs mt-1 opacity-90">${aloc.professor}</div>
         `;
       } else {
         td.innerHTML = `<div class="h-20 flex items-center justify-center text-4xl text-gray-200">+</div>`;
@@ -187,12 +165,6 @@ function popularModalDisciplinas() {
 function popularModalProfessores() {
   const select = document.getElementById("modal-professor");
   select.innerHTML = `<option value="">Selecione Professor</option>`;
-  
-  if (professores.length === 0) {
-    select.innerHTML = `<option value="">Nenhum professor cadastrado</option>`;
-    return;
-  }
-
   professores.forEach(p => {
     const opt = document.createElement("option");
     opt.value = p.nome;
@@ -206,24 +178,20 @@ function salvarAlocacao() {
   const disciplina = document.getElementById("modal-disciplina").value;
   const professor = document.getElementById("modal-professor").value;
 
-  if (!turma) return alert("Selecione a Turma!");
-  if (!disciplina) return alert("Selecione a Disciplina!");
-  if (!professor) return alert("Selecione o Professor!");
+  if (!turma || !disciplina || !professor) {
+    return alert("❌ Preencha todos os campos!");
+  }
 
   const key = `${turma}-${currentCellId}`;
   const profObj = professores.find(p => p.nome === professor);
   const cor = profObj ? profObj.cor : "#4f46e5";
 
-  horariosAlocados[key] = { 
-    disciplina, 
-    professor, 
-    cor 
-  };
+  horariosAlocados[key] = { disciplina, professor, cor };
 
   salvarDados();
   fecharModal();
   renderGrade();
-  
+
   alert(`✅ Aula alocada com sucesso!\n${disciplina} - ${professor}`);
 }
 
@@ -272,63 +240,11 @@ function deletarProfessor(i) { if (confirm("Excluir?")) { professores.splice(i,1
 // ==================== EXPORTAÇÃO ====================
 async function exportarImagem() {
   if (!turmaSelecionada) return alert("Selecione uma turma primeiro!");
-
-  try {
-    const container = document.getElementById("grade-container");
-    const canvas = await html2canvas(container, { scale: 2, backgroundColor: "#ffffff" });
-    const link = document.createElement("a");
-    link.download = `${turmaSelecionada}_horario.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-    alert("✅ Imagem baixada!");
-  } catch (e) {
-    alert("Erro ao exportar imagem.");
-  }
+  alert("Exportar PNG em manutenção.");
 }
 
 async function gerarPDFCompleto() {
-  if (turmas.length === 0) return alert("Não há turmas cadastradas!");
-
-  try {
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF('landscape', 'pt', 'a4');
-
-    for (let i = 0; i < turmas.length; i++) {
-      const turma = turmas[i];
-      renderGrade(turma.nome);
-
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      const container = document.getElementById("grade-container");
-      const canvas = await html2canvas(container, {
-        scale: 2,
-        backgroundColor: "#ffffff",
-        logging: false
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-      const imgWidth = 750;
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      if (i > 0) pdf.addPage();
-
-      pdf.setFontSize(18);
-      pdf.text(`TURMA: ${turma.nome} (${turma.turno.toUpperCase()})`, 40, 40);
-
-      const x = (pageWidth - imgWidth) / 2;
-      pdf.addImage(imgData, 'PNG', x, 70, imgWidth, imgHeight);
-    }
-
-    pdf.save("Horarios_Todas_Turmas.pdf");
-    alert("✅ PDF com todas as turmas gerado com sucesso!");
-
-    if (turmaSelecionada) renderGrade(turmaSelecionada);
-
-  } catch (e) {
-    console.error(e);
-    alert("Erro ao gerar PDF.");
-  }
+  alert("PDF em manutenção - use a tela para testar primeiro.");
 }
 
 // ==================== INICIALIZAÇÃO ====================
