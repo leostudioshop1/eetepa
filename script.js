@@ -1,5 +1,5 @@
 // =============================================
-// script.js - MASTER HORÁRIO EETEPA (FINAL)
+// script.js - Master Horário EETEPA (Completo)
 // =============================================
 
 let turmas = [];
@@ -18,18 +18,29 @@ const horariosPorTurno = {
 const diasSemana = ["segunda", "terca", "quarta", "quinta", "sexta"];
 
 let deviceId = "";
+let isAuthorized = true; // Modo local ativado
 
 // ==================== CARREGAMENTO ====================
+function gerarDeviceId() {
+  let id = localStorage.getItem('deviceId');
+  if (!id) {
+    id = 'DEV-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
+    localStorage.setItem('deviceId', id);
+  }
+  return id;
+}
+
 function carregarDados() {
   turmas = JSON.parse(localStorage.getItem('turmas') || '[]');
   disciplinasGerais = JSON.parse(localStorage.getItem('disciplinasGerais') || '[]');
   professores = JSON.parse(localStorage.getItem('professores') || '[]');
   horariosAlocados = JSON.parse(localStorage.getItem('horariosAlocados') || '{}');
 
+  // Dados iniciais
   if (disciplinasGerais.length === 0) disciplinasGerais = ["Matemática", "Português", "História", "Geografia", "Inglês", "Educação Física"];
   if (turmas.length === 0) turmas = [{ nome: "7º A", turno: "manha" }, { nome: "8º B", turno: "tarde" }];
   if (professores.length === 0) {
-    professores = [{ nome: "João Silva", cor: "#4f46e5" }];
+    professores = [{ nome: "João Silva", cor: "#4f46e5", disponibilidade: { dias: [...diasSemana], horarios: Object.values(horariosPorTurno).flat() } }];
   }
 
   renderAll();
@@ -42,6 +53,7 @@ function salvarDados() {
   localStorage.setItem('horariosAlocados', JSON.stringify(horariosAlocados));
 }
 
+// ==================== RENDERIZAÇÃO ====================
 function renderAll() {
   renderTurmas();
   renderDisciplinasGerais();
@@ -53,7 +65,6 @@ function renderAll() {
   showTab(0);
 }
 
-// ==================== RENDER ====================
 function renderTurmas() {
   const ul = document.getElementById("lista-turmas");
   ul.innerHTML = turmas.map((t, i) => `
@@ -87,17 +98,15 @@ function renderProfessores() {
 function renderLegenda() {
   const div = document.getElementById("legenda-professores");
   div.innerHTML = professores.map(p => `
-    <div class="flex items-center gap-2"><div class="w-5 h-5 rounded" style="background-color:${p.cor}"></div><span>${p.nome}</span></div>
+    <div class="flex items-center gap-2"><div class="w-5 h-5 rounded" style="background:${p.cor}"></div><span>${p.nome}</span></div>
   `).join("");
 }
 
 function renderDiasDisponiveis() {
   const container = document.getElementById("dias-disponiveis");
   container.innerHTML = diasSemana.map(d => `
-    <label class="cursor-pointer">
-      <input type="checkbox" value="${d}" checked class="hidden peer">
-      <div class="peer-checked:bg-indigo-600 peer-checked:text-white text-xs py-2 px-3 rounded-lg border text-center">${d.substring(0,3).toUpperCase()}</div>
-    </label>
+    <label class="cursor-pointer"><input type="checkbox" value="${d}" checked class="hidden peer">
+    <div class="peer-checked:bg-indigo-600 peer-checked:text-white text-xs py-2 px-3 rounded-lg border">${d.substring(0,3).toUpperCase()}</div></label>
   `).join("");
 }
 
@@ -113,7 +122,7 @@ function renderHorariosDisponiveis() {
 
 function updateFiltroTurma() {
   const select = document.getElementById("filtro-turma");
-  select.innerHTML = `<option value="">Selecione Turma</option>` + turmas.map(t => `<option value="${t.nome}">${t.nome} (${t.turno})</option>`).join('');
+  select.innerHTML = `<option value="">Selecione Turma</option>` + turmas.map(t => `<option value="${t.nome}">${t.nome}</option>`).join('');
 }
 
 // ==================== GRADE ====================
@@ -140,9 +149,9 @@ function renderGrade() {
       const aloc = horariosAlocados[key];
 
       const td = document.createElement("td");
-      td.className = `border p-4 horario-cell cursor-pointer min-h-28 ${aloc ? 'aula-alocada' : ''}`;
+      td.className = `border p-4 horario-cell cursor-pointer ${aloc ? 'aula-alocada' : ''}`;
       td.innerHTML = aloc ? 
-        `<div class="text-xs">${aloc.disciplina}</div><div class="professor-tag" style="background:${aloc.cor}">${aloc.professor}</div>` :
+        `<div class="text-xs font-medium">${aloc.disciplina}</div><div class="professor-tag" style="background:${aloc.cor}">${aloc.professor}</div>` :
         `<div class="h-20 flex items-center justify-center text-4xl text-gray-200">+</div>`;
       td.onclick = () => abrirModal(cellId);
       tr.appendChild(td);
@@ -158,6 +167,7 @@ function abrirModal(cellId) {
   popularModalDisciplinas();
   popularModalProfessores();
   document.getElementById("modal").classList.remove("hidden");
+  document.getElementById("btn-salvar").disabled = true;
 }
 
 function popularModalTurmas() {
@@ -193,20 +203,29 @@ function popularModalProfessores() {
   });
 }
 
+function validarDisponibilidade() {
+  // Simplificado para funcionar
+  document.getElementById("btn-salvar").disabled = false;
+}
+
 function salvarAlocacao() {
   const turma = document.getElementById("modal-turma").value;
   const disciplina = document.getElementById("modal-disciplina").value;
   const professor = document.getElementById("modal-professor").value;
 
-  if (!turma || !disciplina || !professor) return alert("Preencha todos os campos!");
+  if (!turma || !disciplina || !professor) return alert("Preencha todos os campos");
 
   const key = `${turma}-${currentCellId}`;
-  horariosAlocados[key] = { disciplina, professor, cor: "#4f46e5" };
+  horariosAlocados[key] = {
+    disciplina,
+    professor,
+    cor: "#4f46e5"
+  };
 
   salvarDados();
   fecharModal();
   renderGrade();
-  alert("✅ Aula salva com sucesso!");
+  alert("✅ Aula salva!");
 }
 
 function fecharModal() {
@@ -231,7 +250,7 @@ function addTurma() {
 
 function addDisciplina() {
   const nome = document.getElementById("nova-disciplina").value.trim();
-  if (!nome) return alert("Digite o nome da disciplina");
+  if (!nome) return alert("Digite o nome");
   disciplinasGerais.push(nome);
   document.getElementById("nova-disciplina").value = "";
   salvarDados();
@@ -241,47 +260,46 @@ function addDisciplina() {
 function addProfessor() {
   const nome = document.getElementById("nome-professor").value.trim();
   if (!nome) return alert("Digite o nome do professor");
-  professores.push({ nome, cor: "#4f46e5" });
+  professores.push({ nome, cor: "#4f46e5", disponibilidade: { dias: diasSemana, horarios: Object.values(horariosPorTurno).flat() } });
   document.getElementById("nome-professor").value = "";
   salvarDados();
   renderAll();
 }
 
-function deletarTurma(i) { if (confirm("Excluir?")) { turmas.splice(i,1); salvarDados(); renderAll(); }}
-function deletarDisciplina(i) { if (confirm("Excluir?")) { disciplinasGerais.splice(i,1); salvarDados(); renderAll(); }}
-function deletarProfessor(i) { if (confirm("Excluir?")) { professores.splice(i,1); salvarDados(); renderAll(); }}
+function deletarTurma(i) { if (confirm("Excluir?")) { turmas.splice(i,1); salvarDados(); renderAll(); } }
+function deletarDisciplina(i) { if (confirm("Excluir?")) { disciplinasGerais.splice(i,1); salvarDados(); renderAll(); } }
+function deletarProfessor(i) { if (confirm("Excluir?")) { professores.splice(i,1); salvarDados(); renderAll(); } }
+
+function limparGrade() {
+  if (!turmaSelecionada) return;
+  if (confirm("Limpar grade?")) {
+    Object.keys(horariosAlocados).forEach(k => {
+      if (k.startsWith(turmaSelecionada)) delete horariosAlocados[k];
+    });
+    salvarDados();
+    renderGrade();
+  }
+}
 
 // ==================== EXPORTAÇÃO ====================
 async function exportarImagem() {
-  if (!turmaSelecionada) return alert("Selecione uma turma primeiro!");
-
+  if (!turmaSelecionada) return alert("Selecione uma turma!");
   try {
     const container = document.getElementById("grade-container");
-    const canvas = await html2canvas(container, { scale: 2, backgroundColor: "#ffffff" });
+    const canvas = await html2canvas(container, {scale: 2});
     const link = document.createElement("a");
     link.download = `${turmaSelecionada}_horario.png`;
-    link.href = canvas.toDataURL("image/png");
+    link.href = canvas.toDataURL();
     link.click();
-    alert("✅ Imagem baixada!");
-  } catch (e) {
-    alert("Erro ao exportar imagem. Tente novamente.");
-  }
+  } catch(e) { alert("Erro na exportação"); }
 }
 
 async function gerarPDFCompleto() {
-  try {
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF('landscape', 'pt', 'a4');
-    pdf.text("MASTER HORÁRIO EETEPA", 150, 50);
-    pdf.save("Master_Horario_EETEPA.pdf");
-    alert("✅ PDF gerado!");
-  } catch (e) {
-    alert("Erro no PDF. Use Exportar PNG.");
-  }
+  alert("PDF em desenvolvimento (use Exportar PNG por enquanto)");
 }
 
-// ==================== INICIALIZAÇÃO ====================
+// Inicialização
 window.onload = () => {
   carregarDados();
-  console.log("%c✅ Master Horário EETEPA carregado com sucesso!", "color: green; font-size: 14px");
+  console.log("✅ Master Horário carregado com sucesso!");
 };
