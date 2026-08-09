@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f766e">
+  <title>Manutenção Preventiva — Hotel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    body { -webkit-tap-highlight-color: transparent; }
+    .safe-bottom { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+    .item-ok { background: #ecfdf5; border-color: #6ee7b7; }
+    .item-pendente { background: #fff7ed; border-color: #fdba74; }
+    .item-problema { background: #fef2f2; border-color: #fca5a5; }
+    .card-apt:active { transform: scale(0.98); }
+    .status-dot { width: 9px; height: 9px; border-radius: 9999px; }
+    .sheet {
+      transform: translateY(100%);
+      transition: transform .28s cubic-bezier(.32,.72,0,1);
+    }
+    .sheet.open { transform: translateY(0); }
+    .overlay { opacity: 0; pointer-events: none; transition: opacity .25s ease; }
+    .overlay.open { opacity: 1; pointer-events: auto; }
+    input, select, textarea, button { font-size: 16px; }
+    .tab-btn.active { color: #0f766e; border-color: #0f766e; }
+    .bar-fill { transition: width .4s ease; }
+    .progress-ring { transform: rotate(-90deg); }
+    .hide { display: none !important; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- ========== HEADER ========== -->
+  <header class="sticky top-0 z-30 bg-teal-700 text-white shadow-lg">
+    <div class="px-4 pt-4 pb-3">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-teal-100 text-xs font-medium uppercase tracking-wide">Hotel</p>
+          <h1 class="text-lg font-bold leading-tight">Manutenção Preventiva</h1>
+          <p id="sync-status" class="text-[11px] text-teal-200/90 mt-0.5">Sincronizando…</p>
+        </div>
+        <div class="flex gap-1.5">
+          <button onclick="sincronizarAgora()" class="bg-teal-600/50 hover:bg-teal-600 w-10 h-10 rounded-xl flex items-center justify-center" title="Sincronizar">
+            <i class="fas fa-cloud-arrow-up" id="icon-sync"></i>
+          </button>
+          <button onclick="marcarVariosOK()" class="bg-teal-600/50 hover:bg-teal-600 w-10 h-10 rounded-xl flex items-center justify-center" title="Ações rápidas">
+            <i class="fas fa-bolt"></i>
+          </button>
+          <button onclick="mostrarAba('mais')" class="bg-teal-600/50 hover:bg-teal-600 w-10 h-10 rounded-xl flex items-center justify-center" title="Mais">
+            <i class="fas fa-ellipsis-v"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Tabs -->
+    <nav class="flex border-t border-teal-600/50">
+      <button class="tab-btn active flex-1 py-2.5 text-sm font-semibold border-b-2 border-white text-white" data-aba="lista" onclick="mostrarAba('lista')">
+        <i class="fas fa-list mr-1"></i> Unidades
+      </button>
+      <button class="tab-btn flex-1 py-2.5 text-sm font-medium border-b-2 border-transparent text-teal-100" data-aba="relatorios" onclick="mostrarAba('relatorios')">
+        <i class="fas fa-chart-pie mr-1"></i> Relatórios
+      </button>
+      <button class="tab-btn flex-1 py-2.5 text-sm font-medium border-b-2 border-transparent text-teal-100" data-aba="alertas" onclick="mostrarAba('alertas')">
+        <i class="fas fa-bell mr-1"></i> Alertas
+        <span id="badge-alertas" class="hide ml-1 bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">0</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- ========== ABA LISTA ========== -->
+  <section id="aba-lista" class="flex-1 flex flex-col min-h-0">
+    <div class="bg-teal-700 px-3 pb-3">
+      <div class="flex gap-2">
+        <div class="relative flex-1">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-teal-200 text-sm"></i>
+          <input id="busca" type="search" placeholder="Buscar apto, funcionário..." oninput="renderLista()"
+            class="w-full bg-teal-800/50 border border-teal-500/40 rounded-xl pl-9 pr-3 py-2.5 text-white placeholder-teal-200/70 outline-none">
+        </div>
+        <select id="filtro-status" onchange="renderLista()"
+          class="bg-teal-800/50 border border-teal-500/40 rounded-xl px-2.5 py-2.5 text-white outline-none max-w-[40%]">
+          <option value="todos">Todos</option>
+          <option value="pendente">Pendentes</option>
+          <option value="parcial">Parciais</option>
+          <option value="ok">Concluídos</option>
+          <option value="problema">Problemas</option>
+          <option value="atrasado">Atrasados</option>
+        </select>
+      </div>
+      <div class="grid grid-cols-4 gap-1.5 mt-3 text-center text-[11px]">
+        <div class="bg-teal-800/40 rounded-lg py-1.5">
+          <div id="sum-ok" class="text-sm font-bold text-emerald-200">0</div>
+          <div class="text-teal-100">OK</div>
+        </div>
+        <div class="bg-teal-800/40 rounded-lg py-1.5">
+          <div id="sum-parcial" class="text-sm font-bold text-sky-200">0</div>
+          <div class="text-teal-100">Parcial</div>
+        </div>
+        <div class="bg-teal-800/40 rounded-lg py-1.5">
+          <div id="sum-pendente" class="text-sm font-bold text-amber-200">0</div>
+          <div class="text-teal-100">Pendente</div>
+        </div>
+        <div class="bg-teal-800/40 rounded-lg py-1.5">
+          <div id="sum-problema" class="text-sm font-bold text-rose-200">0</div>
+          <div class="text-teal-100">Problema</div>
+        </div>
+      </div>
+    </div>
+    <main class="flex-1 overflow-y-auto px-3 py-3 safe-bottom">
+      <div id="lista" class="grid grid-cols-1 gap-2"></div>
+    </main>
+  </section>
+
+  <!-- ========== ABA RELATÓRIOS ========== -->
+  <section id="aba-relatorios" class="hide flex-1 overflow-y-auto px-3 py-3 safe-bottom space-y-3">
+    <!-- Período -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-bold text-slate-800 text-sm"><i class="fas fa-calendar-alt text-teal-600 mr-1.5"></i>Período</h2>
+        <select id="rel-periodo" onchange="renderRelatorios()" class="text-sm border border-slate-200 rounded-lg px-2 py-1 bg-slate-50">
+          <option value="tudo">Todo o histórico</option>
+          <option value="7">Últimos 7 dias</option>
+          <option value="30" selected>Últimos 30 dias</option>
+          <option value="mes">Mês atual</option>
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <div>
+          <label class="text-slate-400">De</label>
+          <input id="rel-de" type="date" onchange="document.getElementById('rel-periodo').value='custom';renderRelatorios()" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 mt-0.5">
+        </div>
+        <div>
+          <label class="text-slate-400">Até</label>
+          <input id="rel-ate" type="date" onchange="document.getElementById('rel-periodo').value='custom';renderRelatorios()" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 mt-0.5">
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 gap-2" id="rel-kpis"></div>
+
+    <!-- Progresso geral -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <h2 class="font-bold text-slate-800 text-sm mb-3"><i class="fas fa-tasks text-teal-600 mr-1.5"></i>Progresso geral</h2>
+      <div class="flex items-center gap-4">
+        <div class="relative w-20 h-20 flex-shrink-0">
+          <svg viewBox="0 0 36 36" class="w-20 h-20 progress-ring">
+            <circle cx="18" cy="18" r="15.5" fill="none" stroke="#e2e8f0" stroke-width="3"></circle>
+            <circle id="ring-progress" cx="18" cy="18" r="15.5" fill="none" stroke="#0d9488" stroke-width="3"
+              stroke-linecap="round" stroke-dasharray="97.4" stroke-dashoffset="97.4"></circle>
+          </svg>
+          <div class="absolute inset-0 flex items-center justify-center">
+            <span id="ring-pct" class="text-sm font-bold text-teal-700">0%</span>
+          </div>
+        </div>
+        <div class="flex-1 space-y-1.5 text-xs" id="rel-progresso-detalhe"></div>
+      </div>
+    </div>
+
+    <!-- Itens com mais problemas -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <h2 class="font-bold text-slate-800 text-sm mb-3"><i class="fas fa-exclamation-triangle text-rose-500 mr-1.5"></i>Itens com mais problemas</h2>
+      <div id="rel-itens-problema" class="space-y-2"></div>
+    </div>
+
+    <!-- Ranking funcionários -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <h2 class="font-bold text-slate-800 text-sm mb-3"><i class="fas fa-user-check text-teal-600 mr-1.5"></i>Por funcionário</h2>
+      <div id="rel-funcionarios" class="space-y-2"></div>
+    </div>
+
+    <!-- Últimas manutenções -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <h2 class="font-bold text-slate-800 text-sm mb-3"><i class="fas fa-history text-slate-500 mr-1.5"></i>Últimas atualizações</h2>
+      <div id="rel-recentes" class="space-y-2"></div>
+    </div>
+
+    <!-- Exportar relatório -->
+    <div class="grid grid-cols-2 gap-2 pb-4">
+      <button onclick="exportarCSV()" class="py-3 rounded-xl bg-white border border-slate-200 font-medium text-sm shadow-sm">
+        <i class="fas fa-file-csv text-emerald-600 mr-1"></i> CSV
+      </button>
+      <button onclick="exportarJSON()" class="py-3 rounded-xl bg-white border border-slate-200 font-medium text-sm shadow-sm">
+        <i class="fas fa-file-code text-sky-600 mr-1"></i> JSON
+      </button>
+      <button onclick="imprimirRelatorio()" class="col-span-2 py-3 rounded-xl bg-teal-600 text-white font-semibold text-sm shadow-lg shadow-teal-600/20">
+        <i class="fas fa-print mr-1"></i> Imprimir / PDF do relatório
+      </button>
+    </div>
+  </section>
+
+  <!-- ========== ABA ALERTAS ========== -->
+  <section id="aba-alertas" class="hide flex-1 overflow-y-auto px-3 py-3 safe-bottom space-y-3">
+    <div class="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm">
+      <label class="text-xs font-semibold text-slate-500">Considerar atrasado após (dias)</label>
+      <div class="flex items-center gap-2 mt-1">
+        <input id="cfg-dias-atraso" type="number" min="1" max="365" value="30" onchange="salvarConfig();renderAlertas();renderLista()"
+          class="w-24 border border-slate-200 rounded-lg px-3 py-2 bg-slate-50">
+        <span class="text-sm text-slate-500">dias sem manutenção</span>
+      </div>
+    </div>
+    <div id="lista-alertas" class="space-y-2"></div>
+  </section>
+
+  <!-- ========== ABA MAIS ========== -->
+  <section id="aba-mais" class="hide flex-1 overflow-y-auto px-3 py-3 safe-bottom space-y-3">
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
+      <h2 class="font-bold text-slate-800"><i class="fas fa-cog text-slate-500 mr-1.5"></i>Configurações</h2>
+      <div>
+        <label class="text-xs font-semibold text-slate-500">Nome do hotel</label>
+        <input id="cfg-hotel" type="text" placeholder="Ex: Hotel EETEPA" onchange="salvarConfig()"
+          class="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-50">
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-slate-500">Funcionário padrão</label>
+        <input id="cfg-func-padrao" type="text" placeholder="Preenche automaticamente" onchange="salvarConfig()"
+          class="w-full mt-1 border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-50">
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-2">
+      <h2 class="font-bold text-slate-800 mb-1"><i class="fas fa-database text-slate-500 mr-1.5"></i>Dados</h2>
+      <button onclick="exportarJSON()" class="w-full text-left px-3 py-3 rounded-xl bg-slate-50 hover:bg-slate-100 flex items-center gap-3">
+        <i class="fas fa-download text-teal-600 w-5 text-center"></i>
+        <span class="text-sm font-medium">Exportar backup (JSON)</span>
+      </button>
+      <button onclick="exportarCSV()" class="w-full text-left px-3 py-3 rounded-xl bg-slate-50 hover:bg-slate-100 flex items-center gap-3">
+        <i class="fas fa-file-csv text-emerald-600 w-5 text-center"></i>
+        <span class="text-sm font-medium">Exportar planilha (CSV)</span>
+      </button>
+      <label class="w-full text-left px-3 py-3 rounded-xl bg-slate-50 hover:bg-slate-100 flex items-center gap-3 cursor-pointer">
+        <i class="fas fa-upload text-sky-600 w-5 text-center"></i>
+        <span class="text-sm font-medium">Importar backup (JSON)</span>
+        <input type="file" accept="application/json,.json" class="hidden" onchange="importarJSON(event)">
+      </label>
+      <button onclick="resetarTudo()" class="w-full text-left px-3 py-3 rounded-xl bg-rose-50 hover:bg-rose-100 flex items-center gap-3 text-rose-700">
+        <i class="fas fa-trash w-5 text-center"></i>
+        <span class="text-sm font-medium">Apagar todos os registros</span>
+      </button>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <h2 class="font-bold text-slate-800 mb-2"><i class="fas fa-info-circle text-slate-500 mr-1.5"></i>Sobre</h2>
+      <p class="text-sm text-slate-500 leading-relaxed">
+        Controle de manutenção preventiva — apartamentos 01 a 86, Auditório e Cozinha.
+        Sincroniza com Supabase (config.js) e mantém cache local offline.
+        Exporte backup com frequência.
+      </p>
+      <p class="text-xs text-slate-400 mt-2" id="info-storage"></p>
+    </div>
+  </section>
+
+  <!-- ========== SHEET EDIÇÃO ========== -->
+  <div id="overlay" class="overlay fixed inset-0 bg-black/50 z-40" onclick="fecharSheet()"></div>
+  <div id="sheet" class="sheet fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[92vh] flex flex-col safe-bottom">
+    <div class="flex items-center justify-between px-4 pt-3 pb-2 border-b sticky top-0 bg-white rounded-t-3xl z-10">
+      <div class="w-10"></div>
+      <div class="w-12 h-1.5 bg-slate-200 rounded-full"></div>
+      <button onclick="fecharSheet()" class="w-10 h-10 flex items-center justify-center text-slate-400">
+        <i class="fas fa-times text-lg"></i>
+      </button>
+    </div>
+    <div class="px-4 pb-2">
+      <h2 id="sheet-titulo" class="text-xl font-bold text-slate-800">Apartamento</h2>
+      <p id="sheet-sub" class="text-sm text-slate-500">Checklist de manutenção</p>
+    </div>
+    <div class="overflow-y-auto flex-1 px-4 pb-4 space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="col-span-2 sm:col-span-1">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Data</label>
+          <input id="campo-data" type="date" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-teal-500">
+        </div>
+        <div class="col-span-2 sm:col-span-1">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Funcionário</label>
+          <input id="campo-funcionario" type="text" list="lista-funcs" placeholder="Nome" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-teal-500">
+          <datalist id="lista-funcs"></datalist>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button type="button" onclick="marcarTodosItens('ok')" class="flex-1 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+          <i class="fas fa-check-double mr-1"></i>Tudo OK
+        </button>
+        <button type="button" onclick="marcarTodosItens('pendente')" class="flex-1 py-2 rounded-xl bg-slate-50 text-slate-600 text-xs font-semibold border border-slate-200">
+          Limpar itens
+        </button>
+      </div>
+
+      <div>
+        <h3 class="text-sm font-bold text-slate-700 mb-2"><i class="fas fa-clipboard-check text-teal-600 mr-1"></i> Itens</h3>
+        <div id="lista-itens" class="space-y-2"></div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Serviço / Troca realizada</label>
+        <textarea id="campo-servico" rows="2" placeholder="Descreva o serviço..." class="w-full border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-teal-500 resize-none"></textarea>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Observações</label>
+        <textarea id="campo-obs" rows="2" placeholder="Observações..." class="w-full border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-teal-500 resize-none"></textarea>
+      </div>
+
+      <!-- Histórico da unidade -->
+      <div id="historico-box" class="hide">
+        <h3 class="text-sm font-bold text-slate-700 mb-2"><i class="fas fa-clock-rotate-left text-slate-400 mr-1"></i> Histórico</h3>
+        <div id="historico-lista" class="space-y-1.5 text-xs"></div>
+      </div>
+    </div>
+    <div class="px-4 pt-2 pb-4 border-t bg-white flex gap-2">
+      <button onclick="limparRegistro()" class="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 font-medium">
+        <i class="fas fa-eraser"></i>
+      </button>
+      <button onclick="salvarRegistro()" class="flex-1 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-lg shadow-teal-600/25">
+        <i class="fas fa-save mr-2"></i>Salvar
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-24 z-[60] bg-slate-900 text-white text-sm px-4 py-2.5 rounded-full shadow-xl opacity-0 pointer-events-none transition-opacity duration-300 max-w-[90%] text-center"></div>
+
+  <!-- Área oculta para impressão -->
+  <div id="print-area" class="hidden"></div>
+
+  <script>
+    // ==================== CONSTANTES ====================
+    const ITENS = [
+      { key: "ar", label: "Ar-condicionado", icon: "fa-snowflake" },
+      { key: "frigobar", label: "Frigobar", icon: "fa-wine-bottle" },
+      { key: "tv", label: "TV", icon: "fa-tv" },
+      { key: "chuveiro", label: "Chuveiro", icon: "fa-shower" },
+      { key: "fechadura", label: "Fechadura", icon: "fa-lock" },
+      { key: "lampadas", label: "Lâmpadas", icon: "fa-lightbulb" },
+      { key: "registro", label: "Registro Banheiro", icon: "fa-faucet" },
+      { key: "sifao", label: "Sifão", icon: "fa-droplet" },
+    ];
+
+    const UNIDADES = [];
+    for (let i = 1; i <= 86; i++) {
+      UNIDADES.push({ id: String(i).padStart(2, "0"), nome: String(i).padStart(2, "0"), tipo: "apto" });
+    }
+    UNIDADES.push({ id: "auditorio", nome: "Auditório", tipo: "area" });
+    UNIDADES.push({ id: "cozinha", nome: "Cozinha", tipo: "area" });
+
+    const STORAGE_KEY = "hotel_manutencao_v2";
+    const CONFIG_KEY = "hotel_manutencao_cfg";
+    const HIST_KEY = "hotel_manutencao_hist";
+
+    let registros = {};
+    let historico = {}; // { unidadeId: [ {data, funcionario, itens, servico, obs, savedAt} ] }
+    let config = { diasAtraso: 30, hotel: "", funcPadrao: "" };
+    let unidadeAtual = null;
+    let abaAtual = "lista";
+    let supabaseClient = null;
+    let syncState = "local"; // local | ok | erro | syncing
+
+    // ==================== SUPABASE ====================
+    try {
+      if (window.SUPABASE_CONFIG?.url && window.SUPABASE_CONFIG?.key) {
+        supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
+      }
+    } catch (e) {
+      console.warn("Supabase init:", e);
+    }
+
+    function setSyncStatus(texto, estado) {
+      syncState = estado || syncState;
+      const el = document.getElementById("sync-status");
+      if (el) el.textContent = texto;
+      const icon = document.getElementById("icon-sync");
+      if (icon) {
+        icon.className = estado === "syncing"
+          ? "fas fa-spinner fa-spin"
+          : estado === "erro"
+            ? "fas fa-cloud-arrow-up text-rose-200"
+            : "fas fa-cloud-arrow-up";
+      }
+    }
+
+    function cacheLocal() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(registros));
+      localStorage.setItem(HIST_KEY, JSON.stringify(historico));
+      localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+    }
+
+    function carregarLocal() {
+      try { registros = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { registros = {}; }
+      try { historico = JSON.parse(localStorage.getItem(HIST_KEY) || "{}"); } catch { historico = {}; }
+      try { config = { ...config, ...JSON.parse(localStorage.getItem(CONFIG_KEY) || "{}") }; } catch {}
+      aplicarConfigNosCampos();
+    }
+
+    function aplicarConfigNosCampos() {
+      document.getElementById("cfg-dias-atraso").value = config.diasAtraso || 30;
+      document.getElementById("cfg-hotel").value = config.hotel || "";
+      document.getElementById("cfg-func-padrao").value = config.funcPadrao || "";
+    }
+
+    async function carregarDoSupabase() {
+      if (!supabaseClient) {
+        setSyncStatus("Modo local (sem config.js / Supabase)", "local");
+        return false;
+      }
+      setSyncStatus("Baixando do Supabase…", "syncing");
+      try {
+        const [regRes, histRes, cfgRes] = await Promise.all([
+          supabaseClient.from("manutencao_registros").select("*"),
+          supabaseClient.from("manutencao_historico").select("*").order("saved_at", { ascending: true }),
+          supabaseClient.from("manutencao_config").select("*").eq("id", 1).maybeSingle(),
+        ]);
+
+        if (regRes.error) throw regRes.error;
+        if (histRes.error) throw histRes.error;
+        // config pode falhar se tabela vazia — ok
+
+        const novosReg = {};
+        (regRes.data || []).forEach(row => {
+          novosReg[row.unidade_id] = {
+            data: row.data || "",
+            funcionario: row.funcionario || "",
+            itens: row.itens || {},
+            servico: row.servico || "",
+            obs: row.obs || "",
+            updatedAt: row.updated_at || null,
+          };
+        });
+        registros = novosReg;
+
+        const novoHist = {};
+        (histRes.data || []).forEach(row => {
+          if (!novoHist[row.unidade_id]) novoHist[row.unidade_id] = [];
+          novoHist[row.unidade_id].push({
+            data: row.data || "",
+            funcionario: row.funcionario || "",
+            itens: row.itens || {},
+            servico: row.servico || "",
+            obs: row.obs || "",
+            savedAt: row.saved_at || null,
+            id: row.id,
+          });
+        });
+        historico = novoHist;
+
+        if (cfgRes.data && !cfgRes.error) {
+          config.hotel = cfgRes.data.hotel || "";
+          config.funcPadrao = cfgRes.data.func_padrao || "";
+          config.diasAtraso = cfgRes.data.dias_atraso || 30;
+          aplicarConfigNosCampos();
+        }
+
+        cacheLocal();
+        setSyncStatus("Sincronizado com Supabase · " + new Date().toLocaleTimeString("pt-BR"), "ok");
+        return true;
+      } catch (e) {
+        console.warn("carregarDoSupabase:", e);
+        setSyncStatus("Erro Supabase: " + (e.message || e) + " (usando cache local)", "erro");
+        return false;
+      }
+    }
+
+    async function upsertRegistroSupabase(unidadeId, reg) {
+      if (!supabaseClient || !unidadeId || !reg) return;
+      const payload = {
+        unidade_id: unidadeId,
+        data: reg.data || null,
+        funcionario: reg.funcionario || null,
+        itens: reg.itens || {},
+        servico: reg.servico || "",
+        obs: reg.obs || "",
+        updated_at: reg.updatedAt || new Date().toISOString(),
+      };
+      const { error } = await supabaseClient
+        .from("manutencao_registros")
+        .upsert(payload, { onConflict: "unidade_id" });
+      if (error) throw error;
+    }
+
+    async function insertHistoricoSupabase(unidadeId, entrada) {
+      if (!supabaseClient || !unidadeId || !entrada) return null;
+      const payload = {
+        unidade_id: unidadeId,
+        data: entrada.data || null,
+        funcionario: entrada.funcionario || null,
+        itens: entrada.itens || {},
+        servico: entrada.servico || "",
+        obs: entrada.obs || "",
+        saved_at: entrada.savedAt || new Date().toISOString(),
+      };
+      const { data, error } = await supabaseClient
+        .from("manutencao_historico")
+        .insert(payload)
+        .select("id")
+        .maybeSingle();
+      if (error) throw error;
+      return data?.id || null;
+    }
+
+    async function deleteRegistroSupabase(unidadeId) {
+      if (!supabaseClient || !unidadeId) return;
+      const { error } = await supabaseClient
+        .from("manutencao_registros")
+        .delete()
+        .eq("unidade_id", unidadeId);
+      if (error) throw error;
+    }
+
+    async function salvarConfigSupabase() {
+      if (!supabaseClient) return;
+      const payload = {
+        id: 1,
+        hotel: config.hotel || "",
+        func_padrao: config.funcPadrao || "",
+        dias_atraso: config.diasAtraso || 30,
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabaseClient
+        .from("manutencao_config")
+        .upsert(payload, { onConflict: "id" });
+      if (error) throw error;
+    }
+
+    /** Persistência local + (quando possível) Supabase */
+    function salvar() {
+      cacheLocal();
+    }
+
+    async function salvarConfig() {
+      config.diasAtraso = parseInt(document.getElementById("cfg-dias-atraso").value, 10) || 30;
+      config.hotel = document.getElementById("cfg-hotel").value.trim();
+      config.funcPadrao = document.getElementById("cfg-func-padrao").value.trim();
+      cacheLocal();
+      atualizarInfoStorage();
+      if (supabaseClient) {
+        try {
+          await salvarConfigSupabase();
+          setSyncStatus("Config salva no Supabase", "ok");
+        } catch (e) {
+          setSyncStatus("Erro ao salvar config: " + e.message, "erro");
+          toast("Erro ao salvar config no banco");
+        }
+      }
+    }
+
+    async function sincronizarAgora() {
+      const ok = await carregarDoSupabase();
+      renderLista();
+      atualizarBadgeAlertas();
+      if (abaAtual === "relatorios") renderRelatorios();
+      if (abaAtual === "alertas") renderAlertas();
+      atualizarInfoStorage();
+      toast(ok ? "Dados atualizados do banco" : "Falha na sincronização");
+    }
+
+    function atualizarInfoStorage() {
+      const n = Object.keys(registros).length;
+      const h = Object.values(historico).reduce((a, b) => a + (b?.length || 0), 0);
+      const modo = supabaseClient ? "Supabase + cache local" : "somente local";
+      document.getElementById("info-storage").textContent =
+        `${n} unidades · ${h} no histórico · ${modo} · ${new Date().toLocaleString("pt-BR")}`;
+    }
+
+    // ==================== STATUS ====================
+    function diasDesde(iso) {
+      if (!iso) return Infinity;
+      const d = new Date(iso + "T12:00:00");
+      if (isNaN(d)) return Infinity;
+      return Math.floor((Date.now() - d.getTime()) / 86400000);
+    }
+
+    function statusUnidade(id) {
+      const r = registros[id];
+      if (!r || !r.itens) return "pendente";
+      const vals = ITENS.map(i => r.itens[i.key] || "pendente");
+      if (vals.some(v => v === "problema")) return "problema";
+      if (vals.every(v => v === "ok")) return "ok";
+      if (vals.some(v => v === "ok")) return "parcial";
+      return "pendente";
+    }
+
+    function estaAtrasado(id) {
+      const r = registros[id];
+      if (!r || !r.data) return true; // nunca feito = atrasado
+      return diasDesde(r.data) > (config.diasAtraso || 30);
+    }
+
+    function contagens() {
+      let ok = 0, parcial = 0, pendente = 0, problema = 0;
+      UNIDADES.forEach(u => {
+        const s = statusUnidade(u.id);
+        if (s === "ok") ok++;
+        else if (s === "parcial") parcial++;
+        else if (s === "problema") problema++;
+        else pendente++;
+      });
+      return { ok, parcial, pendente, problema, total: UNIDADES.length };
+    }
+
+    function labelUnidade(u) {
+      return u.tipo === "area" ? u.nome : "Apto " + u.nome;
+    }
+
+    function formatarData(iso) {
+      if (!iso) return "—";
+      const p = iso.split("-");
+      if (p.length < 3) return iso;
+      return `${p[2]}/${p[1]}/${p[0]}`;
+    }
+
+    // ==================== ABAS ====================
+    function mostrarAba(nome) {
+      abaAtual = nome;
+      ["lista", "relatorios", "alertas", "mais"].forEach(a => {
+        document.getElementById("aba-" + a).classList.toggle("hide", a !== nome);
+      });
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        const on = btn.dataset.aba === nome;
+        btn.classList.toggle("active", on);
+        btn.classList.toggle("text-white", on);
+        btn.classList.toggle("border-white", on);
+        btn.classList.toggle("text-teal-100", !on);
+        btn.classList.toggle("border-transparent", !on);
+        btn.classList.toggle("font-semibold", on);
+        btn.classList.toggle("font-medium", !on);
+      });
+      if (nome === "relatorios") renderRelatorios();
+      if (nome === "alertas") renderAlertas();
+      if (nome === "mais") atualizarInfoStorage();
+      if (nome === "lista") renderLista();
+    }
+
+    // ==================== LISTA ====================
+    function renderLista() {
+      const busca = (document.getElementById("busca").value || "").trim().toLowerCase();
+      const filtro = document.getElementById("filtro-status").value;
+      const c = contagens();
+      document.getElementById("sum-ok").textContent = c.ok;
+      document.getElementById("sum-parcial").textContent = c.parcial;
+      document.getElementById("sum-pendente").textContent = c.pendente;
+      document.getElementById("sum-problema").textContent = c.problema;
+
+      const lista = document.getElementById("lista");
+      const filtradas = UNIDADES.filter(u => {
+        const r = registros[u.id] || {};
+        if (busca) {
+          const blob = `${u.nome} ${u.id} ${r.funcionario || ""} ${r.servico || ""} ${r.obs || ""}`.toLowerCase();
+          if (!blob.includes(busca)) return false;
+        }
+        const s = statusUnidade(u.id);
+        if (filtro === "ok" && s !== "ok") return false;
+        if (filtro === "parcial" && s !== "parcial") return false;
+        if (filtro === "problema" && s !== "problema") return false;
+        if (filtro === "pendente" && s !== "pendente") return false;
+        if (filtro === "atrasado" && !estaAtrasado(u.id)) return false;
+        return true;
+      });
+
+      if (!filtradas.length) {
+        lista.innerHTML = `<div class="text-center text-slate-400 py-12 text-sm">Nenhuma unidade encontrada</div>`;
+        return;
+      }
+
+      lista.innerHTML = filtradas.map(u => {
+        const s = statusUnidade(u.id);
+        const r = registros[u.id] || {};
+        const atrasado = estaAtrasado(u.id);
+        const border =
+          s === "ok" ? "border-l-emerald-500" :
+          s === "problema" ? "border-l-rose-500" :
+          s === "parcial" ? "border-l-sky-400" : "border-l-slate-300";
+        const dot =
+          s === "ok" ? "bg-emerald-500" :
+          s === "problema" ? "bg-rose-500" :
+          s === "parcial" ? "bg-sky-400" : "bg-slate-300";
+        const labelStatus =
+          s === "ok" ? "Concluído" :
+          s === "problema" ? "Problema" :
+          s === "parcial" ? "Parcial" : "Pendente";
+        const itensOk = ITENS.filter(i => r.itens && r.itens[i.key] === "ok").length;
+        const dias = r.data ? diasDesde(r.data) : null;
+
+        return `
+          <button type="button" onclick="abrirSheet('${u.id}')"
+            class="card-apt w-full text-left bg-white rounded-2xl border border-slate-200 border-l-4 ${border} shadow-sm px-3.5 py-3 flex items-center gap-3 transition">
+            <div class="flex-shrink-0 w-11 h-11 rounded-xl ${u.tipo === "area" ? "bg-indigo-50 text-indigo-700" : "bg-teal-50 text-teal-700"} flex items-center justify-center font-bold text-sm">
+              ${u.tipo === "area" ? '<i class="fas fa-building"></i>' : u.nome}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-semibold text-slate-800 text-sm">${labelUnidade(u)}</span>
+                <span class="status-dot ${dot}"></span>
+                <span class="text-[11px] text-slate-400">${labelStatus}</span>
+                ${atrasado ? '<span class="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded-full font-semibold">Atrasado</span>' : ""}
+              </div>
+              <div class="text-[11px] text-slate-500 mt-0.5 truncate">
+                ${r.data ? formatarData(r.data) : "Nunca verificado"}
+                ${dias !== null && dias !== Infinity ? ` · há ${dias}d` : ""}
+                ${r.funcionario ? " · " + r.funcionario : ""}
+                ${itensOk ? ` · ${itensOk}/${ITENS.length}` : ""}
+              </div>
+            </div>
+            <i class="fas fa-chevron-right text-slate-300 text-sm"></i>
+          </button>
+        `;
+      }).join("");
+    }
+
+    // ==================== SHEET ====================
+    function abrirSheet(id) {
+      unidadeAtual = id;
+      const u = UNIDADES.find(x => x.id === id);
+      const r = registros[id] || {};
+      document.getElementById("sheet-titulo").textContent = labelUnidade(u);
+      const dias = r.data ? diasDesde(r.data) : null;
+      document.getElementById("sheet-sub").textContent =
+        r.data
+          ? `Última: ${formatarData(r.data)}${dias !== null ? ` (há ${dias} dias)` : ""}`
+          : "Ainda sem manutenção registrada";
+
+      const hoje = new Date().toISOString().slice(0, 10);
+      document.getElementById("campo-data").value = r.data || hoje;
+      document.getElementById("campo-funcionario").value = r.funcionario || config.funcPadrao || "";
+      document.getElementById("campo-servico").value = r.servico || "";
+      document.getElementById("campo-obs").value = r.obs || "";
+
+      // datalist funcionários
+      const funcs = [...new Set(Object.values(registros).map(x => x.funcionario).filter(Boolean))];
+      if (config.funcPadrao && !funcs.includes(config.funcPadrao)) funcs.unshift(config.funcPadrao);
+      document.getElementById("lista-funcs").innerHTML = funcs.map(f => `<option value="${esc(f)}">`).join("");
+
+      renderItensSheet(r.itens || {});
+      renderHistoricoSheet(id);
+
+      document.getElementById("overlay").classList.add("open");
+      document.getElementById("sheet").classList.add("open");
+      document.body.style.overflow = "hidden";
+    }
+
+    function renderItensSheet(itensMap) {
+      const box = document.getElementById("lista-itens");
+      box.innerHTML = ITENS.map(item => {
+        const val = itensMap[item.key] || "pendente";
+        return `
+          <div class="border rounded-xl p-3 ${classeItem(val)}" data-item="${item.key}">
+            <div class="flex items-center gap-2 mb-2">
+              <i class="fas ${item.icon} text-slate-500 w-5 text-center"></i>
+              <span class="font-medium text-sm flex-1">${item.label}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5">
+              ${btnStatus(item.key, "ok", "OK", val)}
+              ${btnStatus(item.key, "pendente", "—", val)}
+              ${btnStatus(item.key, "problema", "Problema", val)}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderHistoricoSheet(id) {
+      const hist = historico[id] || [];
+      const box = document.getElementById("historico-box");
+      const lista = document.getElementById("historico-lista");
+      if (!hist.length) {
+        box.classList.add("hide");
+        return;
+      }
+      box.classList.remove("hide");
+      lista.innerHTML = [...hist].reverse().slice(0, 8).map(h => {
+        const problemas = ITENS.filter(i => h.itens && h.itens[i.key] === "problema").map(i => i.label);
+        return `
+          <div class="bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
+            <div class="font-medium text-slate-700">${formatarData(h.data)} · ${esc(h.funcionario || "—")}</div>
+            ${problemas.length ? `<div class="text-rose-600 mt-0.5">Problemas: ${problemas.join(", ")}</div>` : `<div class="text-emerald-600 mt-0.5">Sem problemas</div>`}
+            ${h.servico ? `<div class="text-slate-500 mt-0.5 truncate">${esc(h.servico)}</div>` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function classeItem(val) {
+      if (val === "ok") return "item-ok";
+      if (val === "problema") return "item-problema";
+      return "item-pendente";
+    }
+
+    function btnStatus(key, status, label, atual) {
+      const ativo = atual === status;
+      const cores = {
+        ok: ativo ? "bg-emerald-600 text-white" : "bg-white text-emerald-700 border border-emerald-200",
+        pendente: ativo ? "bg-slate-500 text-white" : "bg-white text-slate-500 border border-slate-200",
+        problema: ativo ? "bg-rose-600 text-white" : "bg-white text-rose-700 border border-rose-200",
+      };
+      return `<button type="button" onclick="setItemStatus('${key}','${status}')"
+        class="py-2 rounded-lg text-xs font-semibold ${cores[status]}">${label}</button>`;
+    }
+
+    function setItemStatus(key, status) {
+      if (!unidadeAtual) return;
+      if (!registros[unidadeAtual]) registros[unidadeAtual] = { itens: {} };
+      if (!registros[unidadeAtual].itens) registros[unidadeAtual].itens = {};
+      registros[unidadeAtual].itens[key] = status;
+      const card = document.querySelector(`[data-item="${key}"]`);
+      if (card) {
+        const item = ITENS.find(i => i.key === key);
+        card.className = `border rounded-xl p-3 ${classeItem(status)}`;
+        card.innerHTML = `
+          <div class="flex items-center gap-2 mb-2">
+            <i class="fas ${item.icon} text-slate-500 w-5 text-center"></i>
+            <span class="font-medium text-sm flex-1">${item.label}</span>
+          </div>
+          <div class="grid grid-cols-3 gap-1.5">
+            ${btnStatus(key, "ok", "OK", status)}
+            ${btnStatus(key, "pendente", "—", status)}
+            ${btnStatus(key, "problema", "Problema", status)}
+          </div>
+        `;
+      }
+    }
+
+    function marcarTodosItens(status) {
+      if (!unidadeAtual) return;
+      if (!registros[unidadeAtual]) registros[unidadeAtual] = { itens: {} };
+      registros[unidadeAtual].itens = {};
+      ITENS.forEach(i => { registros[unidadeAtual].itens[i.key] = status; });
+      renderItensSheet(registros[unidadeAtual].itens);
+    }
+
+    function fecharSheet() {
+      document.getElementById("overlay").classList.remove("open");
+      document.getElementById("sheet").classList.remove("open");
+      document.body.style.overflow = "";
+      unidadeAtual = null;
+    }
+
+    async function salvarRegistro() {
+      if (!unidadeAtual) return;
+      const itens = {};
+      ITENS.forEach(i => {
+        itens[i.key] = registros[unidadeAtual]?.itens?.[i.key] || "pendente";
+      });
+
+      const novo = {
+        data: document.getElementById("campo-data").value || "",
+        funcionario: document.getElementById("campo-funcionario").value.trim(),
+        itens,
+        servico: document.getElementById("campo-servico").value.trim(),
+        obs: document.getElementById("campo-obs").value.trim(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const entradaHist = { ...novo, savedAt: new Date().toISOString() };
+      if (!historico[unidadeAtual]) historico[unidadeAtual] = [];
+      historico[unidadeAtual].push(entradaHist);
+      if (historico[unidadeAtual].length > 30) {
+        historico[unidadeAtual] = historico[unidadeAtual].slice(-30);
+      }
+
+      registros[unidadeAtual] = novo;
+      salvar();
+      renderLista();
+      atualizarBadgeAlertas();
+      fecharSheet();
+      toast("Registro salvo");
+
+      if (supabaseClient) {
+        setSyncStatus("Salvando no Supabase…", "syncing");
+        try {
+          await upsertRegistroSupabase(unidadeAtual, novo);
+          const hid = await insertHistoricoSupabase(unidadeAtual, entradaHist);
+          if (hid) entradaHist.id = hid;
+          cacheLocal();
+          setSyncStatus("Sincronizado com Supabase · " + new Date().toLocaleTimeString("pt-BR"), "ok");
+        } catch (e) {
+          console.warn(e);
+          setSyncStatus("Erro ao salvar: " + e.message, "erro");
+          toast("Salvo local, falha no banco: " + e.message);
+        }
+      }
+    }
+
+    async function limparRegistro() {
+      if (!unidadeAtual) return;
+      if (!confirm("Limpar o registro atual desta unidade? (o histórico é mantido)")) return;
+      const id = unidadeAtual;
+      delete registros[id];
+      salvar();
+      renderLista();
+      atualizarBadgeAlertas();
+      fecharSheet();
+      toast("Registro limpo");
+
+      if (supabaseClient) {
+        try {
+          await deleteRegistroSupabase(id);
+          setSyncStatus("Sincronizado com Supabase · " + new Date().toLocaleTimeString("pt-BR"), "ok");
+        } catch (e) {
+          setSyncStatus("Erro ao limpar no banco: " + e.message, "erro");
+        }
+      }
+    }
+
+    // ==================== RELATÓRIOS ====================
+    function periodoFiltro() {
+      const modo = document.getElementById("rel-periodo").value;
+      let de = document.getElementById("rel-de").value;
+      let ate = document.getElementById("rel-ate").value;
+      const hoje = new Date();
+      const iso = d => d.toISOString().slice(0, 10);
+
+      if (modo === "7") {
+        const d = new Date(hoje); d.setDate(d.getDate() - 7);
+        de = iso(d); ate = iso(hoje);
+      } else if (modo === "30") {
+        const d = new Date(hoje); d.setDate(d.getDate() - 30);
+        de = iso(d); ate = iso(hoje);
+      } else if (modo === "mes") {
+        de = iso(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+        ate = iso(hoje);
+      } else if (modo === "tudo") {
+        de = ""; ate = "";
+      }
+      // custom: usa os campos
+      document.getElementById("rel-de").value = de;
+      document.getElementById("rel-ate").value = ate;
+      return { de, ate };
+    }
+
+    function noPeriodo(dataIso, de, ate) {
+      if (!dataIso) return false;
+      if (de && dataIso < de) return false;
+      if (ate && dataIso > ate) return false;
+      return true;
+    }
+
+    function renderRelatorios() {
+      const { de, ate } = periodoFiltro();
+      const c = contagens();
+      const pct = c.total ? Math.round((c.ok / c.total) * 100) : 0;
+
+      // ring
+      const circ = 2 * Math.PI * 15.5;
+      const offset = circ - (pct / 100) * circ;
+      document.getElementById("ring-progress").style.strokeDasharray = circ;
+      document.getElementById("ring-progress").style.strokeDashoffset = offset;
+      document.getElementById("ring-pct").textContent = pct + "%";
+
+      document.getElementById("rel-progresso-detalhe").innerHTML = `
+        <div class="flex justify-between"><span class="text-slate-500">Concluídos</span><span class="font-semibold text-emerald-600">${c.ok}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Parciais</span><span class="font-semibold text-sky-600">${c.parcial}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Pendentes</span><span class="font-semibold text-amber-600">${c.pendente}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Com problema</span><span class="font-semibold text-rose-600">${c.problema}</span></div>
+        <div class="flex justify-between border-t pt-1 mt-1"><span class="text-slate-500">Total unidades</span><span class="font-semibold">${c.total}</span></div>
+      `;
+
+      // KPIs do período (baseados em registros com data no período)
+      const noPer = UNIDADES.filter(u => {
+        const r = registros[u.id];
+        return r && noPeriodo(r.data, de, ate);
+      });
+      const problemasPeriodo = noPer.filter(u => statusUnidade(u.id) === "problema").length;
+      const atrasados = UNIDADES.filter(u => estaAtrasado(u.id)).length;
+      const funcsUnicos = new Set(noPer.map(u => registros[u.id]?.funcionario).filter(Boolean)).size;
+
+      document.getElementById("rel-kpis").innerHTML = `
+        <div class="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm">
+          <div class="text-2xl font-bold text-teal-700">${noPer.length}</div>
+          <div class="text-xs text-slate-500">Verificados no período</div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm">
+          <div class="text-2xl font-bold text-rose-600">${problemasPeriodo}</div>
+          <div class="text-xs text-slate-500">Com problema (período)</div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm">
+          <div class="text-2xl font-bold text-amber-600">${atrasados}</div>
+          <div class="text-xs text-slate-500">Atrasados (&gt;${config.diasAtraso || 30}d)</div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm">
+          <div class="text-2xl font-bold text-indigo-600">${funcsUnicos}</div>
+          <div class="text-xs text-slate-500">Funcionários ativos</div>
+        </div>
+      `;
+
+      // Itens com mais problemas
+      const contItem = {};
+      ITENS.forEach(i => { contItem[i.key] = 0; });
+      UNIDADES.forEach(u => {
+        const r = registros[u.id];
+        if (!r?.itens) return;
+        if (de || ate) { if (!noPeriodo(r.data, de, ate)) return; }
+        ITENS.forEach(i => {
+          if (r.itens[i.key] === "problema") contItem[i.key]++;
+        });
+      });
+      const rankingItens = ITENS
+        .map(i => ({ ...i, n: contItem[i.key] }))
+        .sort((a, b) => b.n - a.n);
+      const maxItem = Math.max(1, ...rankingItens.map(x => x.n));
+
+      document.getElementById("rel-itens-problema").innerHTML = rankingItens.every(x => x.n === 0)
+        ? `<p class="text-sm text-slate-400">Nenhum problema registrado</p>`
+        : rankingItens.map(i => `
+          <div>
+            <div class="flex justify-between text-xs mb-0.5">
+              <span class="text-slate-700"><i class="fas ${i.icon} text-slate-400 mr-1"></i>${i.label}</span>
+              <span class="font-semibold ${i.n ? "text-rose-600" : "text-slate-400"}">${i.n}</span>
+            </div>
+            <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div class="bar-fill h-full ${i.n ? "bg-rose-400" : "bg-slate-200"} rounded-full" style="width:${(i.n / maxItem) * 100}%"></div>
+            </div>
+          </div>
+        `).join("");
+
+      // Por funcionário
+      const porFunc = {};
+      UNIDADES.forEach(u => {
+        const r = registros[u.id];
+        if (!r?.funcionario) return;
+        if (de || ate) { if (!noPeriodo(r.data, de, ate)) return; }
+        if (!porFunc[r.funcionario]) porFunc[r.funcionario] = { total: 0, ok: 0, problema: 0 };
+        porFunc[r.funcionario].total++;
+        const s = statusUnidade(u.id);
+        if (s === "ok") porFunc[r.funcionario].ok++;
+        if (s === "problema") porFunc[r.funcionario].problema++;
+      });
+      const funcs = Object.entries(porFunc).sort((a, b) => b[1].total - a[1].total);
+
+      document.getElementById("rel-funcionarios").innerHTML = !funcs.length
+        ? `<p class="text-sm text-slate-400">Nenhum funcionário no período</p>`
+        : funcs.map(([nome, d]) => `
+          <div class="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2.5">
+            <div class="w-9 h-9 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-sm">
+              ${esc(nome.charAt(0).toUpperCase())}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-sm truncate">${esc(nome)}</div>
+              <div class="text-[11px] text-slate-500">${d.total} unidades · ${d.ok} OK · ${d.problema} problema</div>
+            </div>
+          </div>
+        `).join("");
+
+      // Recentes
+      const recentes = UNIDADES
+        .map(u => ({ u, r: registros[u.id] }))
+        .filter(x => x.r?.updatedAt || x.r?.data)
+        .sort((a, b) => {
+          const ta = a.r.updatedAt || a.r.data || "";
+          const tb = b.r.updatedAt || b.r.data || "";
+          return tb.localeCompare(ta);
+        })
+        .slice(0, 10);
+
+      document.getElementById("rel-recentes").innerHTML = !recentes.length
+        ? `<p class="text-sm text-slate-400">Sem atualizações</p>`
+        : recentes.map(({ u, r }) => {
+          const s = statusUnidade(u.id);
+          const cor = s === "ok" ? "bg-emerald-500" : s === "problema" ? "bg-rose-500" : s === "parcial" ? "bg-sky-400" : "bg-slate-300";
+          return `
+            <button type="button" onclick="mostrarAba('lista');setTimeout(()=>abrirSheet('${u.id}'),50)"
+              class="w-full text-left flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 hover:bg-slate-100">
+              <span class="status-dot ${cor}"></span>
+              <span class="font-medium text-sm flex-1 truncate">${labelUnidade(u)}</span>
+              <span class="text-[11px] text-slate-400">${formatarData(r.data)}</span>
+            </button>
+          `;
+        }).join("");
+    }
+
+    // ==================== ALERTAS ====================
+    function listarAlertas() {
+      const alertas = [];
+      UNIDADES.forEach(u => {
+        const r = registros[u.id];
+        const s = statusUnidade(u.id);
+        if (s === "problema") {
+          const itensP = ITENS.filter(i => r?.itens?.[i.key] === "problema").map(i => i.label);
+          alertas.push({
+            tipo: "problema",
+            prioridade: 1,
+            u,
+            titulo: labelUnidade(u),
+            desc: "Problema: " + (itensP.join(", ") || "itens"),
+            data: r?.data,
+          });
+        }
+        if (estaAtrasado(u.id)) {
+          const dias = r?.data ? diasDesde(r.data) : null;
+          alertas.push({
+            tipo: "atraso",
+            prioridade: 2,
+            u,
+            titulo: labelUnidade(u),
+            desc: r?.data ? `Sem manutenção há ${dias} dias` : "Nunca verificado",
+            data: r?.data,
+          });
+        }
+      });
+      alertas.sort((a, b) => a.prioridade - b.prioridade || (a.titulo > b.titulo ? 1 : -1));
+      return alertas;
+    }
+
+    function atualizarBadgeAlertas() {
+      const n = listarAlertas().length;
+      const badge = document.getElementById("badge-alertas");
+      if (n > 0) {
+        badge.textContent = n > 99 ? "99+" : n;
+        badge.classList.remove("hide");
+      } else {
+        badge.classList.add("hide");
+      }
+    }
+
+    function renderAlertas() {
+      const alertas = listarAlertas();
+      const box = document.getElementById("lista-alertas");
+      if (!alertas.length) {
+        box.innerHTML = `
+          <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-sm">
+            <i class="fas fa-check-circle text-3xl text-emerald-500 mb-2"></i>
+            <p class="font-medium text-slate-700">Nenhum alerta</p>
+            <p class="text-sm text-slate-400 mt-1">Tudo em dia por enquanto</p>
+          </div>`;
+        atualizarBadgeAlertas();
+        return;
+      }
+      box.innerHTML = alertas.map(a => {
+        const cor = a.tipo === "problema" ? "border-l-rose-500 bg-rose-50/50" : "border-l-amber-400 bg-amber-50/40";
+        const icon = a.tipo === "problema" ? "fa-exclamation-circle text-rose-500" : "fa-clock text-amber-500";
+        return `
+          <button type="button" onclick="mostrarAba('lista');setTimeout(()=>abrirSheet('${a.u.id}'),50)"
+            class="w-full text-left bg-white rounded-2xl border border-slate-200 border-l-4 ${cor} px-4 py-3 shadow-sm">
+            <div class="flex items-start gap-3">
+              <i class="fas ${icon} mt-0.5"></i>
+              <div class="flex-1 min-w-0">
+                <div class="font-semibold text-sm text-slate-800">${a.titulo}</div>
+                <div class="text-xs text-slate-600 mt-0.5">${esc(a.desc)}</div>
+                ${a.data ? `<div class="text-[11px] text-slate-400 mt-1">Última: ${formatarData(a.data)}</div>` : ""}
+              </div>
+              <i class="fas fa-chevron-right text-slate-300 text-sm mt-1"></i>
+            </div>
+          </button>
+        `;
+      }).join("");
+      atualizarBadgeAlertas();
+    }
+
+    // ==================== AÇÕES RÁPIDAS ====================
+    function marcarVariosOK() {
+      const nome = prompt("Marcar vários apartamentos como OK.\nDigite os números separados por vírgula ou intervalo (ex: 1,2,5-10):");
+      if (!nome) return;
+      const ids = parseIntervalos(nome);
+      if (!ids.length) { toast("Nenhum apartamento válido"); return; }
+      const func = config.funcPadrao || prompt("Funcionário responsável:") || "";
+      const hoje = new Date().toISOString().slice(0, 10);
+      let n = 0;
+      const lote = [];
+      ids.forEach(id => {
+        const u = UNIDADES.find(x => x.id === id);
+        if (!u) return;
+        const itens = {};
+        ITENS.forEach(i => { itens[i.key] = "ok"; });
+        const novo = { data: hoje, funcionario: func, itens, servico: "Checklist rápido — tudo OK", obs: "", updatedAt: new Date().toISOString() };
+        const entrada = { ...novo, savedAt: new Date().toISOString() };
+        if (!historico[id]) historico[id] = [];
+        historico[id].push(entrada);
+        registros[id] = novo;
+        lote.push({ id, novo, entrada });
+        n++;
+      });
+      salvar();
+      renderLista();
+      atualizarBadgeAlertas();
+      toast(`${n} unidade(s) marcadas como OK`);
+
+      if (supabaseClient && lote.length) {
+        setSyncStatus("Salvando lote no Supabase…", "syncing");
+        (async () => {
+          try {
+            for (const item of lote) {
+              await upsertRegistroSupabase(item.id, item.novo);
+              await insertHistoricoSupabase(item.id, item.entrada);
+            }
+            setSyncStatus("Sincronizado com Supabase · " + new Date().toLocaleTimeString("pt-BR"), "ok");
+          } catch (e) {
+            setSyncStatus("Erro no lote: " + e.message, "erro");
+          }
+        })();
+      }
+    }
+
+    function parseIntervalos(str) {
+      const out = new Set();
+      str.split(/[,;\s]+/).forEach(part => {
+        part = part.trim();
+        if (!part) return;
+        const m = part.match(/^(\d+)\s*[-–]\s*(\d+)$/);
+        if (m) {
+          let a = parseInt(m[1], 10), b = parseInt(m[2], 10);
+          if (a > b) [a, b] = [b, a];
+          for (let i = a; i <= b; i++) out.add(String(i).padStart(2, "0"));
+        } else if (/^\d+$/.test(part)) {
+          out.add(String(parseInt(part, 10)).padStart(2, "0"));
+        } else if (part.toLowerCase() === "auditorio") out.add("auditorio");
+        else if (part.toLowerCase() === "cozinha") out.add("cozinha");
+      });
+      return [...out];
+    }
+
+    // ==================== EXPORT / IMPORT ====================
+    function exportarJSON() {
+      const payload = {
+        app: "manutencao-hotel",
+        versao: 2,
+        exportadoEm: new Date().toISOString(),
+        hotel: config.hotel,
+        config,
+        registros,
+        historico,
+      };
+      baixarArquivo(
+        JSON.stringify(payload, null, 2),
+        `manutencao_hotel_${new Date().toISOString().slice(0, 10)}.json`,
+        "application/json"
+      );
+      toast("Backup JSON exportado");
+    }
+
+    function exportarCSV() {
+      const sep = ";";
+      const headers = ["Unidade", "Data", "Funcionário", ...ITENS.map(i => i.label), "Serviço", "Observações", "Status"];
+      const linhas = [headers.join(sep)];
+      UNIDADES.forEach(u => {
+        const r = registros[u.id] || {};
+        const row = [
+          labelUnidade(u),
+          r.data || "",
+          csvEsc(r.funcionario || ""),
+          ...ITENS.map(i => (r.itens && r.itens[i.key]) || ""),
+          csvEsc(r.servico || ""),
+          csvEsc(r.obs || ""),
+          statusUnidade(u.id),
+        ];
+        linhas.push(row.join(sep));
+      });
+      // BOM para Excel
+      baixarArquivo("\uFEFF" + linhas.join("\n"), `manutencao_hotel_${new Date().toISOString().slice(0, 10)}.csv`, "text/csv;charset=utf-8");
+      toast("CSV exportado");
+    }
+
+    function csvEsc(s) {
+      if (s == null) return "";
+      const t = String(s).replace(/"/g, '""');
+      return /[;"\n]/.test(t) ? `"${t}"` : t;
+    }
+
+    function baixarArquivo(conteudo, nome, mime) {
+      const blob = new Blob([conteudo], { type: mime });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = nome;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function importarJSON(ev) {
+      const file = ev.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          if (!data.registros) throw new Error("Arquivo inválido");
+          if (!confirm("Isso substitui os dados atuais. Continuar?")) return;
+          registros = data.registros || {};
+          historico = data.historico || {};
+          if (data.config) {
+            config = { ...config, ...data.config };
+            document.getElementById("cfg-dias-atraso").value = config.diasAtraso || 30;
+            document.getElementById("cfg-hotel").value = config.hotel || "";
+            document.getElementById("cfg-func-padrao").value = config.funcPadrao || "";
+            localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+          }
+          salvar();
+          renderLista();
+          atualizarBadgeAlertas();
+          toast("Backup importado");
+        } catch (e) {
+          alert("Erro ao importar: " + e.message);
+        }
+        ev.target.value = "";
+      };
+      reader.readAsText(file);
+    }
+
+    async function resetarTudo() {
+      if (!confirm("Apagar TODOS os registros e histórico?")) return;
+      if (!confirm("Tem certeza? Isso apaga também no Supabase se estiver conectado.")) return;
+      registros = {};
+      historico = {};
+      salvar();
+      renderLista();
+      atualizarBadgeAlertas();
+      toast("Dados locais apagados");
+
+      if (supabaseClient) {
+        setSyncStatus("Limpando Supabase…", "syncing");
+        try {
+          // delete all rows (filter that matches everything)
+          await supabaseClient.from("manutencao_registros").delete().neq("unidade_id", "__none__");
+          await supabaseClient.from("manutencao_historico").delete().neq("unidade_id", "__none__");
+          setSyncStatus("Banco limpo · " + new Date().toLocaleTimeString("pt-BR"), "ok");
+          toast("Dados apagados no banco também");
+        } catch (e) {
+          setSyncStatus("Erro ao limpar banco: " + e.message, "erro");
+        }
+      }
+    }
+
+    function imprimirRelatorio() {
+      const c = contagens();
+      const hotel = config.hotel || "Hotel";
+      const { de, ate } = periodoFiltro();
+      let html = `
+        <html><head><title>Relatório Manutenção — ${hotel}</title>
+        <style>
+          body{font-family:system-ui,sans-serif;padding:24px;color:#111}
+          h1{font-size:18px;margin:0 0 4px}
+          h2{font-size:14px;margin:20px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px}
+          table{border-collapse:collapse;width:100%;font-size:11px}
+          th,td{border:1px solid #ccc;padding:4px 6px;text-align:left}
+          th{background:#f1f5f9}
+          .meta{color:#666;font-size:12px;margin-bottom:16px}
+          .ok{color:#059669}.prob{color:#e11d48}.pend{color:#d97706}
+        </style></head><body>
+        <h1>Controle de Manutenção Preventiva — ${esc(hotel)}</h1>
+        <div class="meta">Gerado em ${new Date().toLocaleString("pt-BR")}
+          ${de || ate ? ` · Período: ${formatarData(de) || "…"} a ${formatarData(ate) || "…"}` : ""}</div>
+        <p><b>Resumo:</b> ${c.ok} OK · ${c.parcial} parcial · ${c.pendente} pendente · ${c.problema} problema · ${c.total} unidades</p>
+        <h2>Unidades</h2>
+        <table><thead><tr>
+          <th>Unidade</th><th>Data</th><th>Funcionário</th>
+          ${ITENS.map(i => `<th>${i.label}</th>`).join("")}
+          <th>Status</th><th>Serviço</th>
+        </tr></thead><tbody>
+      `;
+      UNIDADES.forEach(u => {
+        const r = registros[u.id] || {};
+        const s = statusUnidade(u.id);
+        html += `<tr>
+          <td>${labelUnidade(u)}</td>
+          <td>${formatarData(r.data)}</td>
+          <td>${esc(r.funcionario || "")}</td>
+          ${ITENS.map(i => {
+            const v = r.itens?.[i.key] || "";
+            const cls = v === "ok" ? "ok" : v === "problema" ? "prob" : "";
+            return `<td class="${cls}">${v}</td>`;
+          }).join("")}
+          <td>${s}</td>
+          <td>${esc(r.servico || "")}</td>
+        </tr>`;
+      });
+      html += `</tbody></table></body></html>`;
+      const w = window.open("", "_blank");
+      if (!w) { toast("Permita pop-ups para imprimir"); return; }
+      w.document.write(html);
+      w.document.close();
+      setTimeout(() => w.print(), 300);
+    }
+
+    // ==================== UTILS ====================
+    function esc(s) {
+      return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function toast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.style.opacity = "1";
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => { el.style.opacity = "0"; }, 2000);
+    }
+
+    // ==================== INIT ====================
+    (async function init() {
+      carregarLocal();
+      renderLista();
+      atualizarBadgeAlertas();
+      atualizarInfoStorage();
+      if (supabaseClient) {
+        await carregarDoSupabase();
+        renderLista();
+        atualizarBadgeAlertas();
+        atualizarInfoStorage();
+      } else {
+        setSyncStatus("Modo local — coloque config.js na mesma pasta", "local");
+      }
+    })();
+  </script>
+</body>
+</html>
