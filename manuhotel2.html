@@ -42,7 +42,7 @@
         <div>
           <p class="text-teal-100 text-xs font-medium uppercase tracking-wide">Hotel</p>
           <h1 class="text-lg font-bold leading-tight">Manutenção Preventiva</h1>
-          <p id="db-status" class="text-[11px] text-teal-200/90 mt-0.5">Conectando ao banco…</p>
+          <p id="db-status" class="text-[11px] text-teal-200/90 mt-0.5">Desenvolvido por = Léo Cruz…</p>
         </div>
         <div class="flex gap-1.5">
           <button onclick="recarregarDoBanco()" class="bg-teal-600/50 hover:bg-teal-600 w-10 h-10 rounded-xl flex items-center justify-center" title="Atualizar">
@@ -72,7 +72,7 @@
     </nav>
   </header>
 
-  <!-- ========== ABA LISTA ========== -->
+
   <section id="aba-lista" class="flex-1 flex flex-col min-h-0">
     <div class="bg-teal-700 px-3 pb-3">
       <div class="flex gap-2">
@@ -115,7 +115,7 @@
     </main>
   </section>
 
-  <!-- ========== ABA RELATÓRIOS ========== -->
+
   <section id="aba-relatorios" class="hide flex-1 overflow-y-auto px-3 py-3 safe-bottom space-y-3">
     <!-- Período -->
     <div class="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm">
@@ -140,10 +140,10 @@
       </div>
     </div>
 
-    <!-- KPIs -->
+  
     <div class="grid grid-cols-2 gap-2" id="rel-kpis"></div>
 
-    <!-- Progresso geral -->
+    
     <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
       <h2 class="font-bold text-slate-800 text-sm mb-3"><i class="fas fa-tasks text-teal-600 mr-1.5"></i>Progresso geral</h2>
       <div class="flex items-center gap-4">
@@ -161,25 +161,25 @@
       </div>
     </div>
 
-    <!-- Itens com mais problemas -->
+ 
     <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
       <h2 class="font-bold text-slate-800 text-sm mb-3"><i class="fas fa-exclamation-triangle text-rose-500 mr-1.5"></i>Itens com mais problemas</h2>
       <div id="rel-itens-problema" class="space-y-2"></div>
     </div>
 
-    <!-- Ranking funcionários -->
+   
     <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
       <h2 class="font-bold text-slate-800 text-sm mb-3"><i class="fas fa-user-check text-teal-600 mr-1.5"></i>Por funcionário</h2>
       <div id="rel-funcionarios" class="space-y-2"></div>
     </div>
 
-    <!-- Últimas manutenções -->
+    
     <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
       <h2 class="font-bold text-slate-800 text-sm mb-3"><i class="fas fa-history text-slate-500 mr-1.5"></i>Últimas atualizações</h2>
       <div id="rel-recentes" class="space-y-2"></div>
     </div>
 
-    <!-- Exportar relatório -->
+  
     <div class="grid grid-cols-2 gap-2 pb-4">
       <button onclick="exportarCSV()" class="py-3 rounded-xl bg-white border border-slate-200 font-medium text-sm shadow-sm">
         <i class="fas fa-file-csv text-emerald-600 mr-1"></i> CSV
@@ -193,7 +193,7 @@
     </div>
   </section>
 
-  <!-- ========== ABA ALERTAS ========== -->
+
   <section id="aba-alertas" class="hide flex-1 overflow-y-auto px-3 py-3 safe-bottom space-y-3">
     <div class="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm">
       <label class="text-xs font-semibold text-slate-500">Considerar atrasado após (dias)</label>
@@ -206,7 +206,7 @@
     <div id="lista-alertas" class="space-y-2"></div>
   </section>
 
-  <!-- ========== ABA MAIS ========== -->
+ 
   <section id="aba-mais" class="hide flex-1 overflow-y-auto px-3 py-3 safe-bottom space-y-3">
     <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
       <h2 class="font-bold text-slate-800"><i class="fas fa-cog text-slate-500 mr-1.5"></i>Configurações</h2>
@@ -254,7 +254,6 @@
     </div>
   </section>
 
-  <!-- ========== SHEET EDIÇÃO ========== -->
   <div id="overlay" class="overlay fixed inset-0 bg-black/50 z-40" onclick="fecharSheet()"></div>
   <div id="sheet" class="sheet fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[92vh] flex flex-col safe-bottom">
     <div class="flex items-center justify-between px-4 pt-3 pb-2 border-b sticky top-0 bg-white rounded-t-3xl z-10">
@@ -304,7 +303,7 @@
         <textarea id="campo-obs" rows="2" placeholder="Observações..." class="w-full border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-50 outline-none focus:ring-2 focus:ring-teal-500 resize-none"></textarea>
       </div>
 
-      <!-- Histórico da unidade -->
+     
       <div id="historico-box" class="hide">
         <h3 class="text-sm font-bold text-slate-700 mb-2"><i class="fas fa-clock-rotate-left text-slate-400 mr-1"></i> Histórico</h3>
         <div id="historico-lista" class="space-y-1.5 text-xs"></div>
@@ -320,14 +319,14 @@
     </div>
   </div>
 
-  <!-- Toast -->
+
   <div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-24 z-[60] bg-slate-900 text-white text-sm px-4 py-2.5 rounded-full shadow-xl opacity-0 pointer-events-none transition-opacity duration-300 max-w-[90%] text-center"></div>
 
-  <!-- Área oculta para impressão -->
+
   <div id="print-area" class="hidden"></div>
 
   <script>
-    // ==================== CONSTANTES ====================
+ 
     const ITENS = [
       { key: "ar", label: "Ar-condicionado", icon: "fa-snowflake" },
       { key: "frigobar", label: "Frigobar", icon: "fa-wine-bottle" },
@@ -354,7 +353,7 @@
     let supabaseClient = null;
     let salvando = false;
 
-    // ==================== SUPABASE (única fonte de dados) ====================
+
     try {
       if (window.SUPABASE_CONFIG?.url && window.SUPABASE_CONFIG?.key) {
         supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
@@ -528,7 +527,7 @@
         `${n} unidades · ${h} no histórico · somente banco de dados · ${new Date().toLocaleString("pt-BR")}`;
     }
 
-    // ==================== STATUS ====================
+  
     function diasDesde(iso) {
       if (!iso) return Infinity;
       const d = new Date(iso + "T12:00:00");
@@ -575,7 +574,7 @@
       return `${p[2]}/${p[1]}/${p[0]}`;
     }
 
-    // ==================== ABAS ====================
+  
     function mostrarAba(nome) {
       abaAtual = nome;
       ["lista", "relatorios", "alertas", "mais"].forEach(a => {
@@ -597,7 +596,7 @@
       if (nome === "lista") renderLista();
     }
 
-    // ==================== LISTA ====================
+ 
     function renderLista() {
       const busca = (document.getElementById("busca").value || "").trim().toLowerCase();
       const filtro = document.getElementById("filtro-status").value;
@@ -673,7 +672,7 @@
       }).join("");
     }
 
-    // ==================== SHEET ====================
+ 
     function abrirSheet(id) {
       unidadeAtual = id;
       const u = UNIDADES.find(x => x.id === id);
@@ -691,7 +690,7 @@
       document.getElementById("campo-servico").value = r.servico || "";
       document.getElementById("campo-obs").value = r.obs || "";
 
-      // datalist funcionários
+  
       const funcs = [...new Set(Object.values(registros).map(x => x.funcionario).filter(Boolean))];
       if (config.funcPadrao && !funcs.includes(config.funcPadrao)) funcs.unshift(config.funcPadrao);
       document.getElementById("lista-funcs").innerHTML = funcs.map(f => `<option value="${esc(f)}">`).join("");
@@ -867,7 +866,7 @@
       }
     }
 
-    // ==================== RELATÓRIOS ====================
+   
     function periodoFiltro() {
       const modo = document.getElementById("rel-periodo").value;
       let de = document.getElementById("rel-de").value;
@@ -920,7 +919,7 @@
         <div class="flex justify-between border-t pt-1 mt-1"><span class="text-slate-500">Total unidades</span><span class="font-semibold">${c.total}</span></div>
       `;
 
-      // KPIs do período (baseados em registros com data no período)
+   
       const noPer = UNIDADES.filter(u => {
         const r = registros[u.id];
         return r && noPeriodo(r.data, de, ate);
@@ -948,7 +947,7 @@
         </div>
       `;
 
-      // Itens com mais problemas
+     
       const contItem = {};
       ITENS.forEach(i => { contItem[i.key] = 0; });
       UNIDADES.forEach(u => {
@@ -978,7 +977,7 @@
           </div>
         `).join("");
 
-      // Por funcionário
+    
       const porFunc = {};
       UNIDADES.forEach(u => {
         const r = registros[u.id];
@@ -1006,7 +1005,7 @@
           </div>
         `).join("");
 
-      // Recentes
+   
       const recentes = UNIDADES
         .map(u => ({ u, r: registros[u.id] }))
         .filter(x => x.r?.updatedAt || x.r?.data)
@@ -1033,7 +1032,7 @@
         }).join("");
     }
 
-    // ==================== ALERTAS ====================
+   
     function listarAlertas() {
       const alertas = [];
       UNIDADES.forEach(u => {
@@ -1111,7 +1110,7 @@
       atualizarBadgeAlertas();
     }
 
-    // ==================== AÇÕES RÁPIDAS ====================
+   
     function marcarVariosOK() {
       const nome = prompt("Marcar vários apartamentos como OK.\nDigite os números separados por vírgula ou intervalo (ex: 1,2,5-10):");
       if (!nome) return;
@@ -1173,7 +1172,7 @@
       return [...out];
     }
 
-    // ==================== EXPORT / IMPORT ====================
+
     function exportarJSON() {
       const payload = {
         app: "manutencao-hotel",
@@ -1209,7 +1208,7 @@
         ];
         linhas.push(row.join(sep));
       });
-      // BOM para Excel
+  
       baixarArquivo("\uFEFF" + linhas.join("\n"), `manutencao_hotel_${new Date().toISOString().slice(0, 10)}.csv`, "text/csv;charset=utf-8");
       toast("CSV exportado");
     }
