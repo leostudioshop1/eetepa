@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
+  <script src="horario.js"></script>
   <style>
     .horario-cell { transition: all 0.2s; min-height: 64px; }
     .horario-cell:hover { transform: scale(1.02); z-index: 10; }
@@ -178,48 +179,25 @@
       console.warn("Erro ao inicializar Supabase:", e);
     }
 
-    const DIAS = ["segunda", "terca", "quarta", "quinta", "sexta"];
-    const DIAS_LABEL = {
-      segunda: "Segunda", terca: "Terça", quarta: "Quarta",
-      quinta: "Quinta", sexta: "Sexta"
-    };
-
-    // Horários compatíveis com o Gerenciador de Disponibilidade
-    const HORARIOS = {
-      manha: [
-        "07:00 - 07:45", "07:45 - 08:30", "08:30 - 09:15",
-        "09:30 - 10:15", "10:15 - 11:00", "11:00 - 11:45"
-      ],
-      tarde: [
-        "13:00 - 13:35", "13:35 - 14:10", "14:10 - 14:45",
-        "15:00 - 15:35", "15:35 - 16:10", "16:10 - 16:45"
-      ],
-      noite: [
-        "19:00 - 19:35", "19:35 - 20:10", "20:10 - 20:40",
-        "21:00 - 21:35", "21:35 - 22:10"
-      ]
-    };
-
     // Estado local (turmas, disciplinas e grade ficam no navegador)
-    let turmas = JSON.parse(localStorage.getItem("eetepa_turmas") || "[]");
-    let disciplinas = JSON.parse(localStorage.getItem("eetepa_disciplinas") || "[]");
-    let grade = JSON.parse(localStorage.getItem("eetepa_grade") || "{}"); // { turmaId: { "segunda|07:00 - 07:45": { disciplina, professorId, professorNome, cor } } }
-    let professores = []; // carregados do Supabase
+    // A lógica de negócio (disponibilidade + choque) está em horario.js
 
-    // Contexto do modal
-    let modalCtx = { dia: null, horario: null, turmaId: null };
-
-    // ==================== UTILITÁRIOS ====================
-    function salvarLocal() {
-      localStorage.setItem("eetepa_turmas", JSON.stringify(turmas));
-      localStorage.setItem("eetepa_disciplinas", JSON.stringify(disciplinas));
-      localStorage.setItem("eetepa_grade", JSON.stringify(grade));
+    function persistirLocal(data) {
+      localStorage.setItem("eetepa_turmas", JSON.stringify(data.turmas));
+      localStorage.setItem("eetepa_disciplinas", JSON.stringify(data.disciplinas));
+      localStorage.setItem("eetepa_grade", JSON.stringify(data.grade));
     }
 
-    function uid() {
-      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-    }
+    // Inicializa o módulo Horario com o estado salvo
+    Horario.init({
+      turmas: JSON.parse(localStorage.getItem("eetepa_turmas") || "[]"),
+      disciplinas: JSON.parse(localStorage.getItem("eetepa_disciplinas") || "[]"),
+      grade: JSON.parse(localStorage.getItem("eetepa_grade") || "{}"),
+      professores: [],
+      onSave: persistirLocal,
+    });
 
+    // ==================== UI HELPERS ====================
     function showTab(n) {
       document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
       document.querySelectorAll(".tab-button").forEach(el => el.classList.remove("tab-active"));
@@ -231,25 +209,23 @@
     function addTurma() {
       const nome = document.getElementById("nova-turma").value.trim();
       const turno = document.getElementById("turno-turma").value;
-      if (!nome) return alert("Digite o nome da turma");
-      turmas.push({ id: uid(), nome, turno });
+      const res = Horario.addTurma(nome, turno);
+      if (!res.ok) return alert(res.erro);
       document.getElementById("nova-turma").value = "";
-      salvarLocal();
       renderTurmas();
       atualizarFiltroTurma();
     }
 
     function removerTurma(id) {
       if (!confirm("Remover esta turma e todas as suas alocações?")) return;
-      turmas = turmas.filter(t => t.id !== id);
-      delete grade[id];
-      salvarLocal();
+      Horario.removerTurma(id);
       renderTurmas();
       atualizarFiltroTurma();
       renderGrade();
     }
 
     function renderTurmas() {
+      const { turmas } = Horario.getState();
       const ul = document.getElementById("lista-turmas");
       if (!turmas.length) {
         ul.innerHTML = `<li class="text-gray-400 text-sm text-center py-4">Nenhuma turma cadastrada</li>`;
@@ -271,21 +247,20 @@
     // ==================== DISCIPLINAS ====================
     function addDisciplina() {
       const nome = document.getElementById("nova-disciplina").value.trim();
-      if (!nome) return alert("Digite o nome da disciplina");
-      disciplinas.push({ id: uid(), nome });
+      const res = Horario.addDisciplina(nome);
+      if (!res.ok) return alert(res.erro);
       document.getElementById("nova-disciplina").value = "";
-      salvarLocal();
       renderDisciplinas();
     }
 
     function removerDisciplina(id) {
       if (!confirm("Remover esta disciplina?")) return;
-      disciplinas = disciplinas.filter(d => d.id !== id);
-      salvarLocal();
+      Horario.removerDisciplina(id);
       renderDisciplinas();
     }
 
     function renderDisciplinas() {
+      const { disciplinas } = Horario.getState();
       const ul = document.getElementById("lista-disciplinas");
       if (!disciplinas.length) {
         ul.innerHTML = `<li class="text-gray-400 text-sm text-center py-4">Nenhuma disciplina</li>`;
@@ -321,14 +296,14 @@
         return;
       }
 
-      professores = data || [];
+      Horario.setProfessores(data || []);
       renderProfessores();
       renderLegenda();
-      // Re-valida grade se necessário
       renderGrade();
     }
 
     function renderProfessores() {
+      const { professores } = Horario.getState();
       const ul = document.getElementById("lista-professores");
       if (!professores.length) {
         ul.innerHTML = `<li class="text-gray-400 text-sm text-center py-4">Nenhum professor cadastrado no Gerenciador de Disponibilidade.</li>`;
@@ -344,7 +319,7 @@
               <div class="font-medium">${p.nome}</div>
             </div>
             <div class="flex flex-wrap gap-1">
-              ${dias.map(d => `<span class="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">${DIAS_LABEL[d] || d}</span>`).join("") || '<span class="text-xs text-gray-400">Sem disponibilidade</span>'}
+              ${dias.map(d => `<span class="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">${Horario.DIAS_LABEL[d] || d}</span>`).join("") || '<span class="text-xs text-gray-400">Sem disponibilidade</span>'}
             </div>
           </li>
         `;
@@ -352,6 +327,7 @@
     }
 
     function renderLegenda() {
+      const { professores } = Horario.getState();
       const el = document.getElementById("legenda-professores");
       if (!professores.length) {
         el.innerHTML = `<span class="text-gray-400 text-sm">Nenhum professor carregado</span>`;
@@ -367,6 +343,7 @@
 
     // ==================== GRADE ====================
     function atualizarFiltroTurma() {
+      const { turmas } = Horario.getState();
       const sel = document.getElementById("filtro-turma");
       const atual = sel.value;
       sel.innerHTML = turmas.length
@@ -377,6 +354,7 @@
     }
 
     function renderGrade() {
+      const { turmas, grade } = Horario.getState();
       const turmaId = document.getElementById("filtro-turma").value;
       const tbody = document.getElementById("corpo-grade");
       if (!turmaId) {
@@ -387,13 +365,13 @@
       const turma = turmas.find(t => t.id === turmaId);
       if (!turma) return;
 
-      const horarios = HORARIOS[turma.turno] || [];
+      const horarios = Horario.getHorariosDoTurno(turma.turno);
       const alocacoes = grade[turmaId] || {};
 
       tbody.innerHTML = horarios.map(h => `
         <tr>
           <td class="border p-2 text-sm font-medium bg-gray-50 whitespace-nowrap">${h}</td>
-          ${DIAS.map(dia => {
+          ${Horario.DIAS.map(dia => {
             const key = `${dia}|${h}`;
             const cell = alocacoes[key];
             if (cell) {
@@ -423,26 +401,24 @@
       const turmaId = document.getElementById("filtro-turma").value;
       if (!turmaId) return;
       if (!confirm("Limpar todas as alocações desta turma?")) return;
-      grade[turmaId] = {};
-      salvarLocal();
+      Horario.limparGradeTurma(turmaId);
       renderGrade();
     }
 
     function removerAlocacao(turmaId, key) {
       if (!confirm("Remover esta alocação?")) return;
-      if (grade[turmaId]) delete grade[turmaId][key];
-      salvarLocal();
+      Horario.removerAlocacao(turmaId, key);
       renderGrade();
     }
 
     // ==================== MODAL ====================
     function abrirModal(dia, horario, turmaId) {
-      modalCtx = { dia, horario, turmaId };
+      Horario.setModalCtx(dia, horario, turmaId);
+      const { turmas } = Horario.getState();
       const turma = turmas.find(t => t.id === turmaId);
       document.getElementById("modal-contexto").textContent =
-        `${DIAS_LABEL[dia] || dia} • ${horario} • ${turma?.nome || ""}`;
+        `${Horario.DIAS_LABEL[dia] || dia} • ${horario} • ${turma?.nome || ""}`;
 
-      // Preenche turmas
       const selTurma = document.getElementById("modal-turma");
       selTurma.innerHTML = turmas.map(t =>
         `<option value="${t.id}" ${t.id === turmaId ? "selected" : ""}>${t.nome} (${t.turno})</option>`
@@ -459,6 +435,7 @@
     }
 
     function atualizarDisciplinasModal() {
+      const { disciplinas } = Horario.getState();
       const sel = document.getElementById("modal-disciplina");
       sel.innerHTML = disciplinas.length
         ? `<option value="">Selecione...</option>` + disciplinas.map(d =>
@@ -469,6 +446,7 @@
     }
 
     function atualizarProfessoresModal() {
+      const { professores } = Horario.getState();
       const sel = document.getElementById("modal-professor");
       if (!professores.length) {
         sel.innerHTML = `<option value="">Nenhum professor carregado</option>`;
@@ -480,28 +458,17 @@
       validarDisponibilidade();
     }
 
-    function professorDisponivel(prof, dia, horario) {
-      if (!prof || !prof.disponibilidade) return false;
-      const disp = prof.disponibilidade;
-
-      // Formato novo: { segunda: ["13:00 - 13:35", ...], ... }
-      if (disp[dia] && Array.isArray(disp[dia])) {
-        return disp[dia].includes(horario);
-      }
-
-      // Formato antigo (compatibilidade): { dias: [...], horarios: [...] }
-      if (Array.isArray(disp.dias) && Array.isArray(disp.horarios)) {
-        return disp.dias.includes(dia) && disp.horarios.includes(horario);
-      }
-
-      return false;
-    }
-
+    /**
+     * Validação em tempo real no modal:
+     * - Disponibilidade cadastrada (dias + horários)
+     * - Choque: mesmo professor no mesmo dia/horário em outra turma
+     */
     function validarDisponibilidade() {
       const aviso = document.getElementById("aviso-disponibilidade");
       const btn = document.getElementById("btn-salvar");
       const profId = document.getElementById("modal-professor").value;
       const disc = document.getElementById("modal-disciplina").value;
+      const ctx = Horario.getModalCtx();
 
       if (!profId || !disc) {
         aviso.classList.add("hidden");
@@ -509,42 +476,34 @@
         return;
       }
 
-      const prof = professores.find(p => p.id === profId);
-      const ok = professorDisponivel(prof, modalCtx.dia, modalCtx.horario);
+      const turmaId = document.getElementById("modal-turma").value || ctx.turmaId;
+      const validacao = Horario.validarAlocacao(profId, ctx.dia, ctx.horario, turmaId, disc);
 
       aviso.classList.remove("hidden");
-      if (ok) {
+      if (validacao.valido) {
         aviso.className = "mt-4 text-sm p-3 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200";
-        aviso.innerHTML = `<i class="fas fa-check-circle mr-1"></i> Professor disponível neste horário.`;
+        aviso.innerHTML = `<i class="fas fa-check-circle mr-1"></i> ${validacao.mensagem}`;
         btn.disabled = false;
       } else {
         aviso.className = "mt-4 text-sm p-3 rounded-lg bg-red-50 text-red-800 border border-red-200";
-        aviso.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i> Professor <strong>não</strong> está disponível neste dia/horário.`;
+        aviso.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i> ${validacao.mensagem}`;
         btn.disabled = true;
       }
     }
 
     function salvarAlocacao() {
+      const ctx = Horario.getModalCtx();
       const turmaId = document.getElementById("modal-turma").value;
       const disciplina = document.getElementById("modal-disciplina").value;
       const profId = document.getElementById("modal-professor").value;
-      if (!turmaId || !disciplina || !profId) return;
 
-      const prof = professores.find(p => p.id === profId);
-      if (!prof) return;
+      const res = Horario.salvarAlocacao(turmaId, ctx.dia, ctx.horario, disciplina, profId);
+      if (!res.ok) {
+        alert(res.mensagem.replace(/<[^>]+>/g, ""));
+        return;
+      }
 
-      if (!grade[turmaId]) grade[turmaId] = {};
-      const key = `${modalCtx.dia}|${modalCtx.horario}`;
-      grade[turmaId][key] = {
-        disciplina,
-        professorId: prof.id,
-        professorNome: prof.nome,
-        cor: prof.cor || "#4f46e5"
-      };
-
-      salvarLocal();
       fecharModal();
-      // Atualiza o filtro se mudou de turma
       document.getElementById("filtro-turma").value = turmaId;
       renderGrade();
     }
@@ -560,6 +519,7 @@
     }
 
     async function gerarPDFCompleto() {
+      const { turmas } = Horario.getState();
       if (!turmas.length) return alert("Nenhuma turma cadastrada.");
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF("landscape", "pt", "a4");
@@ -571,7 +531,6 @@
         const t = turmas[i];
         document.getElementById("filtro-turma").value = t.id;
         renderGrade();
-        // pequeno delay para o DOM atualizar
         await new Promise(r => setTimeout(r, 100));
 
         const canvas = await html2canvas(document.getElementById("grade-horarios"), {
@@ -586,7 +545,6 @@
         pdf.addImage(img, "PNG", 20, 45, imgW, Math.min(imgH, pageH - 70));
       }
 
-      // volta o filtro original
       renderGrade();
       pdf.save(`Horarios_Completos_EETEPA.pdf`);
     }
