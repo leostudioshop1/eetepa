@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Master Horário EETEPA</title>
+  <link rel="icon" type="image/png" href="icone.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <style>
+    .horario-cell { transition: all 0.2s; min-height: 64px; }
+    .horario-cell:hover { transform: scale(1.02); z-index: 10; }
+    .professor-tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 9999px; }
+    .title-animation { animation: slideTitle 8s infinite alternate ease-in-out; }
+    @keyframes slideTitle { 0% { transform: translateX(-10px); } 100% { transform: translateX(10px); } }
+    .blocked { filter: grayscale(1); pointer-events: none; opacity: 0.7; }
+    .tab-active { border-bottom: 3px solid #4f46e5; color: #4f46e5; }
+    .cell-ocupada { cursor: pointer; }
+    .cell-livre { cursor: pointer; background: #fafafa; }
+    .cell-livre:hover { background: #eef2ff; }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans flex flex-col h-screen" oncontextmenu="return false;">
+
+  <div class="bg-indigo-700 text-white py-4 px-6 flex items-center justify-between shadow-lg">
+    <div class="flex items-center gap-3">
+      <i class="fas fa-clock text-3xl"></i>
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight title-animation">Master Horário EETEPA</h1>
+        <p class="text-indigo-200 text-sm">Sistema de Gerenciamento de Horários</p>
+      </div>
+    </div>
+    <div class="text-right">
+      <div id="device-info" class="text-sm opacity-90"></div>
+    </div>
+  </div>
+
+  <div class="flex flex-1 overflow-hidden" id="main-content">
+    <!-- Sidebar -->
+    <div class="w-96 bg-white shadow-xl overflow-y-auto flex-shrink-0">
+      <div class="p-6 border-b">
+        <h2 class="text-xl font-semibold text-gray-800">Controles</h2>
+      </div>
+      <div class="flex border-b">
+        <button onclick="showTab(0)" id="btn-tab-0" class="tab-button flex-1 py-3 font-medium tab-active">Turmas</button>
+        <button onclick="showTab(1)" id="btn-tab-1" class="tab-button flex-1 py-3 font-medium">Disciplinas</button>
+        <button onclick="showTab(2)" id="btn-tab-2" class="tab-button flex-1 py-3 font-medium">Professores</button>
+      </div>
+
+      <!-- Tab Turmas -->
+      <div id="tab-0" class="tab-content p-6">
+        <div class="space-y-4">
+          <input id="nova-turma" type="text" placeholder="Nome da Turma" class="w-full border rounded-lg px-4 py-2">
+          <div>
+            <label class="block text-sm font-medium mb-2">Turno</label>
+            <select id="turno-turma" class="w-full border rounded-lg px-4 py-2">
+              <option value="manha">Manhã</option>
+              <option value="tarde">Tarde</option>
+              <option value="noite">Noite</option>
+            </select>
+          </div>
+          <button onclick="addTurma()" class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 font-medium">
+            Adicionar Turma
+          </button>
+        </div>
+        <ul id="lista-turmas" class="space-y-3 mt-8"></ul>
+      </div>
+
+      <!-- Tab Disciplinas -->
+      <div id="tab-1" class="tab-content p-6 hidden">
+        <div class="flex gap-2 mb-4">
+          <input id="nova-disciplina" type="text" placeholder="Nova Disciplina" class="flex-1 border rounded-lg px-4 py-2">
+          <button onclick="addDisciplina()" class="bg-indigo-600 text-white px-5 rounded-lg hover:bg-indigo-700">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+        <ul id="lista-disciplinas" class="space-y-2"></ul>
+      </div>
+
+      <!-- Tab Professores (somente leitura do Supabase) -->
+      <div id="tab-2" class="tab-content p-6 hidden">
+        <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-5 text-sm text-indigo-800">
+          <i class="fas fa-info-circle mr-1"></i>
+          Os professores são carregados do <strong>Gerenciador de Disponibilidade</strong>.
+          Cadastre/edite a disponibilidade lá.
+        </div>
+        <button onclick="carregarProfessores()" class="w-full mb-4 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium">
+          <i class="fas fa-sync-alt"></i> Atualizar lista do Supabase
+        </button>
+        <ul id="lista-professores" class="space-y-3"></ul>
+      </div>
+    </div>
+
+    <!-- Grade principal -->
+    <div class="flex-1 flex flex-col min-w-0">
+      <div class="bg-white border-b px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+        <select id="filtro-turma" onchange="renderGrade()" class="border rounded-lg px-4 py-2 min-w-[200px]"></select>
+        <div class="flex flex-wrap gap-3">
+          <button onclick="exportarImagem()" class="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50">
+            <i class="fas fa-image"></i> Exportar PNG
+          </button>
+          <button onclick="gerarPDFCompleto()" class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
+            <i class="fas fa-file-pdf"></i> Gerar PDF Completo
+          </button>
+          <button onclick="limparGrade()" class="flex items-center gap-2 px-4 py-2 text-red-600 border rounded-lg hover:bg-red-50">
+            <i class="fas fa-trash"></i> Limpar
+          </button>
+        </div>
+      </div>
+      <div class="flex-1 overflow-auto p-6" id="grade-container">
+        <table id="grade-horarios" class="w-full border-collapse bg-white shadow-lg rounded-xl overflow-hidden">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="border p-3 w-36">Horário</th>
+              <th class="border p-3">Segunda</th>
+              <th class="border p-3">Terça</th>
+              <th class="border p-3">Quarta</th>
+              <th class="border p-3">Quinta</th>
+              <th class="border p-3">Sexta</th>
+            </tr>
+          </thead>
+          <tbody id="corpo-grade"></tbody>
+        </table>
+      </div>
+      <div class="bg-white border-t p-4">
+        <h3 class="font-medium mb-2 text-sm text-gray-600">Legenda de Professores</h3>
+        <div id="legenda-professores" class="flex flex-wrap gap-4"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-gray-900 text-white py-3 px-6 text-center text-sm">
+    <div class="flex items-center justify-center gap-2">
+      <i class="fas fa-code"></i>
+      <span>Desenvolvido por: <strong>Léo Cruz</strong> - Engenheiro de Software</span>
+    </div>
+  </footer>
+
+  <!-- Modal de alocação -->
+  <div id="modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl p-8 w-full max-w-md">
+      <h2 class="text-xl font-bold mb-2" id="modal-title">Alocar Aula</h2>
+      <p id="modal-contexto" class="text-sm text-gray-500 mb-6"></p>
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium mb-1">Turma</label>
+          <select id="modal-turma" class="w-full border rounded-lg px-4 py-3" onchange="atualizarDisciplinasModal()"></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Disciplina</label>
+          <select id="modal-disciplina" class="w-full border rounded-lg px-4 py-3" onchange="atualizarProfessoresModal()"></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Professor</label>
+          <select id="modal-professor" class="w-full border rounded-lg px-4 py-3" onchange="validarDisponibilidade()"></select>
+        </div>
+      </div>
+      <div id="aviso-disponibilidade" class="mt-4 text-sm p-3 rounded-lg hidden"></div>
+      <div class="flex gap-3 mt-8">
+        <button onclick="fecharModal()" class="flex-1 py-3 border rounded-xl font-medium hover:bg-gray-50">Cancelar</button>
+        <button onclick="salvarAlocacao()" id="btn-salvar" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-medium disabled:opacity-50" disabled>Salvar Alocação</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==================== CONFIGURAÇÃO ====================
+    let supabaseClient = null;
+    try {
+      if (window.SUPABASE_CONFIG?.url && window.SUPABASE_CONFIG?.key) {
+        supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
+      }
+    } catch (e) {
+      console.warn("Erro ao inicializar Supabase:", e);
+    }
+
+    const DIAS = ["segunda", "terca", "quarta", "quinta", "sexta"];
+    const DIAS_LABEL = {
+      segunda: "Segunda", terca: "Terça", quarta: "Quarta",
+      quinta: "Quinta", sexta: "Sexta"
+    };
+
+    // Horários compatíveis com o Gerenciador de Disponibilidade
+    const HORARIOS = {
+      manha: [
+        "07:00 - 07:45", "07:45 - 08:30", "08:30 - 09:15",
+        "09:30 - 10:15", "10:15 - 11:00", "11:00 - 11:45"
+      ],
+      tarde: [
+        "13:00 - 13:35", "13:35 - 14:10", "14:10 - 14:45",
+        "15:00 - 15:35", "15:35 - 16:10", "16:10 - 16:45"
+      ],
+      noite: [
+        "19:00 - 19:35", "19:35 - 20:10", "20:10 - 20:40",
+        "21:00 - 21:35", "21:35 - 22:10"
+      ]
+    };
+
+    // Estado local (turmas, disciplinas e grade ficam no navegador)
+    let turmas = JSON.parse(localStorage.getItem("eetepa_turmas") || "[]");
+    let disciplinas = JSON.parse(localStorage.getItem("eetepa_disciplinas") || "[]");
+    let grade = JSON.parse(localStorage.getItem("eetepa_grade") || "{}"); // { turmaId: { "segunda|07:00 - 07:45": { disciplina, professorId, professorNome, cor } } }
+    let professores = []; // carregados do Supabase
+
+    // Contexto do modal
+    let modalCtx = { dia: null, horario: null, turmaId: null };
+
+    // ==================== UTILITÁRIOS ====================
+    function salvarLocal() {
+      localStorage.setItem("eetepa_turmas", JSON.stringify(turmas));
+      localStorage.setItem("eetepa_disciplinas", JSON.stringify(disciplinas));
+      localStorage.setItem("eetepa_grade", JSON.stringify(grade));
+    }
+
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    function showTab(n) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+      document.querySelectorAll(".tab-button").forEach(el => el.classList.remove("tab-active"));
+      document.getElementById(`tab-${n}`).classList.remove("hidden");
+      document.getElementById(`btn-tab-${n}`).classList.add("tab-active");
+    }
+
+    // ==================== TURMAS ====================
+    function addTurma() {
+      const nome = document.getElementById("nova-turma").value.trim();
+      const turno = document.getElementById("turno-turma").value;
+      if (!nome) return alert("Digite o nome da turma");
+      turmas.push({ id: uid(), nome, turno });
+      document.getElementById("nova-turma").value = "";
+      salvarLocal();
+      renderTurmas();
+      atualizarFiltroTurma();
+    }
+
+    function removerTurma(id) {
+      if (!confirm("Remover esta turma e todas as suas alocações?")) return;
+      turmas = turmas.filter(t => t.id !== id);
+      delete grade[id];
+      salvarLocal();
+      renderTurmas();
+      atualizarFiltroTurma();
+      renderGrade();
+    }
+
+    function renderTurmas() {
+      const ul = document.getElementById("lista-turmas");
+      if (!turmas.length) {
+        ul.innerHTML = `<li class="text-gray-400 text-sm text-center py-4">Nenhuma turma cadastrada</li>`;
+        return;
+      }
+      ul.innerHTML = turmas.map(t => `
+        <li class="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+          <div>
+            <div class="font-medium">${t.nome}</div>
+            <div class="text-xs text-gray-500 capitalize">${t.turno}</div>
+          </div>
+          <button onclick="removerTurma('${t.id}')" class="text-red-500 hover:text-red-700">
+            <i class="fas fa-trash"></i>
+          </button>
+        </li>
+      `).join("");
+    }
+
+    // ==================== DISCIPLINAS ====================
+    function addDisciplina() {
+      const nome = document.getElementById("nova-disciplina").value.trim();
+      if (!nome) return alert("Digite o nome da disciplina");
+      disciplinas.push({ id: uid(), nome });
+      document.getElementById("nova-disciplina").value = "";
+      salvarLocal();
+      renderDisciplinas();
+    }
+
+    function removerDisciplina(id) {
+      if (!confirm("Remover esta disciplina?")) return;
+      disciplinas = disciplinas.filter(d => d.id !== id);
+      salvarLocal();
+      renderDisciplinas();
+    }
+
+    function renderDisciplinas() {
+      const ul = document.getElementById("lista-disciplinas");
+      if (!disciplinas.length) {
+        ul.innerHTML = `<li class="text-gray-400 text-sm text-center py-4">Nenhuma disciplina</li>`;
+        return;
+      }
+      ul.innerHTML = disciplinas.map(d => `
+        <li class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2">
+          <span>${d.nome}</span>
+          <button onclick="removerDisciplina('${d.id}')" class="text-red-500 hover:text-red-700 text-sm">
+            <i class="fas fa-times"></i>
+          </button>
+        </li>
+      `).join("");
+    }
+
+    // ==================== PROFESSORES (Supabase) ====================
+    async function carregarProfessores() {
+      const ul = document.getElementById("lista-professores");
+      if (!supabaseClient) {
+        ul.innerHTML = `<li class="text-amber-600 text-sm p-3 bg-amber-50 rounded-lg">Configure o <code>config.js</code> com as credenciais do Supabase.</li>`;
+        return;
+      }
+
+      ul.innerHTML = `<li class="text-gray-400 text-sm text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Carregando...</li>`;
+
+      const { data, error } = await supabaseClient
+        .from("professores")
+        .select("*")
+        .order("nome");
+
+      if (error) {
+        ul.innerHTML = `<li class="text-red-500 text-sm">Erro: ${error.message}</li>`;
+        return;
+      }
+
+      professores = data || [];
+      renderProfessores();
+      renderLegenda();
+      // Re-valida grade se necessário
+      renderGrade();
+    }
+
+    function renderProfessores() {
+      const ul = document.getElementById("lista-professores");
+      if (!professores.length) {
+        ul.innerHTML = `<li class="text-gray-400 text-sm text-center py-4">Nenhum professor cadastrado no Gerenciador de Disponibilidade.</li>`;
+        return;
+      }
+
+      ul.innerHTML = professores.map(p => {
+        const dias = Object.keys(p.disponibilidade || {}).filter(d => (p.disponibilidade[d] || []).length > 0);
+        return `
+          <li class="bg-gray-50 rounded-xl p-4">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-8 h-8 rounded-full flex-shrink-0" style="background:${p.cor || '#4f46e5'}"></div>
+              <div class="font-medium">${p.nome}</div>
+            </div>
+            <div class="flex flex-wrap gap-1">
+              ${dias.map(d => `<span class="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">${DIAS_LABEL[d] || d}</span>`).join("") || '<span class="text-xs text-gray-400">Sem disponibilidade</span>'}
+            </div>
+          </li>
+        `;
+      }).join("");
+    }
+
+    function renderLegenda() {
+      const el = document.getElementById("legenda-professores");
+      if (!professores.length) {
+        el.innerHTML = `<span class="text-gray-400 text-sm">Nenhum professor carregado</span>`;
+        return;
+      }
+      el.innerHTML = professores.map(p => `
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 rounded-full" style="background:${p.cor || '#4f46e5'}"></div>
+          <span class="text-sm">${p.nome}</span>
+        </div>
+      `).join("");
+    }
+
+    // ==================== GRADE ====================
+    function atualizarFiltroTurma() {
+      const sel = document.getElementById("filtro-turma");
+      const atual = sel.value;
+      sel.innerHTML = turmas.length
+        ? turmas.map(t => `<option value="${t.id}">${t.nome} (${t.turno})</option>`).join("")
+        : `<option value="">Nenhuma turma</option>`;
+      if (atual && turmas.find(t => t.id === atual)) sel.value = atual;
+      renderGrade();
+    }
+
+    function renderGrade() {
+      const turmaId = document.getElementById("filtro-turma").value;
+      const tbody = document.getElementById("corpo-grade");
+      if (!turmaId) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-400 py-12">Selecione ou cadastre uma turma</td></tr>`;
+        return;
+      }
+
+      const turma = turmas.find(t => t.id === turmaId);
+      if (!turma) return;
+
+      const horarios = HORARIOS[turma.turno] || [];
+      const alocacoes = grade[turmaId] || {};
+
+      tbody.innerHTML = horarios.map(h => `
+        <tr>
+          <td class="border p-2 text-sm font-medium bg-gray-50 whitespace-nowrap">${h}</td>
+          ${DIAS.map(dia => {
+            const key = `${dia}|${h}`;
+            const cell = alocacoes[key];
+            if (cell) {
+              return `
+                <td class="border p-1 horario-cell cell-ocupada" style="background:${cell.cor || '#4f46e5'}20"
+                    onclick="abrirModal('${dia}', '${h}', '${turmaId}')"
+                    oncontextmenu="event.preventDefault(); removerAlocacao('${turmaId}', '${key}')">
+                  <div class="p-2 rounded-lg text-center">
+                    <div class="font-semibold text-sm truncate">${cell.disciplina}</div>
+                    <div class="text-xs mt-1 opacity-80 truncate">${cell.professorNome}</div>
+                  </div>
+                </td>
+              `;
+            }
+            return `
+              <td class="border p-1 horario-cell cell-livre"
+                  onclick="abrirModal('${dia}', '${h}', '${turmaId}')">
+                <div class="h-14 flex items-center justify-center text-gray-300 text-xs">+</div>
+              </td>
+            `;
+          }).join("")}
+        </tr>
+      `).join("");
+    }
+
+    function limparGrade() {
+      const turmaId = document.getElementById("filtro-turma").value;
+      if (!turmaId) return;
+      if (!confirm("Limpar todas as alocações desta turma?")) return;
+      grade[turmaId] = {};
+      salvarLocal();
+      renderGrade();
+    }
+
+    function removerAlocacao(turmaId, key) {
+      if (!confirm("Remover esta alocação?")) return;
+      if (grade[turmaId]) delete grade[turmaId][key];
+      salvarLocal();
+      renderGrade();
+    }
+
+    // ==================== MODAL ====================
+    function abrirModal(dia, horario, turmaId) {
+      modalCtx = { dia, horario, turmaId };
+      const turma = turmas.find(t => t.id === turmaId);
+      document.getElementById("modal-contexto").textContent =
+        `${DIAS_LABEL[dia] || dia} • ${horario} • ${turma?.nome || ""}`;
+
+      // Preenche turmas
+      const selTurma = document.getElementById("modal-turma");
+      selTurma.innerHTML = turmas.map(t =>
+        `<option value="${t.id}" ${t.id === turmaId ? "selected" : ""}>${t.nome} (${t.turno})</option>`
+      ).join("");
+
+      atualizarDisciplinasModal();
+      document.getElementById("aviso-disponibilidade").classList.add("hidden");
+      document.getElementById("btn-salvar").disabled = true;
+      document.getElementById("modal").classList.remove("hidden");
+    }
+
+    function fecharModal() {
+      document.getElementById("modal").classList.add("hidden");
+    }
+
+    function atualizarDisciplinasModal() {
+      const sel = document.getElementById("modal-disciplina");
+      sel.innerHTML = disciplinas.length
+        ? `<option value="">Selecione...</option>` + disciplinas.map(d =>
+            `<option value="${d.nome}">${d.nome}</option>`
+          ).join("")
+        : `<option value="">Nenhuma disciplina cadastrada</option>`;
+      atualizarProfessoresModal();
+    }
+
+    function atualizarProfessoresModal() {
+      const sel = document.getElementById("modal-professor");
+      if (!professores.length) {
+        sel.innerHTML = `<option value="">Nenhum professor carregado</option>`;
+        validarDisponibilidade();
+        return;
+      }
+      sel.innerHTML = `<option value="">Selecione...</option>` +
+        professores.map(p => `<option value="${p.id}">${p.nome}</option>`).join("");
+      validarDisponibilidade();
+    }
+
+    function professorDisponivel(prof, dia, horario) {
+      if (!prof || !prof.disponibilidade) return false;
+      const disp = prof.disponibilidade;
+
+      // Formato novo: { segunda: ["13:00 - 13:35", ...], ... }
+      if (disp[dia] && Array.isArray(disp[dia])) {
+        return disp[dia].includes(horario);
+      }
+
+      // Formato antigo (compatibilidade): { dias: [...], horarios: [...] }
+      if (Array.isArray(disp.dias) && Array.isArray(disp.horarios)) {
+        return disp.dias.includes(dia) && disp.horarios.includes(horario);
+      }
+
+      return false;
+    }
+
+    function validarDisponibilidade() {
+      const aviso = document.getElementById("aviso-disponibilidade");
+      const btn = document.getElementById("btn-salvar");
+      const profId = document.getElementById("modal-professor").value;
+      const disc = document.getElementById("modal-disciplina").value;
+
+      if (!profId || !disc) {
+        aviso.classList.add("hidden");
+        btn.disabled = true;
+        return;
+      }
+
+      const prof = professores.find(p => p.id === profId);
+      const ok = professorDisponivel(prof, modalCtx.dia, modalCtx.horario);
+
+      aviso.classList.remove("hidden");
+      if (ok) {
+        aviso.className = "mt-4 text-sm p-3 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200";
+        aviso.innerHTML = `<i class="fas fa-check-circle mr-1"></i> Professor disponível neste horário.`;
+        btn.disabled = false;
+      } else {
+        aviso.className = "mt-4 text-sm p-3 rounded-lg bg-red-50 text-red-800 border border-red-200";
+        aviso.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i> Professor <strong>não</strong> está disponível neste dia/horário.`;
+        btn.disabled = true;
+      }
+    }
+
+    function salvarAlocacao() {
+      const turmaId = document.getElementById("modal-turma").value;
+      const disciplina = document.getElementById("modal-disciplina").value;
+      const profId = document.getElementById("modal-professor").value;
+      if (!turmaId || !disciplina || !profId) return;
+
+      const prof = professores.find(p => p.id === profId);
+      if (!prof) return;
+
+      if (!grade[turmaId]) grade[turmaId] = {};
+      const key = `${modalCtx.dia}|${modalCtx.horario}`;
+      grade[turmaId][key] = {
+        disciplina,
+        professorId: prof.id,
+        professorNome: prof.nome,
+        cor: prof.cor || "#4f46e5"
+      };
+
+      salvarLocal();
+      fecharModal();
+      // Atualiza o filtro se mudou de turma
+      document.getElementById("filtro-turma").value = turmaId;
+      renderGrade();
+    }
+
+    // ==================== EXPORTAÇÃO ====================
+    async function exportarImagem() {
+      const el = document.getElementById("grade-horarios");
+      const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff" });
+      const link = document.createElement("a");
+      link.download = `horario_${new Date().toISOString().slice(0,10)}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
+
+    async function gerarPDFCompleto() {
+      if (!turmas.length) return alert("Nenhuma turma cadastrada.");
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF("landscape", "pt", "a4");
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+
+      for (let i = 0; i < turmas.length; i++) {
+        if (i > 0) pdf.addPage();
+        const t = turmas[i];
+        document.getElementById("filtro-turma").value = t.id;
+        renderGrade();
+        // pequeno delay para o DOM atualizar
+        await new Promise(r => setTimeout(r, 100));
+
+        const canvas = await html2canvas(document.getElementById("grade-horarios"), {
+          scale: 1.5, backgroundColor: "#ffffff"
+        });
+        const img = canvas.toDataURL("image/png");
+        const imgW = pageW - 40;
+        const imgH = (canvas.height * imgW) / canvas.width;
+
+        pdf.setFontSize(16);
+        pdf.text(`${t.nome} — ${t.turno.toUpperCase()}`, 20, 30);
+        pdf.addImage(img, "PNG", 20, 45, imgW, Math.min(imgH, pageH - 70));
+      }
+
+      // volta o filtro original
+      renderGrade();
+      pdf.save(`Horarios_Completos_EETEPA.pdf`);
+    }
+
+    // ==================== INIT ====================
+    function init() {
+      document.getElementById("device-info").textContent =
+        `${navigator.platform || ""} • ${new Date().toLocaleDateString("pt-BR")}`;
+
+      renderTurmas();
+      renderDisciplinas();
+      atualizarFiltroTurma();
+      carregarProfessores();
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>
