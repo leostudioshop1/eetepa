@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gerenciador de Disponibilidade - Professores</title>
+  <title>Disponibilidade - Professores</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
@@ -23,7 +23,7 @@
 <body class="bg-gray-50 min-h-screen">
 
   <div class="max-w-6xl mx-auto p-6">
-    <h1 class="text-4xl font-bold text-center text-indigo-700 mb-8">Gerenciador de Disponibilidade dos Professores</h1>
+    <h1 class="text-4xl font-bold text-center text-indigo-700 mb-8">Disponibilidade dos Melhores Professores do Brasil</h1>
 
     <!-- Formulário de Cadastro -->
     <div class="bg-white rounded-2xl shadow-lg p-8 mb-10">
@@ -53,7 +53,7 @@
         </div>
         <p class="text-sm text-gray-500 mb-4">Marque os horários disponíveis em cada dia da semana individualmente.</p>
         
-        <!-- Container da matriz / cards por dia -->
+    
         <div id="disponibilidade-matrix" class="space-y-4"></div>
       </div>
 
@@ -62,7 +62,7 @@
       </button>
     </div>
 
-    <!-- Lista de Professores -->
+ 
     <div class="bg-white rounded-2xl shadow-lg p-8">
       <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
         <h2 class="text-2xl font-semibold">Professores Cadastrados</h2>
@@ -75,7 +75,7 @@
   </div>
 
   <script>
-    // Proteção: se config.js não existir ou falhar, não quebra o restante da página
+ 
     let supabaseClient = null;
     try {
       if (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url && window.SUPABASE_CONFIG.key) {
@@ -96,12 +96,12 @@
       sexta: "Sexta-feira"
     };
     const horariosFixos = [
-      // Manhã (45 min)
+   
       "07:00 - 07:45", "07:45 - 08:30", "08:30 - 09:15", "09:30 - 10:15", "10:15 - 11:00", "11:00 - 11:45",
-      // Tarde (35 min) — intervalo 14:45 às 15:00
+    
       "13:00 - 13:35", "13:35 - 14:10", "14:10 - 14:45",
       "15:00 - 15:35", "15:35 - 16:10", "16:10 - 16:45",
-      // Noite (35 min) — intervalo 20:40 às 21:00
+    
       "19:00 - 19:35", "19:35 - 20:10", "20:10 - 20:40",
       "21:00 - 21:35", "21:35 - 22:10"
     ];
