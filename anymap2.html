@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>AnyMap — Gerenciador de Computadores</title>
+  <title>AnyMap — Gerenciador de Computadores 1.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
@@ -193,7 +193,7 @@
   <div id="toast-container" class="fixed bottom-20 sm:bottom-4 left-3 right-3 sm:left-auto sm:right-4 z-50 space-y-2 sm:max-w-sm"></div>
 
   <script>
-    // ==================== SUPABASE (mesmo padrão do manuhotel2) ====================
+
     let supabaseClient = null;
     try {
       if (window.SUPABASE_CONFIG?.url && window.SUPABASE_CONFIG?.key) {
@@ -217,7 +217,7 @@
       return true;
     }
 
-    // ==================== ESTADO ====================
+ 
     let currentTab = 'computadores';
     let currentPage = 0;
     const PAGE_SIZE = 12;
@@ -251,7 +251,7 @@
       if (el) el.classList.toggle('hidden', !on);
     }
 
-    // ==================== DADOS ====================
+ 
     async function fetchAll() {
       if (!exigirBanco()) { loadData(); return; }
       setLoading(true);
@@ -291,7 +291,7 @@
       if (supabaseClient) showToast('Dados atualizados!', 'success');
     }
 
-    // ==================== TABS / RENDER ====================
+  
     function switchTab(tab) {
       currentTab = tab;
       currentPage = 0;
@@ -447,7 +447,7 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // ==================== MODAL ====================
+
     function openModal(id) {
       editingId = id || null;
       var title = document.getElementById('modal-title');
@@ -517,7 +517,7 @@
       });
     }
 
-    // ==================== CRUD ====================
+
     async function saveItem(e) {
       e.preventDefault();
       if (!exigirBanco()) return;
@@ -619,7 +619,7 @@
       showToast('CSV exportado!', 'success');
     }
 
-    // ==================== INIT ====================
+  
     (async function init() {
       if (!supabaseClient) {
         var banner = document.getElementById('config-banner');
