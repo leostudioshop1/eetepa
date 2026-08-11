@@ -1,6 +1,6 @@
 async function gerarRelatorioPDF() {
   if (!supabaseClient) {
-    return alert("❌ Configuração do Supabase não encontrada.");
+    return alert("❌ Configuração não encontrada.");
   }
 
   const { data: professores, error } = await supabaseClient.from('professores').select('*').order('nome');
@@ -81,7 +81,7 @@ async function gerarRelatorioPDF() {
   pdf.save("Relatorio_Disponibilidade_Professores.pdf");
 }
 
-// Inicialização — garante que a matriz sempre aparece
+
 function init() {
   renderDisponibilidadeMatrix();
   carregarProfessores();
