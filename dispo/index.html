@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Disponibilidade - Professores</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <div class="max-w-6xl mx-auto p-6">
+    <h1 class="text-4xl font-bold text-center text-indigo-700 mb-8">Disponibilidade dos Melhores Professores do Brasil</h1>
+
+    <!-- Formulário de Cadastro -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 mb-10">
+      <h2 class="text-2xl font-semibold mb-6">Cadastrar Professor</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <label class="block text-sm font-medium mb-2">Nome do Professor</label>
+          <input id="nome" type="text" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500" placeholder="Ex: Maria Silva">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Cor (opcional)</label>
+          <input id="cor" type="color" value="#4f46e5" class="w-full h-12 border border-gray-300 rounded-lg p-1">
+        </div>
+      </div>
+
+      <div class="mt-8">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <label class="block text-sm font-medium text-gray-800">Disponibilidade por Dia e Horário</label>
+          <div class="flex gap-2">
+            <button type="button" onclick="selecionarTodos()" class="text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-1.5 rounded-lg font-medium">
+              Selecionar todos
+            </button>
+            <button type="button" onclick="limparTodos()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg font-medium">
+              Limpar todos
+            </button>
+          </div>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">Marque os horários disponíveis em cada dia da semana individualmente.</p>
+        
+    
+        <div id="disponibilidade-matrix" class="space-y-4"></div>
+      </div>
+
+      <button onclick="cadastrarProfessor()" class="mt-10 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-4 rounded-xl text-lg">
+        <i class="fas fa-save mr-2"></i> Cadastrar Professor
+      </button>
+    </div>
+
+ 
+    <div class="bg-white rounded-2xl shadow-lg p-8">
+      <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+        <h2 class="text-2xl font-semibold">Professores Cadastrados</h2>
+        <button onclick="gerarRelatorioPDF()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl">
+          <i class="fas fa-file-pdf"></i> Gerar Relatório PDF
+        </button>
+      </div>
+      <div id="lista-professores" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+    </div>
+  </div>
+
+  <!-- Scripts divididos (ordem importante) -->
+  <script src="init-supabase.js"></script>
+  <script src="data.js"></script>
+  <script src="ui-matrix.js"></script>
+  <script src="actions.js"></script>
+  <script src="coleta.js"></script>
+  <script src="professor.js"></script>
+  <script src="display.js"></script>
+  <script src="report.js"></script>
+</body>
+</html>
