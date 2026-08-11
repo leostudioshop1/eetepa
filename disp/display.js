@@ -3,7 +3,7 @@ function formatarDisponibilidadeHTML(disponibilidade) {
     return '<span class="text-gray-400">Não informado</span>';
   }
 
-  // Compatibilidade com formato antigo
+  // pra formato antigo
   if (Array.isArray(disponibilidade.dias) || Array.isArray(disponibilidade.horarios)) {
     const dias = disponibilidade.dias || [];
     const horarios = disponibilidade.horarios || [];
@@ -18,7 +18,7 @@ function formatarDisponibilidadeHTML(disponibilidade) {
     `;
   }
 
-  // Novo formato: { segunda: [...], terca: [...] }
+  // Agora foi. Novo formato: { segunda: [...], terca: [...] }
   const diasComHorarios = diasSemana.filter(d => disponibilidade[d] && disponibilidade[d].length > 0);
   if (diasComHorarios.length === 0) {
     return '<span class="text-gray-400">Nenhuma disponibilidade cadastrada</span>';
