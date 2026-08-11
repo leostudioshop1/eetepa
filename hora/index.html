@@ -10,6 +10,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-init.js"></script>
+  <script src="dispositivo-tracker.js"></script>
+  <script src="turmas.js"></script>
+  <script src="disciplinas.js"></script>
+  <script src="professores.js"></script>
+  <script src="grade.js"></script>
+  <script src="modal.js"></script>
+  <script src="export-init.js"></script>
   <script src="config.js"></script>
   <script src="horario.js"></script>
   <link rel="stylesheet" href="styles.css">
@@ -30,7 +38,7 @@
   </div>
 
   <div class="flex flex-1 overflow-hidden" id="main-content">
-    <!-- Sidebar -->
+ 
     <div class="w-96 bg-white shadow-xl overflow-y-auto flex-shrink-0">
       <div class="p-6 border-b">
         <h2 class="text-xl font-semibold text-gray-800">Controles</h2>
@@ -41,7 +49,7 @@
         <button onclick="showTab(2)" id="btn-tab-2" class="tab-button flex-1 py-3 font-medium">Professores</button>
       </div>
 
-      <!-- Tab Turmas -->
+     
       <div id="tab-0" class="tab-content p-6">
         <div class="space-y-4">
           <input id="nova-turma" type="text" placeholder="Nome da Turma" class="w-full border rounded-lg px-4 py-2">
@@ -60,7 +68,7 @@
         <ul id="lista-turmas" class="space-y-3 mt-8"></ul>
       </div>
 
-      <!-- Tab Disciplinas -->
+    
       <div id="tab-1" class="tab-content p-6 hidden">
         <div class="flex gap-2 mb-4">
           <input id="nova-disciplina" type="text" placeholder="Nova Disciplina" class="flex-1 border rounded-lg px-4 py-2">
@@ -71,21 +79,21 @@
         <ul id="lista-disciplinas" class="space-y-2"></ul>
       </div>
 
-      <!-- Tab Professores (somente leitura do Supabase) -->
+   
       <div id="tab-2" class="tab-content p-6 hidden">
         <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-5 text-sm text-indigo-800">
           <i class="fas fa-info-circle mr-1"></i>
           Os professores são carregados do <strong>Gerenciador de Disponibilidade</strong>.
-          Cadastre/edite a disponibilidade lá.
+          Cadastre/edite a disponibilidade dos alecrim dourados lá.
         </div>
         <button onclick="carregarProfessores()" class="w-full mb-4 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium">
-          <i class="fas fa-sync-alt"></i> Atualizar lista do Supabase
+          <i class="fas fa-sync-alt"></i> Atualizar lista
         </button>
         <ul id="lista-professores" class="space-y-3"></ul>
       </div>
     </div>
 
-    <!-- Grade principal -->
+  
     <div class="flex-1 flex flex-col min-w-0">
       <div class="bg-white border-b px-6 py-4 flex flex-wrap items-center justify-between gap-3">
         <select id="filtro-turma" onchange="renderGrade()" class="border rounded-lg px-4 py-2 min-w-[200px]"></select>
@@ -130,7 +138,7 @@
     </div>
   </footer>
 
-  <!-- Modal de alocação -->
+
   <div id="modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
     <div class="bg-white rounded-2xl p-8 w-full max-w-md">
       <h2 class="text-xl font-bold mb-2" id="modal-title">Alocar Aula</h2>
@@ -157,14 +165,7 @@
     </div>
   </div>
 
-<!-- Scripts divididos (ordem importante) -->
-  <script src="supabase-init.js"></script>
-  <script src="dispositivo-tracker.js"></script>
-  <script src="turmas.js"></script>
-  <script src="disciplinas.js"></script>
-  <script src="professores.js"></script>
-  <script src="grade.js"></script>
-  <script src="modal.js"></script>
-  <script src="export-init.js"></script>
+
+
 </body>
 </html>
