@@ -1,8 +1,7 @@
-// ==================== PROFESSORES (Supabase) ====================
 async function carregarProfessores() {
   const ul = document.getElementById("lista-professores");
   if (!supabaseClient) {
-    ul.innerHTML = `<li class="text-amber-600 text-sm p-3 bg-amber-50 rounded-lg">Configure o <code>config.js</code> com as credenciais do Supabase.</li>`;
+    ul.innerHTML = `<li class="text-amber-600 text-sm p-3 bg-amber-50 rounded-lg">Configure o <code>config.js</code> com as credenciais.</li>`;
     return;
   }
 
