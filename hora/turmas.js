@@ -1,11 +1,10 @@
-// ==================== UI HELPERS ====================
 function showTab(n) {
   document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
   document.querySelectorAll(".tab-button").forEach(el => el.classList.remove("tab-active"));
   document.getElementById(`tab-${n}`).classList.remove("hidden");
   document.getElementById(`btn-tab-${n}`).classList.add("tab-active");
 }
-// ==================== TURMAS ====================
+// as turmas
 function addTurma() {
   const nome = document.getElementById("nova-turma").value.trim();
   const turno = document.getElementById("turno-turma").value;
