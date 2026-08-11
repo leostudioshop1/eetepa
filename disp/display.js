@@ -39,7 +39,7 @@ async function carregarProfessores() {
   if (!container) return;
 
   if (!supabaseClient) {
-    container.innerHTML = `<p class="text-amber-600 text-center py-6">⚠️ Configure o arquivo <code>config.js</code> com as credenciais do Supabase para carregar os professores.</p>`;
+    container.innerHTML = `<p class="text-amber-600 text-center py-6">⚠️ Relatório de uso <code>config.js</code> com as credenciais.</p>`;
     return;
   }
 
