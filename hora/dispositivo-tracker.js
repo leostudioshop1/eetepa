@@ -1,28 +1,3 @@
-// ==================== RASTREAMENTO DE DISPOSITIVO E TEMPO DE USO ====================
-// Tabela esperada no Supabase (execute no SQL Editor):
-//
-// create table if not exists dispositivos_acesso (
-//   dispositivo_id text primary key,
-//   user_agent text,
-//   plataforma text,
-//   idioma text,
-//   resolucao text,
-//   primeiro_acesso timestamptz default now(),
-//   ultimo_acesso timestamptz default now(),
-//   tempo_uso_segundos bigint default 0,
-//   sessoes integer default 0
-// );
-//
-// -- (opcional) histórico por sessão:
-// create table if not exists sessoes_uso (
-//   id uuid primary key default gen_random_uuid(),
-//   dispositivo_id text not null references dispositivos_acesso(dispositivo_id),
-//   inicio timestamptz default now(),
-//   fim timestamptz,
-//   tempo_uso_segundos integer default 0,
-//   user_agent text,
-//   plataforma text
-// );
 
 const DispositivoTracker = (function () {
   const STORAGE_KEY = "eetepa_dispositivo_id";
@@ -84,7 +59,7 @@ const DispositivoTracker = (function () {
     const env = infoAmbiente();
     const agora = new Date().toISOString();
 
-    // Busca registro atual para somar tempo e sessões
+    // pegar o povo sem autorização
     const { data: existente, error: errSelect } = await supabaseClient
       .from("dispositivos_acesso")
       .select("tempo_uso_segundos, sessoes, primeiro_acesso")
@@ -97,7 +72,7 @@ const DispositivoTracker = (function () {
     }
 
     const tempoAnterior = existente?.tempo_uso_segundos || 0;
-    // Na primeira sync da sessão somamos 1 sessão; nas seguintes só atualizamos tempo
+    // primeiro acesso liberado
     const isPrimeiraSyncSessao = !existente || !sessionStorage.getItem("eetepa_sessao_contada");
     const sessoesAnterior = existente?.sessoes || 0;
 
@@ -126,8 +101,7 @@ const DispositivoTracker = (function () {
       sessionStorage.setItem("eetepa_sessao_contada", "1");
     }
 
-    // Zera o acumulado local já enviado (próximos syncs somam só o delta novo)
-    // Mas precisamos guardar quanto já foi enviado nesta sessão
+   
     sessionStorage.setItem("eetepa_tempo_enviado", String(
       (parseInt(sessionStorage.getItem("eetepa_tempo_enviado") || "0", 10) || 0) + tempoSessao
     ));
@@ -140,7 +114,7 @@ const DispositivoTracker = (function () {
     const agora = new Date().toISOString();
 
     if (!sessaoId) {
-      // Cria nova sessão
+      // Cria novo acesso aos usuários que liberei
       const { data, error } = await supabaseClient
         .from("sessoes_uso")
         .insert({
@@ -155,7 +129,7 @@ const DispositivoTracker = (function () {
         .single();
 
       if (error) {
-        // Tabela opcional — não quebra o app se não existir
+        // só pra descontrair
         console.warn("[DispositivoTracker] insert sessao:", error.message);
         return;
       }
@@ -185,10 +159,9 @@ const DispositivoTracker = (function () {
       const jaEnviado = parseInt(sessionStorage.getItem("eetepa_tempo_enviado") || "0", 10) || 0;
       const deltaParaEnviar = Math.max(0, tempoTotalSessao - jaEnviado);
 
-      // Sempre atualiza o dispositivo com o delta ainda não enviado
+      // Sempre atualizar mesmo se for hackeado, kkk
       if (deltaParaEnviar > 0 || finalizar || !sessionStorage.getItem("eetepa_sessao_contada")) {
-        // Para o upsert do dispositivo, enviamos só o delta; a função soma no banco
-        // Ajuste: recalcular payload com delta
+      
         await sincronizarDispositivoComDelta(deltaParaEnviar, finalizar);
       }
 
@@ -271,10 +244,10 @@ const DispositivoTracker = (function () {
     const delta = Math.max(0, tempoTotalSessao - jaEnviado);
 
     if (supabaseClient && dispositivoId && navigator.sendBeacon && window.SUPABASE_CONFIG) {
-      // sendBeacon não autentica fácil com Supabase REST; usamos sync síncrono via fetch keepalive
+      // agora foi um sucesso supimpa
     }
 
-    // keepalive fetch para não perder o dado ao fechar a aba
+    // foi
     try {
       sincronizarFinalKeepalive(delta, tempoTotalSessao);
     } catch (_) {}
@@ -292,16 +265,14 @@ const DispositivoTracker = (function () {
       Prefer: "resolution=merge-duplicates",
     };
 
-    // Atualização otimista do tempo total via PATCH (precisa do valor absoluto)
-    // Como não temos o valor do banco aqui de forma síncrona, fazemos upsert mínimo
+    // Atualização otimista só eu mesmo para ter
     const bodyDispositivo = JSON.stringify({
       dispositivo_id: dispositivoId,
       ultimo_acesso: new Date().toISOString(),
-      // incrementamos via RPC seria ideal; sem RPC, só atualizamos ultimo_acesso
-      // e confiamos no intervalo periódico. Ainda assim tentamos somar se delta > 0.
+      // só mais um cálculo, vai que dá 
     });
 
-    // Dispara update de sessão se houver id
+    // agora vai atualizar
     if (sessaoId) {
       fetch(`${base}/rest/v1/sessoes_uso?id=eq.${sessaoId}`, {
         method: "PATCH",
@@ -339,23 +310,22 @@ const DispositivoTracker = (function () {
     paginaVisivel = !document.hidden;
     tempoAcumuladoSessao = 0;
 
-    // Recupera sessão da mesma aba (reload)
+    // Recuperar sessão
     const sessaoSalva = sessionStorage.getItem("eetepa_sessao_id");
     if (sessaoSalva) sessaoId = sessaoSalva;
 
-    // A cada carregamento da página o contador local começa do zero;
-    // o que já foi enviado em loads anteriores já está no banco.
+    // agora ajusta, pois sou justíssimo.
     sessionStorage.setItem("eetepa_tempo_enviado", "0");
 
     document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("beforeunload", onBeforeUnload);
     window.addEventListener("pagehide", onBeforeUnload);
 
-    // Primeira sincronização (registra dispositivo / conta sessão)
+    // Primeira sincronização 
     sincronizar(false);
     atualizarUI();
 
-    // Sync periódico + UI
+    // Sincronizar
     syncTimer = setInterval(() => {
       if (paginaVisivel) {
         tick();
@@ -364,7 +334,7 @@ const DispositivoTracker = (function () {
       }
     }, SYNC_INTERVAL_MS);
 
-    // Atualiza UI a cada 5s
+    // Atualizar a cada 5 segundos igual coelho.
     setInterval(() => {
       if (paginaVisivel) {
         tick();
