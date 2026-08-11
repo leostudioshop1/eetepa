@@ -1,12 +1,7 @@
-// ==================== HORÁRIO.JS ====================
-// Gerenciamento de horários, alocações e detecção de choques
-// - Respeita disponibilidade cadastrada do professor (dias + horários)
-// - Impede lotação do mesmo professor no mesmo dia/horário em turmas diferentes
-
 (function (global) {
   "use strict";
 
-  // Constantes compartilhadas
+  // Constantes compartilhadas para economizar energia
   const DIAS = ["segunda", "terca", "quarta", "quinta", "sexta"];
   const DIAS_LABEL = {
     segunda: "Segunda",
@@ -16,7 +11,7 @@
     sexta: "Sexta",
   };
 
-  // Horários compatíveis com o Gerenciador de Disponibilidade
+  // Horários compatíveis com a Disponibilidade de cada alecrim dourado
   const HORARIOS = {
     manha: [
       "07:00 - 07:45",
@@ -43,17 +38,17 @@
     ],
   };
 
-  // Estado interno (referências externas injetadas via init)
+  // esse agora foi dentro
   let state = {
     turmas: [],
     disciplinas: [],
     grade: {}, // { turmaId: { "segunda|07:00 - 07:45": { disciplina, professorId, professorNome, cor } } }
     professores: [],
     modalCtx: { dia: null, horario: null, turmaId: null },
-    onSave: null, // callback para persistir no localStorage
+    onSave: null, // persistencia é o nome
   };
 
-  // ==================== UTILITÁRIOS ====================
+  // utilidades
   function uid() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
@@ -68,23 +63,17 @@
     }
   }
 
-  // ==================== DISPONIBILIDADE DO PROFESSOR ====================
-  /**
-   * Verifica se o professor está disponível no dia e horário informados,
-   * conforme o cadastro no Gerenciador de Disponibilidade.
-   * Suporta formato novo { segunda: ["13:00 - 13:35", ...] }
-   * e formato antigo { dias: [...], horarios: [...] }.
-   */
+  // agora a galeria dos alecrim dourados
+ 
   function professorDisponivel(prof, dia, horario) {
     if (!prof || !prof.disponibilidade) return false;
     const disp = prof.disponibilidade;
 
-    // Formato novo: { segunda: ["13:00 - 13:35", ...], ... }
+ 
     if (disp[dia] && Array.isArray(disp[dia])) {
       return disp[dia].includes(horario);
     }
 
-    // Formato antigo (compatibilidade)
     if (Array.isArray(disp.dias) && Array.isArray(disp.horarios)) {
       return disp.dias.includes(dia) && disp.horarios.includes(horario);
     }
@@ -92,17 +81,12 @@
     return false;
   }
 
-  // ==================== CHOQUE DE HORÁRIOS ====================
-  /**
-   * Verifica se o professor já está alocado em OUTRA turma
-   * no mesmo dia e no mesmo horário.
-   * Retorna { conflito: boolean, turmaNome?: string, disciplina?: string }
-   */
+
   function professorEmChoque(professorId, dia, horario, turmaIdAtual) {
     if (!professorId) return { conflito: false };
 
     for (const turma of state.turmas) {
-      // Ignora a própria turma (permite editar a mesma célula)
+      // permite editar a mesma célula
       if (turma.id === turmaIdAtual) continue;
 
       const alocacoes = state.grade[turma.id] || {};
@@ -122,11 +106,7 @@
     return { conflito: false };
   }
 
-  /**
-   * Validação completa antes de salvar:
-   * 1. Professor deve estar disponível (dias + horários cadastrados)
-   * 2. Professor não pode estar lotado no mesmo dia/horário em outra turma
-   */
+
   function validarAlocacao(professorId, dia, horario, turmaId, disciplinaNome) {
     const resultado = {
       valido: false,
@@ -145,7 +125,7 @@
       return resultado;
     }
 
-    // 1. Disponibilidade cadastrada
+    //  Disponibilidade cadastrada
     if (!professorDisponivel(prof, dia, horario)) {
       resultado.mensagem =
         "Professor <strong>não</strong> está disponível neste dia/horário (conforme cadastro de disponibilidade).";
@@ -153,7 +133,7 @@
       return resultado;
     }
 
-    // 2. Choque entre turmas
+    //  Choque entre turmas
     const choque = professorEmChoque(professorId, dia, horario, turmaId);
     if (choque.conflito) {
       resultado.mensagem = `Choque de horário: <strong>${prof.nome}</strong> já está lotado em <strong>${choque.turmaNome}</strong> (${choque.disciplina}) neste mesmo dia e horário.`;
@@ -167,7 +147,7 @@
     return resultado;
   }
 
-  // ==================== TURMAS ====================
+  //turmas
   function addTurma(nome, turno) {
     if (!nome) return { ok: false, erro: "Digite o nome da turma" };
     state.turmas.push({ id: uid(), nome, turno });
@@ -181,7 +161,7 @@
     salvar();
   }
 
-  // ==================== DISCIPLINAS ====================
+  // disciplinas do povo
   function addDisciplina(nome) {
     if (!nome) return { ok: false, erro: "Digite o nome da disciplina" };
     state.disciplinas.push({ id: uid(), nome });
@@ -194,7 +174,7 @@
     salvar();
   }
 
-  // ==================== GRADE ====================
+  // grade
   function limparGradeTurma(turmaId) {
     if (!turmaId) return;
     state.grade[turmaId] = {};
@@ -208,10 +188,7 @@
     }
   }
 
-  /**
-   * Salva a alocação após validação completa (disponibilidade + choque).
-   * Retorna { ok: boolean, mensagem?: string }
-   */
+ 
   function salvarAlocacao(turmaId, dia, horario, disciplina, professorId) {
     const validacao = validarAlocacao(
       professorId,
@@ -243,7 +220,7 @@
     return { ok: true };
   }
 
-  // ==================== RENDERIZAÇÃO DA GRADE ====================
+  // ajustes na grade
   function getHorariosDoTurno(turno) {
     return HORARIOS[turno] || [];
   }
@@ -253,16 +230,7 @@
     return alocacoes[`${dia}|${horario}`] || null;
   }
 
-  // ==================== INIT / API PÚBLICA ====================
-  /**
-   * Inicializa o módulo com o estado e callback de persistência.
-   * @param {Object} opts
-   * @param {Array} opts.turmas
-   * @param {Array} opts.disciplinas
-   * @param {Object} opts.grade
-   * @param {Array} opts.professores
-   * @param {Function} opts.onSave - chamado com { turmas, disciplinas, grade }
-   */
+ 
   function init(opts = {}) {
     state.turmas = opts.turmas || [];
     state.disciplinas = opts.disciplinas || [];
@@ -292,7 +260,7 @@
     };
   }
 
-  // Expor API
+  // Expor dados, sensível aqui
   const Horario = {
     DIAS,
     DIAS_LABEL,
