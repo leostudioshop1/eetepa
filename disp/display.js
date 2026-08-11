@@ -3,7 +3,7 @@ function formatarDisponibilidadeHTML(disponibilidade) {
     return '<span class="text-gray-400">Não informado</span>';
   }
 
-  // pra formato antigo
+  // Compatibilidade com formato antigo
   if (Array.isArray(disponibilidade.dias) || Array.isArray(disponibilidade.horarios)) {
     const dias = disponibilidade.dias || [];
     const horarios = disponibilidade.horarios || [];
@@ -18,7 +18,7 @@ function formatarDisponibilidadeHTML(disponibilidade) {
     `;
   }
 
-  // Agora foi. Novo formato: { segunda: [...], terca: [...] }
+  // Novo formato: { segunda: [...], terca: [...] }
   const diasComHorarios = diasSemana.filter(d => disponibilidade[d] && disponibilidade[d].length > 0);
   if (diasComHorarios.length === 0) {
     return '<span class="text-gray-400">Nenhuma disponibilidade cadastrada</span>';
@@ -39,7 +39,7 @@ async function carregarProfessores() {
   if (!container) return;
 
   if (!supabaseClient) {
-    container.innerHTML = `<p class="text-amber-600 text-center py-6">⚠️ Relatório de uso <code>config.js</code> com as credenciais.</p>`;
+    container.innerHTML = `<p class="text-amber-600 text-center py-6">⚠️ Configure o arquivo <code>config.js</code> com as credenciais do Supabase para carregar os professores.</p>`;
     return;
   }
 

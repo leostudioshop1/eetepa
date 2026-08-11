@@ -1,6 +1,6 @@
 async function cadastrarProfessor() {
   if (!supabaseClient) {
-    return alert("❌ Configuração Não é possível cadastrar.");
+    return alert("❌ Configuração do Supabase não encontrada (config.js). Não é possível cadastrar.");
   }
 
   const nome = document.getElementById("nome").value.trim();
