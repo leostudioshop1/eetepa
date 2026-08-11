@@ -12,7 +12,7 @@ function coletarDisponibilidade() {
     }
   });
 
-  // Remove dias sem nenhum horário marcado
+ 
   Object.keys(disponibilidade).forEach(dia => {
     if (disponibilidade[dia].length === 0) {
       delete disponibilidade[dia];
