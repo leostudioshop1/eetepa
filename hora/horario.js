@@ -283,7 +283,7 @@
     limparGradeTurma,
     removerAlocacao,
     salvarAlocacao,
-    // Grade helpers
+    // Grade ultima quase nao chega
     getHorariosDoTurno,
     getAlocacao,
   };
