@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial - Como Ajustar o Estoque | Premium 4</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #0d47a1;
+            --accent: #00c853;
+            --bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --text: #333;
+            --text-light: #666;
+            --border: #e0e0e0;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #1a73e8, #0d47a1);
+            color: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            font-size: 1.05rem;
+            opacity: 0.9;
+        }
+
+        .step {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 24px;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .step-number {
+            background: var(--primary);
+            color: white;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .step-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .step-content {
+            padding: 24px;
+        }
+
+        .step-content p {
+            margin-bottom: 16px;
+            color: var(--text);
+            font-size: 1.05rem;
+        }
+
+        .step-content ul {
+            margin: 12px 0 20px 20px;
+            color: var(--text-light);
+        }
+
+        .step-content li {
+            margin-bottom: 6px;
+        }
+
+        .image-wrapper {
+            margin-top: 16px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: #fafafa;
+        }
+
+        .image-wrapper img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .highlight {
+            background: #e3f2fd;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .tip {
+            background: #e8f5e9;
+            border-left: 4px solid var(--accent);
+            padding: 14px 18px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 20px;
+            font-size: 0.95rem;
+        }
+
+        .tip strong {
+            color: #2e7d32;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+
+            header {
+                padding: 24px 16px;
+            }
+
+            header h1 {
+                font-size: 1.4rem;
+            }
+
+            .step-header {
+                padding: 16px;
+            }
+
+            .step-title {
+                font-size: 1.1rem;
+            }
+
+            .step-content {
+                padding: 16px;
+            }
+
+            .step-number {
+                width: 36px;
+                height: 36px;
+                font-size: 1.05rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📦 Como Ajustar o Estoque</h1>
+            <p>Tutorial passo a passo no sistema <strong>Premium 4</strong></p>
+        </header>
+
+        <!-- PASSO 1 -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">1</div>
+                <div class="step-title">Acesse o menu Produtos</div>
+            </div>
+            <div class="step-content">
+                <p>Na tela principal do sistema, localize e clique no botão <span class="highlight">Produtos</span> (ícone da caixa amarela).</p>
+                <div class="image-wrapper">
+                    <img src="estoque1.png" alt="Passo 1 - Clicar em Produtos">
+                </div>
+            </div>
+        </div>
+
+        <!-- PASSO 2 -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">2</div>
+                <div class="step-title">Abra o produto e acesse Movimentar Estoque</div>
+            </div>
+            <div class="step-content">
+                <p>Com o produto aberto (exemplo: <strong>BAINHA COM VIOLA</strong>), clique no botão <span class="highlight">Outros</span> na barra inferior e selecione a opção <span class="highlight">Movimentar Estoque</span>.</p>
+                <div class="image-wrapper">
+                    <img src="estoque2.png" alt="Passo 2 - Outros > Movimentar Estoque">
+                </div>
+            </div>
+        </div>
+
+        <!-- PASSO 3 -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">3</div>
+                <div class="step-title">Preencha os dados e grave a movimentação</div>
+            </div>
+            <div class="step-content">
+                <p>Na tela <strong>PRODUTO | Movimentar Estoque</strong>, preencha as informações:</p>
+                <ul>
+                    <li><strong>Data:</strong> confirme a data da movimentação</li>
+                    <li><strong>Movimento:</strong> selecione <span class="highlight">ENTRADA</span> (para adicionar) ou <span class="highlight">SAÍDA</span> (para retirar)</li>
+                    <li><strong>Quantidade:</strong> digite a quantidade que deseja ajustar</li>
+                    <li><strong>Valor R$:</strong> preencha se necessário</li>
+                </ul>
+                <p>Depois de preencher, clique no botão verde <span class="highlight">✔ Gravar</span> no canto direito da tela.</p>
+                <div class="image-wrapper">
+                    <img src="estoque3.png" alt="Passo 3 - Preencher quantidade e Gravar">
+                </div>
+
+                <div class="tip">
+                    <strong>Dica:</strong> Após gravar, o estoque atual do produto será atualizado automaticamente.
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            Tutorial gerado para o sistema Premium 4 • Ajuste de Estoque
+        </footer>
+    </div>
+</body>
+</html>
