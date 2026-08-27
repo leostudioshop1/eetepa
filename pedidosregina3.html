@@ -681,7 +681,7 @@
         <div class="logo-icon">📦</div>
         <div class="logo-text">
           <span>Gestão de Pedidos</span>
-          <small>Sistema Profissional</small>
+          <small>Papel e Arte - Sistema Registrado</small>
         </div>
       </div>
       <button class="menu-toggle" id="menuToggle" aria-label="Menu" onclick="toggleMenu()">☰</button>
@@ -961,12 +961,12 @@
       <div class="card">
         <div class="card-title">Dados e backup</div>
         <p style="font-size:0.9rem; color:var(--muted); margin-bottom:1rem;">
-          Os dados ficam salvos no Supabase. Exporte um backup periodicamente.
+          Os dados ficam salvos na nuvem - Desenvolvido por - Léo Cruz.
         </p>
         <div class="btn-group">
-          <button class="btn btn-outline" onclick="exportarBackup()">↓ Exportar backup (JSON)</button>
+          <button class="btn btn-outline" onclick="exportarBackup()">↓ </button>
           <label class="btn btn-outline" style="cursor:pointer; margin:0;">
-            ↑ Importar backup
+            ↑ 
             <input type="file" accept=".json,application/json" style="display:none" onchange="importarBackup(event)" />
           </label>
           <button class="btn btn-danger" onclick="limparTudo()">Apagar todos os dados</button>
@@ -2180,7 +2180,7 @@
           if (!data.clientes || !data.produtos || !data.pedidos) {
             throw new Error('Arquivo inválido');
           }
-          if (!confirm('Isso irá inserir os dados do backup no Supabase. Continuar?')) {
+          if (!confirm('Isso irá inserir os dados do backup na nuvem. Continuar?')) {
             ev.target.value = '';
             return;
           }
@@ -2266,7 +2266,7 @@
     }
 
     async function limparTudo() {
-      if (!confirm('ATENÇÃO: apagar TODOS os clientes, produtos e pedidos no Supabase?\nEsta ação não pode ser desfeita.')) return;
+      if (!confirm('ATENÇÃO: apagar TODOS os clientes, produtos e pedidos?\nEsta ação não pode ser desfeita.')) return;
       if (!confirm('Confirma realmente a exclusão de todos os dados?')) return;
       if (!sb) return;
       try {
