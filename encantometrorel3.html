@@ -258,7 +258,7 @@ h1 span {
   box-shadow: 0 0 0 4px rgba(11, 94, 60, 0.1);
 }
 
-/* Comments list */
+
 .comment-list {
   display: flex;
   flex-direction: column;
@@ -315,7 +315,7 @@ h1 span {
   font-size: 0.9rem;
 }
 
-/* Empty / loading / error */
+
 .state-box {
   text-align: center;
   padding: 32px 16px;
@@ -334,7 +334,7 @@ h1 span {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Actions bar */
+
 .actions-bar {
   display: flex;
   flex-wrap: wrap;
@@ -423,7 +423,7 @@ h1 span {
 </div>
 
 <header class="hero container">
-  <div class="badge">📊 Relatório ao vivo</div>
+  <div class="badge">📊 Relatório da Excelência da equipe do estande</div>
   <h1>ENCANTÔ<span>METRO</span></h1>
   <p class="subtitle">Resultados das avaliações do estande da EETEPA Xinguara na FAX 2026.</p>
   <p class="updated" id="lastUpdated">Carregando…</p>
@@ -434,7 +434,7 @@ h1 span {
     📡 Sem conexão — os dados serão atualizados quando a internet voltar.
   </div>
 
-  <!-- Resumo -->
+
   <section class="card">
     <div class="actions-bar">
       <h2 class="card-title" style="margin:0">📈 Resumo geral</h2>
@@ -452,7 +452,7 @@ h1 span {
     </div>
   </section>
 
-  <!-- Distribuição -->
+ 
   <section class="card">
     <h2 class="card-title">⭐ Distribuição das notas</h2>
     <div id="distribution">
@@ -460,7 +460,7 @@ h1 span {
     </div>
   </section>
 
-  <!-- Comentários e avaliações -->
+
   <section class="card">
     <h2 class="card-title">💬 Avaliações e comentários</h2>
 
@@ -493,7 +493,7 @@ h1 span {
 (() => {
   'use strict';
 
-  // Mesma configuração do Encantômetro
+ 
   const cfg = window.SUPABASE_CONFIG || { url: '', key: '' };
   let supabaseClient = null;
   try {
@@ -761,7 +761,7 @@ h1 span {
     URL.revokeObjectURL(url);
   });
 
-  // Auto-refresh a cada 60s
+
   loadData();
   setInterval(loadData, 60000);
 })();
