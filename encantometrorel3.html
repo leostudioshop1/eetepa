@@ -116,7 +116,7 @@ h1 span {
   margin-top: 6px;
 }
 
-/* Cards */
+
 .card {
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(215, 227, 236, 0.9);
@@ -138,7 +138,7 @@ h1 span {
   letter-spacing: -0.01em;
 }
 
-/* Stats grid */
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -522,7 +522,7 @@ h1 span {
   let currentFilter = 'all';
   let searchTerm = '';
 
-  // Offline banner
+ 
   const offlineBanner = $('#offlineBanner');
   function updateOfflineUI() {
     offlineBanner.classList.toggle('visible', !navigator.onLine);
@@ -566,16 +566,32 @@ h1 span {
     }
 
     try {
-      const { data, error } = await supabaseClient
-        .from('avaliacoes')
-        .select('score, comentario, data_avaliacao, evento, estande, dispositivo, idioma')
-        .eq('evento', EVENTO)
-        .eq('estande', ESTANDE)
-        .order('data_avaliacao', { ascending: false });
+    
+      const PAGE_SIZE = 1000;
+      const rows = [];
+      let from = 0;
 
-      if (error) throw error;
+      while (true) {
+        const { data, error } = await supabaseClient
+          .from('avaliacoes')
+          .select('score, comentario, data_avaliacao, evento, estande, dispositivo, idioma')
+          .eq('evento', EVENTO)
+          .eq('estande', ESTANDE)
+          .order('data_avaliacao', { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
 
-      allData = data || [];
+        if (error) throw error;
+
+        const page = data || [];
+        rows.push(...page);
+
+       
+        if (page.length < PAGE_SIZE) break;
+
+        from += PAGE_SIZE;
+      }
+
+      allData = rows;
       lastEl.textContent = 'Atualizado em ' + new Date().toLocaleString('pt-BR');
       $('#btnExport').disabled = allData.length === 0;
 
