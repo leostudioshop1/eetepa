@@ -8,7 +8,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>ENCANTÔMETRO · EETEPA Xinguara · FAX 2026</title>
-  <!-- Estatísticas corrigidas: contagem exata no Supabase, sem limite visual de 1000 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -56,7 +55,7 @@ body {
   margin-inline: auto;
 }
 
-/* ── Top bar institucional ── */
+
 .topbar {
   background: linear-gradient(135deg, var(--eetepa-green) 0%, #0a4d32 100%);
   color: #fff;
@@ -70,7 +69,7 @@ body {
 .topbar span { opacity: 0.9; }
 .topbar strong { font-weight: 800; }
 
-/* ── Hero ── */
+
 .hero {
   padding: 28px 0 12px;
   text-align: center;
@@ -134,7 +133,7 @@ h1 span {
   font-weight: 500;
 }
 
-/* ── Card principal ── */
+
 .card {
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(215, 227, 236, 0.9);
@@ -177,7 +176,7 @@ h1 span {
   font-weight: 500;
 }
 
-/* ── Ratings ── */
+
 .ratings {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -256,7 +255,7 @@ h1 span {
   transition: 0.2s;
 }
 
-/* ── Form ── */
+
 .form {
   margin-top: 26px;
   display: grid;
@@ -385,7 +384,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
 .status.error { color: var(--danger); }
 .status.success { color: var(--success); }
 
-/* ── Online indicator ── */
+
 .conn-banner {
   display: none;
   align-items: center;
@@ -402,7 +401,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
 }
 .conn-banner.visible { display: flex; }
 
-/* ── Stats / Admin ── */
+
 .admin {
   margin-top: 20px;
   padding-top: 18px;
@@ -501,7 +500,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
 }
 .clear:hover { background: #fef2f2; }
 
-/* ── Footer ── */
+
 .footer {
   text-align: center;
   color: var(--muted);
@@ -511,7 +510,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
 }
 .footer strong { color: var(--eetepa-green); font-weight: 800; }
 
-/* ── Success overlay ── */
+
 .success-overlay {
   position: fixed;
   inset: 0;
@@ -577,7 +576,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
   width: 100%;
 }
 
-/* ── Confetti canvas ── */
+
 #confetti {
   position: fixed;
   inset: 0;
@@ -585,7 +584,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
   z-index: 99;
 }
 
-/* ── Responsive ── */
+
 @media (max-width: 560px) {
   .container { width: calc(100% - 20px); }
   .hero { padding: 20px 0 8px; }
@@ -621,7 +620,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
 }
 
 @media (prefers-color-scheme: dark) {
-  /* Mantém visual claro institucional na feira; opcional futuro */
+
 }
 </style>
 </head>
@@ -736,7 +735,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
 (() => {
   'use strict';
 
-  // Fallback se config.js não carregar (evita quebra total)
+
   const cfg = window.SUPABASE_CONFIG || { url: '', key: '' };
   let supabaseClient = null;
   try {
@@ -848,7 +847,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
     btn.addEventListener('click', () => selectScore(btn.dataset.score));
   });
 
-  // Teclado: 1–5 seleciona nota
+
   document.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'TEXTAREA') return;
     if (e.key >= '1' && e.key <= '5') selectScore(e.key);
@@ -961,7 +960,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
     if (e.key === 'Escape' && successOverlay.classList.contains('show')) hideSuccess();
   });
 
-  // Confetti leve
+
   function launchConfetti() {
     const canvas = $('#confetti');
     const ctx = canvas.getContext('2d');
@@ -1027,9 +1026,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
     barsEl.innerHTML = '';
 
     try {
-      // Não baixa todas as avaliações. O SELECT comum do Supabase/PostgREST
-      // pode retornar no máximo 1000 linhas. Aqui usamos COUNT exato no servidor,
-      // portanto o painel continua funcionando com milhares de avaliações.
+
       const counts = await Promise.all([1, 2, 3, 4, 5].map(async (nota) => {
         const { count, error } = await supabaseClient
           .from('avaliacoes')
@@ -1076,7 +1073,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
   });
 
   updateStats();
-  // Atualiza estatísticas periodicamente se o painel estiver aberto
+
   setInterval(() => {
     if ($('#adminPanel').open) updateStats();
   }, 30000);
