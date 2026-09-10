@@ -55,7 +55,7 @@ body {
   margin-inline: auto;
 }
 
-/* ── Top bar institucional ── */
+
 .topbar {
   background: linear-gradient(135deg, var(--eetepa-green) 0%, #0a4d32 100%);
   color: #fff;
@@ -69,7 +69,7 @@ body {
 .topbar span { opacity: 0.9; }
 .topbar strong { font-weight: 800; }
 
-/* ── Hero ── */
+
 .hero {
   padding: 28px 0 12px;
   text-align: center;
@@ -133,7 +133,7 @@ h1 span {
   font-weight: 500;
 }
 
-/* ── Card principal ── */
+
 .card {
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(215, 227, 236, 0.9);
@@ -176,7 +176,7 @@ h1 span {
   font-weight: 500;
 }
 
-/* ── Ratings ── */
+
 .ratings {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -255,7 +255,7 @@ h1 span {
   transition: 0.2s;
 }
 
-/* ── Form ── */
+
 .form {
   margin-top: 26px;
   display: grid;
@@ -384,7 +384,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
 .status.error { color: var(--danger); }
 .status.success { color: var(--success); }
 
-/* ── Online indicator ── */
+
 .conn-banner {
   display: none;
   align-items: center;
@@ -401,7 +401,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
 }
 .conn-banner.visible { display: flex; }
 
-/* ── Stats / Admin ── */
+
 .admin {
   margin-top: 20px;
   padding-top: 18px;
@@ -500,7 +500,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
 }
 .clear:hover { background: #fef2f2; }
 
-/* ── Footer ── */
+
 .footer {
   text-align: center;
   color: var(--muted);
@@ -510,7 +510,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
 }
 .footer strong { color: var(--eetepa-green); font-weight: 800; }
 
-/* ── Success overlay ── */
+
 .success-overlay {
   position: fixed;
   inset: 0;
@@ -576,7 +576,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
   width: 100%;
 }
 
-/* ── Confetti canvas ── */
+
 #confetti {
   position: fixed;
   inset: 0;
@@ -584,7 +584,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
   z-index: 99;
 }
 
-/* ── Responsive ── */
+
 @media (max-width: 560px) {
   .container { width: calc(100% - 20px); }
   .hero { padding: 20px 0 8px; }
@@ -620,7 +620,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
 }
 
 @media (prefers-color-scheme: dark) {
-  /* Mantém visual claro institucional na feira; opcional futuro */
+
 }
 </style>
 </head>
@@ -735,7 +735,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
 (() => {
   'use strict';
 
-  // Fallback se config.js não carregar (evita quebra total)
+
   const cfg = window.SUPABASE_CONFIG || { url: '', key: '' };
   let supabaseClient = null;
   try {
@@ -847,7 +847,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
     btn.addEventListener('click', () => selectScore(btn.dataset.score));
   });
 
-  // Teclado: 1–5 seleciona nota
+
   document.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'TEXTAREA') return;
     if (e.key >= '1' && e.key <= '5') selectScore(e.key);
@@ -960,7 +960,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
     if (e.key === 'Escape' && successOverlay.classList.contains('show')) hideSuccess();
   });
 
-  // Confetti leve
+
   function launchConfetti() {
     const canvas = $('#confetti');
     const ctx = canvas.getContext('2d');
@@ -1026,20 +1026,21 @@ button.primary.loading .btn-text { opacity: 0.9; }
     barsEl.innerHTML = '';
 
     try {
-      const { data, error } = await supabaseClient
-        .from('avaliacoes')
-        .select('score')
-        .eq('evento', EVENTO)
-        .eq('estande', ESTANDE);
 
-      if (error) throw error;
+      const counts = await Promise.all([1, 2, 3, 4, 5].map(async (nota) => {
+        const { count, error } = await supabaseClient
+          .from('avaliacoes')
+          .select('score', { count: 'exact', head: true })
+          .eq('evento', EVENTO)
+          .eq('estande', ESTANDE)
+          .eq('score', nota);
 
-      const registros = data || [];
-      const total = registros.length;
-      const counts = [1, 2, 3, 4, 5].map(n =>
-        registros.filter(item => Number(item.score) === n).length
-      );
-      const soma = registros.reduce((sum, item) => sum + Number(item.score || 0), 0);
+        if (error) throw error;
+        return Number(count || 0);
+      }));
+
+      const total = counts.reduce((sum, count) => sum + count, 0);
+      const soma = counts.reduce((sum, count, index) => sum + count * (index + 1), 0);
       const avg = total ? soma / total : 0;
       const max = Math.max(...counts, 0);
       const top = total && max > 0 ? counts.indexOf(max) + 1 : null;
@@ -1072,7 +1073,7 @@ button.primary.loading .btn-text { opacity: 0.9; }
   });
 
   updateStats();
-  // Atualiza estatísticas periodicamente se o painel estiver aberto
+
   setInterval(() => {
     if ($('#adminPanel').open) updateStats();
   }, 30000);
