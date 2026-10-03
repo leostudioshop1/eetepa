@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão Financeira Pessoal</title>
+
+    <!-- Configurações do Supabase -->
+    <script src="config.js"></script>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .card-print {
+                border: 1px solid #ccc !important;
+                box-shadow: none !important;
+                break-inside: avoid;
+            }
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- BARRA SUPERIOR / CABEÇALHO -->
+    <header class="bg-slate-800/80 backdrop-blur border-b border-slate-700/60 sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-brand-500/10 border border-brand-500/30 p-2 rounded-xl text-brand-500">
+                    <i class="fa-solid fa-wallet text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight text-white">Gestão Financeira</h1>
+                    <p class="text-xs text-slate-400">Controle Inteligente de Gastos</p>
+                </div>
+            </div>
+
+            <!-- Ações do Cabeçalho -->
+            <div class="flex items-center flex-wrap gap-2 text-xs">
+                <!-- Status do Supabase -->
+                <div id="supabaseStatusBadge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span id="supabaseStatusText">Armazenamento Local</span>
+                </div>
+
+                <button onclick="exportJSON()" title="Exportar backup em JSON" class="bg-slate-700/60 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-600/50 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-download"></i> <span class="hidden sm:inline">JSON</span>
+                </button>
+                <button onclick="exportCSV()" title="Exportar para Excel (CSV)" class="bg-slate-700/60 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-600/50 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-csv"></i> <span class="hidden sm:inline">CSV</span>
+                </button>
+                <label class="bg-slate-700/60 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-600/50 transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-upload"></i> <span class="hidden sm:inline">Importar</span>
+                    <input type="file" id="importFile" accept=".json" class="hidden" onchange="importJSON(event)">
+                </label>
+                <button onclick="window.print()" class="bg-brand-600 hover:bg-brand-500 text-white font-medium px-3 py-1.5 rounded-lg transition shadow-lg shadow-brand-600/20 flex items-center gap-1.5 ml-1">
+                    <i class="fa-solid fa-print"></i> <span>Imprimir</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- CABEÇALHO DE FILTROS & PERÍODO -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800/40 p-4 rounded-2xl border border-slate-800 no-print">
+            <div class="flex items-center space-x-2">
+                <i class="fa-regular fa-calendar-check text-brand-500"></i>
+                <h2 class="font-semibold text-slate-200 text-sm sm:text-base">Período de Análise</h2>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <select id="periodSelect" onchange="handlePeriodChange()" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none flex-1 sm:flex-none">
+                    <option value="current_month">Mês Atual</option>
+                    <option value="last_month">Mês Anterior</option>
+                    <option value="current_year">Ano Atual</option>
+                    <option value="all">Todo o Histórico</option>
+                    <option value="custom">Personalizado</option>
+                </select>
+
+                <div id="customDateRange" class="hidden flex items-center gap-2">
+                    <input type="date" id="filterStartDate" onchange="renderApp()" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-2">
+                    <span class="text-slate-500 text-xs">até</span>
+                    <input type="date" id="filterEndDate" onchange="renderApp()" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-2">
+                </div>
+            </div>
+        </div>
+
+        <!-- CARDS DE VISÃO GERAL (INDICADORES) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Entradas -->
+            <div class="bg-slate-800/60 backdrop-blur border border-slate-700/50 rounded-2xl p-4 sm:p-5 card-print shadow-xl relative overflow-hidden">
+                <div class="absolute -right-2 -bottom-2 text-emerald-500/10 text-6xl pointer-events-none">
+                    <i class="fa-solid fa-arrow-trend-up"></i>
+                </div>
+                <div class="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
+                    <span>Total Entradas</span>
+                    <span class="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400"><i class="fa-solid fa-arrow-down"></i></span>
+                </div>
+                <div class="text-xl sm:text-2xl font-bold text-emerald-400" id="cardIncome">R$ 0,00</div>
+                <p class="text-[10px] text-slate-500 mt-2" id="incomeSubtitle">No período selecionado</p>
+            </div>
+
+            <!-- Saídas -->
+            <div class="bg-slate-800/60 backdrop-blur border border-slate-700/50 rounded-2xl p-4 sm:p-5 card-print shadow-xl relative overflow-hidden">
+                <div class="absolute -right-2 -bottom-2 text-rose-500/10 text-6xl pointer-events-none">
+                    <i class="fa-solid fa-arrow-trend-down"></i>
+                </div>
+                <div class="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
+                    <span>Total Saídas</span>
+                    <span class="p-1.5 rounded-lg bg-rose-500/10 text-rose-400"><i class="fa-solid fa-arrow-up"></i></span>
+                </div>
+                <div class="text-xl sm:text-2xl font-bold text-rose-400" id="cardExpense">R$ 0,00</div>
+                <p class="text-[10px] text-slate-500 mt-2" id="expenseSubtitle">No período selecionado</p>
+            </div>
+
+            <!-- Saldo -->
+            <div class="bg-slate-800/60 backdrop-blur border border-slate-700/50 rounded-2xl p-4 sm:p-5 card-print shadow-xl relative overflow-hidden">
+                <div class="absolute -right-2 -bottom-2 text-brand-500/10 text-6xl pointer-events-none">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+                <div class="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
+                    <span>Saldo Líquido</span>
+                    <span id="balanceIcon" class="p-1.5 rounded-lg bg-brand-500/10 text-brand-400"><i class="fa-solid fa-equals"></i></span>
+                </div>
+                <div class="text-xl sm:text-2xl font-bold text-slate-100" id="cardBalance">R$ 0,00</div>
+                <p class="text-[10px] text-slate-500 mt-2" id="balanceSubtitle">Resultado no período</p>
+            </div>
+
+            <!-- Taxa de Poupança -->
+            <div class="bg-slate-800/60 backdrop-blur border border-slate-700/50 rounded-2xl p-4 sm:p-5 card-print shadow-xl relative overflow-hidden">
+                <div class="absolute -right-2 -bottom-2 text-indigo-500/10 text-6xl pointer-events-none">
+                    <i class="fa-solid fa-piggy-bank"></i>
+                </div>
+                <div class="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
+                    <span>Taxa de Poupança</span>
+                    <span class="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400"><i class="fa-solid fa-percent"></i></span>
+                </div>
+                <div class="text-xl sm:text-2xl font-bold text-indigo-400" id="cardSavingsRate">0%</div>
+                <p class="text-[10px] text-slate-500 mt-2" id="savingsSubtitle">Da renda guardada</p>
+            </div>
+        </div>
+
+        <!-- LAYOUT DUPLO: FORMULÁRIO E GRÁFICOS -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- FORMULÁRIO DE LANÇAMENTO (Lado Esquerdo no Desktop) -->
+            <div class="lg:col-span-4 bg-slate-800/60 backdrop-blur border border-slate-700/50 rounded-2xl p-5 shadow-xl no-print flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-700/60">
+                        <h3 class="font-bold text-slate-100 flex items-center gap-2 text-sm sm:text-base">
+                            <i class="fa-solid fa-circle-plus text-brand-500"></i>
+                            <span id="formTitle">Novo Lançamento</span>
+                        </h3>
+                        <button type="button" id="cancelEditBtn" onclick="resetForm()" class="hidden text-xs text-rose-400 hover:text-rose-300">
+                            Cancelar Edição
+                        </button>
+                    </div>
+
+                    <form id="transactionForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                        <input type="hidden" id="editId">
+
+                        <!-- Tipo de Movimentação (Saída Selecionada por Padrão) -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Tipo de Movimentação</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="type" value="expense" checked class="peer sr-only" onchange="updateCategoryOptions()">
+                                    <div class="w-full text-center py-2 px-3 text-xs font-semibold rounded-xl border border-slate-700 bg-slate-900/60 text-slate-400 peer-checked:bg-rose-500/20 peer-checked:border-rose-500/50 peer-checked:text-rose-400 transition">
+                                        <i class="fa-solid fa-arrow-up text-xs mr-1"></i> Saída
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="type" value="income" class="peer sr-only" onchange="updateCategoryOptions()">
+                                    <div class="w-full text-center py-2 px-3 text-xs font-semibold rounded-xl border border-slate-700 bg-slate-900/60 text-slate-400 peer-checked:bg-emerald-500/20 peer-checked:border-emerald-500/50 peer-checked:text-emerald-400 transition">
+                                        <i class="fa-solid fa-arrow-down text-xs mr-1"></i> Entrada
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Valor e Data -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-300 mb-1">Valor (R$)</label>
+                                <input type="number" step="0.01" min="0.01" id="amount" required placeholder="0,00" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-300 mb-1">Data</label>
+                                <input type="date" id="date" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            </div>
+                        </div>
+
+                        <!-- Categoria -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Categoria</label>
+                            <select id="category" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                <!-- Preenchido dinamicamente pelo JS -->
+                            </select>
+                        </div>
+
+                        <!-- Descrição -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Descrição</label>
+                            <input type="text" id="description" placeholder="Ex: Supermercado, Salário..." required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        </div>
+
+                        <!-- Botão Salvar -->
+                        <button type="submit" id="submitBtn" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-semibold py-2.5 rounded-xl transition shadow-lg shadow-brand-600/20 text-sm flex items-center justify-center gap-2 mt-2">
+                            <i class="fa-solid fa-plus"></i>
+                            <span id="submitBtnText">Adicionar Lançamento</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Resumo Rápido Top Gastos -->
+                <div class="mt-6 pt-4 border-t border-slate-700/60">
+                    <h4 class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-fire text-rose-400"></i> Top Gastos no Período
+                    </h4>
+                    <ul id="topExpensesList" class="space-y-1.5 text-xs text-slate-300">
+                        <li class="text-slate-500 italic">Nenhum gasto registrado.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- RELATÓRIOS E GRÁFICOS (Lado Direito no Desktop) -->
+            <div class="lg:col-span-8 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- Gráfico 1: Fluxo de Caixa Mensal -->
+                    <div class="bg-slate-800/60 backdrop-blur border border-slate-700/50 rounded-2xl p-4 sm:p-5 card-print shadow-xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="font-bold text-slate-100 text-sm flex items-center gap-2">
+                                    <i class="fa-solid fa-chart-column text-brand-500"></i> Fluxo de Caixa
+                                </h3>
+                                <span class="text-[11px] text-slate-400">Entradas vs Saídas</span>
+                            </div>
+                            <div class="relative h-56 w-full">
+                                <canvas id="cashFlowChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico 2: Despesas por Categoria -->
+                    <div class="bg-slate-800/60 backdrop-blur border border-slate-700/50 rounded-2xl p-4 sm:p-5 card-print shadow-xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="font-bold text-slate-100 text-sm flex items-center gap-2">
+                                    <i class="fa-solid fa-chart-pie text-brand-500"></i> Gastos por Categoria
+                                </h3>
+                                <span class="text-[11px] text-slate-400">Distribuição %</span>
+                            </div>
+                            <div class="relative h-56 w-full flex items-center justify-center">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- EXTRATO DE TRANSAÇÕES -->
+                <div class="bg-slate-800/60 backdrop-blur border border-slate-700/50 rounded-2xl p-4 sm:p-5 shadow-xl card-print">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 no-print">
+                        <h3 class="font-bold text-slate-100 text-sm sm:text-base flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-brand-500"></i>
+                            Extrato de Lançamentos
+                        </h3>
+
+                        <!-- Filtros e Busca Local do Extrato -->
+                        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                            <div class="relative flex-1 sm:w-48">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
+                                <input type="text" id="searchQuery" oninput="renderTable()" placeholder="Buscar..." class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg pl-8 pr-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            </div>
+                            <select id="filterCategory" onchange="renderTable()" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                <option value="all">Todas Categorias</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Tabela Tabela de Transações com Scroll Responsivo -->
+                    <div class="overflow-x-auto rounded-xl border border-slate-700/50">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-900/80 uppercase text-[10px] tracking-wider text-slate-400 border-b border-slate-700/60">
+                                <tr>
+                                    <th class="p-3">Data</th>
+                                    <th class="p-3">Descrição</th>
+                                    <th class="p-3">Categoria</th>
+                                    <th class="p-3 text-right">Valor</th>
+                                    <th class="p-3 text-center no-print">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionTableBody" class="divide-y divide-slate-800">
+                                <!-- Linhas renderizadas via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Mensagem Sem Registros -->
+                    <div id="emptyState" class="hidden py-8 text-center text-slate-500 text-xs">
+                        <i class="fa-solid fa-receipt text-3xl mb-2 text-slate-600 block"></i>
+                        Nenhum lançamento encontrado no período.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- JS DA APLICAÇÃO E INTEGRAÇÃO SUPABASE -->
+    <script>
+        // Categorias Pré-definidas
+        const CATEGORIES = {
+            expense: ['Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Lazer', 'Educação', 'Contas & Serviços', 'Outros Gastos'],
+            income: ['Salário', 'Freelance', 'Investimentos', 'Vendas', 'Outras Entradas']
+        };
+
+        // Estado da Aplicação
+        let transactions = [];
+        let supabaseClient = null;
+        let isSupabaseActive = false;
+        let cashFlowChartInstance = null;
+        let categoryChartInstance = null;
+
+        // Inicialização ao carregar a página
+        document.addEventListener('DOMContentLoaded', () => {
+            // Define data padrão do formulário como hoje
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            
+            // Popula opções de categoria
+            updateCategoryOptions();
+
+            // Tenta inicializar conexão com Supabase através das variáveis globais do config.js
+            initSupabaseFromConfig();
+
+            // Carrega e renderiza dados
+            loadTransactions();
+        });
+
+        // Configuração do Supabase via arquivo config.js
+        function initSupabaseFromConfig() {
+            // Verifica se as variáveis foram exportadas no arquivo config.js
+            const url = window.SUPABASE_URL || (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : null);
+            const key = window.SUPABASE_ANON_KEY || (typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : null);
+
+            if (url && key) {
+                try {
+                    supabaseClient = supabase.createClient(url, key);
+                    isSupabaseActive = true;
+                    updateStatusBadge(true, 'Conectado ao Supabase');
+                } catch (err) {
+                    console.error('Erro ao conectar ao Supabase:', err);
+                    isSupabaseActive = false;
+                    updateStatusBadge(false, 'Erro no Supabase (Modo Local)');
+                }
+            } else {
+                console.warn('Variáveis SUPABASE_URL ou SUPABASE_ANON_KEY não encontradas no config.js. Utilizando LocalStorage.');
+                isSupabaseActive = false;
+                updateStatusBadge(false, 'Armazenamento Local (config.js não detectado)');
+            }
+        }
+
+        function updateStatusBadge(active, text) {
+            const badge = document.getElementById('supabaseStatusBadge');
+            const statusText = document.getElementById('supabaseStatusText');
+            statusText.innerText = text;
+
+            if (active) {
+                badge.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium";
+                badge.querySelector('span').className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+            } else {
+                badge.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium";
+                badge.querySelector('span').className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
+            }
+        }
+
+        // Atualiza Dropdown de Categorias
+        function updateCategoryOptions() {
+            const type = document.querySelector('input[name="type"]:checked').value;
+            const categorySelect = document.getElementById('category');
+            categorySelect.innerHTML = '';
+
+            CATEGORIES[type].forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                categorySelect.appendChild(opt);
+            });
+
+            // Atualiza também filtro do extrato
+            populateCategoryFilter();
+        }
+
+        function populateCategoryFilter() {
+            const filterSelect = document.getElementById('filterCategory');
+            const currentVal = filterSelect.value;
+            filterSelect.innerHTML = '<option value="all">Todas Categorias</option>';
+            
+            const allCats = [...CATEGORIES.expense, ...CATEGORIES.income];
+            allCats.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                filterSelect.appendChild(opt);
+            });
+            filterSelect.value = currentVal;
+        }
+
+        // Carregar Transações (Supabase ou LocalStorage)
+        async function loadTransactions() {
+            if (isSupabaseActive) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('transactions')
+                        .select('*')
+                        .order('date', { ascending: false });
+
+                    if (error) throw error;
+                    transactions = data || [];
+                } catch (err) {
+                    console.error('Falha ao carregar do Supabase:', err);
+                    transactions = getLocalTransactions();
+                }
+            } else {
+                transactions = getLocalTransactions();
+            }
+
+            renderApp();
+        }
+
+        function getLocalTransactions() {
+            return JSON.parse(localStorage.getItem('finances_data') || '[]');
+        }
+
+        function saveLocalTransactions(data) {
+            localStorage.setItem('finances_data', JSON.stringify(data));
+        }
+
+        // Submissão do Formulário (Criar / Editar)
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const editId = document.getElementById('editId').value;
+            const type = document.querySelector('input[name="type"]:checked').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const date = document.getElementById('date').value;
+            const category = document.getElementById('category').value;
+            const description = document.getElementById('description').value.trim();
+
+            const payload = {
+                type,
+                amount,
+                date,
+                category,
+                description,
+                updated_at: new Date().toISOString()
+            };
+
+            if (isSupabaseActive) {
+                try {
+                    if (editId) {
+                        const { error } = await supabaseClient
+                            .from('transactions')
+                            .update(payload)
+                            .eq('id', editId);
+                        if (error) throw error;
+                    } else {
+                        const { error } = await supabaseClient
+                            .from('transactions')
+                            .insert([payload]);
+                        if (error) throw error;
+                    }
+                } catch (err) {
+                    alert('Erro ao salvar no Supabase: ' + err.message);
+                    return;
+                }
+            } else {
+                // Modo Local
+                if (editId) {
+                    const idx = transactions.findIndex(t => t.id == editId);
+                    if (idx !== -1) {
+                        transactions[idx] = { ...transactions[idx], ...payload };
+                    }
+                } else {
+                    payload.id = Date.now().toString();
+                    transactions.unshift(payload);
+                }
+                saveLocalTransactions(transactions);
+            }
+
+            resetForm();
+            await loadTransactions();
+        }
+
+        // Resetar Formulário
+        function resetForm() {
+            document.getElementById('transactionForm').reset();
+            document.getElementById('editId').value = '';
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            
+            // Força a opção Saída por padrão
+            document.querySelector('input[name="type"][value="expense"]').checked = true;
+            updateCategoryOptions();
+
+            document.getElementById('formTitle').innerText = 'Novo Lançamento';
+            document.getElementById('submitBtnText').innerText = 'Adicionar Lançamento';
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+        }
+
+        // Editar Lançamento
+        function editTransaction(id) {
+            const item = transactions.find(t => t.id == id);
+            if (!item) return;
+
+            document.getElementById('editId').value = item.id;
+            document.querySelector(`input[name="type"][value="${item.type}"]`).checked = true;
+            updateCategoryOptions();
+
+            document.getElementById('amount').value = item.amount;
+            document.getElementById('date').value = item.date;
+            document.getElementById('category').value = item.category;
+            document.getElementById('description').value = item.description;
+
+            document.getElementById('formTitle').innerText = 'Editar Lançamento';
+            document.getElementById('submitBtnText').innerText = 'Atualizar Lançamento';
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Excluir Lançamento
+        async function deleteTransaction(id) {
+            if (!confirm('Deseja realmente excluir este lançamento?')) return;
+
+            if (isSupabaseActive) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('transactions')
+                        .delete()
+                        .eq('id', id);
+                    if (error) throw error;
+                } catch (err) {
+                    alert('Erro ao excluir do Supabase: ' + err.message);
+                    return;
+                }
+            } else {
+                transactions = transactions.filter(t => t.id != id);
+                saveLocalTransactions(transactions);
+            }
+
+            await loadTransactions();
+        }
+
+        // Filtro de Período
+        function handlePeriodChange() {
+            const val = document.getElementById('periodSelect').value;
+            const customRange = document.getElementById('customDateRange');
+            if (val === 'custom') {
+                customRange.classList.remove('hidden');
+            } else {
+                customRange.classList.add('hidden');
+            }
+            renderApp();
+        }
+
+        function getFilteredTransactions() {
+            const period = document.getElementById('periodSelect').value;
+            const now = new Date();
+            
+            return transactions.filter(t => {
+                const tDate = new Date(t.date + 'T00:00:00');
+                
+                if (period === 'current_month') {
+                    return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+                } else if (period === 'last_month') {
+                    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                    return tDate.getMonth() === lastMonth.getMonth() && tDate.getFullYear() === lastMonth.getFullYear();
+                } else if (period === 'current_year') {
+                    return tDate.getFullYear() === now.getFullYear();
+                } else if (period === 'custom') {
+                    const start = document.getElementById('filterStartDate').value;
+                    const end = document.getElementById('filterEndDate').value;
+                    if (start && new Date(t.date) < new Date(start)) return false;
+                    if (end && new Date(t.date) > new Date(end)) return false;
+                    return true;
+                }
+                return true; // 'all'
+            });
+        }
+
+        // Renderização Geral do App
+        function renderApp() {
+            const filtered = getFilteredTransactions();
+            renderCards(filtered);
+            renderTable(filtered);
+            renderCharts(filtered);
+            renderTopExpenses(filtered);
+        }
+
+        // Renderizar Cartões
+        function renderCards(data) {
+            const income = data.filter(t => t.type === 'income').reduce((acc, t) => acc + Number(t.amount), 0);
+            const expense = data.filter(t => t.type === 'expense').reduce((acc, t) => acc + Number(t.amount), 0);
+            const balance = income - expense;
+            const savingsRate = income > 0 ? Math.max(0, ((income - expense) / income) * 100) : 0;
+
+            document.getElementById('cardIncome').innerText = formatCurrency(income);
+            document.getElementById('cardExpense').innerText = formatCurrency(expense);
+            
+            const cardBalance = document.getElementById('cardBalance');
+            cardBalance.innerText = formatCurrency(balance);
+            cardBalance.className = `text-xl sm:text-2xl font-bold ${balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+            document.getElementById('cardSavingsRate').innerText = `${savingsRate.toFixed(1)}%`;
+        }
+
+        // Renderizar Tabela Extrato
+        function renderTable(dataToUse) {
+            const data = dataToUse || getFilteredTransactions();
+            const query = document.getElementById('searchQuery').value.toLowerCase();
+            const selectedCat = document.getElementById('filterCategory').value;
+
+            const tbody = document.getElementById('transactionTableBody');
+            tbody.innerHTML = '';
+
+            const finalData = data.filter(t => {
+                const matchesQuery = t.description.toLowerCase().includes(query) || t.category.toLowerCase().includes(query);
+                const matchesCat = selectedCat === 'all' || t.category === selectedCat;
+                return matchesQuery && matchesCat;
+            });
+
+            if (finalData.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('emptyState').classList.add('hidden');
+            }
+
+            finalData.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/40 transition";
+
+                const isExpense = t.type === 'expense';
+                const badgeClass = isExpense ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+
+                tr.innerHTML = `
+                    <td class="p-3 text-slate-400 whitespace-nowrap">${formatDate(t.date)}</td>
+                    <td class="p-3 font-medium text-slate-200">${escapeHTML(t.description)}</td>
+                    <td class="p-3">
+                        <span class="inline-block px-2 py-0.5 text-[10px] rounded-md border ${badgeClass}">
+                            ${escapeHTML(t.category)}
+                        </span>
+                    </td>
+                    <td class="p-3 text-right font-semibold whitespace-nowrap ${isExpense ? 'text-rose-400' : 'text-emerald-400'}">
+                        ${isExpense ? '-' : '+'} ${formatCurrency(t.amount)}
+                    </td>
+                    <td class="p-3 text-center no-print whitespace-nowrap">
+                        <button onclick="editTransaction('${t.id}')" class="text-slate-400 hover:text-brand-400 p-1 mr-1" title="Editar">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-400 p-1" title="Excluir">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Renderizar Top Gastos
+        function renderTopExpenses(data) {
+            const list = document.getElementById('topExpensesList');
+            list.innerHTML = '';
+
+            const expenses = data.filter(t => t.type === 'expense')
+                                 .sort((a, b) => b.amount - a.amount)
+                                 .slice(0, 3);
+
+            if (expenses.length === 0) {
+                list.innerHTML = '<li class="text-slate-500 italic">Nenhum gasto no período.</li>';
+                return;
+            }
+
+            expenses.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = "flex justify-between items-center py-1 border-b border-slate-700/30 last:border-none";
+                li.innerHTML = `
+                    <span class="truncate pr-2"><span class="text-slate-500 font-bold mr-1">#${index+1}</span> ${escapeHTML(item.description)}</span>
+                    <span class="font-semibold text-rose-400 whitespace-nowrap">${formatCurrency(item.amount)}</span>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        // Renderizar Gráficos com Chart.js
+        function renderCharts(data) {
+            // 1. Gráfico Fluxo de Caixa (Mensal)
+            const monthsMap = {};
+            data.forEach(t => {
+                const monthKey = t.date.substring(0, 7); // AAAA-MM
+                if (!monthsMap[monthKey]) monthsMap[monthKey] = { income: 0, expense: 0 };
+                if (t.type === 'income') monthsMap[monthKey].income += Number(t.amount);
+                else monthsMap[monthKey].expense += Number(t.amount);
+            });
+
+            const sortedMonths = Object.keys(monthsMap).sort();
+            const labels = sortedMonths.map(m => {
+                const [year, month] = m.split('-');
+                return `${month}/${year.substring(2)}`;
+            });
+
+            const incomeData = sortedMonths.map(m => monthsMap[m].income);
+            const expenseData = sortedMonths.map(m => monthsMap[m].expense);
+
+            if (cashFlowChartInstance) cashFlowChartInstance.destroy();
+            const ctx1 = document.getElementById('cashFlowChart').getContext('2d');
+            cashFlowChartInstance = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: labels.length ? labels : ['Sem Dados'],
+                    datasets: [
+                        { label: 'Entradas', data: incomeData, backgroundColor: '#10b981', borderRadius: 4 },
+                        { label: 'Saídas', data: expenseData, backgroundColor: '#f43f5e', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } },
+                    scales: {
+                        x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { display: false } },
+                        y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#334155' } }
+                    }
+                }
+            });
+
+            // 2. Gráfico por Categoria (Apenas Saídas)
+            const categoryMap = {};
+            data.filter(t => t.type === 'expense').forEach(t => {
+                categoryMap[t.category] = (categoryMap[t.category] || 0) + Number(t.amount);
+            });
+
+            const catLabels = Object.keys(categoryMap);
+            const catValues = Object.values(categoryMap);
+
+            if (categoryChartInstance) categoryChartInstance.destroy();
+            const ctx2 = document.getElementById('categoryChart').getContext('2d');
+            categoryChartInstance = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: catLabels.length ? catLabels : ['Sem Gastos'],
+                    datasets: [{
+                        data: catValues.length ? catValues : [1],
+                        backgroundColor: [
+                            '#f43f5e', '#3b82f6', '#eab308', '#a855f7', 
+                            '#06b6d4', '#ec4899', '#f97316', '#64748b'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 } } } }
+                }
+            });
+        }
+
+        // Exportar JSON
+        function exportJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transactions, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `finance_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        // Exportar CSV
+        function exportCSV() {
+            if (transactions.length === 0) {
+                alert('Nenhum dado para exportar.');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,ID,Tipo,Data,Categoria,Descricao,Valor\n";
+            transactions.forEach(t => {
+                csvContent += `"${t.id}","${t.type}","${t.date}","${t.category}","${t.description.replace(/"/g, '""')}",${t.amount}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `relatorio_financeiro_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+
+        // Importar JSON
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        if (confirm(`Deseja importar ${importedData.length} registros?`)) {
+                            if (isSupabaseActive) {
+                                const { error } = await supabaseClient.from('transactions').insert(importedData);
+                                if (error) throw error;
+                            } else {
+                                transactions = importedData;
+                                saveLocalTransactions(transactions);
+                            }
+                            await loadTransactions();
+                            alert('Dados importados com sucesso!');
+                        }
+                    } else {
+                        alert('Formato de arquivo JSON inválido.');
+                    }
+                } catch (err) {
+                    alert('Erro ao importar arquivo: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Funções Utilitárias
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const [year, month, day] = dateStr.split('-');
+            return `${day}/${month}/${year}`;
+        }
+
+        function escapeHTML(str) {
+            return String(str).replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+    </script>
+</body>
+</html>
