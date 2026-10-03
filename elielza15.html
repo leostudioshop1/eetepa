@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Gestão Financeira Clean - Elielza</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Configuração do Supabase (externo) -->
+    <script src="config.js"></script>
+
+    <style>
+        /* Ajustes específicos para iOS Safe Area */
+        body {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        /* Evita zoom automático no Safari do iPhone quando o input foca */
+        @media (max-width: 640px) {
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+        }
+
+        @media print {
+            body { background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            .card-print { border: 1px solid #ddd !important; box-shadow: none !important; color: black !important; }
+        }
+        
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-full flex flex-col font-sans antialiased text-slate-200 bg-slate-950 selection:bg-indigo-500 selection:text-white">
+
+    <!-- BARRA SUPERIOR CLEAN -->
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-30 pt-[env(safe-area-inset-top)] no-print">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                    <i class="fa-solid fa-wallet text-base"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-sm tracking-tight text-white block">Minhas Finanças</span>
+                    <span class="text-[10px] text-slate-400 block -mt-0.5 sm:hidden">Tabela: elielza</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2 text-xs">
+                <!-- Status da Conexão Supabase -->
+                <div id="supabaseStatusBadge" class="px-2.5 py-1.5 rounded-full bg-slate-800/90 text-slate-400 border border-slate-700/50 flex items-center gap-1.5 font-medium min-h-[36px]" title="Status do Banco de Dados">
+                    <span id="supabaseStatusDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <span id="supabaseStatusText" class="hidden sm:inline">Conectando...</span>
+                </div>
+
+                <button onclick="exportCSV()" title="Exportar dados para CSV/Excel" class="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-2.5 sm:px-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 transition border border-slate-700/50 flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-file-csv text-sm"></i> <span class="hidden sm:inline text-xs">Exportar</span>
+                </button>
+                <button onclick="window.print()" title="Imprimir Relatório" class="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-2.5 sm:px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-medium transition flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-600/20">
+                    <i class="fa-solid fa-print text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
+
+        <!-- CARDS DE RESUMO FINANCEIRO -->
+        <div class="grid grid-cols-3 gap-2.5 sm:gap-4">
+            <div class="bg-slate-900/80 border border-slate-800 p-3 sm:p-4 rounded-2xl card-print">
+                <span class="text-[10px] sm:text-[11px] font-semibold text-slate-400 block mb-1 uppercase tracking-wider">Entradas</span>
+                <span id="cardIncome" class="text-sm sm:text-2xl font-bold text-emerald-400 block truncate">R$ 0,00</span>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 p-3 sm:p-4 rounded-2xl card-print">
+                <span class="text-[10px] sm:text-[11px] font-semibold text-slate-400 block mb-1 uppercase tracking-wider">Saídas</span>
+                <span id="cardExpense" class="text-sm sm:text-2xl font-bold text-rose-400 block truncate">R$ 0,00</span>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 p-3 sm:p-4 rounded-2xl card-print">
+                <span class="text-[10px] sm:text-[11px] font-semibold text-slate-400 block mb-1 uppercase tracking-wider">Saldo</span>
+                <span id="cardBalance" class="text-sm sm:text-2xl font-bold text-slate-100 block truncate">R$ 0,00</span>
+            </div>
+        </div>
+
+        <!-- FORMULÁRIO DE INSERÇÃO DIRETA E CLEAN -->
+        <div class="bg-slate-900/90 border border-slate-800/90 rounded-2xl p-4 sm:p-6 shadow-xl no-print">
+            <div class="flex items-center justify-between mb-3.5">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400" id="formTitle">Novo Lançamento</span>
+
+                <!-- Alternador Rápido Saída / Entrada -->
+                <div class="inline-flex p-1 bg-slate-950 border border-slate-800 rounded-xl">
+                    <button type="button" id="btnTypeExpense" onclick="setTransactionType('saida')" class="min-h-[38px] px-3.5 py-1.5 text-xs font-bold rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30 transition active:scale-95 flex items-center">
+                        <i class="fa-solid fa-arrow-up mr-1.5"></i> Saída
+                    </button>
+                    <button type="button" id="btnTypeIncome" onclick="setTransactionType('entrada')" class="min-h-[38px] px-3.5 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 transition active:scale-95 flex items-center">
+                        <i class="fa-solid fa-arrow-down mr-1.5"></i> Entrada
+                    </button>
+                </div>
+            </div>
+
+            <form id="transactionForm" onsubmit="handleFormSubmit(event)" class="space-y-3.5">
+                <input type="hidden" id="editId">
+                <input type="hidden" id="transactionType" value="saida">
+
+                <!-- Campo de Valor em Destaque -->
+                <div class="relative">
+                    <span class="absolute left-4 top-3 text-slate-500 font-bold text-xl">R$</span>
+                    <input type="number" step="0.01" min="0.01" id="amount" required placeholder="0,00" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-12 pr-4 py-3 text-2xl font-bold text-white focus:outline-none focus:border-indigo-500 transition placeholder-slate-700 min-h-[52px]">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <!-- Descrição -->
+                    <div class="sm:col-span-1">
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">Descrição</label>
+                        <input type="text" id="description" placeholder="Ex: Mercado, Uber..." required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm sm:text-xs text-slate-100 focus:outline-none focus:border-indigo-500 min-h-[44px]">
+                    </div>
+
+                    <!-- Categoria -->
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">Categoria</label>
+                        <select id="category" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm sm:text-xs text-slate-100 focus:outline-none focus:border-indigo-500 min-h-[44px]">
+                            <!-- Preenchido via JS -->
+                        </select>
+                    </div>
+
+                    <!-- Data -->
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">Data</label>
+                        <input type="date" id="date" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-sm sm:text-xs text-slate-100 focus:outline-none focus:border-indigo-500 min-h-[44px]">
+                    </div>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="flex items-center gap-2 pt-1">
+                    <button type="submit" id="submitBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white font-semibold py-3.5 rounded-xl transition text-sm sm:text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 min-h-[48px]">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                        <span id="submitBtnText">Salvar Despesa</span>
+                    </button>
+                    <button type="button" id="cancelEditBtn" onclick="resetForm()" class="hidden bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-300 font-medium px-4 py-3.5 rounded-xl text-sm sm:text-xs min-h-[48px]">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- EXTRATO / HISTÓRICO DE TRANSAÇÕES -->
+        <div class="space-y-3">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 no-print">
+                <span class="text-xs font-bold text-slate-300">Extrato Financeiro <span class="hidden sm:inline text-slate-500">(Tabela: elielza)</span></span>
+
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <select id="periodSelect" onchange="renderApp()" class="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2.5 focus:outline-none flex-1 sm:flex-initial min-h-[40px]">
+                        <option value="current_month">Mês Atual</option>
+                        <option value="last_month">Mês Anterior</option>
+                        <option value="current_year">Ano Atual</option>
+                        <option value="all">Tudo</option>
+                    </select>
+
+                    <input type="text" id="searchQuery" oninput="renderTable()" placeholder="Buscar..." class="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2.5 focus:outline-none flex-1 sm:w-40 min-h-[40px]">
+                </div>
+            </div>
+
+            <!-- Tabela em Desktop / Cards empilhados no iPhone -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden card-print">
+                
+                <!-- Visão Tabela para Telas Médias e Grandes -->
+                <div class="hidden sm:block overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950/80 uppercase text-[10px] tracking-wider text-slate-500 border-b border-slate-800">
+                            <tr>
+                                <th class="p-3.5">Data</th>
+                                <th class="p-3.5">Descrição</th>
+                                <th class="p-3.5">Categoria</th>
+                                <th class="p-3.5 text-right">Valor</th>
+                                <th class="p-3.5 text-center no-print">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionTableBody" class="divide-y divide-slate-800/60">
+                            <!-- Preenchido via JS em telas maiores -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Visão Cards para iPhone / Mobile -->
+                <div id="mobileTransactionCards" class="block sm:hidden divide-y divide-slate-800/60 p-1">
+                    <!-- Preenchido via JS no Mobile -->
+                </div>
+
+                <div id="emptyState" class="hidden py-8 text-center text-slate-500 text-xs">
+                    Nenhum lançamento encontrado na tabela elielza.
+                </div>
+            </div>
+        </div>
+
+        <!-- GRÁFICOS VISUAIS CLEAN -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 card-print">
+                <h3 class="text-xs font-semibold text-slate-400 mb-3">Fluxo Mensal</h3>
+                <div class="relative h-44 w-full">
+                    <canvas id="cashFlowChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 card-print">
+                <h3 class="text-xs font-semibold text-slate-400 mb-3">Despesas por Categoria</h3>
+                <div class="relative h-44 w-full flex items-center justify-center">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- LÓGICA DA APLICAÇÃO JS -->
+    <script>
+        // Verificação de segurança da config
+        if (!window.SUPABASE_CONFIG) {
+            alert("Erro: Configurações do Supabase não encontradas! Verifique o arquivo config.js");
+        }
+
+        // Conexão ao Supabase
+        const supabaseClient = supabase.createClient(
+            window.SUPABASE_CONFIG.url,
+            window.SUPABASE_CONFIG.key
+        );
+
+        const CATEGORIES = {
+            saida: ['Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Lazer', 'Contas', 'Outros'],
+            entrada: ['Salário', 'Freelance', 'Investimentos', 'Outros']
+        };
+
+        let transactions = [];
+        let cashFlowChartInstance = null;
+        let categoryChartInstance = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            updateCategoryOptions();
+            updateStatusBadge(true, 'Supabase Conectado');
+            loadTransactions();
+        });
+
+        function setTransactionType(type) {
+            document.getElementById('transactionType').value = type;
+            const btnExpense = document.getElementById('btnTypeExpense');
+            const btnIncome = document.getElementById('btnTypeIncome');
+            const submitBtnText = document.getElementById('submitBtnText');
+
+            if (type === 'saida') {
+                btnExpense.className = "min-h-[38px] px-3.5 py-1.5 text-xs font-bold rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30 transition active:scale-95 flex items-center";
+                btnIncome.className = "min-h-[38px] px-3.5 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 transition active:scale-95 flex items-center border border-transparent";
+                submitBtnText.innerText = "Salvar Despesa";
+            } else {
+                btnIncome.className = "min-h-[38px] px-3.5 py-1.5 text-xs font-bold rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition active:scale-95 flex items-center";
+                btnExpense.className = "min-h-[38px] px-3.5 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-slate-200 transition active:scale-95 flex items-center border border-transparent";
+                submitBtnText.innerText = "Salvar Receita";
+            }
+
+            updateCategoryOptions();
+        }
+
+        function updateStatusBadge(active, text) {
+            document.getElementById('supabaseStatusText').innerText = text;
+            const dot = document.getElementById('supabaseStatusDot');
+            dot.className = active ? "w-2 h-2 rounded-full bg-emerald-400 animate-pulse" : "w-2 h-2 rounded-full bg-amber-400";
+        }
+
+        function updateCategoryOptions() {
+            const type = document.getElementById('transactionType').value;
+            const categorySelect = document.getElementById('category');
+            categorySelect.innerHTML = '';
+
+            CATEGORIES[type].forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                categorySelect.appendChild(opt);
+            });
+        }
+
+        // CARREGA TODOS OS DADOS DA TABELA 'elielza'
+        async function loadTransactions() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('elielza')
+                    .select('*')
+                    .order('data_hora', { ascending: false });
+
+                if (error) throw error;
+
+                transactions = (data || []).map(item => ({
+                    id: item.id,
+                    type: item.tipo,
+                    amount: parseFloat(item.valor) || 0,
+                    date: item.data_hora ? item.data_hora.substring(0, 10) : '',
+                    category: item.categoria || 'Outros',
+                    description: item.descricao || '',
+                    data_hora: item.data_hora
+                }));
+
+                renderApp();
+            } catch (err) {
+                console.error("Erro ao carregar da tabela elielza:", err);
+                alert("Erro ao carregar dados do Supabase: " + err.message);
+            }
+        }
+
+        // SALVA OU ATUALIZA NA TABELA 'elielza'
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const editId = document.getElementById('editId').value;
+            const tipo = document.getElementById('transactionType').value;
+            const valor = parseFloat(document.getElementById('amount').value);
+            const dateVal = document.getElementById('date').value;
+            const categoria = document.getElementById('category').value;
+            const descricao = document.getElementById('description').value.trim();
+
+            const data_hora = `${dateVal}T12:00:00.000Z`;
+
+            const payload = {
+                tipo: tipo,
+                valor: valor,
+                data_hora: data_hora,
+                categoria: categoria,
+                descricao: descricao
+            };
+
+            try {
+                if (editId) {
+                    const { error } = await supabaseClient
+                        .from('elielza')
+                        .update(payload)
+                        .eq('id', editId);
+
+                    if (error) throw error;
+                } else {
+                    const { error } = await supabaseClient
+                        .from('elielza')
+                        .insert([payload]);
+
+                    if (error) throw error;
+                }
+
+                resetForm();
+                await loadTransactions();
+            } catch (err) {
+                console.error("Erro ao salvar na tabela elielza:", err);
+                alert("Erro ao salvar no banco de dados: " + err.message);
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('transactionForm').reset();
+            document.getElementById('editId').value = '';
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            setTransactionType('saida');
+
+            document.getElementById('formTitle').innerText = 'Novo Lançamento';
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+        }
+
+        function editTransaction(id) {
+            const item = transactions.find(t => t.id == id);
+            if (!item) return;
+
+            document.getElementById('editId').value = item.id;
+            setTransactionType(item.type);
+
+            document.getElementById('amount').value = item.amount;
+            document.getElementById('date').value = item.date;
+            document.getElementById('category').value = item.category;
+            document.getElementById('description').value = item.description;
+
+            document.getElementById('formTitle').innerText = 'Editar Lançamento';
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // DELETA DA TABELA 'elielza'
+        async function deleteTransaction(id) {
+            if (!confirm('Deseja excluir este lançamento da tabela elielza?')) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('elielza')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                await loadTransactions();
+            } catch (err) {
+                console.error("Erro ao excluir na tabela elielza:", err);
+                alert("Erro ao excluir lançamento: " + err.message);
+            }
+        }
+
+        function getFilteredTransactions() {
+            const period = document.getElementById('periodSelect').value;
+            const now = new Date();
+
+            return transactions.filter(t => {
+                if (!t.date) return true;
+                const tDate = new Date(t.date + 'T00:00:00');
+                if (period === 'current_month') {
+                    return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+                } else if (period === 'last_month') {
+                    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                    return tDate.getMonth() === lastMonth.getMonth() && tDate.getFullYear() === lastMonth.getFullYear();
+                } else if (period === 'current_year') {
+                    return tDate.getFullYear() === now.getFullYear();
+                }
+                return true;
+            });
+        }
+
+        function renderApp() {
+            const filtered = getFilteredTransactions();
+            renderCards(filtered);
+            renderTable(filtered);
+            renderCharts(filtered);
+        }
+
+        function renderCards(data) {
+            const income = data.filter(t => t.type === 'entrada').reduce((acc, t) => acc + Number(t.amount), 0);
+            const expense = data.filter(t => t.type === 'saida').reduce((acc, t) => acc + Number(t.amount), 0);
+            const balance = income - expense;
+
+            document.getElementById('cardIncome').innerText = formatCurrency(income);
+            document.getElementById('cardExpense').innerText = formatCurrency(expense);
+            
+            const cardBalance = document.getElementById('cardBalance');
+            cardBalance.innerText = formatCurrency(balance);
+            cardBalance.className = `text-sm sm:text-2xl font-bold block truncate ${balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+        }
+
+        function renderTable(dataToUse) {
+            const data = dataToUse || getFilteredTransactions();
+            const query = document.getElementById('searchQuery').value.toLowerCase();
+
+            const tbody = document.getElementById('transactionTableBody');
+            const mobileCards = document.getElementById('mobileTransactionCards');
+            tbody.innerHTML = '';
+            mobileCards.innerHTML = '';
+
+            const finalData = data.filter(t => 
+                (t.description || '').toLowerCase().includes(query) || (t.category || '').toLowerCase().includes(query)
+            );
+
+            if (finalData.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('emptyState').classList.add('hidden');
+            }
+
+            finalData.forEach(t => {
+                const isExpense = t.type === 'saida';
+
+                // 1. Render para Desktop (Tabela)
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/40 transition";
+                tr.innerHTML = `
+                    <td class="p-3.5 text-slate-400 whitespace-nowrap">${formatDate(t.date)}</td>
+                    <td class="p-3.5 font-medium text-slate-200">${escapeHTML(t.description)}</td>
+                    <td class="p-3.5 text-slate-400">${escapeHTML(t.category)}</td>
+                    <td class="p-3.5 text-right font-semibold whitespace-nowrap ${isExpense ? 'text-rose-400' : 'text-emerald-400'}">
+                        ${isExpense ? '-' : '+'} ${formatCurrency(t.amount)}
+                    </td>
+                    <td class="p-3.5 text-center no-print whitespace-nowrap">
+                        <button onclick="editTransaction('${t.id}')" title="Editar" class="text-slate-500 hover:text-indigo-400 p-2 transition">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button onclick="deleteTransaction('${t.id}')" title="Excluir" class="text-slate-500 hover:text-rose-400 p-2 transition">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+
+                // 2. Render para Mobile / iPhone ( Cards )
+                const card = document.createElement('div');
+                card.className = "p-3 flex items-center justify-between gap-3 active:bg-slate-800/30 transition";
+                card.innerHTML = `
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-medium">${formatDate(t.date)}</span>
+                            <span class="text-[10px] text-slate-500 truncate">${escapeHTML(t.category)}</span>
+                        </div>
+                        <p class="font-medium text-xs text-slate-200 truncate">${escapeHTML(t.description)}</p>
+                    </div>
+
+                    <div class="text-right flex-shrink-0">
+                        <span class="font-bold text-xs block mb-1 ${isExpense ? 'text-rose-400' : 'text-emerald-400'}">
+                            ${isExpense ? '-' : '+'} ${formatCurrency(t.amount)}
+                        </span>
+                        <div class="flex items-center justify-end gap-1 no-print">
+                            <button onclick="editTransaction('${t.id}')" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 active:text-indigo-400 flex items-center justify-center">
+                                <i class="fa-solid fa-pen text-[10px]"></i>
+                            </button>
+                            <button onclick="deleteTransaction('${t.id}')" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 active:text-rose-400 flex items-center justify-center">
+                                <i class="fa-solid fa-trash text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                mobileCards.appendChild(card);
+            });
+        }
+
+        function renderCharts(data) {
+            const monthsMap = {};
+            data.forEach(t => {
+                if (!t.date) return;
+                const monthKey = t.date.substring(0, 7);
+                if (!monthsMap[monthKey]) monthsMap[monthKey] = { income: 0, expense: 0 };
+                if (t.type === 'entrada') monthsMap[monthKey].income += Number(t.amount);
+                else monthsMap[monthKey].expense += Number(t.amount);
+            });
+
+            const sortedMonths = Object.keys(monthsMap).sort();
+            const labels = sortedMonths.map(m => m.split('-')[1]);
+
+            if (cashFlowChartInstance) cashFlowChartInstance.destroy();
+            const ctx1 = document.getElementById('cashFlowChart').getContext('2d');
+            cashFlowChartInstance = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: labels.length ? labels : ['-'],
+                    datasets: [
+                        { label: 'Entradas', data: sortedMonths.map(m => monthsMap[m].income), backgroundColor: '#10b981', borderRadius: 4 },
+                        { label: 'Saídas', data: sortedMonths.map(m => monthsMap[m].expense), backgroundColor: '#f43f5e', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#64748b', font: { size: 10 } } } },
+                    scales: {
+                        x: { ticks: { color: '#64748b' }, grid: { display: false } },
+                        y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } }
+                    }
+                }
+            });
+
+            const categoryMap = {};
+            data.filter(t => t.type === 'saida').forEach(t => {
+                categoryMap[t.category] = (categoryMap[t.category] || 0) + Number(t.amount);
+            });
+
+            if (categoryChartInstance) categoryChartInstance.destroy();
+            const ctx2 = document.getElementById('categoryChart').getContext('2d');
+            categoryChartInstance = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(categoryMap),
+                    datasets: [{
+                        data: Object.values(categoryMap),
+                        backgroundColor: ['#f43f5e', '#6366f1', '#eab308', '#a855f7', '#06b6d4', '#f97316', '#64748b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#64748b', font: { size: 10 } } } }
+                }
+            });
+        }
+
+        function exportCSV() {
+            if (transactions.length === 0) return alert('Nenhum dado disponível para exportar.');
+            let csv = "data:text/csv;charset=utf-8,ID,Tipo,Data,Categoria,Descricao,Valor\n";
+            transactions.forEach(t => {
+                csv += `"${t.id}","${t.type}","${t.date}","${t.category}","${(t.description || '').replace(/"/g, '""')}",${t.amount}\n`;
+            });
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csv));
+            link.setAttribute("download", `elielza_financas_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const [year, month, day] = dateStr.split('-');
+            return `${day}/${month}/${year.substring(2)}`;
+        }
+
+        function escapeHTML(str) {
+            return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
+        }
+    </script>
+</body>
+</html>
