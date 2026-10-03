@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão Financeira Clean</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Exportador PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- Configuração do Supabase (externo) -->
+    <script src="config.js"></script>
+
+    <style>
+        @media print {
+            body { background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            .card-print { border: 1px solid #ddd !important; box-shadow: none !important; }
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+    </style>
+</head>
+<body class="min-h-full flex flex-col font-sans antialiased text-slate-200 bg-slate-950">
+
+    <!-- BARRA SUPERIOR -->
+    <header class="bg-slate-900/60 backdrop-blur border-b border-slate-800/80 sticky top-0 z-30 no-print">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                    <i class="fa-solid fa-wallet text-sm"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-sm tracking-tight text-white block leading-tight">Gestão Financeira</span>
+                    <span class="text-[10px] text-slate-400 block">Conectado ao Supabase</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2 text-xs">
+                <!-- Status do Conector -->
+                <div id="supabaseStatusBadge" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700/50 flex items-center gap-1.5 font-medium">
+                    <span id="supabaseStatusDot" class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    <span id="supabaseStatusText" class="hidden sm:inline">Carregando...</span>
+                </div>
+
+                <button onclick="exportarPDF()" title="Exportar PDF" class="p-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700/50">
+                    <i class="fa-solid fa-file-pdf text-red-400 mr-1"></i> <span class="hidden sm:inline">PDF</span>
+                </button>
+                <button onclick="exportCSV()" title="Exportar CSV" class="p-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700/50">
+                    <i class="fa-solid fa-file-csv text-emerald-400 mr-1"></i> <span class="hidden sm:inline">CSV</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main id="relatorioArea" class="flex-1 max-w-5xl w-full mx-auto px-4 py-6 space-y-6">
+
+        <!-- RESUMO RÁPIDO (CARDS CLEAN) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div class="bg-slate-900/80 border border-slate-800 p-3 sm:p-4 rounded-xl card-print">
+                <span class="text-[11px] font-medium text-slate-400 block mb-0.5">Saldo do Mês</span>
+                <span id="cardBalance" class="text-base sm:text-xl font-bold text-slate-100">R$ 0,00</span>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 p-3 sm:p-4 rounded-xl card-print">
+                <span class="text-[11px] font-medium text-slate-400 block mb-0.5">Total Entradas</span>
+                <span id="cardIncome" class="text-base sm:text-xl font-bold text-emerald-400">R$ 0,00</span>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 p-3 sm:p-4 rounded-xl card-print">
+                <span class="text-[11px] font-medium text-slate-400 block mb-0.5">Total Saídas</span>
+                <span id="cardExpense" class="text-base sm:text-xl font-bold text-rose-400">R$ 0,00</span>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 p-3 sm:p-4 rounded-xl card-print">
+                <span class="text-[11px] font-medium text-slate-400 block mb-0.5">Caixa do Hotel</span>
+                <span id="cardCaixa" class="text-base sm:text-xl font-bold text-indigo-400">R$ 0,00</span>
+            </div>
+        </div>
+
+        <!-- FORMULÁRIO DE INSERÇÃO DIRETA -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-2xl no-print">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" id="formTitle">Novo Lançamento</span>
+
+                <!-- Alternador de Tipo Direto (Saída Selecionada Por Padrão) -->
+                <div class="inline-flex p-0.5 bg-slate-950 border border-slate-800 rounded-lg">
+                    <button type="button" id="btnTypeExpense" onclick="setTransactionType('saida')" class="px-3 py-1 text-xs font-semibold rounded-md bg-rose-500/20 text-rose-400 transition">
+                        <i class="fa-solid fa-arrow-up mr-1"></i> Saída
+                    </button>
+                    <button type="button" id="btnTypeIncome" onclick="setTransactionType('entrada')" class="px-3 py-1 text-xs font-semibold rounded-md text-slate-400 hover:text-slate-200 transition">
+                        <i class="fa-solid fa-arrow-down mr-1"></i> Entrada
+                    </button>
+                </div>
+            </div>
+
+            <form id="transactionForm" onsubmit="handleFormSubmit(event)" class="space-y-3">
+                <input type="hidden" id="editId">
+                <input type="hidden" id="transactionType" value="saida">
+
+                <!-- Campo de Valor em Destaque -->
+                <div class="relative">
+                    <span class="absolute left-3.5 top-2.5 text-slate-500 font-semibold text-lg">R$</span>
+                    <input type="number" step="0.01" min="0.01" id="valor" required placeholder="0,00" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-4 py-2.5 text-xl font-bold text-white focus:outline-none focus:border-indigo-500 transition">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <!-- Descrição -->
+                    <div class="sm:col-span-1">
+                        <input type="text" id="descricao" placeholder="Descrição (ex: Almoço, Compras...)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+                    </div>
+
+                    <!-- Categoria -->
+                    <div>
+                        <select id="categoria" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+                            <!-- Preenchido dinamicamente -->
+                        </select>
+                    </div>
+
+                    <!-- Data e Hora -->
+                    <div>
+                        <input type="datetime-local" id="data_hora" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <!-- Campos Opcionais Expansíveis -->
+                <details class="text-xs text-slate-400 border-t border-slate-800/80 pt-2">
+                    <summary class="cursor-pointer hover:text-slate-200 font-medium py-1">Detalhes Adicionais (Origem, Pagamento, Responsável)</summary>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-2">
+                        <div>
+                            <label class="block text-[10px] text-slate-500 mb-1">Origem</label>
+                            <input type="text" id="origem" placeholder="Ex: Caixa do Hotel, Banco..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-500 mb-1">Forma de Pagamento</label>
+                            <input type="text" id="forma_pagamento" placeholder="Ex: Pix, Dinheiro, Cartão..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-500 mb-1">Responsável</label>
+                            <input type="text" id="responsavel" placeholder="Ex: Recepção, Gerência..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+                        </div>
+                    </div>
+                </details>
+
+                <!-- Botões de Ação -->
+                <div class="flex items-center gap-2 pt-1">
+                    <button type="submit" id="submitBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-check"></i>
+                        <span id="submitBtnText">Salvar Despesa</span>
+                    </button>
+                    <button type="button" id="cancelEditBtn" onclick="resetForm()" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium px-4 py-2.5 rounded-xl text-xs">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- FILTROS & HISTÓRICO -->
+        <div class="space-y-4">
+            <div class="flex flex-wrap justify-between items-center gap-2 no-print">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs font-bold text-slate-300">Acompanhamento do Mês</span>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <input type="month" id="mesFiltro" onchange="carregar()" class="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none">
+                    
+                    <select id="categoriaFiltro" onchange="carregar()" class="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none">
+                        <option value="">Todas as Categorias</option>
+                    </select>
+
+                    <input type="text" id="searchQuery" oninput="renderTable()" placeholder="Buscar..." class="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none w-28 sm:w-36">
+                </div>
+            </div>
+
+            <!-- TABELA CLEAN -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden card-print">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950/60 uppercase text-[10px] tracking-wider text-slate-500 border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Data / Hora</th>
+                                <th class="p-3">Descrição</th>
+                                <th class="p-3">Tipo</th>
+                                <th class="p-3 text-right">Valor</th>
+                                <th class="p-3">Categoria</th>
+                                <th class="p-3">Origem</th>
+                                <th class="p-3">Pagamento</th>
+                                <th class="p-3">Responsável</th>
+                                <th class="p-3 text-center no-print">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaBody" class="divide-y divide-slate-800/60">
+                            <!-- Inserido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="emptyState" class="hidden py-8 text-center text-slate-500 text-xs">
+                    Nenhum lançamento encontrado para o filtro selecionado.
+                </div>
+            </div>
+        </div>
+
+        <!-- GRÁFICOS CLEAN -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 card-print">
+                <h3 class="text-xs font-semibold text-slate-400 mb-3">Fluxo de Caixa</h3>
+                <div class="relative h-48 w-full">
+                    <canvas id="cashFlowChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 card-print">
+                <h3 class="text-xs font-semibold text-slate-400 mb-3">Gastos por Categoria</h3>
+                <div class="relative h-48 w-full flex items-center justify-center">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- JS APLICAÇÃO -->
+    <script>
+        // Categorias Padrão
+        const DEFAULT_CATEGORIES = {
+            saida: ['Alimentação', 'Manutenção', 'Lavanderia', 'Limpeza', 'Contas', 'Salários', 'Fornecedores', 'Outros'],
+            entrada: ['Hospedagem', 'Restaurante', 'Bar', 'Eventos', 'Outros']
+        };
+
+        let supabaseClient = null;
+        let isSupabaseActive = false;
+        let gastosData = [];
+        let cashFlowChartInstance = null;
+        let categoryChartInstance = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setMesAtual();
+            setNowDateTime();
+            
+            // Verifica o objeto SUPABASE_CONFIG vindo do config.js
+            if (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url && window.SUPABASE_CONFIG.key) {
+                try {
+                    supabaseClient = supabase.createClient(
+                        window.SUPABASE_CONFIG.url,
+                        window.SUPABASE_CONFIG.key
+                    );
+                    isSupabaseActive = true;
+                    updateStatusBadge(true, 'Supabase OK');
+                } catch (err) {
+                    console.error("Erro ao inicializar Supabase:", err);
+                    updateStatusBadge(false, 'Erro Conexão');
+                }
+            } else {
+                updateStatusBadge(false, 'config.js Ausente');
+            }
+
+            carregarCategorias().then(() => carregar());
+        });
+
+        function setMesAtual() {
+            const hoje = new Date();
+            document.getElementById("mesFiltro").value = hoje.toISOString().slice(0, 7);
+        }
+
+        function setNowDateTime() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('data_hora').value = now.toISOString().slice(0, 16);
+        }
+
+        function updateStatusBadge(active, text) {
+            document.getElementById('supabaseStatusText').innerText = text;
+            const dot = document.getElementById('supabaseStatusDot');
+            dot.className = active ? "w-1.5 h-1.5 rounded-full bg-emerald-400" : "w-1.5 h-1.5 rounded-full bg-amber-400";
+        }
+
+        function setTransactionType(type) {
+            document.getElementById('transactionType').value = type;
+            const btnExpense = document.getElementById('btnTypeExpense');
+            const btnIncome = document.getElementById('btnTypeIncome');
+            const submitBtnText = document.getElementById('submitBtnText');
+
+            if (type === 'saida') {
+                btnExpense.className = "px-3 py-1 text-xs font-semibold rounded-md bg-rose-500/20 text-rose-400 transition";
+                btnIncome.className = "px-3 py-1 text-xs font-semibold rounded-md text-slate-400 hover:text-slate-200 transition";
+                submitBtnText.innerText = "Salvar Despesa";
+            } else {
+                btnIncome.className = "px-3 py-1 text-xs font-semibold rounded-md bg-emerald-500/20 text-emerald-400 transition";
+                btnExpense.className = "px-3 py-1 text-xs font-semibold rounded-md text-slate-400 hover:text-slate-200 transition";
+                submitBtnText.innerText = "Salvar Entrada";
+            }
+
+            updateCategoryOptions();
+        }
+
+        function updateCategoryOptions() {
+            const type = document.getElementById('transactionType').value;
+            const select = document.getElementById('categoria');
+            select.innerHTML = '';
+
+            const list = DEFAULT_CATEGORIES[type] || [];
+            list.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                select.appendChild(opt);
+            });
+        }
+
+        async function carregarCategorias() {
+            let todasCategorias = [];
+            
+            if (isSupabaseActive) {
+                let desde = 0;
+                const passo = 1000;
+                let buscando = true;
+
+                while (buscando) {
+                    const { data, error } = await supabaseClient
+                        .from('gastos')
+                        .select('categoria')
+                        .range(desde, desde + passo - 1);
+
+                    if (error) {
+                        console.error("Erro ao carregar categorias:", error);
+                        break;
+                    }
+
+                    if (data && data.length > 0) {
+                        data.forEach(item => {
+                            if (item.categoria) todasCategorias.push(item.categoria);
+                        });
+                        desde += passo;
+                    }
+
+                    if (!data || data.length < passo) {
+                        buscando = false;
+                    }
+                }
+            }
+
+            // Junta com padrões
+            todasCategorias = [...todasCategorias, ...DEFAULT_CATEGORIES.saida, ...DEFAULT_CATEGORIES.entrada];
+
+            const categoriasUnicas = [...new Set(todasCategorias)].sort((a, b) => 
+                a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })
+            );
+
+            const selectFiltro = document.getElementById("categoriaFiltro");
+            selectFiltro.innerHTML = '<option value="">Todas as Categorias</option>';
+            categoriasUnicas.forEach(cat => {
+                selectFiltro.innerHTML += `<option value="${escapeHTML(cat)}">${escapeHTML(cat)}</option>`;
+            });
+
+            updateCategoryOptions();
+        }
+
+        function getIntervaloMes() {
+            const mes = document.getElementById("mesFiltro").value;
+            if (!mes) return { inicio: null, fim: null };
+            
+            const inicio = new Date(mes + "-01T00:00:00");
+            const fim = new Date(inicio);
+            fim.setMonth(fim.getMonth() + 1);
+            fim.setSeconds(fim.getSeconds() - 1);
+
+            return { inicio: inicio.toISOString(), fim: fim.toISOString() };
+        }
+
+        async function carregar() {
+            if (!isSupabaseActive) {
+                renderApp();
+                return;
+            }
+
+            const { inicio, fim } = getIntervaloMes();
+            const categoriaSelecionada = document.getElementById("categoriaFiltro").value;
+
+            let query = supabaseClient.from('gastos').select('*');
+
+            if (inicio && fim) {
+                query = query.gte('data_hora', inicio).lte('data_hora', fim);
+            }
+
+            if (categoriaSelecionada) {
+                query = query.eq('categoria', categoriaSelecionada);
+            }
+
+            const { data, error } = await query.order('data_hora', { ascending: false });
+
+            if (error) {
+                console.error("Erro ao carregar dados:", error);
+                alert("Erro ao carregar dados: " + error.message);
+                return;
+            }
+
+            gastosData = data || [];
+            renderApp();
+        }
+
+        function renderApp() {
+            renderCards();
+            renderTable();
+            renderCharts();
+        }
+
+        function renderCards() {
+            let totalEntradas = 0, totalSaidas = 0, caixa = 0;
+
+            gastosData.forEach(g => {
+                const valor = parseFloat(g.valor) || 0;
+                const isEntrada = g.tipo === 'entrada';
+
+                if (isEntrada) totalEntradas += valor;
+                else totalSaidas += valor;
+
+                if (g.origem === "Caixa do Hotel") {
+                    caixa += (isEntrada ? valor : -valor);
+                }
+            });
+
+            const saldo = totalEntradas - totalSaidas;
+
+            document.getElementById("cardIncome").innerText = formatCurrency(totalEntradas);
+            document.getElementById("cardExpense").innerText = formatCurrency(totalSaidas);
+            document.getElementById("cardCaixa").innerText = formatCurrency(caixa);
+
+            const cardBalance = document.getElementById("cardBalance");
+            cardBalance.innerText = formatCurrency(saldo);
+            cardBalance.className = `text-base sm:text-xl font-bold ${saldo >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+        }
+
+        function renderTable() {
+            const query = document.getElementById('searchQuery').value.toLowerCase();
+            const tbody = document.getElementById('tabelaBody');
+            tbody.innerHTML = '';
+
+            const finalData = gastosData.filter(g => 
+                (g.descricao || '').toLowerCase().includes(query) || 
+                (g.categoria || '').toLowerCase().includes(query) ||
+                (g.responsavel || '').toLowerCase().includes(query)
+            );
+
+            if (finalData.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('emptyState').classList.add('hidden');
+            }
+
+            finalData.forEach(g => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/40 transition";
+
+                const isEntrada = g.tipo === 'entrada';
+                const valor = parseFloat(g.valor) || 0;
+
+                tr.innerHTML = `
+                    <td class="p-3 text-slate-400 whitespace-nowrap">${formatDate(g.data_hora)}</td>
+                    <td class="p-3 font-medium text-slate-200">${escapeHTML(g.descricao || '')}</td>
+                    <td class="p-3"><span class="font-bold text-[10px] uppercase ${isEntrada ? 'text-emerald-400' : 'text-rose-400'}">${g.tipo || ''}</span></td>
+                    <td class="p-3 text-right font-semibold whitespace-nowrap ${isEntrada ? 'text-emerald-400' : 'text-rose-400'}">
+                        ${isEntrada ? '+' : '-'} ${formatCurrency(valor)}
+                    </td>
+                    <td class="p-3 text-slate-400">${escapeHTML(g.categoria || '')}</td>
+                    <td class="p-3 text-slate-400">${escapeHTML(g.origem || '')}</td>
+                    <td class="p-3 text-slate-400">${escapeHTML(g.forma_pagamento || '')}</td>
+                    <td class="p-3 text-slate-400">${escapeHTML(g.responsavel || '')}</td>
+                    <td class="p-3 text-center no-print whitespace-nowrap">
+                        <button onclick="editTransaction('${g.id}')" class="text-slate-500 hover:text-indigo-400 p-1 mr-1">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button onclick="deleteTransaction('${g.id}')" class="text-slate-500 hover:text-rose-400 p-1">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const editId = document.getElementById('editId').value;
+            const tipo = document.getElementById('transactionType').value;
+            const valor = parseFloat(document.getElementById('valor').value);
+            const descricao = document.getElementById('descricao').value.trim();
+            const categoria = document.getElementById('categoria').value;
+            const data_hora = new Date(document.getElementById('data_hora').value).toISOString();
+
+            const origem = document.getElementById('origem').value.trim();
+            const forma_pagamento = document.getElementById('forma_pagamento').value.trim();
+            const responsavel = document.getElementById('responsavel').value.trim();
+
+            const payload = {
+                tipo,
+                valor,
+                descricao,
+                categoria,
+                data_hora,
+                origem: origem || "Caixa do Hotel",
+                forma_pagamento: forma_pagamento || "Outros",
+                responsavel: responsavel || "Sistema"
+            };
+
+            if (isSupabaseActive) {
+                try {
+                    if (editId) {
+                        const { error } = await supabaseClient.from('gastos').update(payload).eq('id', editId);
+                        if (error) throw error;
+                    } else {
+                        const { error } = await supabaseClient.from('gastos').insert([payload]);
+                        if (error) throw error;
+                    }
+                } catch (err) {
+                    alert('Erro ao salvar no banco: ' + err.message);
+                    return;
+                }
+            }
+
+            resetForm();
+            await carregar();
+        }
+
+        function resetForm() {
+            document.getElementById('transactionForm').reset();
+            document.getElementById('editId').value = '';
+            setNowDateTime();
+            setTransactionType('saida');
+
+            document.getElementById('formTitle').innerText = 'Novo Lançamento';
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+        }
+
+        function editTransaction(id) {
+            const item = gastosData.find(g => g.id == id);
+            if (!item) return;
+
+            document.getElementById('editId').value = item.id;
+            setTransactionType(item.tipo || 'saida');
+
+            document.getElementById('valor').value = item.valor;
+            document.getElementById('descricao').value = item.descricao || '';
+            document.getElementById('categoria').value = item.categoria || '';
+
+            if (item.data_hora) {
+                const dt = new Date(item.data_hora);
+                dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+                document.getElementById('data_hora').value = dt.toISOString().slice(0, 16);
+            }
+
+            document.getElementById('origem').value = item.origem || '';
+            document.getElementById('forma_pagamento').value = item.forma_pagamento || '';
+            document.getElementById('responsavel').value = item.responsavel || '';
+
+            document.getElementById('formTitle').innerText = 'Editar Lançamento';
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function deleteTransaction(id) {
+            if (!confirm('Deseja excluir este lançamento?')) return;
+
+            if (isSupabaseActive) {
+                const { error } = await supabaseClient.from('gastos').delete().eq('id', id);
+                if (error) alert('Erro ao excluir: ' + error.message);
+            }
+
+            await carregar();
+        }
+
+        function renderCharts() {
+            // Chart 1: Fluxo
+            const monthsMap = {};
+            gastosData.forEach(g => {
+                const dateKey = g.data_hora ? g.data_hora.substring(0, 7) : 'Outros';
+                if (!monthsMap[dateKey]) monthsMap[dateKey] = { entrada: 0, saida: 0 };
+                if (g.tipo === 'entrada') monthsMap[dateKey].entrada += Number(g.valor || 0);
+                else monthsMap[dateKey].saida += Number(g.valor || 0);
+            });
+
+            const sortedMonths = Object.keys(monthsMap).sort();
+
+            if (cashFlowChartInstance) cashFlowChartInstance.destroy();
+            const ctx1 = document.getElementById('cashFlowChart').getContext('2d');
+            cashFlowChartInstance = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: sortedMonths.length ? sortedMonths : ['-'],
+                    datasets: [
+                        { label: 'Entradas', data: sortedMonths.map(m => monthsMap[m].entrada), backgroundColor: '#10b981' },
+                        { label: 'Saídas', data: sortedMonths.map(m => monthsMap[m].saida), backgroundColor: '#f43f5e' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#64748b', font: { size: 10 } } } },
+                    scales: {
+                        x: { ticks: { color: '#64748b' }, grid: { display: false } },
+                        y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } }
+                    }
+                }
+            });
+
+            // Chart 2: Categorias
+            const categoryMap = {};
+            gastosData.filter(g => g.tipo !== 'entrada').forEach(g => {
+                const cat = g.categoria || 'Sem Categoria';
+                categoryMap[cat] = (categoryMap[cat] || 0) + Number(g.valor || 0);
+            });
+
+            if (categoryChartInstance) categoryChartInstance.destroy();
+            const ctx2 = document.getElementById('categoryChart').getContext('2d');
+            categoryChartInstance = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(categoryMap),
+                    datasets: [{
+                        data: Object.values(categoryMap),
+                        backgroundColor: ['#f43f5e', '#6366f1', '#eab308', '#a855f7', '#06b6d4', '#f97316', '#64748b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#64748b', font: { size: 10 } } } }
+                }
+            });
+        }
+
+        function exportarPDF() {
+            html2pdf().set({
+                margin: 0.5,
+                filename: `livro_caixa_${document.getElementById('mesFiltro').value || 'geral'}.pdf`,
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            }).from(document.getElementById("relatorioArea")).save();
+        }
+
+        function exportCSV() {
+            if (gastosData.length === 0) return alert('Sem dados.');
+            let csv = "data:text/csv;charset=utf-8,Data Hora,Descricao,Tipo,Valor,Categoria,Origem,Pagamento,Responsavel\n";
+            gastosData.forEach(g => {
+                csv += `"${g.data_hora}","${(g.descricao||'').replace(/"/g, '""')}","${g.tipo}",${g.valor},"${g.categoria||''}","${g.origem||''}","${g.forma_pagamento||''}","${g.responsavel||''}"\n`;
+            });
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csv));
+            link.setAttribute("download", `gastos_${document.getElementById('mesFiltro').value || 'export'}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            return new Date(dateStr).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+        }
+
+        function escapeHTML(str) {
+            return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
+        }
+    </script>
+</body>
+</html>
