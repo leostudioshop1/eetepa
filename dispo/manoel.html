@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manoel Cai — Clique para Derrubar</title>
+  <style>
+    :root {
+      --bg: #1a1510;
+      --panel: #2a2218;
+      --text: #f5e6d3;
+      --muted: #a89070;
+      --accent: #e8a54b;
+      --danger: #e85d4b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      user-select: none;
+    }
+    .bg-noise {
+      position: fixed; inset: 0; pointer-events: none; opacity: 0.04; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    header {
+      position: relative; z-index: 2;
+      text-align: center;
+      padding: 16px 20px 8px;
+    }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+      text-shadow: 0 2px 0 #5c3d12;
+    }
+    header p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .stats {
+      display: flex; gap: 20px; justify-content: center;
+      margin-top: 10px; font-size: 0.9rem;
+    }
+    .stat {
+      background: var(--panel);
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid #3d3225;
+    }
+    .stat strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+
+    .stage-wrap {
+      position: relative; z-index: 1;
+      width: min(560px, 94vw);
+      margin: 12px auto;
+    }
+    .stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      border-radius: 16px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 3px solid #4a3c2a;
+      box-shadow:
+        0 0 0 1px #2a2218,
+        0 12px 40px rgba(0,0,0,0.55),
+        inset 0 0 60px rgba(0,0,0,0.15);
+      background: #0d0a08;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .stage:hover:not(.fallen) {
+      transform: scale(1.01);
+      box-shadow:
+        0 0 0 1px #2a2218,
+        0 16px 48px rgba(0,0,0,0.6),
+        0 0 24px rgba(232,165,75,0.15);
+    }
+    .stage:active:not(.fallen) { transform: scale(0.99); }
+
+    .stage img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1);
+    }
+    #imgSit {
+      opacity: 1;
+      z-index: 1;
+    }
+    #imgFall {
+      opacity: 0;
+      z-index: 2;
+      transform: translateY(-8%) rotate(-2deg) scale(1.02);
+    }
+    .stage.fallen #imgSit {
+      opacity: 0;
+    }
+    .stage.fallen #imgFall {
+      opacity: 1;
+      transform: translateY(0) rotate(0) scale(1);
+      animation: impact 0.55s cubic-bezier(0.22, 1.2, 0.36, 1);
+    }
+    @keyframes impact {
+      0% { transform: translateY(-18%) rotate(-4deg) scale(1.05); opacity: 0.3; }
+      55% { transform: translateY(3%) rotate(1deg) scale(0.98); opacity: 1; }
+      75% { transform: translateY(-1%) rotate(-0.5deg) scale(1.01); }
+      100% { transform: translateY(0) rotate(0) scale(1); }
+    }
+
+    .hint {
+      position: absolute;
+      bottom: 14px; left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      background: rgba(26,21,16,0.82);
+      color: var(--text);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: 1px solid #5a4a35;
+      pointer-events: none;
+      letter-spacing: 0.03em;
+      animation: pulseHint 1.8s ease-in-out infinite;
+      white-space: nowrap;
+    }
+    .stage.fallen .hint { display: none; }
+    @keyframes pulseHint {
+      0%, 100% { opacity: 0.75; transform: translateX(-50%) scale(1); }
+      50% { opacity: 1; transform: translateX(-50%) scale(1.04); }
+    }
+
+    .boom {
+      position: absolute;
+      z-index: 10;
+      font-size: clamp(2rem, 8vw, 3.5rem);
+      font-weight: 900;
+      color: var(--danger);
+      text-shadow: 0 0 20px rgba(232,93,75,0.8), 2px 2px 0 #5c1a12;
+      pointer-events: none;
+      opacity: 0;
+      top: 40%; left: 50%;
+      transform: translate(-50%, -50%) scale(0.5);
+    }
+    .boom.show {
+      animation: boomPop 0.9s ease-out forwards;
+    }
+    @keyframes boomPop {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(-8deg); }
+      30% { opacity: 1; transform: translate(-50%, -50%) scale(1.25) rotate(4deg); }
+      60% { opacity: 1; transform: translate(-50%, -40%) scale(1.05) rotate(-2deg); }
+      100% { opacity: 0; transform: translate(-50%, -60%) scale(0.9) rotate(0); }
+    }
+
+    .dust {
+      position: absolute; inset: 0; z-index: 4; pointer-events: none;
+      overflow: hidden;
+    }
+    .particle {
+      position: absolute;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #c4a574;
+      opacity: 0;
+    }
+
+    .controls {
+      position: relative; z-index: 2;
+      display: flex; gap: 10px; flex-wrap: wrap;
+      justify-content: center;
+      padding: 8px 16px 24px;
+    }
+    .btn {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid #4a3c2a;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, border-color 0.15s;
+    }
+    .btn:hover { background: #3d3225; border-color: var(--accent); }
+    .btn:active { transform: scale(0.96); }
+    .btn.primary {
+      background: var(--accent);
+      color: #1a1510;
+      border-color: #c48a30;
+    }
+    .btn.primary:hover { background: #f0b55a; }
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .shake {
+      animation: screenShake 0.45s ease-out;
+    }
+    @keyframes screenShake {
+      0%, 100% { transform: translate(0,0); }
+      20% { transform: translate(-6px, 3px); }
+      40% { transform: translate(5px, -4px); }
+      60% { transform: translate(-4px, 2px); }
+      80% { transform: translate(3px, -2px); }
+    }
+
+    footer {
+      position: relative; z-index: 2;
+      font-size: 0.72rem;
+      color: var(--muted);
+      padding-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-noise"></div>
+  <header>
+    <h1>MANOEL CAI</h1>
+    <p>Clique nele para derrubar da cadeira</p>
+    <div class="stats">
+      <div class="stat">Quedas: <strong id="score">0</strong></div>
+      <div class="stat">Recorde: <strong id="best">0</strong></div>
+    </div>
+  </header>
+
+  <div class="stage-wrap" id="stageWrap">
+    <div class="stage" id="stage" role="button" tabindex="0" aria-label="Clique para derrubar">
+      <img id="imgSit" src="obama-sentado.jpg" alt="Manoel sentado" draggable="false" />
+      <img id="imgFall" src="obama-caido.jpg" alt="Manoel caído" draggable="false" />
+      <div class="dust" id="dust"></div>
+      <div class="boom" id="boom">CRASH!</div>
+      <div class="hint">👆 Clique para cair!</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn primary" id="btnFall" onclick="doFall()">Derrubar</button>
+    <button class="btn" id="btnReset" onclick="doReset()" disabled>Levantar</button>
+  </div>
+  <footer>leomaster · clique ou espaço</footer>
+
+  <script>
+    let fallen = false;
+    let score = 0;
+    let best = parseInt(localStorage.getItem('obama-cai-best') || '0', 10);
+    let busy = false;
+
+    document.getElementById('best').textContent = best;
+
+    const stage = document.getElementById('stage');
+    const stageWrap = document.getElementById('stageWrap');
+    const boom = document.getElementById('boom');
+    const dust = document.getElementById('dust');
+    const btnFall = document.getElementById('btnFall');
+    const btnReset = document.getElementById('btnReset');
+
+    function playThud() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const now = ctx.currentTime;
+        // low thud
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(90, now);
+        o.frequency.exponentialRampToValueAtTime(35, now + 0.25);
+        g.gain.setValueAtTime(0.35, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(now); o.stop(now + 0.4);
+        // noise click
+        const bufferSize = ctx.sampleRate * 0.12;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+        const ng = ctx.createGain();
+        ng.gain.setValueAtTime(0.2, now);
+        ng.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        noise.connect(ng); ng.connect(ctx.destination);
+        noise.start(now);
+        setTimeout(() => ctx.close(), 500);
+      } catch (_) {}
+    }
+
+    function spawnDust() {
+      dust.innerHTML = '';
+      for (let i = 0; i < 18; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const x = 30 + Math.random() * 40;
+        const y = 55 + Math.random() * 30;
+        p.style.left = x + '%';
+        p.style.top = y + '%';
+        p.style.width = (4 + Math.random() * 8) + 'px';
+        p.style.height = p.style.width;
+        p.style.background = ['#c4a574', '#8b7355', '#e8d4b0', '#6b5344'][i % 4];
+        dust.appendChild(p);
+        const dx = (Math.random() - 0.5) * 120;
+        const dy = -30 - Math.random() * 80;
+        p.animate([
+          { opacity: 0.9, transform: 'translate(0,0) scale(1)' },
+          { opacity: 0, transform: 'translate(' + dx + 'px,' + dy + 'px) scale(0.2)' }
+        ], { duration: 600 + Math.random() * 400, easing: 'cubic-bezier(0.2,0.8,0.3,1)', fill: 'forwards' });
+      }
+    }
+
+    function doFall() {
+      if (fallen || busy) return;
+      busy = true;
+      fallen = true;
+      stage.classList.add('fallen');
+      stageWrap.classList.add('shake');
+      boom.classList.remove('show');
+      void boom.offsetWidth;
+      boom.classList.add('show');
+      spawnDust();
+      playThud();
+
+      score++;
+      document.getElementById('score').textContent = score;
+      if (score > best) {
+        best = score;
+        localStorage.setItem('obama-cai-best', String(best));
+        document.getElementById('best').textContent = best;
+      }
+
+      btnFall.disabled = true;
+      btnReset.disabled = false;
+
+      setTimeout(function() {
+        stageWrap.classList.remove('shake');
+        busy = false;
+      }, 500);
+    }
+
+    function doReset() {
+      if (!fallen || busy) return;
+      busy = true;
+      fallen = false;
+      stage.classList.remove('fallen');
+      boom.classList.remove('show');
+      dust.innerHTML = '';
+      btnFall.disabled = false;
+      btnReset.disabled = true;
+      setTimeout(function() { busy = false; }, 350);
+    }
+
+    stage.addEventListener('click', function() {
+      if (fallen) doReset();
+      else doFall();
+    });
+    stage.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (fallen) doReset();
+        else doFall();
+      }
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === ' ' && e.target === document.body) {
+        e.preventDefault();
+        if (fallen) doReset();
+        else doFall();
+      }
+      if (e.key === 'r' || e.key === 'R') doReset();
+    });
+  </script>
+</body>
+</html>
