@@ -7,6 +7,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0a1628">
   <title>Campeões JOPEX 26 - EETEPA Xinguara</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+
   <style>
     * {
       margin: 0;
@@ -46,6 +50,7 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      position: relative;
     }
 
     .cover-section {
@@ -55,12 +60,12 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 14px 16px 8px;
+      padding: 12px 16px 6px;
     }
 
     .cover-section img {
       width: 100%;
-      max-width: 280px;
+      max-width: 220px;
       aspect-ratio: 1 / 1;
       object-fit: cover;
       border-radius: 14px;
@@ -71,40 +76,297 @@
     .header {
       flex-shrink: 0;
       background: linear-gradient(180deg, #0f3460 0%, #0a2540 100%);
-      padding: 12px 16px 14px;
+      padding: 10px 16px 12px;
       text-align: center;
     }
 
     .header h1 {
-      font-size: 1.15rem;
-      margin-bottom: 4px;
+      font-size: 1.1rem;
+      margin-bottom: 3px;
       color: #fff;
       font-weight: 700;
     }
 
     .header .subtitle {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: #7eb8ff;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .now-playing {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       color: #ffd700;
       font-weight: 600;
-      min-height: 20px;
+      min-height: 18px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
+    /* ========== TELAS ========== */
+    .screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      background: #0f1c2e;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    .screen-scroll {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 14px 16px 16px;
+      overscroll-behavior: contain;
+    }
+
+    .instructions {
+      background: rgba(30, 144, 255, 0.12);
+      border: 1px solid rgba(126, 184, 255, 0.25);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      font-size: 0.82rem;
+      line-height: 1.4;
+      color: #c8e0ff;
+    }
+
+    .instructions strong {
+      color: #ffd700;
+      display: block;
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.82rem;
+      color: #7eb8ff;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .form-group select,
+    .form-group input {
+      width: 100%;
+      padding: 13px 14px;
+      font-size: 1rem;
+      border-radius: 12px;
+      border: 2px solid rgba(126, 184, 255, 0.3);
+      background: #0a1628;
+      color: #fff;
+      appearance: none;
+      -webkit-appearance: none;
+      touch-action: manipulation;
+    }
+
+    .form-group select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237eb8ff' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+    }
+
+    .form-group select:focus,
+    .form-group input:focus {
+      outline: none;
+      border-color: #1e90ff;
+    }
+
+    .time-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .time-row .form-group {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 15px;
+      margin-top: 8px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(145deg, #ffd700, #f0a500);
+      color: #1a1a2e;
+      box-shadow: 0 5px 18px rgba(255, 215, 0, 0.4);
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .btn-secondary {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      border: 2px solid rgba(126, 184, 255, 0.4);
+      border-radius: 12px;
+      background: transparent;
+      color: #7eb8ff;
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+
+    .btn-secondary:active { background: rgba(30, 144, 255, 0.15); }
+
+    .btn-danger {
+      width: 100%;
+      padding: 12px;
+      margin-top: 8px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      border: 2px solid rgba(255, 107, 107, 0.5);
+      border-radius: 12px;
+      background: transparent;
+      color: #ff6b6b;
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+
+    .btn-danger:active { background: rgba(255, 107, 107, 0.12); }
+
+    .msg-error {
+      color: #ff6b6b;
+      font-size: 0.82rem;
+      margin-top: 10px;
+      text-align: center;
+      display: none;
+    }
+
+    .msg-success {
+      color: #4ade80;
+      font-size: 0.82rem;
+      margin-top: 10px;
+      text-align: center;
+      display: none;
+    }
+
+    /* ========== CONTAGEM ========== */
+    .countdown-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .countdown-label {
+      font-size: 0.9rem;
+      color: #7eb8ff;
+      margin-bottom: 6px;
+    }
+
+    .countdown-time {
+      font-size: 3rem;
+      font-weight: 800;
+      color: #ffd700;
+      letter-spacing: 2px;
+      margin-bottom: 14px;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.35);
+    }
+
+    .countdown-info {
+      font-size: 0.95rem;
+      color: #fff;
+      margin-bottom: 4px;
+      line-height: 1.35;
+    }
+
+    .countdown-info strong { color: #ffd700; }
+
+    .countdown-sub {
+      font-size: 0.82rem;
+      color: #7a9bb8;
+      margin-bottom: 4px;
+    }
+
+    .countdown-created {
+      font-size: 0.75rem;
+      color: #5a7a9a;
+      margin-bottom: 16px;
+    }
+
+    .sound-unlock {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      width: 100%;
+      max-width: 280px;
+    }
+
+    .sound-unlock.show { display: flex; }
+
+    .sound-unlock-btn {
+      width: 100%;
+      padding: 14px 18px;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(145deg, #22c55e, #16a34a);
+      color: #fff;
+      box-shadow: 0 5px 18px rgba(34, 197, 94, 0.4);
+      touch-action: manipulation;
+      cursor: pointer;
+      animation: pulse-green 1.5s ease-in-out infinite;
+    }
+
+    .sound-unlock-btn:active { transform: scale(0.97); }
+
+    .sound-unlock-hint {
+      font-size: 0.78rem;
+      color: #86efac;
+      line-height: 1.3;
+    }
+
+    @keyframes pulse-green {
+      0%, 100% { box-shadow: 0 5px 18px rgba(34, 197, 94, 0.4); }
+      50% { box-shadow: 0 5px 28px rgba(34, 197, 94, 0.7); }
+    }
+
+    .sound-ready {
+      display: none;
+      font-size: 0.82rem;
+      color: #4ade80;
+      margin-bottom: 10px;
+    }
+
+    .sound-ready.show { display: block; }
+
+    .countdown-actions {
+      width: 100%;
+      max-width: 280px;
+      padding: 0 0 8px;
+    }
+
+    /* ========== PLAYER ========== */
     .controls {
       flex-shrink: 0;
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 28px;
-      padding: 16px 20px;
+      gap: 26px;
+      padding: 14px 18px;
       background: #0a1628;
     }
 
@@ -112,10 +374,10 @@
       background: linear-gradient(145deg, #1e90ff, #0d6efd);
       border: none;
       color: white;
-      width: 56px;
-      height: 56px;
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
-      font-size: 1.35rem;
+      font-size: 1.3rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -123,14 +385,12 @@
       touch-action: manipulation;
     }
 
-    .controls button:active {
-      transform: scale(0.92);
-    }
+    .controls button:active { transform: scale(0.92); }
 
     #playPauseBtn {
-      width: 72px;
-      height: 72px;
-      font-size: 1.7rem;
+      width: 68px;
+      height: 68px;
+      font-size: 1.6rem;
       background: linear-gradient(145deg, #ffd700, #f0a500);
       color: #1a1a2e;
       box-shadow: 0 5px 18px rgba(255, 215, 0, 0.45);
@@ -140,7 +400,7 @@
       flex: 1;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      padding: 6px 0 10px;
+      padding: 4px 0 8px;
       background: #0f1c2e;
       overscroll-behavior: contain;
     }
@@ -148,15 +408,13 @@
     .song-item {
       display: flex;
       align-items: center;
-      padding: 14px 18px;
-      min-height: 52px;
+      padding: 12px 16px;
+      min-height: 48px;
       border-left: 4px solid transparent;
       touch-action: manipulation;
     }
 
-    .song-item:active {
-      background: rgba(30, 144, 255, 0.18);
-    }
+    .song-item:active { background: rgba(30, 144, 255, 0.18); }
 
     .song-item.active {
       background: rgba(30, 144, 255, 0.22);
@@ -164,25 +422,23 @@
     }
 
     .song-number {
-      width: 28px;
+      width: 26px;
       font-weight: 700;
       color: #7eb8ff;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       flex-shrink: 0;
     }
 
-    .song-item.active .song-number {
-      color: #ffd700;
-    }
+    .song-item.active .song-number { color: #ffd700; }
 
     .song-info {
       flex: 1;
       min-width: 0;
-      padding-right: 8px;
+      padding-right: 6px;
     }
 
     .song-title {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 500;
       line-height: 1.3;
       display: -webkit-box;
@@ -191,85 +447,231 @@
       overflow: hidden;
     }
 
-    .song-item.active .song-title {
-      color: #ffd700;
-    }
+    .song-item.active .song-title { color: #ffd700; }
 
     .playing-icon {
-      margin-left: 6px;
+      margin-left: 4px;
       color: #ffd700;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       display: none;
       flex-shrink: 0;
     }
 
-    .song-item.active .playing-icon {
-      display: inline;
-    }
+    .song-item.active .playing-icon { display: inline; }
 
     .footer {
       flex-shrink: 0;
       text-align: center;
-      padding: 10px 12px;
-      padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
-      font-size: 0.72rem;
+      padding: 8px 12px;
+      padding-bottom: max(8px, env(safe-area-inset-bottom, 8px));
+      font-size: 0.7rem;
       color: #7a9bb8;
       background: #0a1628;
       border-top: 1px solid rgba(255,255,255,0.06);
     }
 
-    .footer strong {
-      color: #7eb8ff;
+    .footer strong { color: #7eb8ff; }
+
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 22, 40, 0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      border-radius: 20px;
     }
 
-    /* iPhone SE / telas menores */
+    .loading-overlay.show { display: flex; }
+
+    .spinner {
+      width: 38px;
+      height: 38px;
+      border: 4px solid rgba(126, 184, 255, 0.3);
+      border-top-color: #ffd700;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .tap-to-play-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 22, 40, 0.92);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 60;
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .tap-to-play-overlay.show { display: flex; }
+
+    .tap-to-play-overlay h2 {
+      font-size: 1.3rem;
+      color: #ffd700;
+      margin-bottom: 8px;
+    }
+
+    .tap-to-play-overlay p {
+      font-size: 0.9rem;
+      color: #c8e0ff;
+      margin-bottom: 18px;
+      line-height: 1.35;
+    }
+
+    .tap-to-play-btn {
+      padding: 16px 32px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 16px;
+      background: linear-gradient(145deg, #ffd700, #f0a500);
+      color: #1a1a2e;
+      box-shadow: 0 6px 24px rgba(255, 215, 0, 0.45);
+      touch-action: manipulation;
+      cursor: pointer;
+      animation: pulse-gold 1.4s ease-in-out infinite;
+    }
+
+    .tap-to-play-btn:active { transform: scale(0.96); }
+
+    @keyframes pulse-gold {
+      0%, 100% { box-shadow: 0 6px 24px rgba(255, 215, 0, 0.45); }
+      50% { box-shadow: 0 6px 36px rgba(255, 215, 0, 0.75); }
+    }
+
     @media (max-height: 700px) {
-      .cover-section { padding: 10px 14px 6px; }
-      .cover-section img { max-width: 200px; }
-      .header { padding: 10px 14px 12px; }
-      .header h1 { font-size: 1.05rem; }
-      .controls { padding: 12px 16px; gap: 22px; }
-      .controls button { width: 50px; height: 50px; font-size: 1.2rem; }
-      #playPauseBtn { width: 64px; height: 64px; font-size: 1.5rem; }
-      .song-item { padding: 12px 16px; min-height: 48px; }
-    }
-
-    @media (max-width: 360px) {
-      .cover-section img { max-width: 220px; }
-      .song-title { font-size: 0.9rem; }
-      .controls { gap: 18px; }
+      .cover-section img { max-width: 160px; }
+      .countdown-time { font-size: 2.4rem; }
+      #playPauseBtn { width: 60px; height: 60px; font-size: 1.4rem; }
+      .controls button { width: 46px; height: 46px; font-size: 1.15rem; }
     }
   </style>
 </head>
 <body>
 
   <div class="player-container">
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="spinner"></div>
+    </div>
+
+    <div class="tap-to-play-overlay" id="tapToPlayOverlay">
+      <h2>🏆 Hora de começar!</h2>
+      <p id="tapToPlayText">A playlist está pronta.<br>Toque no botão para iniciar.</p>
+      <button class="tap-to-play-btn" id="tapToPlayBtn">▶️ Tocar agora</button>
+    </div>
+
     <div class="cover-section">
-      <img src="capa.png" alt="Capa CD - Campeões JOPEX 26 - EETEPA Xinguara">
+      <img src="capa.png" alt="Capa CD - Campeões JOPEX 26">
     </div>
 
     <div class="header">
       <h1>🏆 Campeões JOPEX 26</h1>
       <div class="subtitle">EETEPA Xinguara • Juntos Somos Mais Fortes!</div>
-      <div class="now-playing" id="nowPlaying">Nenhuma música tocando</div>
+      <div class="now-playing" id="nowPlaying">Carregando...</div>
     </div>
 
-    <div class="controls">
-      <button id="prevBtn" aria-label="Música anterior">⏮</button>
-      <button id="playPauseBtn" aria-label="Play ou Pause">▶️</button>
-      <button id="nextBtn" aria-label="Próxima música">⏭</button>
+    <!-- ========== TELA 1: AGENDAR ========== -->
+    <div class="screen" id="setupScreen">
+      <div class="screen-scroll">
+        <div class="instructions">
+          <strong>📋 Como usar</strong>
+          1. Escolha a <strong style="display:inline;color:#ffd700">música</strong> que deve começar<br>
+          2. Escolha a <strong style="display:inline;color:#ffd700">hora</strong> e o <strong style="display:inline;color:#ffd700">minuto</strong><br>
+          3. Toque em <strong style="display:inline;color:#ffd700">Agendar</strong><br>
+          4. Aparece a contagem regressiva. Quando zerar, a música inicia e segue a playlist.
+        </div>
+
+        <div class="form-group">
+          <label for="songSelect">🎵 Música que vai tocar primeiro</label>
+          <select id="songSelect"></select>
+        </div>
+
+        <div class="time-row">
+          <div class="form-group">
+            <label for="hourSelect">🕐 Hora</label>
+            <select id="hourSelect"></select>
+          </div>
+          <div class="form-group">
+            <label for="minuteSelect">🕑 Minuto</label>
+            <select id="minuteSelect"></select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="createdBy">👤 Seu nome (opcional)</label>
+          <input type="text" id="createdBy" placeholder="Ex: João" maxlength="40">
+        </div>
+
+        <button class="btn-primary" id="scheduleBtn">Agendar e iniciar contagem</button>
+        <div class="msg-error" id="errorMsg"></div>
+        <div class="msg-success" id="successMsg"></div>
+      </div>
     </div>
 
-    <div class="playlist" id="playlist"></div>
+    <!-- ========== TELA 2: CONTAGEM REGRESSIVA ========== -->
+    <div class="screen" id="countdownScreen">
+      <div class="countdown-wrap">
+        <div class="countdown-label">Começa em</div>
+        <div class="countdown-time" id="countdownDisplay">00:00:00</div>
+        <div class="countdown-info">
+          Vai tocar: <strong id="scheduledSongTitle">—</strong>
+        </div>
+        <div class="countdown-sub" id="scheduledTimeText">Horário: --:--</div>
+        <div class="countdown-created" id="scheduledCreatedBy"></div>
+
+        <div class="sound-unlock" id="soundUnlock">
+          <button class="sound-unlock-btn" id="soundUnlockBtn">🔊 Ativar som neste celular</button>
+          <div class="sound-unlock-hint">
+            Toque uma vez para liberar o áudio.<br>
+            Assim a música começa sozinha na hora.
+          </div>
+        </div>
+        <div class="sound-ready" id="soundReady">✅ Som ativado — inicia automaticamente</div>
+
+        <div class="countdown-actions">
+          <button class="btn-secondary" id="changeScheduleBtn">Alterar horário / música</button>
+          <button class="btn-danger" id="cancelBtn">Cancelar agendamento</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== TELA 3: PLAYER ========== -->
+    <div class="screen" id="playerScreen">
+      <div class="controls">
+        <button id="prevBtn" aria-label="Anterior">⏮</button>
+        <button id="playPauseBtn" aria-label="Play/Pause">▶️</button>
+        <button id="nextBtn" aria-label="Próxima">⏭</button>
+      </div>
+      <div class="playlist" id="playlist"></div>
+      <div style="padding: 8px 16px 4px;">
+        <button class="btn-secondary" id="newScheduleFromPlayerBtn" style="margin-top:0;">Novo agendamento</button>
+      </div>
+    </div>
 
     <div class="footer">
-      <strong>EETEPA Xinguara</strong> • Toque em qualquer música
+      <strong>EETEPA Xinguara</strong> • Sincronizado em tempo real
     </div>
   </div>
 
-  <audio id="audioPlayer" playsinline></audio>
+  <audio id="audioPlayer" playsinline preload="auto"></audio>
 
   <script>
+    if (!window.SUPABASE_CONFIG) {
+      alert("Erro: config.js do Supabase não encontrado!");
+    }
+
+    const supabaseClient = supabase.createClient(
+      window.SUPABASE_CONFIG.url,
+      window.SUPABASE_CONFIG.key
+    );
+
     const songs = [
       { title: "01 - HINO OFICIAL EEtepa!", file: "musica1.mp3" },
       { title: "02 - Nascemos Para Vencer", file: "musica2.mp3" },
@@ -290,37 +692,181 @@
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
 
+    const setupScreen = document.getElementById('setupScreen');
+    const countdownScreen = document.getElementById('countdownScreen');
+    const playerScreen = document.getElementById('playerScreen');
+    const songSelect = document.getElementById('songSelect');
+    const hourSelect = document.getElementById('hourSelect');
+    const minuteSelect = document.getElementById('minuteSelect');
+    const createdByInput = document.getElementById('createdBy');
+    const scheduleBtn = document.getElementById('scheduleBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const changeScheduleBtn = document.getElementById('changeScheduleBtn');
+    const newScheduleFromPlayerBtn = document.getElementById('newScheduleFromPlayerBtn');
+    const errorMsg = document.getElementById('errorMsg');
+    const successMsg = document.getElementById('successMsg');
+    const countdownDisplay = document.getElementById('countdownDisplay');
+    const scheduledSongTitle = document.getElementById('scheduledSongTitle');
+    const scheduledTimeText = document.getElementById('scheduledTimeText');
+    const scheduledCreatedBy = document.getElementById('scheduledCreatedBy');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const soundUnlock = document.getElementById('soundUnlock');
+    const soundUnlockBtn = document.getElementById('soundUnlockBtn');
+    const soundReady = document.getElementById('soundReady');
+    const tapToPlayOverlay = document.getElementById('tapToPlayOverlay');
+    const tapToPlayBtn = document.getElementById('tapToPlayBtn');
+    const tapToPlayText = document.getElementById('tapToPlayText');
+
     let currentIndex = -1;
     let isPlaying = false;
+    let startIndex = 0;
+    let countdownInterval = null;
+    let targetTime = null;
+    let currentScheduleId = null;
+    let hasStartedPlaying = false;
+    let audioUnlocked = false;
+    let pendingStartIndex = null;
+    let userWantsSetup = false; // força mostrar formulário ao clicar em "Alterar"
+
+    function showLoading(v) {
+      loadingOverlay.classList.toggle('show', v);
+    }
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.style.display = 'block';
+      successMsg.style.display = 'none';
+    }
+
+    function showSuccess(msg) {
+      successMsg.textContent = msg;
+      successMsg.style.display = 'block';
+      errorMsg.style.display = 'none';
+    }
+
+    function clearMessages() {
+      errorMsg.style.display = 'none';
+      successMsg.style.display = 'none';
+    }
+
+    function showScreen(name) {
+      setupScreen.classList.remove('active');
+      countdownScreen.classList.remove('active');
+      playerScreen.classList.remove('active');
+
+      if (name === 'setup') {
+        setupScreen.classList.add('active');
+        nowPlayingEl.textContent = 'Escolha a música, hora e minuto';
+      } else if (name === 'countdown') {
+        countdownScreen.classList.add('active');
+        nowPlayingEl.textContent = 'Aguardando horário...';
+        if (!audioUnlocked) {
+          soundUnlock.classList.add('show');
+          soundReady.classList.remove('show');
+        } else {
+          soundUnlock.classList.remove('show');
+          soundReady.classList.add('show');
+        }
+      } else if (name === 'player') {
+        playerScreen.classList.add('active');
+      }
+    }
+
+    function populateSelects() {
+      songSelect.innerHTML = '';
+      songs.forEach((song, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = song.title;
+        songSelect.appendChild(opt);
+      });
+
+      hourSelect.innerHTML = '';
+      for (let h = 0; h < 24; h++) {
+        const opt = document.createElement('option');
+        opt.value = h;
+        opt.textContent = String(h).padStart(2, '0');
+        hourSelect.appendChild(opt);
+      }
+
+      minuteSelect.innerHTML = '';
+      for (let m = 0; m < 60; m++) {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = String(m).padStart(2, '0');
+        minuteSelect.appendChild(opt);
+      }
+
+      const now = new Date();
+      now.setMinutes(now.getMinutes() + 2);
+      hourSelect.value = now.getHours();
+      minuteSelect.value = now.getMinutes();
+    }
 
     function renderPlaylist() {
       playlistEl.innerHTML = '';
       songs.forEach((song, index) => {
         const item = document.createElement('div');
         item.className = 'song-item';
-        item.innerHTML = `
-          <div class="song-number">${index + 1}</div>
-          <div class="song-info">
-            <div class="song-title">${song.title}</div>
-          </div>
-          <div class="playing-icon">▶</div>
-        `;
-        item.addEventListener('click', () => playSong(index));
+        item.innerHTML =
+          '<div class="song-number">' + (index + 1) + '</div>' +
+          '<div class="song-info"><div class="song-title">' + song.title + '</div></div>' +
+          '<div class="playing-icon">▶</div>';
+        item.addEventListener('click', function () { playSong(index); });
         playlistEl.appendChild(item);
       });
     }
 
-    function playSong(index) {
-      if (index < 0 || index >= songs.length) return;
+    async function unlockAudio() {
+      try {
+        audio.src = songs[0].file;
+        audio.volume = 0.01;
+        await audio.play();
+        audio.pause();
+        audio.currentTime = 0;
+        audio.volume = 1;
+        audioUnlocked = true;
+        soundUnlock.classList.remove('show');
+        soundReady.classList.add('show');
+        return true;
+      } catch (e) {
+        console.warn('Unlock falhou:', e);
+        return false;
+      }
+    }
+
+    async function playSong(index) {
+      if (index < 0 || index >= songs.length) return false;
       currentIndex = index;
       audio.src = songs[index].file;
-      audio.play().catch(() => audio.play());
-      isPlaying = true;
-      updateUI();
+      audio.volume = 1;
+
+      try {
+        await audio.play();
+        isPlaying = true;
+        audioUnlocked = true;
+        updateUI();
+        return true;
+      } catch (e) {
+        isPlaying = false;
+        pendingStartIndex = index;
+        showTapToPlay(songs[index].title);
+        updateUI();
+        return false;
+      }
+    }
+
+    function showTapToPlay(title) {
+      tapToPlayText.innerHTML = 'A faixa <strong style="color:#ffd700">' + title + '</strong> está pronta.<br>Toque no botão para iniciar neste celular.';
+      tapToPlayOverlay.classList.add('show');
+    }
+
+    function hideTapToPlay() {
+      tapToPlayOverlay.classList.remove('show');
     }
 
     function updateUI() {
-      document.querySelectorAll('.song-item').forEach((item, i) => {
+      document.querySelectorAll('.song-item').forEach(function (item, i) {
         item.classList.toggle('active', i === currentIndex);
       });
       nowPlayingEl.textContent = currentIndex >= 0
@@ -329,32 +875,324 @@
       playPauseBtn.textContent = isPlaying ? '⏸️' : '▶️';
     }
 
-    playPauseBtn.addEventListener('click', () => {
-      if (currentIndex === -1) { playSong(0); return; }
-      if (isPlaying) { audio.pause(); isPlaying = false; }
-      else { audio.play(); isPlaying = true; }
+    function formatTime(ms) {
+      if (ms < 0) ms = 0;
+      var total = Math.floor(ms / 1000);
+      var h = Math.floor(total / 3600);
+      var m = Math.floor((total % 3600) / 60);
+      var s = total % 60;
+      return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    async function fetchActiveSchedule() {
+      var res = await supabaseClient
+        .from('playlist_schedule')
+        .select('*')
+        .in('status', ['pending', 'playing'])
+        .order('scheduled_at', { ascending: true })
+        .limit(1);
+
+      if (res.error) {
+        console.error(res.error);
+        return null;
+      }
+      return res.data && res.data.length ? res.data[0] : null;
+    }
+
+    async function createSchedule(songIndex, hour, minute, createdBy) {
+      await supabaseClient
+        .from('playlist_schedule')
+        .update({ status: 'cancelled' })
+        .in('status', ['pending', 'playing']);
+
+      var scheduledAt = new Date();
+      scheduledAt.setHours(hour, minute, 0, 0);
+
+      var res = await supabaseClient
+        .from('playlist_schedule')
+        .insert({
+          song_index: songIndex,
+          song_title: songs[songIndex].title,
+          scheduled_hour: hour,
+          scheduled_minute: minute,
+          scheduled_at: scheduledAt.toISOString(),
+          status: 'pending',
+          created_by: createdBy || 'Anônimo'
+        })
+        .select()
+        .single();
+
+      if (res.error) throw res.error;
+      return res.data;
+    }
+
+    async function cancelSchedule(id) {
+      var res = await supabaseClient
+        .from('playlist_schedule')
+        .update({ status: 'cancelled' })
+        .eq('id', id);
+      if (res.error) throw res.error;
+    }
+
+    async function markAsPlaying(id) {
+      await supabaseClient
+        .from('playlist_schedule')
+        .update({ status: 'playing' })
+        .eq('id', id);
+    }
+
+    function stopCountdown() {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+    }
+
+    async function startPlayback(songIndex, scheduleId) {
+      if (hasStartedPlaying) return;
+      hasStartedPlaying = true;
+      startIndex = songIndex;
+      currentScheduleId = scheduleId;
+      userWantsSetup = false;
+
+      if (scheduleId) {
+        await markAsPlaying(scheduleId);
+      }
+
+      showScreen('player');
+      await playSong(songIndex);
+    }
+
+    function startCountdown(schedule) {
+      stopCountdown();
+
+      currentScheduleId = schedule.id;
+      startIndex = schedule.song_index;
+      targetTime = new Date(schedule.scheduled_at);
+      hasStartedPlaying = false;
+      userWantsSetup = false;
+
+      scheduledSongTitle.textContent = schedule.song_title;
+      scheduledTimeText.textContent =
+        'Horário marcado: ' +
+        String(schedule.scheduled_hour).padStart(2, '0') + ':' +
+        String(schedule.scheduled_minute).padStart(2, '0');
+      scheduledCreatedBy.textContent = schedule.created_by
+        ? 'Agendado por: ' + schedule.created_by
+        : '';
+
+      showScreen('countdown');
+
+      try {
+        audio.src = songs[schedule.song_index].file;
+        audio.load();
+      } catch (e) {}
+
+      countdownInterval = setInterval(function () {
+        var now = new Date();
+        var diff = targetTime - now;
+
+        if (diff <= 0) {
+          stopCountdown();
+          startPlayback(schedule.song_index, schedule.id);
+          return;
+        }
+        countdownDisplay.textContent = formatTime(diff);
+      }, 200);
+    }
+
+    async function checkAndSync() {
+      // Se o usuário pediu para alterar, não força countdown de volta
+      if (userWantsSetup) {
+        showScreen('setup');
+        return;
+      }
+
+      try {
+        var schedule = await fetchActiveSchedule();
+
+        if (!schedule) {
+          stopCountdown();
+          if (!hasStartedPlaying) {
+            currentScheduleId = null;
+            showScreen('setup');
+          }
+          return;
+        }
+
+        var target = new Date(schedule.scheduled_at);
+        var now = new Date();
+
+        if (schedule.status === 'playing') {
+          if (!hasStartedPlaying) {
+            await startPlayback(schedule.song_index, schedule.id);
+          }
+          return;
+        }
+
+        // pending
+        if (target > now) {
+          if (!countdownInterval || currentScheduleId !== schedule.id) {
+            startCountdown(schedule);
+          }
+        } else {
+          if (!hasStartedPlaying) {
+            await startPlayback(schedule.song_index, schedule.id);
+          }
+        }
+      } catch (err) {
+        console.error('Sync erro:', err);
+        // Em caso de erro de rede, ainda mostra o formulário
+        if (!hasStartedPlaying && !countdownInterval) {
+          showScreen('setup');
+        }
+      }
+    }
+
+    function setupRealtime() {
+      supabaseClient
+        .channel('playlist_schedule_changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'playlist_schedule' },
+          function () {
+            checkAndSync();
+          }
+        )
+        .subscribe();
+    }
+
+    // —— Eventos ——
+    scheduleBtn.addEventListener('click', async function () {
+      clearMessages();
+
+      var selectedIndex = parseInt(songSelect.value, 10);
+      var hour = parseInt(hourSelect.value, 10);
+      var minute = parseInt(minuteSelect.value, 10);
+      var createdBy = createdByInput.value.trim();
+
+      var now = new Date();
+      var target = new Date();
+      target.setHours(hour, minute, 0, 0);
+
+      if (target <= now) {
+        showError('Esse horário já passou. Escolha uma hora e minuto no futuro.');
+        return;
+      }
+
+      scheduleBtn.disabled = true;
+      showLoading(true);
+
+      try {
+        await unlockAudio();
+        var schedule = await createSchedule(selectedIndex, hour, minute, createdBy);
+        userWantsSetup = false;
+        showSuccess('Agendado! Contagem iniciada.');
+        startCountdown(schedule);
+      } catch (err) {
+        console.error(err);
+        showError('Erro ao agendar: ' + (err.message || 'Tente de novo'));
+      } finally {
+        scheduleBtn.disabled = false;
+        showLoading(false);
+      }
+    });
+
+    async function goToSetupAndCancel() {
+      showLoading(true);
+      try {
+        if (currentScheduleId) {
+          await cancelSchedule(currentScheduleId);
+        }
+        stopCountdown();
+        currentScheduleId = null;
+        targetTime = null;
+        hasStartedPlaying = false;
+        userWantsSetup = true;
+        hideTapToPlay();
+        audio.pause();
+        isPlaying = false;
+        clearMessages();
+        showScreen('setup');
+      } catch (err) {
+        alert('Erro ao cancelar: ' + err.message);
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    cancelBtn.addEventListener('click', goToSetupAndCancel);
+    changeScheduleBtn.addEventListener('click', goToSetupAndCancel);
+
+    newScheduleFromPlayerBtn.addEventListener('click', async function () {
+      await goToSetupAndCancel();
+    });
+
+    soundUnlockBtn.addEventListener('click', async function () {
+      var ok = await unlockAudio();
+      if (!ok) {
+        alert('Não foi possível ativar o som. Toque em qualquer lugar da tela e tente de novo.');
+      }
+    });
+
+    tapToPlayBtn.addEventListener('click', async function () {
+      hideTapToPlay();
+      var idx = pendingStartIndex !== null ? pendingStartIndex : startIndex;
+      pendingStartIndex = null;
+      audioUnlocked = true;
+      await playSong(idx);
+    });
+
+    playPauseBtn.addEventListener('click', async function () {
+      if (currentIndex === -1) {
+        await playSong(startIndex);
+        return;
+      }
+      if (isPlaying) {
+        audio.pause();
+        isPlaying = false;
+      } else {
+        try {
+          await audio.play();
+          isPlaying = true;
+        } catch (e) {
+          showTapToPlay(songs[currentIndex].title);
+        }
+      }
       updateUI();
     });
 
-    prevBtn.addEventListener('click', () => {
+    prevBtn.addEventListener('click', function () {
       playSong(currentIndex > 0 ? currentIndex - 1 : songs.length - 1);
     });
 
-    nextBtn.addEventListener('click', () => {
-      if (currentIndex < songs.length - 1) playSong(currentIndex + 1);
-      else { audio.pause(); isPlaying = false; updateUI(); }
+    nextBtn.addEventListener('click', function () {
+      if (currentIndex < songs.length - 1) {
+        playSong(currentIndex + 1);
+      } else {
+        audio.pause();
+        isPlaying = false;
+        updateUI();
+      }
     });
 
-    audio.addEventListener('ended', () => {
-      if (currentIndex < songs.length - 1) playSong(currentIndex + 1);
-      else {
+    audio.addEventListener('ended', function () {
+      if (currentIndex < songs.length - 1) {
+        playSong(currentIndex + 1);
+      } else {
         isPlaying = false;
         updateUI();
         nowPlayingEl.textContent = 'Fim da playlist 🏆';
       }
     });
 
+    // Start
+    populateSelects();
     renderPlaylist();
+    showScreen('setup'); // sempre começa mostrando o formulário
+    setupRealtime();
+    checkAndSync();
+    setInterval(checkAndSync, 10000);
   </script>
 </body>
 </html>
