@@ -78,10 +78,6 @@
       transform: scale(1.1);
     }
 
-    .controls button:active {
-      transform: scale(0.95);
-    }
-
     #playPauseBtn {
       width: 65px;
       height: 65px;
@@ -163,6 +159,14 @@
       color: #888;
       background: #0f3460;
     }
+
+    .error-msg {
+      color: #ff6b6b;
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 10px;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -171,6 +175,7 @@
     <div class="header">
       <h1>🎵 Minhas Músicas</h1>
       <div class="now-playing" id="nowPlaying">Nenhuma música tocando</div>
+      <div class="error-msg" id="errorMsg"></div>
     </div>
 
     <div class="controls">
@@ -179,42 +184,38 @@
       <button id="nextBtn" title="Próxima">⏭</button>
     </div>
 
-    <div class="playlist" id="playlist">
-      <!-- As músicas serão inseridas via JavaScript -->
-    </div>
+    <div class="playlist" id="playlist"></div>
 
     <div class="footer">
       Player de autoria própria • Clique em qualquer música
     </div>
   </div>
 
-  <audio id="audioPlayer"></audio>
+  <audio id="audioPlayer" preload="metadata"></audio>
 
   <script>
     // ============================================
-    // ✏️ EDITE AQUI AS SUAS MÚSICAS
-    // Coloque o nome real da música e o nome do arquivo MP3
+    // ✏️ EDITE AQUI — IMPORTANTE!
+    // Os nomes dos arquivos devem ser EXATAMENTE iguais
+    // aos nomes que estão no GitHub (respeitando maiúsculas/minúsculas)
     // ============================================
     const songs = [
-      { title: "Música 1 - Título da Música", file: "musica1.mp3" },
-      { title: "Música 2 - Título da Música", file: "musica2.mp3" },
-      { title: "Música 3 - Título da Música", file: "musica3.mp3" },
-      { title: "Música 4 - Título da Música", file: "musica4.mp3" },
-      { title: "Música 5 - Título da Música", file: "musica5.mp3" },
-      { title: "Música 6 - Título da Música", file: "musica6.mp3" },
-      { title: "Música 7 - Título da Música", file: "musica7.mp3" },
-      { title: "Música 8 - Título da Música", file: "musica8.mp3" },
-      { title: "Música 9 - Título da Música", file: "musica9.mp3" },
-      { title: "Música 10 - Título da Música", file: "musica10.mp3" }
+      { title: "Música 1", file: "./musica1.mp3" },
+      { title: "Música 2", file: "./musica2.mp3" },
+      { title: "Música 3", file: "./musica3.mp3" },
+      { title: "Música 4", file: "./musica4.mp3" },
+      { title: "Música 5", file: "./musica5.mp3" },
+      { title: "Música 6", file: "./musica6.mp3" },
+      { title: "Música 7", file: "./musica7.mp3" },
+      { title: "Música 8", file: "./musica8.mp3" },
+      { title: "Música 9", file: "./musica9.mp3" },
+      { title: "Música 10", file: "./musica10.mp3" }
     ];
-
-    // ============================================
-    // Código do player (não precisa mexer)
-    // ============================================
 
     const audio = document.getElementById('audioPlayer');
     const playlistEl = document.getElementById('playlist');
     const nowPlayingEl = document.getElementById('nowPlaying');
+    const errorMsgEl = document.getElementById('errorMsg');
     const playPauseBtn = document.getElementById('playPauseBtn');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
@@ -222,7 +223,6 @@
     let currentIndex = -1;
     let isPlaying = false;
 
-    // Criar a lista de músicas
     function renderPlaylist() {
       playlistEl.innerHTML = '';
       songs.forEach((song, index) => {
@@ -240,41 +240,50 @@
       });
     }
 
-    // Tocar uma música específica
     function playSong(index) {
       if (index < 0 || index >= songs.length) return;
 
       currentIndex = index;
-      audio.src = songs[index].file;
-      audio.play();
-      isPlaying = true;
+      errorMsgEl.style.display = 'none';
+      errorMsgEl.textContent = '';
 
-      updateUI();
+      audio.src = songs[index].file;
+      
+      const playPromise = audio.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            isPlaying = true;
+            updateUI();
+          })
+          .catch(error => {
+            console.error('Erro ao tocar:', error);
+            isPlaying = false;
+            errorMsgEl.style.display = 'block';
+            errorMsgEl.textContent = `Erro: não foi possível carregar "${songs[index].file}". Verifique o nome do arquivo.`;
+            updateUI();
+          });
+      }
     }
 
-    // Atualizar interface
     function updateUI() {
-      // Destacar música atual
       const items = document.querySelectorAll('.song-item');
       items.forEach((item, i) => {
         item.classList.toggle('active', i === currentIndex);
       });
 
-      // Atualizar texto "tocando agora"
       if (currentIndex >= 0) {
         nowPlayingEl.textContent = `Tocando: ${songs[currentIndex].title}`;
       } else {
         nowPlayingEl.textContent = 'Nenhuma música tocando';
       }
 
-      // Atualizar botão play/pause
       playPauseBtn.textContent = isPlaying ? '⏸️' : '▶️';
     }
 
-    // Play / Pause
     playPauseBtn.addEventListener('click', () => {
       if (currentIndex === -1) {
-        // Se nenhuma música estiver selecionada, começa da primeira
         playSong(0);
         return;
       }
@@ -283,46 +292,54 @@
         audio.pause();
         isPlaying = false;
       } else {
-        audio.play();
-        isPlaying = true;
+        audio.play()
+          .then(() => { isPlaying = true; updateUI(); })
+          .catch(() => {
+            errorMsgEl.style.display = 'block';
+            errorMsgEl.textContent = 'Erro ao reproduzir a música.';
+          });
       }
       updateUI();
     });
 
-    // Música anterior
     prevBtn.addEventListener('click', () => {
       if (currentIndex > 0) {
         playSong(currentIndex - 1);
       } else {
-        playSong(songs.length - 1); // volta para a última
+        playSong(songs.length - 1);
       }
     });
 
-    // Próxima música
     nextBtn.addEventListener('click', () => {
       if (currentIndex < songs.length - 1) {
         playSong(currentIndex + 1);
       } else {
-        // Para na última (como solicitado)
         audio.pause();
         isPlaying = false;
         updateUI();
       }
     });
 
-    // Quando a música terminar, toca a próxima automaticamente
     audio.addEventListener('ended', () => {
       if (currentIndex < songs.length - 1) {
         playSong(currentIndex + 1);
       } else {
-        // Chegou no final da lista
         isPlaying = false;
         updateUI();
         nowPlayingEl.textContent = 'Fim da playlist';
       }
     });
 
-    // Inicializar
+    // Detecta erro de carregamento do arquivo
+    audio.addEventListener('error', () => {
+      if (currentIndex >= 0) {
+        errorMsgEl.style.display = 'block';
+        errorMsgEl.textContent = `Arquivo não encontrado: ${songs[currentIndex].file}`;
+        isPlaying = false;
+        updateUI();
+      }
+    });
+
     renderPlaylist();
   </script>
 </body>
