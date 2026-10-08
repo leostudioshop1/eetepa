@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meu Player de Músicas</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f0f0f, #1a1a2e);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .player-container {
+      background: #16213e;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    .header {
+      background: #0f3460;
+      padding: 25px 20px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+    }
+
+    .now-playing {
+      font-size: 0.95rem;
+      color: #e94560;
+      font-weight: 600;
+      min-height: 24px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 25px;
+      padding: 25px 20px;
+      background: #1a1a2e;
+    }
+
+    .controls button {
+      background: #e94560;
+      border: none;
+      color: white;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .controls button:hover {
+      background: #ff6b81;
+      transform: scale(1.1);
+    }
+
+    .controls button:active {
+      transform: scale(0.95);
+    }
+
+    #playPauseBtn {
+      width: 65px;
+      height: 65px;
+      font-size: 1.6rem;
+    }
+
+    .playlist {
+      max-height: 420px;
+      overflow-y: auto;
+      padding: 10px 0;
+    }
+
+    .playlist::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .playlist::-webkit-scrollbar-thumb {
+      background: #e94560;
+      border-radius: 10px;
+    }
+
+    .song-item {
+      display: flex;
+      align-items: center;
+      padding: 14px 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+      border-left: 4px solid transparent;
+    }
+
+    .song-item:hover {
+      background: rgba(233, 69, 96, 0.15);
+    }
+
+    .song-item.active {
+      background: rgba(233, 69, 96, 0.25);
+      border-left: 4px solid #e94560;
+    }
+
+    .song-number {
+      width: 30px;
+      font-weight: 600;
+      color: #aaa;
+      font-size: 0.95rem;
+    }
+
+    .song-item.active .song-number {
+      color: #e94560;
+    }
+
+    .song-info {
+      flex: 1;
+    }
+
+    .song-title {
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .song-item.active .song-title {
+      color: #e94560;
+    }
+
+    .playing-icon {
+      margin-left: 10px;
+      color: #e94560;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .song-item.active .playing-icon {
+      display: inline;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 12px;
+      font-size: 0.8rem;
+      color: #888;
+      background: #0f3460;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="player-container">
+    <div class="header">
+      <h1>🎵 Minhas Músicas</h1>
+      <div class="now-playing" id="nowPlaying">Nenhuma música tocando</div>
+    </div>
+
+    <div class="controls">
+      <button id="prevBtn" title="Anterior">⏮</button>
+      <button id="playPauseBtn" title="Play/Pause">▶️</button>
+      <button id="nextBtn" title="Próxima">⏭</button>
+    </div>
+
+    <div class="playlist" id="playlist">
+      <!-- As músicas serão inseridas via JavaScript -->
+    </div>
+
+    <div class="footer">
+      Player de autoria própria • Clique em qualquer música
+    </div>
+  </div>
+
+  <audio id="audioPlayer"></audio>
+
+  <script>
+    // ============================================
+    // ✏️ EDITE AQUI AS SUAS MÚSICAS
+    // Coloque o nome real da música e o nome do arquivo MP3
+    // ============================================
+    const songs = [
+      { title: "Música 1 - Título da Música", file: "musica1.mp3" },
+      { title: "Música 2 - Título da Música", file: "musica2.mp3" },
+      { title: "Música 3 - Título da Música", file: "musica3.mp3" },
+      { title: "Música 4 - Título da Música", file: "musica4.mp3" },
+      { title: "Música 5 - Título da Música", file: "musica5.mp3" },
+      { title: "Música 6 - Título da Música", file: "musica6.mp3" },
+      { title: "Música 7 - Título da Música", file: "musica7.mp3" },
+      { title: "Música 8 - Título da Música", file: "musica8.mp3" },
+      { title: "Música 9 - Título da Música", file: "musica9.mp3" },
+      { title: "Música 10 - Título da Música", file: "musica10.mp3" }
+    ];
+
+    // ============================================
+    // Código do player (não precisa mexer)
+    // ============================================
+
+    const audio = document.getElementById('audioPlayer');
+    const playlistEl = document.getElementById('playlist');
+    const nowPlayingEl = document.getElementById('nowPlaying');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    let currentIndex = -1;
+    let isPlaying = false;
+
+    // Criar a lista de músicas
+    function renderPlaylist() {
+      playlistEl.innerHTML = '';
+      songs.forEach((song, index) => {
+        const item = document.createElement('div');
+        item.className = 'song-item';
+        item.innerHTML = `
+          <div class="song-number">${index + 1}</div>
+          <div class="song-info">
+            <div class="song-title">${song.title}</div>
+          </div>
+          <div class="playing-icon">▶</div>
+        `;
+        item.addEventListener('click', () => playSong(index));
+        playlistEl.appendChild(item);
+      });
+    }
+
+    // Tocar uma música específica
+    function playSong(index) {
+      if (index < 0 || index >= songs.length) return;
+
+      currentIndex = index;
+      audio.src = songs[index].file;
+      audio.play();
+      isPlaying = true;
+
+      updateUI();
+    }
+
+    // Atualizar interface
+    function updateUI() {
+      // Destacar música atual
+      const items = document.querySelectorAll('.song-item');
+      items.forEach((item, i) => {
+        item.classList.toggle('active', i === currentIndex);
+      });
+
+      // Atualizar texto "tocando agora"
+      if (currentIndex >= 0) {
+        nowPlayingEl.textContent = `Tocando: ${songs[currentIndex].title}`;
+      } else {
+        nowPlayingEl.textContent = 'Nenhuma música tocando';
+      }
+
+      // Atualizar botão play/pause
+      playPauseBtn.textContent = isPlaying ? '⏸️' : '▶️';
+    }
+
+    // Play / Pause
+    playPauseBtn.addEventListener('click', () => {
+      if (currentIndex === -1) {
+        // Se nenhuma música estiver selecionada, começa da primeira
+        playSong(0);
+        return;
+      }
+
+      if (isPlaying) {
+        audio.pause();
+        isPlaying = false;
+      } else {
+        audio.play();
+        isPlaying = true;
+      }
+      updateUI();
+    });
+
+    // Música anterior
+    prevBtn.addEventListener('click', () => {
+      if (currentIndex > 0) {
+        playSong(currentIndex - 1);
+      } else {
+        playSong(songs.length - 1); // volta para a última
+      }
+    });
+
+    // Próxima música
+    nextBtn.addEventListener('click', () => {
+      if (currentIndex < songs.length - 1) {
+        playSong(currentIndex + 1);
+      } else {
+        // Para na última (como solicitado)
+        audio.pause();
+        isPlaying = false;
+        updateUI();
+      }
+    });
+
+    // Quando a música terminar, toca a próxima automaticamente
+    audio.addEventListener('ended', () => {
+      if (currentIndex < songs.length - 1) {
+        playSong(currentIndex + 1);
+      } else {
+        // Chegou no final da lista
+        isPlaying = false;
+        updateUI();
+        nowPlayingEl.textContent = 'Fim da playlist';
+      }
+    });
+
+    // Inicializar
+    renderPlaylist();
+  </script>
+</body>
+</html>
