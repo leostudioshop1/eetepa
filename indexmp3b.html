@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0a1628">
+  <title>Campeões JOPEX 26 - EETEPA Xinguara</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(160deg, #0a1628 0%, #12253f 50%, #0f1c2e 100%);
+      color: #fff;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: env(safe-area-inset-top, 12px) env(safe-area-inset-right, 12px) env(safe-area-inset-bottom, 12px) env(safe-area-inset-left, 12px);
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .player-container {
+      background: #0f1c2e;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 440px;
+      height: calc(100dvh - env(safe-area-inset-top, 12px) - env(safe-area-inset-bottom, 12px) - 24px);
+      max-height: 900px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cover-section {
+      flex-shrink: 0;
+      width: 100%;
+      background: #0a1628;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 14px 16px 8px;
+    }
+
+    .cover-section img {
+      width: 100%;
+      max-width: 280px;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+      display: block;
+    }
+
+    .header {
+      flex-shrink: 0;
+      background: linear-gradient(180deg, #0f3460 0%, #0a2540 100%);
+      padding: 12px 16px 14px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 1.15rem;
+      margin-bottom: 4px;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .header .subtitle {
+      font-size: 0.8rem;
+      color: #7eb8ff;
+      margin-bottom: 6px;
+    }
+
+    .now-playing {
+      font-size: 0.85rem;
+      color: #ffd700;
+      font-weight: 600;
+      min-height: 20px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .status {
+      font-size: 0.7rem;
+      color: #7a9bb8;
+      margin-top: 4px;
+    }
+
+    .controls {
+      flex-shrink: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 28px;
+      padding: 16px 20px;
+      background: #0a1628;
+    }
+
+    .controls button {
+      background: linear-gradient(145deg, #1e90ff, #0d6efd);
+      border: none;
+      color: white;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      font-size: 1.35rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(13, 110, 253, 0.4);
+      touch-action: manipulation;
+    }
+
+    .controls button:active {
+      transform: scale(0.92);
+    }
+
+    #playPauseBtn {
+      width: 72px;
+      height: 72px;
+      font-size: 1.7rem;
+      background: linear-gradient(145deg, #ffd700, #f0a500);
+      color: #1a1a2e;
+      box-shadow: 0 5px 18px rgba(255, 215, 0, 0.45);
+    }
+
+    .playlist {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 6px 0 10px;
+      background: #0f1c2e;
+      overscroll-behavior: contain;
+    }
+
+    .song-item {
+      display: flex;
+      align-items: center;
+      padding: 14px 18px;
+      min-height: 52px;
+      border-left: 4px solid transparent;
+      touch-action: manipulation;
+    }
+
+    .song-item:active {
+      background: rgba(30, 144, 255, 0.18);
+    }
+
+    .song-item.active {
+      background: rgba(30, 144, 255, 0.22);
+      border-left: 4px solid #ffd700;
+    }
+
+    .song-number {
+      width: 28px;
+      font-weight: 700;
+      color: #7eb8ff;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    .song-item.active .song-number {
+      color: #ffd700;
+    }
+
+    .song-info {
+      flex: 1;
+      min-width: 0;
+      padding-right: 8px;
+    }
+
+    .song-title {
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .song-item.active .song-title {
+      color: #ffd700;
+    }
+
+    .playing-icon {
+      margin-left: 6px;
+      color: #ffd700;
+      font-size: 0.9rem;
+      display: none;
+      flex-shrink: 0;
+    }
+
+    .song-item.active .playing-icon {
+      display: inline;
+    }
+
+    .footer {
+      flex-shrink: 0;
+      text-align: center;
+      padding: 10px 12px;
+      padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
+      font-size: 0.72rem;
+      color: #7a9bb8;
+      background: #0a1628;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .footer strong {
+      color: #7eb8ff;
+    }
+
+    @media (max-height: 700px) {
+      .cover-section { padding: 10px 14px 6px; }
+      .cover-section img { max-width: 200px; }
+      .header { padding: 10px 14px 12px; }
+      .header h1 { font-size: 1.05rem; }
+      .controls { padding: 12px 16px; gap: 22px; }
+      .controls button { width: 50px; height: 50px; font-size: 1.2rem; }
+      #playPauseBtn { width: 64px; height: 64px; font-size: 1.5rem; }
+      .song-item { padding: 12px 16px; min-height: 48px; }
+    }
+
+    @media (max-width: 360px) {
+      .cover-section img { max-width: 220px; }
+      .song-title { font-size: 0.9rem; }
+      .controls { gap: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="player-container">
+    <div class="cover-section">
+      <img src="capa.png" alt="Capa CD - Campeões JOPEX 26 - EETEPA Xinguara">
+    </div>
+
+    <div class="header">
+      <h1>🏆 Campeões JOPEX 26</h1>
+      <div class="subtitle">EETEPA Xinguara • Juntos Somos Mais Fortes!</div>
+      <div class="now-playing" id="nowPlaying">Conectando à rádio...</div>
+      <div class="status" id="status">● sincronizando</div>
+    </div>
+
+    <div class="controls">
+      <button id="prevBtn" aria-label="Música anterior">⏮</button>
+      <button id="playPauseBtn" aria-label="Play ou Pause">▶️</button>
+      <button id="nextBtn" aria-label="Próxima música">⏭</button>
+    </div>
+
+    <div class="playlist" id="playlist"></div>
+
+    <div class="footer">
+      <strong>EETEPA Xinguara</strong> • Rádio sincronizada • Toque em qualquer música
+    </div>
+  </div>
+
+  <audio id="audioPlayer" playsinline preload="auto"></audio>
+
+  <script>
+    // ============================================================
+    // 1. COLE AQUI O SEU firebaseConfig (do Firebase Console)
+    // ============================================================
+    const firebaseConfig = {
+      apiKey: "AIza...",
+      authDomain: "seu-projeto.firebaseapp.com",
+      databaseURL: "https://seu-projeto-default-rtdb.firebaseio.com",
+      projectId: "seu-projeto",
+      storageBucket: "seu-projeto.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
+    };
+    // ============================================================
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const radioRef = db.ref('radio');
+
+    const songs = [
+      { title: "01 - HINO OFICIAL EEtepa!", file: "musica1.mp3" },
+      { title: "02 - Nascemos Para Vencer", file: "musica2.mp3" },
+      { title: "03 - Arena da EETEPA", file: "musica3.mp3" },
+      { title: "04 - Chegou a Taça", file: "musica4.mp3" },
+      { title: "05 - EETEPA HOJE A TAÇA VAI CHEGAR samba", file: "musica5.mp3" },
+      { title: "06 - A TAÇA É NOSSA", file: "musica6.mp3" },
+      { title: "07 - EETEPA Vai Passar - Brega", file: "musica7.mp3" },
+      { title: "08 - EETEPA Número Um - Reggae", file: "musica8.mp3" },
+      { title: "09 - EetePA Vai Vencer", file: "musica9.mp3" },
+      { title: "10 - Um Só Coração - Viking (faixa bônus)", file: "musica10.mp3" }
+    ];
+
+    const audio = document.getElementById('audioPlayer');
+    const playlistEl = document.getElementById('playlist');
+    const nowPlayingEl = document.getElementById('nowPlaying');
+    const statusEl = document.getElementById('status');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    let currentIndex = 0;
+    let isPlaying = false;
+    let startedAt = null;          // timestamp do servidor quando começou
+    let positionWhenStarted = 0;   // posição em segundos
+    let serverOffset = 0;          // diferença de relógio
+    let isApplyingRemote = false;  // evita loop infinito
+    let syncInterval = null;
+
+    // ---- Relógio do servidor Firebase ----
+    db.ref('.info/serverTimeOffset').on('value', (snap) => {
+      serverOffset = snap.val() || 0;
+    });
+
+    function nowServer() {
+      return Date.now() + serverOffset;
+    }
+
+    function getCurrentPosition() {
+      if (!isPlaying || startedAt === null) return positionWhenStarted;
+      return positionWhenStarted + (nowServer() - startedAt) / 1000;
+    }
+
+    // ---- Render da playlist ----
+    function renderPlaylist() {
+      playlistEl.innerHTML = '';
+      songs.forEach((song, index) => {
+        const item = document.createElement('div');
+        item.className = 'song-item' + (index === currentIndex ? ' active' : '');
+        item.innerHTML = `
+          <div class="song-number">${index + 1}</div>
+          <div class="song-info">
+            <div class="song-title">${song.title}</div>
+          </div>
+          <div class="playing-icon">▶</div>
+        `;
+        item.addEventListener('click', () => {
+          radioRef.set({
+            currentIndex: index,
+            isPlaying: true,
+            startedAt: nowServer(),
+            positionWhenStarted: 0
+          });
+        });
+        playlistEl.appendChild(item);
+      });
+    }
+
+    // ---- Atualiza a interface ----
+    function updateUI() {
+      document.querySelectorAll('.song-item').forEach((item, i) => {
+        item.classList.toggle('active', i === currentIndex);
+      });
+      nowPlayingEl.textContent = 'Tocando: ' + songs[currentIndex].title;
+      playPauseBtn.textContent = isPlaying ? '⏸️' : '▶️';
+      statusEl.textContent = isPlaying ? '● no ar' : '● pausado';
+    }
+
+    // ---- Aplica o estado vindo do Firebase ----
+    function applyState(data) {
+      if (!data) return;
+
+      isApplyingRemote = true;
+
+      const newIndex = data.currentIndex ?? 0;
+      const newPlaying = data.isPlaying ?? false;
+      const newStartedAt = data.startedAt ?? null;
+      const newPos = data.positionWhenStarted ?? 0;
+
+      const songChanged = newIndex !== currentIndex;
+      currentIndex = newIndex;
+      isPlaying = newPlaying;
+      startedAt = newStartedAt;
+      positionWhenStarted = newPos;
+
+      // Carrega a música se mudou
+      if (songChanged || !audio.src.endsWith(songs[currentIndex].file)) {
+        audio.src = songs[currentIndex].file;
+      }
+
+      // Calcula a posição correta
+      const targetPos = getCurrentPosition();
+
+      const doSeekAndPlay = () => {
+        if (Math.abs(audio.currentTime - targetPos) > 0.8) {
+          audio.currentTime = Math.max(0, targetPos);
+        }
+
+        if (isPlaying) {
+          audio.play().catch(() => {});
+        } else {
+          audio.pause();
+        }
+        updateUI();
+        isApplyingRemote = false;
+      };
+
+      if (audio.readyState >= 2) {
+        doSeekAndPlay();
+      } else {
+        audio.addEventListener('canplay', doSeekAndPlay, { once: true });
+      }
+    }
+
+    // ---- Escuta mudanças no Firebase ----
+    radioRef.on('value', (snap) => {
+      applyState(snap.val());
+    });
+
+    // ---- Inicializa o estado se ainda não existir ----
+    radioRef.once('value').then((snap) => {
+      if (!snap.exists()) {
+        radioRef.set({
+          currentIndex: 0,
+          isPlaying: false,
+          startedAt: null,
+          positionWhenStarted: 0
+        });
+      }
+    });
+
+    // ---- Controles ----
+    playPauseBtn.addEventListener('click', () => {
+      if (isPlaying) {
+        // Pausar
+        radioRef.set({
+          currentIndex,
+          isPlaying: false,
+          startedAt: null,
+          positionWhenStarted: getCurrentPosition()
+        });
+      } else {
+        // Tocar
+        radioRef.set({
+          currentIndex,
+          isPlaying: true,
+          startedAt: nowServer(),
+          positionWhenStarted: audio.currentTime || 0
+        });
+      }
+    });
+
+    prevBtn.addEventListener('click', () => {
+      const newIndex = (currentIndex - 1 + songs.length) % songs.length;
+      radioRef.set({
+        currentIndex: newIndex,
+        isPlaying: true,
+        startedAt: nowServer(),
+        positionWhenStarted: 0
+      });
+    });
+
+    nextBtn.addEventListener('click', () => {
+      const newIndex = (currentIndex + 1) % songs.length;
+      radioRef.set({
+        currentIndex: newIndex,
+        isPlaying: true,
+        startedAt: nowServer(),
+        positionWhenStarted: 0
+      });
+    });
+
+    // Quando a música termina → avança automaticamente
+    audio.addEventListener('ended', () => {
+      if (isApplyingRemote) return;
+      const newIndex = (currentIndex + 1) % songs.length;
+      radioRef.set({
+        currentIndex: newIndex,
+        isPlaying: true,
+        startedAt: nowServer(),
+        positionWhenStarted: 0
+      });
+    });
+
+    // Re-sincroniza a cada 8 segundos (corrige deriva de relógio)
+    setInterval(() => {
+      if (!isPlaying || isApplyingRemote) return;
+      const target = getCurrentPosition();
+      if (Math.abs(audio.currentTime - target) > 1.2) {
+        audio.currentTime = target;
+      }
+    }, 8000);
+
+    // ---- Inicia ----
+    renderPlaylist();
+  </script>
+</body>
+</html>
