@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webcam Binária Fullscreen</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+    }
+    #canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: block;
+    }
+    #ui {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.85);
+      border: 1px solid #0f0;
+      padding: 10px 18px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    #ui.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    label {
+      color: #0f0;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    input[type="range"] {
+      width: 90px;
+      accent-color: #0f0;
+    }
+    button {
+      background: transparent;
+      color: #0f0;
+      border: 1px solid #0f0;
+      padding: 5px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0f0;
+      color: #000;
+    }
+    #start-screen {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      color: #0f0;
+    }
+    #start-screen h1 {
+      font-size: 1.5rem;
+      letter-spacing: 3px;
+      margin-bottom: 18px;
+      text-shadow: 0 0 12px #0f0;
+    }
+    #start-screen p {
+      font-size: 0.9rem;
+      opacity: 0.7;
+      margin-bottom: 28px;
+      text-align: center;
+      line-height: 1.5;
+    }
+    #btn-start {
+      font-size: 1rem;
+      padding: 12px 28px;
+      border: 2px solid #0f0;
+      background: transparent;
+      color: #0f0;
+      cursor: pointer;
+    }
+    #btn-start:hover {
+      background: #0f0;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="start-screen">
+    <h1>WEBCAM BINÁRIA</h1>
+    <p>
+      Clique em INICIAR → permita a câmera<br>
+      Depois use o botão "Tela Cheia"
+    </p>
+    <button id="btn-start">INICIAR</button>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div id="ui">
+    <label>
+      Densidade
+      <input type="range" id="density" min="6" max="14" value="8">
+    </label>
+    <label>
+      Limiar
+      <input type="range" id="threshold" min="40" max="180" value="100">
+    </label>
+    <button id="btn-invert">Inverter</button>
+    <button id="btn-fullscreen">Tela Cheia</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const densitySlider = document.getElementById('density');
+    const thresholdSlider = document.getElementById('threshold');
+    const btnInvert = document.getElementById('btn-invert');
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+    const btnStart = document.getElementById('btn-start');
+    const startScreen = document.getElementById('start-screen');
+    const ui = document.getElementById('ui');
+
+    // Vídeo da webcam
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = true;
+
+    // Canvas de amostragem (reutilizado – muito mais estável)
+    const sampleCanvas = document.createElement('canvas');
+    const sampleCtx = sampleCanvas.getContext('2d', { willReadFrequently: true });
+
+    let inverted = false;
+    let running = false;
+    let hideTimer = null;
+
+    // ================== REDIMENSIONAR ==================
+    function resize() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      // Define o tamanho real do canvas
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+    }
+
+    window.addEventListener('resize', resize);
+    document.addEventListener('fullscreenchange', () => {
+      // Espera o navegador terminar a transição
+      setTimeout(() => {
+        resize();
+        // Força o vídeo a continuar tocando (importante!)
+        if (video.paused) video.play().catch(() => {});
+      }, 150);
+    });
+    resize();
+
+    // ================== CONTROLES ==================
+    function showUI() {
+      ui.classList.add('visible');
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => ui.classList.remove('visible'), 2800);
+    }
+    document.addEventListener('mousemove', showUI);
+    document.addEventListener('touchstart', showUI);
+
+    // ================== INICIAR CÂMERA ==================
+    async function start() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+
+        video.srcObject = stream;
+        await video.play();
+
+        startScreen.style.display = 'none';
+        running = true;
+        resize();
+        requestAnimationFrame(loop);
+
+      } catch (err) {
+        alert('Erro ao acessar a câmera:\n' + err.message);
+        console.error(err);
+      }
+    }
+    btnStart.addEventListener('click', start);
+
+    // ================== FULLSCREEN ==================
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.warn('Fullscreen falhou:', err);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+    btnFullscreen.addEventListener('click', toggleFullscreen);
+
+    // ================== INVERTER ==================
+    btnInvert.addEventListener('click', () => {
+      inverted = !inverted;
+      btnInvert.textContent = inverted ? 'Normal' : 'Inverter';
+    });
+
+    // ================== LOOP PRINCIPAL ==================
+    function loop() {
+      if (!running) return;
+
+      // Garante que o vídeo está tocando
+      if (video.readyState < 2) {
+        requestAnimationFrame(loop);
+        return;
+      }
+
+      const charSize = parseInt(densitySlider.value) || 8;
+      const threshold = parseInt(thresholdSlider.value) || 100;
+
+      const cols = Math.floor(canvas.width / charSize);
+      const rows = Math.floor(canvas.height / charSize);
+
+      if (cols < 4 || rows < 4) {
+        requestAnimationFrame(loop);
+        return;
+      }
+
+      // Prepara o canvas de amostragem
+      sampleCanvas.width = cols;
+      sampleCanvas.height = rows;
+
+      // Desenha o vídeo espelhado
+      sampleCtx.save();
+      sampleCtx.translate(cols, 0);
+      sampleCtx.scale(-1, 1);
+      sampleCtx.drawImage(video, 0, 0, cols, rows);
+      sampleCtx.restore();
+
+      const imageData = sampleCtx.getImageData(0, 0, cols, rows);
+      const data = imageData.data;
+
+      // Limpa a tela
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Desenha os binários
+      ctx.font = `${charSize}px "Courier New", monospace`;
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = '#00ff00';
+
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const i = (y * cols + x) * 4;
+          const brightness = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+          let char = brightness > threshold ? '1' : '0';
+          if (inverted) char = (char === '1') ? '0' : '1';
+          ctx.fillText(char, x * charSize, y * charSize);
+        }
+      }
+
+      requestAnimationFrame(loop);
+    }
+  </script>
+</body>
+</html>
