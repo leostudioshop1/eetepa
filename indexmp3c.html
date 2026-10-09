@@ -115,146 +115,6 @@
       display: flex;
     }
 
-    .screen-scroll {
-      flex: 1;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 14px 16px 16px;
-      overscroll-behavior: contain;
-    }
-
-    .instructions {
-      background: rgba(30, 144, 255, 0.12);
-      border: 1px solid rgba(126, 184, 255, 0.25);
-      border-radius: 12px;
-      padding: 12px 14px;
-      margin-bottom: 14px;
-      font-size: 0.82rem;
-      line-height: 1.4;
-      color: #c8e0ff;
-    }
-
-    .instructions strong {
-      color: #ffd700;
-      display: block;
-      margin-bottom: 5px;
-      font-size: 0.9rem;
-    }
-
-    .form-group {
-      margin-bottom: 14px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 0.82rem;
-      color: #7eb8ff;
-      margin-bottom: 6px;
-      font-weight: 600;
-    }
-
-    .form-group select,
-    .form-group input {
-      width: 100%;
-      padding: 13px 14px;
-      font-size: 1rem;
-      border-radius: 12px;
-      border: 2px solid rgba(126, 184, 255, 0.3);
-      background: #0a1628;
-      color: #fff;
-      appearance: none;
-      -webkit-appearance: none;
-      touch-action: manipulation;
-    }
-
-    .form-group select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237eb8ff' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 14px center;
-    }
-
-    .form-group select:focus,
-    .form-group input:focus {
-      outline: none;
-      border-color: #1e90ff;
-    }
-
-    .time-row {
-      display: flex;
-      gap: 10px;
-    }
-
-    .time-row .form-group {
-      flex: 1;
-      margin-bottom: 0;
-    }
-
-    .btn-primary {
-      width: 100%;
-      padding: 15px;
-      margin-top: 8px;
-      font-size: 1.05rem;
-      font-weight: 700;
-      border: none;
-      border-radius: 14px;
-      background: linear-gradient(145deg, #ffd700, #f0a500);
-      color: #1a1a2e;
-      box-shadow: 0 5px 18px rgba(255, 215, 0, 0.4);
-      touch-action: manipulation;
-      cursor: pointer;
-    }
-
-    .btn-primary:active { transform: scale(0.97); }
-    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
-
-    .btn-secondary {
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      font-size: 0.92rem;
-      font-weight: 600;
-      border: 2px solid rgba(126, 184, 255, 0.4);
-      border-radius: 12px;
-      background: transparent;
-      color: #7eb8ff;
-      touch-action: manipulation;
-      cursor: pointer;
-    }
-
-    .btn-secondary:active { background: rgba(30, 144, 255, 0.15); }
-
-    .btn-danger {
-      width: 100%;
-      padding: 12px;
-      margin-top: 8px;
-      font-size: 0.92rem;
-      font-weight: 600;
-      border: 2px solid rgba(255, 107, 107, 0.5);
-      border-radius: 12px;
-      background: transparent;
-      color: #ff6b6b;
-      touch-action: manipulation;
-      cursor: pointer;
-    }
-
-    .btn-danger:active { background: rgba(255, 107, 107, 0.12); }
-
-    .msg-error {
-      color: #ff6b6b;
-      font-size: 0.82rem;
-      margin-top: 10px;
-      text-align: center;
-      display: none;
-    }
-
-    .msg-success {
-      color: #4ade80;
-      font-size: 0.82rem;
-      margin-top: 10px;
-      text-align: center;
-      display: none;
-    }
-
     .countdown-wrap {
       flex: 1;
       display: flex;
@@ -302,7 +162,6 @@
       margin-bottom: 10px;
     }
 
-    /* Status do buffer */
     .buffer-status {
       font-size: 0.78rem;
       margin-bottom: 14px;
@@ -362,12 +221,6 @@
     }
 
     .sound-ready.show { display: block; }
-
-    .countdown-actions {
-      width: 100%;
-      max-width: 280px;
-      padding: 0 0 8px;
-    }
 
     .controls {
       flex-shrink: 0;
@@ -586,45 +439,7 @@
       <div class="now-playing" id="nowPlaying">Carregando...</div>
     </div>
 
-    <!-- TELA 1: AGENDAR -->
-    <div class="screen" id="setupScreen">
-      <div class="screen-scroll">
-        <div class="instructions">
-          <strong>📋 Como usar</strong>
-          1. Escolha a <strong style="display:inline;color:#ffd700">música</strong> que deve começar<br>
-          2. Escolha a <strong style="display:inline;color:#ffd700">hora</strong> e o <strong style="display:inline;color:#ffd700">minuto</strong><br>
-          3. Toque em <strong style="display:inline;color:#ffd700">Agendar</strong><br>
-          4. A música é baixada para o celular durante a contagem. Quando zerar, inicia na hora.
-        </div>
-
-        <div class="form-group">
-          <label for="songSelect">🎵 Música que vai tocar primeiro</label>
-          <select id="songSelect"></select>
-        </div>
-
-        <div class="time-row">
-          <div class="form-group">
-            <label for="hourSelect">🕐 Hora</label>
-            <select id="hourSelect"></select>
-          </div>
-          <div class="form-group">
-            <label for="minuteSelect">🕑 Minuto</label>
-            <select id="minuteSelect"></select>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="createdBy">👤 Seu nome (opcional)</label>
-          <input type="text" id="createdBy" placeholder="Ex: João" maxlength="40">
-        </div>
-
-        <button class="btn-primary" id="scheduleBtn">Agendar e iniciar contagem</button>
-        <div class="msg-error" id="errorMsg"></div>
-        <div class="msg-success" id="successMsg"></div>
-      </div>
-    </div>
-
-    <!-- TELA 2: CONTAGEM -->
+    <!-- TELA: CONTAGEM (só aparece se houver agendamento ativo) -->
     <div class="screen" id="countdownScreen">
       <div class="countdown-wrap">
         <div class="countdown-label">Começa em</div>
@@ -645,25 +460,17 @@
           </div>
         </div>
         <div class="sound-ready" id="soundReady">✅ Som ativado — inicia automaticamente</div>
-
-        <div class="countdown-actions">
-          <button class="btn-secondary" id="changeScheduleBtn">Alterar horário / música</button>
-          <button class="btn-danger" id="cancelBtn">Cancelar agendamento</button>
-        </div>
       </div>
     </div>
 
-    <!-- TELA 3: PLAYER -->
-    <div class="screen" id="playerScreen">
+    <!-- TELA: PLAYER (padrão — inicia na faixa 1) -->
+    <div class="screen active" id="playerScreen">
       <div class="controls">
         <button id="prevBtn" aria-label="Anterior">⏮</button>
         <button id="playPauseBtn" aria-label="Play/Pause">▶️</button>
         <button id="nextBtn" aria-label="Próxima">⏭</button>
       </div>
       <div class="playlist" id="playlist"></div>
-      <div style="padding: 8px 16px 4px;">
-        <button class="btn-secondary" id="newScheduleFromPlayerBtn" style="margin-top:0;">Novo agendamento</button>
-      </div>
     </div>
 
     <div class="footer">
@@ -703,19 +510,8 @@
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
 
-    const setupScreen = document.getElementById('setupScreen');
     const countdownScreen = document.getElementById('countdownScreen');
     const playerScreen = document.getElementById('playerScreen');
-    const songSelect = document.getElementById('songSelect');
-    const hourSelect = document.getElementById('hourSelect');
-    const minuteSelect = document.getElementById('minuteSelect');
-    const createdByInput = document.getElementById('createdBy');
-    const scheduleBtn = document.getElementById('scheduleBtn');
-    const cancelBtn = document.getElementById('cancelBtn');
-    const changeScheduleBtn = document.getElementById('changeScheduleBtn');
-    const newScheduleFromPlayerBtn = document.getElementById('newScheduleFromPlayerBtn');
-    const errorMsg = document.getElementById('errorMsg');
-    const successMsg = document.getElementById('successMsg');
     const countdownDisplay = document.getElementById('countdownDisplay');
     const scheduledSongTitle = document.getElementById('scheduledSongTitle');
     const scheduledTimeText = document.getElementById('scheduledTimeText');
@@ -738,31 +534,13 @@
     let hasStartedPlaying = false;
     let audioUnlocked = false;
     let pendingStartIndex = null;
-    let userWantsSetup = false;
+    let followingSchedule = false;
 
-    // Cache em memória: index → objectURL (blob)
     const songCache = {};
-    let preloadToken = 0; // evita race condition se trocar de agendamento
+    let preloadToken = 0;
 
     function showLoading(v) {
       loadingOverlay.classList.toggle('show', v);
-    }
-
-    function showError(msg) {
-      errorMsg.textContent = msg;
-      errorMsg.style.display = 'block';
-      successMsg.style.display = 'none';
-    }
-
-    function showSuccess(msg) {
-      successMsg.textContent = msg;
-      successMsg.style.display = 'block';
-      errorMsg.style.display = 'none';
-    }
-
-    function clearMessages() {
-      errorMsg.style.display = 'none';
-      successMsg.style.display = 'none';
     }
 
     function setBufferStatus(text, state) {
@@ -771,14 +549,10 @@
     }
 
     function showScreen(name) {
-      setupScreen.classList.remove('active');
       countdownScreen.classList.remove('active');
       playerScreen.classList.remove('active');
 
-      if (name === 'setup') {
-        setupScreen.classList.add('active');
-        nowPlayingEl.textContent = 'Escolha a música, hora e minuto';
-      } else if (name === 'countdown') {
+      if (name === 'countdown') {
         countdownScreen.classList.add('active');
         nowPlayingEl.textContent = 'Aguardando horário...';
         if (!audioUnlocked) {
@@ -788,40 +562,9 @@
           soundUnlock.classList.remove('show');
           soundReady.classList.add('show');
         }
-      } else if (name === 'player') {
+      } else {
         playerScreen.classList.add('active');
       }
-    }
-
-    function populateSelects() {
-      songSelect.innerHTML = '';
-      songs.forEach(function (song, i) {
-        var opt = document.createElement('option');
-        opt.value = i;
-        opt.textContent = song.title;
-        songSelect.appendChild(opt);
-      });
-
-      hourSelect.innerHTML = '';
-      for (var h = 0; h < 24; h++) {
-        var oh = document.createElement('option');
-        oh.value = h;
-        oh.textContent = String(h).padStart(2, '0');
-        hourSelect.appendChild(oh);
-      }
-
-      minuteSelect.innerHTML = '';
-      for (var m = 0; m < 60; m++) {
-        var om = document.createElement('option');
-        om.value = m;
-        om.textContent = String(m).padStart(2, '0');
-        minuteSelect.appendChild(om);
-      }
-
-      var now = new Date();
-      now.setMinutes(now.getMinutes() + 2);
-      hourSelect.value = now.getHours();
-      minuteSelect.value = now.getMinutes();
     }
 
     function renderPlaylist() {
@@ -838,7 +581,6 @@
       });
     }
 
-    // ========== PRELOAD / CACHE ==========
     function getSongSrc(index) {
       if (songCache[index]) return songCache[index];
       return songs[index].file;
@@ -852,7 +594,7 @@
         var res = await fetch(songs[index].file, { cache: 'force-cache' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         var blob = await res.blob();
-        if (token !== preloadToken) return false; // agendamento mudou
+        if (token !== preloadToken) return false;
         var url = URL.createObjectURL(blob);
         songCache[index] = url;
         return true;
@@ -866,13 +608,11 @@
       var token = ++preloadToken;
       setBufferStatus('⬇ Baixando música para este celular...', 'loading');
 
-      // 1) Faixa principal (a que vai tocar primeiro) — prioritária
       var okMain = await cacheSong(startIdx, token);
       if (token !== preloadToken) return;
 
       if (okMain) {
         setBufferStatus('✅ Música pronta na memória — inicia na hora', 'ready');
-        // Já coloca no elemento audio
         try {
           audio.src = getSongSrc(startIdx);
           audio.load();
@@ -885,7 +625,6 @@
         } catch (e) {}
       }
 
-      // 2) Próximas 3 faixas da sequência (em segundo plano)
       for (var i = 1; i <= 3; i++) {
         var next = startIdx + i;
         if (next >= songs.length) break;
@@ -894,15 +633,6 @@
       }
     }
 
-    function clearSongCache() {
-      preloadToken++;
-      Object.keys(songCache).forEach(function (k) {
-        try { URL.revokeObjectURL(songCache[k]); } catch (e) {}
-        delete songCache[k];
-      });
-    }
-
-    // ========== ÁUDIO ==========
     async function unlockAudio() {
       try {
         var src = getSongSrc(startIndex >= 0 ? startIndex : 0);
@@ -928,11 +658,9 @@
       audio.src = getSongSrc(index);
       audio.volume = 1;
 
-      // Se ainda não estiver em cache, tenta baixar em paralelo (próximas)
       if (!songCache[index]) {
         cacheSong(index, preloadToken);
       }
-      // Pré-carrega a seguinte enquanto toca
       if (index + 1 < songs.length && !songCache[index + 1]) {
         cacheSong(index + 1, preloadToken);
       }
@@ -980,7 +708,6 @@
       return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
     }
 
-    // ========== SUPABASE ==========
     async function fetchActiveSchedule() {
       var res = await supabaseClient
         .from('playlist_schedule')
@@ -994,41 +721,6 @@
         return null;
       }
       return res.data && res.data.length ? res.data[0] : null;
-    }
-
-    async function createSchedule(songIndex, hour, minute, createdBy) {
-      await supabaseClient
-        .from('playlist_schedule')
-        .update({ status: 'cancelled' })
-        .in('status', ['pending', 'playing']);
-
-      var scheduledAt = new Date();
-      scheduledAt.setHours(hour, minute, 0, 0);
-
-      var res = await supabaseClient
-        .from('playlist_schedule')
-        .insert({
-          song_index: songIndex,
-          song_title: songs[songIndex].title,
-          scheduled_hour: hour,
-          scheduled_minute: minute,
-          scheduled_at: scheduledAt.toISOString(),
-          status: 'pending',
-          created_by: createdBy || 'Anônimo'
-        })
-        .select()
-        .single();
-
-      if (res.error) throw res.error;
-      return res.data;
-    }
-
-    async function cancelSchedule(id) {
-      var res = await supabaseClient
-        .from('playlist_schedule')
-        .update({ status: 'cancelled' })
-        .eq('id', id);
-      if (res.error) throw res.error;
     }
 
     async function markAsPlaying(id) {
@@ -1046,15 +738,18 @@
     }
 
     async function startPlayback(songIndex, scheduleId) {
-      if (hasStartedPlaying) return;
+      if (hasStartedPlaying && followingSchedule && currentScheduleId === scheduleId) return;
       hasStartedPlaying = true;
+      followingSchedule = true;
       startIndex = songIndex;
       currentScheduleId = scheduleId;
-      userWantsSetup = false;
 
       if (scheduleId) {
         await markAsPlaying(scheduleId);
       }
+
+      audio.pause();
+      isPlaying = false;
 
       showScreen('player');
       await playSong(songIndex);
@@ -1067,7 +762,11 @@
       startIndex = schedule.song_index;
       targetTime = new Date(schedule.scheduled_at);
       hasStartedPlaying = false;
-      userWantsSetup = false;
+      followingSchedule = true;
+
+      audio.pause();
+      isPlaying = false;
+      updateUI();
 
       scheduledSongTitle.textContent = schedule.song_title;
       scheduledTimeText.textContent =
@@ -1079,8 +778,6 @@
         : '';
 
       showScreen('countdown');
-
-      // Baixa a música (e próximas) para a memória do aparelho
       preloadFromIndex(schedule.song_index);
 
       countdownInterval = setInterval(function () {
@@ -1096,20 +793,27 @@
       }, 200);
     }
 
-    async function checkAndSync() {
-      if (userWantsSetup) {
-        showScreen('setup');
-        return;
-      }
+    async function startDefaultPlayback() {
+      if (hasStartedPlaying || followingSchedule) return;
+      hasStartedPlaying = true;
+      startIndex = 0;
+      showScreen('player');
+      preloadFromIndex(0);
+      await playSong(0);
+    }
 
+    async function checkAndSync() {
       try {
         var schedule = await fetchActiveSchedule();
 
         if (!schedule) {
           stopCountdown();
+          followingSchedule = false;
+          currentScheduleId = null;
           if (!hasStartedPlaying) {
-            currentScheduleId = null;
-            showScreen('setup');
+            await startDefaultPlayback();
+          } else if (countdownScreen.classList.contains('active')) {
+            showScreen('player');
           }
           return;
         }
@@ -1118,8 +822,7 @@
         var now = new Date();
 
         if (schedule.status === 'playing') {
-          if (!hasStartedPlaying) {
-            // Ainda tenta cachear se chegou atrasado
+          if (!hasStartedPlaying || currentScheduleId !== schedule.id) {
             preloadFromIndex(schedule.song_index);
             await startPlayback(schedule.song_index, schedule.id);
           }
@@ -1131,7 +834,7 @@
             startCountdown(schedule);
           }
         } else {
-          if (!hasStartedPlaying) {
+          if (!hasStartedPlaying || currentScheduleId !== schedule.id) {
             preloadFromIndex(schedule.song_index);
             await startPlayback(schedule.song_index, schedule.id);
           }
@@ -1139,7 +842,7 @@
       } catch (err) {
         console.error('Sync erro:', err);
         if (!hasStartedPlaying && !countdownInterval) {
-          showScreen('setup');
+          await startDefaultPlayback();
         }
       }
     }
@@ -1154,70 +857,6 @@
         )
         .subscribe();
     }
-
-    // —— Eventos ——
-    scheduleBtn.addEventListener('click', async function () {
-      clearMessages();
-
-      var selectedIndex = parseInt(songSelect.value, 10);
-      var hour = parseInt(hourSelect.value, 10);
-      var minute = parseInt(minuteSelect.value, 10);
-      var createdBy = createdByInput.value.trim();
-
-      var now = new Date();
-      var target = new Date();
-      target.setHours(hour, minute, 0, 0);
-
-      if (target <= now) {
-        showError('Esse horário já passou. Escolha uma hora e minuto no futuro.');
-        return;
-      }
-
-      scheduleBtn.disabled = true;
-      showLoading(true);
-
-      try {
-        await unlockAudio();
-        var schedule = await createSchedule(selectedIndex, hour, minute, createdBy);
-        userWantsSetup = false;
-        showSuccess('Agendado! Baixando música e iniciando contagem.');
-        startCountdown(schedule);
-      } catch (err) {
-        console.error(err);
-        showError('Erro ao agendar: ' + (err.message || 'Tente de novo'));
-      } finally {
-        scheduleBtn.disabled = false;
-        showLoading(false);
-      }
-    });
-
-    async function goToSetupAndCancel() {
-      showLoading(true);
-      try {
-        if (currentScheduleId) {
-          await cancelSchedule(currentScheduleId);
-        }
-        stopCountdown();
-        clearSongCache();
-        currentScheduleId = null;
-        targetTime = null;
-        hasStartedPlaying = false;
-        userWantsSetup = true;
-        hideTapToPlay();
-        audio.pause();
-        isPlaying = false;
-        clearMessages();
-        showScreen('setup');
-      } catch (err) {
-        alert('Erro ao cancelar: ' + err.message);
-      } finally {
-        showLoading(false);
-      }
-    }
-
-    cancelBtn.addEventListener('click', goToSetupAndCancel);
-    changeScheduleBtn.addEventListener('click', goToSetupAndCancel);
-    newScheduleFromPlayerBtn.addEventListener('click', goToSetupAndCancel);
 
     soundUnlockBtn.addEventListener('click', async function () {
       var ok = await unlockAudio();
@@ -1277,10 +916,9 @@
       }
     });
 
-    // Start
-    populateSelects();
+    // Start — versão alunos
     renderPlaylist();
-    showScreen('setup');
+    showScreen('player');
     setupRealtime();
     checkAndSync();
     setInterval(checkAndSync, 10000);
