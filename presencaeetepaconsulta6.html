@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SQL Chart — PeopleCounter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { colors: { primary: { 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' } } } }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #111; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    #sql-input {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      resize: vertical;
+      min-height: 120px;
+    }
+    .example-chip {
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .example-chip:hover { background: #1e3a5f; }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+  <div id="app" class="flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between flex-wrap gap-2">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center font-bold text-sm">SQL</div>
+        <div>
+          <h1 class="font-semibold text-lg leading-tight">SQL Chart — PeopleCounter</h1>
+          <p class="text-xs text-gray-400">Consulta SELECT no Supabase → gráfico simples</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span id="online-badge" class="px-3 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400">—</span>
+        <span id="supabase-badge" class="px-3 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400">Supabase: —</span>
+      </div>
+    </header>
+
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <!-- Painel esquerdo: SQL -->
+      <section class="lg:w-2/5 border-r border-gray-800 flex flex-col bg-gray-900/50">
+        <div class="p-4 border-b border-gray-800">
+          <h2 class="text-sm font-medium text-gray-300 mb-2">Comando SQL (SELECT)</h2>
+          <p class="text-xs text-gray-500 mb-3">
+            Apenas <code class="text-blue-400">SELECT</code> na tabela <code class="text-blue-400">people_count_events</code>.
+            Suporta <code class="text-blue-400">WHERE</code>, <code class="text-blue-400">AND</code>, operadores =, !=, &gt;, &lt;, &gt;=, &lt;=, LIKE, IN e ORDER BY / LIMIT.
+          </p>
+          <textarea id="sql-input" class="w-full bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="SELECT * FROM people_count_events WHERE date = '2026-10-17' ORDER BY timestamp DESC LIMIT 100"></textarea>
+          <div class="flex flex-wrap gap-2 mt-3">
+            <button id="btn-run" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm font-medium">
+              ▶ Executar
+            </button>
+            <button id="btn-clear" class="px-4 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm">Limpar</button>
+            <button id="btn-test" class="px-4 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm">🔌 Testar Supabase</button>
+          </div>
+          <p id="query-status" class="text-xs text-gray-500 mt-3"></p>
+        </div>
+
+        <div class="p-4 flex-1 overflow-auto">
+          <h3 class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Exemplos (clique para usar)</h3>
+          <div class="space-y-2 text-xs">
+            <div class="example-chip bg-gray-800 rounded-lg px-3 py-2 border border-gray-700" data-sql="SELECT * FROM people_count_events ORDER BY timestamp DESC LIMIT 50">
+              SELECT * … LIMIT 50 (últimos eventos)
+            </div>
+            <div class="example-chip bg-gray-800 rounded-lg px-3 py-2 border border-gray-700" data-sql="SELECT * FROM people_count_events WHERE date = 'YYYY-MM-DD'">
+              SELECT * WHERE date = 'hoje' (troque a data)
+            </div>
+            <div class="example-chip bg-gray-800 rounded-lg px-3 py-2 border border-gray-700" data-sql="SELECT * FROM people_count_events WHERE type = 'in' AND date = 'YYYY-MM-DD'">
+              SELECT * WHERE type = 'in' AND date = …
+            </div>
+            <div class="example-chip bg-gray-800 rounded-lg px-3 py-2 border border-gray-700" data-sql="SELECT * FROM people_count_events WHERE type = 'out' ORDER BY timestamp DESC LIMIT 100">
+              SELECT * WHERE type = 'out' …
+            </div>
+            <div class="example-chip bg-gray-800 rounded-lg px-3 py-2 border border-gray-700" data-sql="SELECT * FROM people_count_events WHERE hour >= 8 AND hour <= 18 AND date = 'YYYY-MM-DD'">
+              SELECT * WHERE hour entre 8 e 18
+            </div>
+            <div class="example-chip bg-gray-800 rounded-lg px-3 py-2 border border-gray-700" data-sql="SELECT * FROM people_count_events WHERE confidence >= 0.5 ORDER BY confidence DESC LIMIT 30">
+              SELECT * WHERE confidence &gt;= 0.5
+            </div>
+          </div>
+
+          <div class="mt-6 bg-gray-900 rounded-xl p-4 border border-gray-800">
+            <h3 class="text-sm font-medium text-gray-300 mb-2">Colunas disponíveis</h3>
+            <ul class="text-xs text-gray-400 space-y-1 font-mono">
+              <li>id, timestamp, date, hour</li>
+              <li>type (in | out)</li>
+              <li>confidence, tracking_id, session_id</li>
+              <li>zone, source</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Painel direito: gráfico + tabela -->
+      <section class="lg:w-3/5 flex flex-col overflow-hidden">
+        <!-- Cards resumo -->
+        <div class="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 border-b border-gray-800">
+          <div class="bg-gray-900 rounded-xl p-3 text-center">
+            <div class="text-xl font-bold text-blue-400" id="stat-rows">0</div>
+            <div class="text-xs text-gray-400 mt-0.5">Linhas</div>
+          </div>
+          <div class="bg-gray-900 rounded-xl p-3 text-center">
+            <div class="text-xl font-bold text-green-400" id="stat-in">0</div>
+            <div class="text-xs text-gray-400 mt-0.5">Entradas</div>
+          </div>
+          <div class="bg-gray-900 rounded-xl p-3 text-center">
+            <div class="text-xl font-bold text-red-400" id="stat-out">0</div>
+            <div class="text-xs text-gray-400 mt-0.5">Saídas</div>
+          </div>
+          <div class="bg-gray-900 rounded-xl p-3 text-center">
+            <div class="text-xl font-bold text-yellow-400" id="stat-avg-conf">—</div>
+            <div class="text-xs text-gray-400 mt-0.5">Conf. média</div>
+          </div>
+        </div>
+
+        <!-- Gráfico -->
+        <div class="p-4 border-b border-gray-800">
+          <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h3 class="text-sm font-medium text-gray-300">Gráfico</h3>
+            <div class="flex items-center gap-2">
+              <label class="text-xs text-gray-400">Agrupar por:</label>
+              <select id="chart-group" class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs">
+                <option value="type">Tipo (in/out)</option>
+                <option value="hour">Hora</option>
+                <option value="date">Data</option>
+                <option value="zone">Zona</option>
+              </select>
+              <select id="chart-type" class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs">
+                <option value="bar">Barras</option>
+                <option value="pie">Pizza</option>
+                <option value="line">Linha</option>
+              </select>
+            </div>
+          </div>
+          <div class="bg-gray-900 rounded-xl p-4" style="min-height: 260px;">
+            <canvas id="result-chart" height="220"></canvas>
+            <p id="chart-empty" class="text-center text-gray-500 text-sm py-12 hidden">Execute uma consulta para ver o gráfico</p>
+          </div>
+        </div>
+
+        <!-- Tabela de resultados -->
+        <div class="flex-1 overflow-auto p-4">
+          <h3 class="text-sm font-medium text-gray-300 mb-3">Resultados <span id="result-count" class="text-gray-500 font-normal"></span></h3>
+          <div class="bg-gray-900 rounded-xl overflow-x-auto border border-gray-800">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-800 text-gray-400 sticky top-0">
+                <tr id="table-head">
+                  <th class="text-left px-4 py-3">—</th>
+                </tr>
+              </thead>
+              <tbody id="table-body">
+                <tr>
+                  <td class="px-4 py-8 text-center text-gray-500" colspan="10">Nenhuma consulta executada</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+<script>
+/* ========== SUPABASE (mesmo padrão do PeopleCounter) ========== */
+if (!window.SUPABASE_CONFIG) {
+  alert("Erro: Configurações do Supabase não encontradas! Verifique o arquivo config.js");
+}
+
+const supabaseClient = supabase.createClient(
+  window.SUPABASE_CONFIG.url,
+  window.SUPABASE_CONFIG.key
+);
+
+let isOnline = navigator.onLine;
+let supabaseOk = false;
+let lastRows = [];
+let chartInstance = null;
+
+const TABLE = 'people_count_events';
+
+function updateOnlineUI() {
+  const badge = document.getElementById('online-badge');
+  if (isOnline) {
+    badge.textContent = '● Online';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-green-900 text-green-300';
+  } else {
+    badge.textContent = '○ Offline';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-orange-900 text-orange-300';
+  }
+}
+
+async function testSupabaseConnection() {
+  const badge = document.getElementById('supabase-badge');
+  if (!window.SUPABASE_CONFIG?.url || !window.SUPABASE_CONFIG?.key) {
+    badge.textContent = 'Supabase: sem config';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-red-900 text-red-300';
+    supabaseOk = false;
+    return false;
+  }
+  if (!isOnline) {
+    badge.textContent = 'Supabase: offline';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-orange-900 text-orange-300';
+    supabaseOk = false;
+    return false;
+  }
+  try {
+    const { error } = await supabaseClient.from(TABLE).select('id').limit(1);
+    if (error) {
+      badge.textContent = 'Supabase: erro';
+      badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-yellow-900 text-yellow-300';
+      supabaseOk = false;
+      return false;
+    }
+    badge.textContent = 'Supabase: OK';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-green-900 text-green-300';
+    supabaseOk = true;
+    return true;
+  } catch (err) {
+    badge.textContent = 'Supabase: erro';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-yellow-900 text-yellow-300';
+    supabaseOk = false;
+    return false;
+  }
+}
+
+window.addEventListener('online', () => { isOnline = true; updateOnlineUI(); testSupabaseConnection(); });
+window.addEventListener('offline', () => { isOnline = false; updateOnlineUI(); testSupabaseConnection(); });
+
+/* ========== Parser SQL simples → filtros Supabase ========== */
+/**
+ * Aceita apenas:
+ * SELECT [cols|*] FROM people_count_events [WHERE ...] [ORDER BY ...] [LIMIT n]
+ * WHERE: col op valor  (op: = != <> > < >= <= LIKE)  unidos por AND
+ * IN (a,b,c) também suportado
+ */
+function parseSQL(sql) {
+  const original = sql.trim();
+  if (!original) throw new Error('Digite um comando SQL.');
+
+  // Remove comentários simples e normaliza espaços
+  let s = original.replace(/--.*$/gm, '').replace(/\s+/g, ' ').trim();
+  const upper = s.toUpperCase();
+
+  if (!upper.startsWith('SELECT')) {
+    throw new Error('Apenas comandos SELECT são permitidos.');
+  }
+
+  // FROM
+  const fromMatch = s.match(/\bFROM\s+([a-zA-Z0-9_]+)/i);
+  if (!fromMatch) throw new Error('Falta a cláusula FROM.');
+  const table = fromMatch[1].toLowerCase();
+  if (table !== TABLE && table !== 'people_count_events') {
+    throw new Error('Só é permitida a tabela people_count_events.');
+  }
+
+  // Colunas (entre SELECT e FROM)
+  const selectPart = s.substring(6, s.search(/\bFROM\b/i)).trim();
+  let columns = '*';
+  if (selectPart && selectPart !== '*') {
+    columns = selectPart.split(',').map(c => c.trim()).filter(Boolean).join(',');
+  }
+
+  // WHERE
+  const whereMatch = s.match(/\bWHERE\s+(.+?)(?:\s+ORDER\s+BY|\s+LIMIT\s|$)/i);
+  const conditions = [];
+  if (whereMatch) {
+    const whereStr = whereMatch[1].trim();
+    // Divide por AND (não trata OR por simplicidade e segurança)
+    if (/\bOR\b/i.test(whereStr)) {
+      throw new Error('OR não é suportado. Use apenas AND.');
+    }
+    const parts = whereStr.split(/\s+AND\s+/i);
+    for (const part of parts) {
+      const trimmed = part.trim();
+      // IN ( ... )
+      const inMatch = trimmed.match(/^([a-zA-Z0-9_]+)\s+IN\s*\((.+)\)$/i);
+      if (inMatch) {
+        const col = inMatch[1].toLowerCase();
+        const vals = inMatch[2].split(',').map(v => stripQuotes(v.trim()));
+        conditions.push({ col, op: 'in', value: vals });
+        continue;
+      }
+      // col op valor
+      const opMatch = trimmed.match(/^([a-zA-Z0-9_]+)\s*(=|!=|<>|>=|<=|>|<|LIKE)\s*(.+)$/i);
+      if (!opMatch) throw new Error('Condição WHERE inválida: ' + trimmed);
+      let op = opMatch[2].toUpperCase();
+      if (op === '<>') op = '!=';
+      const value = stripQuotes(opMatch[3].trim());
+      conditions.push({ col: opMatch[1].toLowerCase(), op, value });
+    }
+  }
+
+  // ORDER BY
+  let orderBy = null;
+  const orderMatch = s.match(/\bORDER\s+BY\s+([a-zA-Z0-9_]+)(?:\s+(ASC|DESC))?/i);
+  if (orderMatch) {
+    orderBy = { col: orderMatch[1].toLowerCase(), asc: !(orderMatch[2] && orderMatch[2].toUpperCase() === 'DESC') };
+  }
+
+  // LIMIT
+  let limit = 500; // proteção
+  const limitMatch = s.match(/\bLIMIT\s+(\d+)/i);
+  if (limitMatch) {
+    limit = Math.min(parseInt(limitMatch[1], 10), 1000);
+  }
+
+  return { columns, conditions, orderBy, limit };
+}
+
+function stripQuotes(v) {
+  if ((v.startsWith("'") && v.endsWith("'")) || (v.startsWith('"') && v.endsWith('"'))) {
+    return v.slice(1, -1);
+  }
+  // número?
+  if (/^-?\d+(\.\d+)?$/.test(v)) return Number(v);
+  // boolean
+  if (v.toLowerCase() === 'true') return true;
+  if (v.toLowerCase() === 'false') return false;
+  return v;
+}
+
+/* ========== Executa no Supabase ========== */
+async function runQuery(sql) {
+  const parsed = parseSQL(sql);
+  let query = supabaseClient.from(TABLE).select(parsed.columns === '*' ? '*' : parsed.columns);
+
+  for (const c of parsed.conditions) {
+    switch (c.op) {
+      case '=':
+        query = query.eq(c.col, c.value);
+        break;
+      case '!=':
+        query = query.neq(c.col, c.value);
+        break;
+      case '>':
+        query = query.gt(c.col, c.value);
+        break;
+      case '>=':
+        query = query.gte(c.col, c.value);
+        break;
+      case '<':
+        query = query.lt(c.col, c.value);
+        break;
+      case '<=':
+        query = query.lte(c.col, c.value);
+        break;
+      case 'LIKE':
+        query = query.ilike(c.col, c.value);
+        break;
+      case 'in':
+        query = query.in(c.col, c.value);
+        break;
+      default:
+        throw new Error('Operador não suportado: ' + c.op);
+    }
+  }
+
+  if (parsed.orderBy) {
+    query = query.order(parsed.orderBy.col, { ascending: parsed.orderBy.asc });
+  } else {
+    query = query.order('timestamp', { ascending: false });
+  }
+
+  query = query.limit(parsed.limit);
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+/* ========== UI: tabela + stats + gráfico ========== */
+function updateStats(rows) {
+  document.getElementById('stat-rows').textContent = String(rows.length);
+  const ins = rows.filter(r => r.type === 'in').length;
+  const outs = rows.filter(r => r.type === 'out').length;
+  document.getElementById('stat-in').textContent = String(ins);
+  document.getElementById('stat-out').textContent = String(outs);
+
+  const confs = rows.map(r => Number(r.confidence)).filter(n => !isNaN(n));
+  if (confs.length) {
+    const avg = confs.reduce((a, b) => a + b, 0) / confs.length;
+    document.getElementById('stat-avg-conf').textContent = (avg * 100).toFixed(0) + '%';
+  } else {
+    document.getElementById('stat-avg-conf').textContent = '—';
+  }
+}
+
+function renderTable(rows) {
+  const thead = document.getElementById('table-head');
+  const tbody = document.getElementById('table-body');
+  const countEl = document.getElementById('result-count');
+
+  if (!rows.length) {
+    thead.innerHTML = '<th class="text-left px-4 py-3">—</th>';
+    tbody.innerHTML = '<tr><td class="px-4 py-8 text-center text-gray-500">Nenhum resultado</td></tr>';
+    countEl.textContent = '';
+    return;
+  }
+
+  // Colunas na ordem preferida
+  const preferred = ['timestamp', 'date', 'hour', 'type', 'confidence', 'tracking_id', 'session_id', 'zone', 'source', 'id'];
+  const keys = Object.keys(rows[0]);
+  const cols = preferred.filter(c => keys.includes(c)).concat(keys.filter(k => !preferred.includes(k)));
+
+  thead.innerHTML = cols.map(c => `<th class="text-left px-3 py-2.5 whitespace-nowrap">${c}</th>`).join('');
+  tbody.innerHTML = rows.map(row => {
+    return '<tr class="hover:bg-gray-800/50 border-t border-gray-800">' +
+      cols.map(c => {
+        let val = row[c];
+        if (val == null) val = '';
+        if (c === 'type') {
+          const cls = val === 'in' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300';
+          const label = val === 'in' ? 'Entrada' : (val === 'out' ? 'Saída' : val);
+          return `<td class="px-3 py-2"><span class="px-2 py-0.5 rounded-full text-xs ${cls}">${label}</span></td>`;
+        }
+        if (c === 'confidence' && typeof val === 'number') {
+          return `<td class="px-3 py-2">${(val * 100).toFixed(0)}%</td>`;
+        }
+        if (c === 'timestamp' && val) {
+          try {
+            return `<td class="px-3 py-2 text-xs whitespace-nowrap">${new Date(val).toLocaleString('pt-BR')}</td>`;
+          } catch (_) {}
+        }
+        return `<td class="px-3 py-2 text-xs max-w-[180px] truncate" title="${String(val)}">${val}</td>`;
+      }).join('') +
+      '</tr>';
+  }).join('');
+
+  countEl.textContent = `(${rows.length} linha${rows.length !== 1 ? 's' : ''})`;
+}
+
+function aggregateForChart(rows, groupBy) {
+  const map = {};
+  for (const r of rows) {
+    let key = r[groupBy];
+    if (key == null || key === '') key = '(vazio)';
+    if (groupBy === 'hour') key = String(key).padStart(2, '0') + 'h';
+    if (groupBy === 'type') key = key === 'in' ? 'Entrada' : (key === 'out' ? 'Saída' : key);
+    map[key] = (map[key] || 0) + 1;
+  }
+
+  // Ordena: hora e data numericamente/cronologicamente, resto por quantidade
+  let labels = Object.keys(map);
+  if (groupBy === 'hour') {
+    labels.sort((a, b) => parseInt(a) - parseInt(b));
+  } else if (groupBy === 'date') {
+    labels.sort();
+  } else {
+    labels.sort((a, b) => map[b] - map[a]);
+  }
+  return { labels, values: labels.map(l => map[l]) };
+}
+
+const CHART_COLORS = [
+  'rgba(59, 130, 246, 0.85)',
+  'rgba(34, 197, 94, 0.85)',
+  'rgba(239, 68, 68, 0.85)',
+  'rgba(234, 179, 8, 0.85)',
+  'rgba(168, 85, 247, 0.85)',
+  'rgba(6, 182, 212, 0.85)',
+  'rgba(249, 115, 22, 0.85)',
+  'rgba(236, 72, 153, 0.85)',
+];
+
+function renderChart(rows) {
+  const emptyEl = document.getElementById('chart-empty');
+  const canvas = document.getElementById('result-chart');
+  if (!rows.length) {
+    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+    canvas.classList.add('hidden');
+    emptyEl.classList.remove('hidden');
+    return;
+  }
+  canvas.classList.remove('hidden');
+  emptyEl.classList.add('hidden');
+
+  const groupBy = document.getElementById('chart-group').value;
+  const chartType = document.getElementById('chart-type').value;
+  const { labels, values } = aggregateForChart(rows, groupBy);
+
+  if (chartInstance) chartInstance.destroy();
+
+  const ctx = canvas.getContext('2d');
+  const isPie = chartType === 'pie';
+
+  chartInstance = new Chart(ctx, {
+    type: chartType,
+    data: {
+      labels,
+      datasets: [{
+        label: 'Quantidade',
+        data: values,
+        backgroundColor: isPie || chartType === 'bar'
+          ? labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length])
+          : 'rgba(59, 130, 246, 0.2)',
+        borderColor: isPie
+          ? labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length].replace('0.85', '1'))
+          : '#3b82f6',
+        borderWidth: isPie ? 1 : 2,
+        fill: chartType === 'line',
+        tension: 0.3,
+        pointRadius: chartType === 'line' ? 3 : 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          display: isPie,
+          labels: { color: '#9ca3af', boxWidth: 12 }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const v = ctx.raw;
+              const total = values.reduce((a, b) => a + b, 0);
+              const pct = total ? ((v / total) * 100).toFixed(1) : 0;
+              return ` ${v} (${pct}%)`;
+            }
+          }
+        }
+      },
+      scales: isPie ? {} : {
+        x: {
+          ticks: { color: '#9ca3af', maxRotation: 45, minRotation: 0 },
+          grid: { color: '#1f2937' }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { color: '#9ca3af', precision: 0 },
+          grid: { color: '#1f2937' }
+        }
+      }
+    }
+  });
+}
+
+/* ========== Ações ========== */
+async function execute() {
+  const status = document.getElementById('query-status');
+  const sql = document.getElementById('sql-input').value;
+  status.textContent = 'Executando…';
+  status.className = 'text-xs text-yellow-400 mt-3';
+
+  try {
+    if (!isOnline) throw new Error('Sem conexão com a internet.');
+    const rows = await runQuery(sql);
+    lastRows = rows;
+    updateStats(rows);
+    renderTable(rows);
+    renderChart(rows);
+    status.textContent = `OK — ${rows.length} linha(s) retornada(s).`;
+    status.className = 'text-xs text-green-400 mt-3';
+  } catch (err) {
+    console.error(err);
+    status.textContent = 'Erro: ' + (err.message || String(err));
+    status.className = 'text-xs text-red-400 mt-3';
+    lastRows = [];
+    updateStats([]);
+    renderTable([]);
+    renderChart([]);
+  }
+}
+
+function setupExamples() {
+  const today = new Date().toISOString().slice(0, 10);
+  document.querySelectorAll('.example-chip').forEach(el => {
+    let sql = el.dataset.sql || '';
+    sql = sql.replace(/YYYY-MM-DD/g, today);
+    el.dataset.sql = sql;
+    // atualiza o texto visível se tinha placeholder
+    if (el.textContent.includes('hoje') || el.textContent.includes('…')) {
+      // deixa o texto amigável
+    }
+    el.addEventListener('click', () => {
+      document.getElementById('sql-input').value = el.dataset.sql;
+    });
+  });
+}
+
+function init() {
+  updateOnlineUI();
+  testSupabaseConnection();
+  setupExamples();
+
+  // Preenche um exemplo inicial com a data de hoje
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('sql-input').value =
+    `SELECT * FROM people_count_events WHERE date = '${today}' ORDER BY timestamp DESC LIMIT 100`;
+
+  document.getElementById('btn-run').addEventListener('click', execute);
+  document.getElementById('btn-clear').addEventListener('click', () => {
+    document.getElementById('sql-input').value = '';
+    document.getElementById('query-status').textContent = '';
+  });
+  document.getElementById('btn-test').addEventListener('click', async () => {
+    const ok = await testSupabaseConnection();
+    alert(ok ? 'Conexão OK!' : 'Falha. Verifique internet, config.js e a tabela people_count_events.');
+  });
+
+  document.getElementById('chart-group').addEventListener('change', () => renderChart(lastRows));
+  document.getElementById('chart-type').addEventListener('change', () => renderChart(lastRows));
+
+  // Enter + Ctrl/Cmd para executar
+  document.getElementById('sql-input').addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      execute();
+    }
+  });
+}
+
+init();
+</script>
+</body>
+</html>
