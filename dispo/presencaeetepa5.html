@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PeopleCounter Surveillance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dexie@4.0.10/dist/dexie.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Configuração do Supabase (externo) - mesmo padrão do Livro Caixa -->
+  <script src="config.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { colors: { primary: { 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' } } } }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #111; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    #canvas { cursor: crosshair; }
+    @keyframes flash-in { 0% { background-color: rgba(34,197,94,0.3); } 100% { background-color: transparent; } }
+    @keyframes flash-out { 0% { background-color: rgba(239,68,68,0.3); } 100% { background-color: transparent; } }
+    .flash-in { animation: flash-in 0.6s ease-out; }
+    .flash-out { animation: flash-out 0.6s ease-out; }
+    .mode-btn.active { background: #2563eb; color: white; }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+  <div id="app" class="flex flex-col h-screen">
+    <header class="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center font-bold text-sm">PC</div>
+        <div>
+          <h1 class="font-semibold text-lg leading-tight">PeopleCounter Surveillance</h1>
+          <p class="text-xs text-gray-400">Detecção por presença • Conta ao sair da câmera • Supabase</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="supabase-badge" class="px-3 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400" title="Status Supabase">
+          Supabase: —
+        </span>
+        <span id="status-badge" class="px-3 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400">
+          Aguardando fonte de vídeo
+        </span>
+      </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+      <section class="w-1/2 border-r border-gray-800 flex flex-col bg-gray-900/50">
+        <div class="p-4 border-b border-gray-800 flex flex-wrap gap-2 items-center">
+          <button id="btn-screen" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm font-medium transition">📺 Capturar Janela</button>
+          <button id="btn-camera" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition">📷 Câmera Local</button>
+          <button id="btn-stop" class="px-4 py-2 bg-red-700 hover:bg-red-600 rounded-lg text-sm font-medium transition hidden">⏹ Parar</button>
+
+          <div class="flex items-center gap-1 ml-2 border border-gray-700 rounded-lg p-0.5">
+            <button id="btn-mode-presence" class="mode-btn active px-3 py-1.5 rounded-md text-xs font-medium transition" title="Conta quando a pessoa sai da câmera">👤 Presença</button>
+            <button id="btn-mode-line" class="mode-btn px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white transition" title="Conta ao cruzar a linha">─ Linha</button>
+          </div>
+
+          <div class="flex items-center gap-2 ml-auto">
+            <label class="text-xs text-gray-400">Confiança:</label>
+            <input id="confidence" type="range" min="0.15" max="0.85" step="0.05" value="0.30" class="w-24" />
+            <span id="confidence-value" class="text-xs w-8">0.30</span>
+          </div>
+        </div>
+
+        <div class="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
+          <video id="video" class="absolute inset-0 w-full h-full object-contain hidden" playsinline muted></video>
+          <canvas id="canvas" class="absolute inset-0 w-full h-full object-contain"></canvas>
+          <div id="placeholder" class="text-center text-gray-500 p-8">
+            <div class="text-5xl mb-4">📹</div>
+            <p class="text-lg font-medium">Nenhuma fonte de vídeo selecionada</p>
+            <p class="text-sm mt-2">Clique em "Capturar Janela" para selecionar a aba/janela da câmera</p>
+            <p class="text-xs mt-3 text-gray-600">Modo Presença: detecta a pessoa e conta quando ela sai do enquadramento</p>
+          </div>
+        </div>
+
+        <div class="p-3 border-t border-gray-800 flex items-center gap-4 text-sm flex-wrap">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-green-500"></span>
+            <span>FPS: <strong id="fps">0</strong></span>
+          </div>
+          <div>Na cena agora: <strong id="current-count" class="text-primary-500">0</strong></div>
+          <div class="text-xs text-gray-500" id="mode-hint">Modo: Presença • Conta ao sair da câmera</div>
+          <div class="ml-auto flex gap-4 flex-wrap">
+            <label class="flex items-center gap-2 cursor-pointer" id="draw-line-label" style="display:none">
+              <input type="checkbox" id="draw-line" class="rounded" />
+              <span>Mostrar linha</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="blur-faces" class="rounded" />
+              <span>Blur faces</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer" title="Envia cada evento automaticamente para o Supabase">
+              <input type="checkbox" id="sync-supabase" checked class="rounded" />
+              <span>Sync Supabase</span>
+            </label>
+            <div class="flex items-center gap-1 border border-gray-700 rounded-lg p-0.5" id="line-orient-group" style="display:none">
+              <button id="btn-line-h" class="mode-btn active px-2 py-1 rounded text-xs">H</button>
+              <button id="btn-line-v" class="mode-btn px-2 py-1 rounded text-xs text-gray-400">V</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="w-1/2 flex flex-col overflow-hidden">
+        <div class="p-4 grid grid-cols-4 gap-3 border-b border-gray-800">
+          <div class="bg-gray-900 rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-green-400" id="total-in">0</div>
+            <div class="text-xs text-gray-400 mt-1">Entradas (hoje)</div>
+          </div>
+          <div class="bg-gray-900 rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-red-400" id="total-out">0</div>
+            <div class="text-xs text-gray-400 mt-1">Saídas (hoje)</div>
+          </div>
+          <div class="bg-gray-900 rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-blue-400" id="total-events">0</div>
+            <div class="text-xs text-gray-400 mt-1">Total eventos</div>
+          </div>
+          <div class="bg-gray-900 rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-yellow-400" id="peak-hour">--</div>
+            <div class="text-xs text-gray-400 mt-1">Pico de fluxo</div>
+          </div>
+        </div>
+
+        <div class="flex border-b border-gray-800">
+          <button class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-primary-500 text-primary-400" data-tab="live">Ao vivo</button>
+          <button class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-200" data-tab="history">Histórico</button>
+          <button class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-200" data-tab="reports">Relatórios</button>
+          <button class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-200" data-tab="export">Exportar / Sync</button>
+        </div>
+
+        <div class="flex-1 overflow-auto p-4">
+          <div id="tab-live" class="tab-content space-y-4">
+            <div class="bg-gray-900 rounded-xl p-4">
+              <h3 class="text-sm font-medium text-gray-300 mb-3">Fluxo por minuto (últimos 30 min)</h3>
+              <canvas id="chart-live" height="180"></canvas>
+            </div>
+            <div class="bg-gray-900 rounded-xl p-4">
+              <h3 class="text-sm font-medium text-gray-300 mb-3">Últimos eventos</h3>
+              <div id="live-events" class="space-y-2 max-h-64 overflow-y-auto text-sm">
+                <p class="text-gray-500 text-center py-4">Nenhum evento ainda</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="tab-history" class="tab-content hidden">
+            <div class="flex gap-3 mb-4 flex-wrap">
+              <input type="date" id="filter-date" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm" />
+              <select id="filter-type" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm">
+                <option value="all">Todos</option>
+                <option value="in">Entradas</option>
+                <option value="out">Saídas</option>
+              </select>
+              <button id="btn-filter" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm">Filtrar (local)</button>
+              <button id="btn-filter-supabase" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm">Filtrar (Supabase)</button>
+            </div>
+            <div class="bg-gray-900 rounded-xl overflow-hidden">
+              <table class="w-full text-sm">
+                <thead class="bg-gray-800 text-gray-400">
+                  <tr>
+                    <th class="text-left px-4 py-3">Horário</th>
+                    <th class="text-left px-4 py-3">Tipo</th>
+                    <th class="text-left px-4 py-3">Confiança</th>
+                    <th class="text-left px-4 py-3">Tracking ID</th>
+                  </tr>
+                </thead>
+                <tbody id="history-table"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="tab-reports" class="tab-content hidden space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-gray-900 rounded-xl p-4">
+                <h3 class="text-sm font-medium text-gray-300 mb-3">Distribuição por hora (hoje)</h3>
+                <canvas id="chart-hourly" height="200"></canvas>
+              </div>
+              <div class="bg-gray-900 rounded-xl p-4">
+                <h3 class="text-sm font-medium text-gray-300 mb-3">Resumo do dia</h3>
+                <div id="daily-summary" class="space-y-2 text-sm"><p class="text-gray-500">Carregando...</p></div>
+              </div>
+            </div>
+            <div class="bg-gray-900 rounded-xl p-4">
+              <h3 class="text-sm font-medium text-gray-300 mb-3">Comparativo últimos 7 dias</h3>
+              <canvas id="chart-weekly" height="160"></canvas>
+            </div>
+          </div>
+
+          <div id="tab-export" class="tab-content hidden space-y-6">
+            <div class="bg-gray-900 rounded-xl p-5">
+              <h3 class="font-medium mb-3">Supabase</h3>
+              <p class="text-sm text-gray-400 mb-3">Status: <strong id="supabase-status-text">Verificando...</strong></p>
+              <p class="text-sm text-gray-400 mb-4">Com <strong>Sync Supabase</strong> ativo, cada entrada/saída é enviada automaticamente para a tabela <code class="text-green-400">people_count_events</code>.</p>
+              <div class="flex flex-wrap gap-3">
+                <button id="btn-sync-pending" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium">
+                  ☁ Enviar eventos locais pendentes
+                </button>
+                <button id="btn-test-supabase" class="px-5 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium">
+                  🔌 Testar conexão
+                </button>
+              </div>
+              <p id="sync-result" class="text-xs text-gray-500 mt-3"></p>
+            </div>
+
+            <div class="bg-gray-900 rounded-xl p-5">
+              <h3 class="font-medium mb-3">Exportar CSV</h3>
+              <p class="text-sm text-gray-400 mb-4">Gera CSV pronto para importação manual no Supabase (se preferir).</p>
+              <div class="flex gap-3 mb-4">
+                <input type="date" id="export-from" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm" />
+                <span class="self-center text-gray-500">até</span>
+                <input type="date" id="export-to" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div class="flex gap-3">
+                <button id="btn-export-csv" class="px-5 py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium">📥 Baixar CSV</button>
+                <button id="btn-export-all" class="px-5 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium">Baixar tudo</button>
+              </div>
+            </div>
+
+            <div class="bg-gray-900 rounded-xl p-5">
+              <h3 class="font-medium mb-3">Dados locais (IndexedDB)</h3>
+              <p class="text-sm text-gray-400 mb-3">Total de registros locais: <strong id="db-count">0</strong></p>
+              <button id="btn-clear-data" class="px-4 py-2 bg-red-800 hover:bg-red-700 rounded-lg text-sm">🗑 Limpar todos os dados locais</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+<script>
+/* ========== SUPABASE (mesmo padrão do Livro Caixa) ========== */
+if (!window.SUPABASE_CONFIG) {
+  console.warn("Configurações do Supabase não encontradas! Verifique o arquivo config.js");
+}
+
+const supabaseClient = window.SUPABASE_CONFIG
+  ? supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key)
+  : null;
+
+let supabaseOk = false;
+
+async function testSupabaseConnection() {
+  const badge = document.getElementById('supabase-badge');
+  const statusText = document.getElementById('supabase-status-text');
+  if (!supabaseClient) {
+    badge.textContent = 'Supabase: config ausente';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-red-900 text-red-300';
+    if (statusText) statusText.textContent = 'config.js não encontrado ou inválido';
+    supabaseOk = false;
+    return false;
+  }
+  try {
+    const { error } = await supabaseClient
+      .from('people_count_events')
+      .select('id', { count: 'exact', head: true });
+    if (error) throw error;
+    badge.textContent = 'Supabase: conectado';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-green-900 text-green-300';
+    if (statusText) statusText.textContent = 'Conectado • tabela people_count_events OK';
+    supabaseOk = true;
+    return true;
+  } catch (err) {
+    console.error('Supabase:', err);
+    badge.textContent = 'Supabase: erro';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-yellow-900 text-yellow-300';
+    if (statusText) statusText.textContent = 'Erro: ' + (err.message || err);
+    supabaseOk = false;
+    return false;
+  }
+}
+
+/** Envia um evento para o Supabase (mesmo padrão de insert do seu projeto) */
+async function sendEventToSupabase(event) {
+  if (!supabaseClient || !document.getElementById('sync-supabase').checked) return { ok: false, skipped: true };
+
+  const row = {
+    id: event.id,
+    timestamp: event.timestamp,
+    date: event.date,
+    hour: event.hour,
+    type: event.type,
+    confidence: event.confidence,
+    tracking_id: event.trackingId,
+    session_id: event.sessionId,
+    zone: event.zone || 'main',
+    source: event.zone || 'presence'
+  };
+
+  const { data, error } = await supabaseClient
+    .from('people_count_events')
+    .insert([row])
+    .select();
+
+  if (error) {
+    console.error('Erro ao enviar para Supabase:', error);
+    return { ok: false, error };
+  }
+  return { ok: true, data };
+}
+
+/** Busca eventos do Supabase por data (padrão de query do Livro Caixa) */
+async function fetchEventsFromSupabase(date, type) {
+  if (!supabaseClient) return [];
+
+  let query = supabaseClient
+    .from('people_count_events')
+    .select('*')
+    .eq('date', date)
+    .order('timestamp', { ascending: false });
+
+  if (type && type !== 'all') {
+    query = query.eq('type', type);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error(error);
+    alert('Erro ao carregar do Supabase: ' + error.message);
+    return [];
+  }
+  return data || [];
+}
+
+/** Envia em lote eventos locais que ainda não foram sincronizados */
+async function syncPendingLocalEvents() {
+  const resultEl = document.getElementById('sync-result');
+  if (!supabaseClient) {
+    resultEl.textContent = 'Supabase não configurado.';
+    return;
+  }
+  resultEl.textContent = 'Enviando...';
+
+  const all = await getAllEvents();
+  if (all.length === 0) {
+    resultEl.textContent = 'Nenhum evento local para enviar.';
+    return;
+  }
+
+  // Envia em lotes de 100
+  const batchSize = 100;
+  let sent = 0;
+  let errors = 0;
+
+  for (let i = 0; i < all.length; i += batchSize) {
+    const batch = all.slice(i, i + batchSize).map(e => ({
+      id: e.id,
+      timestamp: e.timestamp,
+      date: e.date,
+      hour: e.hour,
+      type: e.type,
+      confidence: e.confidence,
+      tracking_id: e.trackingId,
+      session_id: e.sessionId,
+      zone: e.zone || 'main',
+      source: e.zone || 'presence'
+    }));
+
+    const { error } = await supabaseClient
+      .from('people_count_events')
+      .upsert(batch, { onConflict: 'id' });
+
+    if (error) {
+      console.error(error);
+      errors++;
+    } else {
+      sent += batch.length;
+    }
+  }
+
+  resultEl.textContent = `Enviados/atualizados: ${sent}` + (errors ? ` • Erros em ${errors} lote(s)` : ' • OK');
+  await testSupabaseConnection();
+}
+
+/* ========== UTIL ========== */
+function uuid() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+/* ========== DATABASE LOCAL (IndexedDB) ========== */
+const db = new Dexie('PeopleCounterDB');
+db.version(1).stores({
+  events: 'id, timestamp, date, hour, type, trackingId, sessionId',
+  settings: 'id'
+});
+
+const DEFAULT_SETTINGS = {
+  confidenceThreshold: 0.30,
+  drawLine: false,
+  blurFaces: false,
+  countMode: 'presence',
+  lineOrientation: 'horizontal',
+  linePos: 0.5,
+  retentionDays: 30,
+  syncSupabase: true
+};
+
+async function getSettings() {
+  const s = await db.settings.get('main');
+  return s ? { ...DEFAULT_SETTINGS, ...s } : { ...DEFAULT_SETTINGS };
+}
+async function saveSettings(partial) {
+  const current = await getSettings();
+  await db.settings.put({ id: 'main', ...current, ...partial });
+}
+async function addEvent(event) { await db.events.add(event); }
+async function getEventsByDate(date, type) {
+  let events = await db.events.where('date').equals(date).toArray();
+  if (type && type !== 'all') events = events.filter(e => e.type === type);
+  return events;
+}
+async function getEventsInRange(from, to) {
+  return db.events.where('date').between(from, to, true, true).toArray();
+}
+async function getAllEvents() { return db.events.orderBy('timestamp').toArray(); }
+async function getTodayStats() {
+  const today = new Date().toISOString().slice(0, 10);
+  const events = await getEventsByDate(today);
+  const totalIn = events.filter(e => e.type === 'in').length;
+  const totalOut = events.filter(e => e.type === 'out').length;
+  const byHour = {};
+  events.forEach(e => { byHour[e.hour] = (byHour[e.hour] || 0) + 1; });
+  let peakHour = -1, peakCount = 0;
+  Object.entries(byHour).forEach(([h, c]) => { if (c > peakCount) { peakCount = c; peakHour = Number(h); } });
+  return { totalIn, totalOut, total: events.length, peakHour, byHour };
+}
+async function getLast7DaysStats() {
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const date = d.toISOString().slice(0, 10);
+    const events = await getEventsByDate(date);
+    days.push({ date, in: events.filter(e => e.type === 'in').length, out: events.filter(e => e.type === 'out').length });
+  }
+  return days;
+}
+async function clearAllData() { await db.events.clear(); }
+async function countEvents() { return db.events.count(); }
+async function clearOldData(days) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  await db.events.where('timestamp').below(cutoff.toISOString()).delete();
+}
+
+/* ========== TRACKER ========== */
+class PresenceTracker {
+  constructor() {
+    this.nextId = 1;
+    this.tracks = new Map();
+    this.lostTimeout = 800;
+    this.minVisibleMs = 350;
+    this.maxMatchDist = 140;
+  }
+
+  update(detections, mode, lineOrientation, linePos, videoW, videoH) {
+    const now = Date.now();
+    const events = [];
+    const usedTracks = new Set();
+    const matchedDetections = [];
+
+    for (const det of detections) {
+      const [x, y, w, h] = det.bbox;
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+      const area = w * h;
+      let bestId = null;
+      let bestDist = this.maxMatchDist;
+      const adaptiveDist = this.maxMatchDist + (area < 5000 ? 50 : 0);
+
+      for (const [id, track] of this.tracks) {
+        if (usedTracks.has(id)) continue;
+        const dist = Math.hypot(cx - track.centroid.x, cy - track.centroid.y);
+        if (dist < bestDist && dist < adaptiveDist) {
+          bestDist = dist;
+          bestId = id;
+        }
+      }
+
+      if (bestId) {
+        const track = this.tracks.get(bestId);
+        const prevX = track.centroid.x;
+        const prevY = track.centroid.y;
+
+        if (mode === 'line' && !track.counted) {
+          const isH = lineOrientation === 'horizontal';
+          const absPos = isH ? linePos * videoH : linePos * videoW;
+          let type = null;
+          if (isH) {
+            if (prevY < absPos && cy >= absPos) type = 'in';
+            else if (prevY > absPos && cy <= absPos) type = 'out';
+          } else {
+            if (prevX < absPos && cx >= absPos) type = 'in';
+            else if (prevX > absPos && cx <= absPos) type = 'out';
+          }
+          if (type) {
+            track.counted = true;
+            events.push({ id: bestId, type, confidence: det.score });
+          }
+        }
+
+        track.centroid = { x: cx, y: cy };
+        track.lastSeen = now;
+        track.lastScore = det.score;
+        track.bbox = det.bbox;
+        usedTracks.add(bestId);
+        det.trackingId = bestId;
+      } else {
+        const id = 't' + this.nextId++;
+        this.tracks.set(id, {
+          id, centroid: { x: cx, y: cy }, firstSeen: now, lastSeen: now,
+          lastScore: det.score, bbox: det.bbox, counted: false
+        });
+        det.trackingId = id;
+      }
+      matchedDetections.push(det);
+    }
+
+    if (mode === 'presence') {
+      for (const [id, track] of this.tracks) {
+        if (usedTracks.has(id)) continue;
+        if (now - track.lastSeen > this.lostTimeout) {
+          const visibleDuration = track.lastSeen - (track.firstSeen || track.lastSeen);
+          if (!track.counted && visibleDuration >= this.minVisibleMs) {
+            track.counted = true;
+            events.push({ id, type: 'in', confidence: track.lastScore || 0.5 });
+          }
+          this.tracks.delete(id);
+        }
+      }
+    } else {
+      for (const [id, track] of this.tracks) {
+        if (now - track.lastSeen > this.lostTimeout * 2) this.tracks.delete(id);
+      }
+    }
+
+    return { detections: matchedDetections, events };
+  }
+
+  reset() { this.tracks.clear(); this.nextId = 1; }
+}
+
+/* ========== APP STATE ========== */
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const placeholder = document.getElementById('placeholder');
+const statusBadge = document.getElementById('status-badge');
+const btnScreen = document.getElementById('btn-screen');
+const btnCamera = document.getElementById('btn-camera');
+const btnStop = document.getElementById('btn-stop');
+const btnModePresence = document.getElementById('btn-mode-presence');
+const btnModeLine = document.getElementById('btn-mode-line');
+const btnLineH = document.getElementById('btn-line-h');
+const btnLineV = document.getElementById('btn-line-v');
+const confidenceSlider = document.getElementById('confidence');
+const confidenceValue = document.getElementById('confidence-value');
+const drawLineCheck = document.getElementById('draw-line');
+const blurFacesCheck = document.getElementById('blur-faces');
+const syncSupabaseCheck = document.getElementById('sync-supabase');
+const modeHint = document.getElementById('mode-hint');
+const lineOrientGroup = document.getElementById('line-orient-group');
+const drawLineLabel = document.getElementById('draw-line-label');
+const fpsEl = document.getElementById('fps');
+const currentCountEl = document.getElementById('current-count');
+const totalInEl = document.getElementById('total-in');
+const totalOutEl = document.getElementById('total-out');
+const totalEventsEl = document.getElementById('total-events');
+const peakHourEl = document.getElementById('peak-hour');
+const liveEventsEl = document.getElementById('live-events');
+const historyTable = document.getElementById('history-table');
+const dailySummaryEl = document.getElementById('daily-summary');
+const dbCountEl = document.getElementById('db-count');
+
+let model = null, stream = null, animationId = null, sessionId = uuid();
+let tracker = new PresenceTracker();
+let isRunning = false, lastFpsTime = performance.now(), frameCount = 0;
+let countMode = 'presence', lineOrientation = 'horizontal', linePos = 0.5;
+let liveChart = null, hourlyChart = null, weeklyChart = null;
+const minuteBuffer = [];
+
+async function loadModel() {
+  if (model) return;
+  statusBadge.textContent = 'Carregando modelo de IA...';
+  statusBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-yellow-900 text-yellow-300';
+  model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
+  statusBadge.textContent = 'Modelo pronto • Aguardando fonte';
+  statusBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400';
+}
+
+async function detectPeople(threshold) {
+  if (!model || video.readyState < 2) return [];
+  const predictions = await model.detect(video, 20);
+  return predictions
+    .filter(p => p.class === 'person' && p.score >= threshold)
+    .map(p => ({ bbox: p.bbox, class: p.class, score: p.score }));
+}
+
+async function startScreenCapture() {
+  try {
+    stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+    startVideo(stream, 'screen');
+  } catch (err) {
+    console.error(err);
+    alert('Não foi possível capturar a janela.');
+  }
+}
+
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+    startVideo(stream, 'camera');
+  } catch (err) {
+    console.error(err);
+    alert('Não foi possível acessar a câmera.');
+  }
+}
+
+function startVideo(mediaStream, source) {
+  video.srcObject = mediaStream;
+  video.classList.remove('hidden');
+  placeholder.classList.add('hidden');
+  btnStop.classList.remove('hidden');
+  btnScreen.classList.add('hidden');
+  btnCamera.classList.add('hidden');
+  video.onloadedmetadata = () => {
+    video.play();
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    isRunning = true;
+    sessionId = uuid();
+    tracker.reset();
+    statusBadge.textContent = 'Monitorando (' + source + ')';
+    statusBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-green-900 text-green-300';
+    detectLoop();
+  };
+  mediaStream.getVideoTracks()[0].onended = () => stopVideo();
+}
+
+function stopVideo() {
+  isRunning = false;
+  if (animationId) cancelAnimationFrame(animationId);
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  video.srcObject = null;
+  video.classList.add('hidden');
+  placeholder.classList.remove('hidden');
+  btnStop.classList.add('hidden');
+  btnScreen.classList.remove('hidden');
+  btnCamera.classList.remove('hidden');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  statusBadge.textContent = 'Aguardando fonte de vídeo';
+  statusBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400';
+  currentCountEl.textContent = '0';
+}
+
+async function detectLoop() {
+  if (!isRunning) return;
+  const start = performance.now();
+  const threshold = parseFloat(confidenceSlider.value);
+  try {
+    const detections = await detectPeople(threshold);
+    const result = tracker.update(detections, countMode, lineOrientation, linePos, video.videoWidth, video.videoHeight);
+    drawFrame(result.detections);
+    for (const ev of result.events) await registerEvent(ev.type, ev.confidence, ev.id);
+    currentCountEl.textContent = String(result.detections.length);
+    frameCount++;
+    const now = performance.now();
+    if (now - lastFpsTime >= 1000) {
+      fpsEl.textContent = String(frameCount);
+      frameCount = 0;
+      lastFpsTime = now;
+    }
+  } catch (err) { console.error(err); }
+  const elapsed = performance.now() - start;
+  const delay = Math.max(0, 30 - elapsed);
+  setTimeout(() => { animationId = requestAnimationFrame(detectLoop); }, delay);
+}
+
+function drawFrame(detections) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  if (countMode === 'line' && drawLineCheck.checked) {
+    ctx.save();
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 6]);
+    ctx.beginPath();
+    if (lineOrientation === 'horizontal') {
+      const y = linePos * canvas.height;
+      ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#22c55e'; ctx.font = 'bold 13px sans-serif';
+      ctx.fillText('LINHA DE CONTAGEM', 10, y - 10);
+    } else {
+      const x = linePos * canvas.width;
+      ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#22c55e'; ctx.font = 'bold 13px sans-serif';
+      ctx.fillText('LINHA', x + 8, 20);
+    }
+    ctx.restore();
+  }
+
+  for (const det of detections) {
+    const [x, y, w, h] = det.bbox;
+    if (blurFacesCheck.checked) {
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(x, y, w, Math.min(h * 0.45, h));
+    }
+    ctx.strokeStyle = '#22d3ee';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, w, h);
+    const label = (det.trackingId || 'p') + ' ' + (det.score * 100).toFixed(0) + '%';
+    const tw = ctx.measureText(label).width + 8;
+    ctx.fillStyle = 'rgba(34, 211, 238, 0.9)';
+    ctx.fillRect(x, Math.max(0, y - 20), tw, 20);
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText(label, x + 4, Math.max(14, y - 6));
+  }
+
+  if (countMode === 'presence' && detections.length > 0) {
+    ctx.fillStyle = 'rgba(34, 197, 94, 0.15)';
+    ctx.fillRect(0, 0, canvas.width, 28);
+    ctx.fillStyle = '#4ade80';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('Modo Presença: ' + detections.length + ' pessoa(s) • conta quando sair da câmera', 10, 18);
+  }
+}
+
+async function registerEvent(type, confidence, trackingId) {
+  const now = new Date();
+  const event = {
+    id: uuid(),
+    timestamp: now.toISOString(),
+    date: now.toISOString().slice(0, 10),
+    hour: now.getHours(),
+    type,
+    confidence,
+    trackingId,
+    sessionId,
+    zone: countMode
+  };
+
+  // 1) Sempre salva local (IndexedDB)
+  await addEvent(event);
+  addLiveEvent(event);
+  await refreshStats();
+  updateLiveChart();
+
+  // 2) Envia para Supabase (mesmo padrão do seu Livro Caixa)
+  const result = await sendEventToSupabase(event);
+  if (result.error) {
+    // falha silenciosa no fluxo principal; usuário pode reenviar na aba Exportar
+    console.warn('Falha sync Supabase (evento ficou só local):', result.error.message);
+  }
+}
+
+function addLiveEvent(event) {
+  const empty = liveEventsEl.querySelector('p');
+  if (empty) empty.remove();
+  const div = document.createElement('div');
+  div.className = 'flex items-center justify-between px-3 py-2 rounded-lg bg-gray-800 ' + (event.type === 'in' ? 'flash-in' : 'flash-out');
+  div.innerHTML =
+    '<div class="flex items-center gap-2">' +
+      '<span class="text-lg">' + (event.type === 'in' ? '🟢' : '🔴') + '</span>' +
+      '<span class="font-medium">' + (event.type === 'in' ? 'Entrada' : 'Saída') + '</span>' +
+      '<span class="text-gray-500 text-xs">' + event.trackingId + '</span></div>' +
+    '<div class="text-right text-xs text-gray-400">' +
+      '<div>' + new Date(event.timestamp).toLocaleTimeString('pt-BR') + '</div>' +
+      '<div>' + (event.confidence * 100).toFixed(0) + '%</div></div>';
+  liveEventsEl.prepend(div);
+  while (liveEventsEl.children.length > 30) liveEventsEl.lastChild.remove();
+}
+
+async function refreshStats() {
+  const stats = await getTodayStats();
+  totalInEl.textContent = String(stats.totalIn);
+  totalOutEl.textContent = String(stats.totalOut);
+  totalEventsEl.textContent = String(stats.total);
+  peakHourEl.textContent = stats.peakHour >= 0 ? stats.peakHour + 'h' : '--';
+  dailySummaryEl.innerHTML =
+    '<div class="flex justify-between"><span>Entradas</span><strong class="text-green-400">' + stats.totalIn + '</strong></div>' +
+    '<div class="flex justify-between"><span>Saídas</span><strong class="text-red-400">' + stats.totalOut + '</strong></div>' +
+    '<div class="flex justify-between"><span>Total de eventos</span><strong>' + stats.total + '</strong></div>' +
+    '<div class="flex justify-between"><span>Horário de pico</span><strong>' + (stats.peakHour >= 0 ? stats.peakHour + ':00' : '—') + '</strong></div>' +
+    '<div class="flex justify-between"><span>Diferença (in - out)</span><strong>' + (stats.totalIn - stats.totalOut) + '</strong></div>';
+  if (hourlyChart) {
+    const labels = Array.from({ length: 24 }, (_, i) => i + 'h');
+    hourlyChart.data.labels = labels;
+    hourlyChart.data.datasets[0].data = labels.map((_, i) => stats.byHour[i] || 0);
+    hourlyChart.update();
+  }
+  const week = await getLast7DaysStats();
+  if (weeklyChart) {
+    weeklyChart.data.labels = week.map(d => d.date.slice(5));
+    weeklyChart.data.datasets[0].data = week.map(d => d.in);
+    weeklyChart.data.datasets[1].data = week.map(d => d.out);
+    weeklyChart.update();
+  }
+}
+
+function setupCharts() {
+  liveChart = new Chart(document.getElementById('chart-live').getContext('2d'), {
+    type: 'line',
+    data: { labels: [], datasets: [{ label: 'Eventos / min', data: [], borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3, pointRadius: 2 }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9ca3af', maxTicksLimit: 8 }, grid: { color: '#1f2937' } }, y: { beginAtZero: true, ticks: { color: '#9ca3af' }, grid: { color: '#1f2937' } } } }
+  });
+  hourlyChart = new Chart(document.getElementById('chart-hourly').getContext('2d'), {
+    type: 'bar',
+    data: { labels: [], datasets: [{ label: 'Eventos', data: [], backgroundColor: '#3b82f6' }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9ca3af', maxTicksLimit: 12 }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: '#9ca3af' }, grid: { color: '#1f2937' } } } }
+  });
+  weeklyChart = new Chart(document.getElementById('chart-weekly').getContext('2d'), {
+    type: 'bar',
+    data: { labels: [], datasets: [{ label: 'Entradas', data: [], backgroundColor: '#22c55e' }, { label: 'Saídas', data: [], backgroundColor: '#ef4444' }] },
+    options: { responsive: true, scales: { x: { ticks: { color: '#9ca3af' }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: '#9ca3af' }, grid: { color: '#1f2937' } } } }
+  });
+}
+
+function updateLiveChart() {
+  const now = new Date();
+  const label = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const last = minuteBuffer[minuteBuffer.length - 1];
+  if (last && last.time === label) last.count++;
+  else { minuteBuffer.push({ time: label, count: 1 }); if (minuteBuffer.length > 30) minuteBuffer.shift(); }
+  if (liveChart) {
+    liveChart.data.labels = minuteBuffer.map(m => m.time);
+    liveChart.data.datasets[0].data = minuteBuffer.map(m => m.count);
+    liveChart.update('none');
+  }
+}
+
+function renderHistoryRows(events) {
+  // events podem vir do local (trackingId) ou Supabase (tracking_id)
+  historyTable.innerHTML = events.length === 0
+    ? '<tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">Nenhum evento encontrado</td></tr>'
+    : events.map(e => {
+        const tipo = e.type;
+        const conf = e.confidence != null ? e.confidence : 0;
+        const tid = e.trackingId || e.tracking_id || '';
+        const ts = e.timestamp;
+        return '<tr class="hover:bg-gray-800/50"><td class="px-4 py-2.5">' + new Date(ts).toLocaleTimeString('pt-BR') + '</td>' +
+          '<td class="px-4 py-2.5"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ' +
+          (tipo === 'in' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300') + '">' +
+          (tipo === 'in' ? 'Entrada' : 'Saída') + '</span></td>' +
+          '<td class="px-4 py-2.5">' + (conf * 100).toFixed(0) + '%</td>' +
+          '<td class="px-4 py-2.5 font-mono text-xs text-gray-400">' + tid + '</td></tr>';
+      }).join('');
+}
+
+async function loadHistoryLocal() {
+  const date = document.getElementById('filter-date').value || new Date().toISOString().slice(0, 10);
+  const type = document.getElementById('filter-type').value;
+  let events = await getEventsByDate(date, type);
+  events.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  renderHistoryRows(events);
+}
+
+async function loadHistorySupabase() {
+  const date = document.getElementById('filter-date').value || new Date().toISOString().slice(0, 10);
+  const type = document.getElementById('filter-type').value;
+  const events = await fetchEventsFromSupabase(date, type);
+  renderHistoryRows(events);
+}
+
+function eventsToCSV(events) {
+  const headers = ['id','timestamp','date','hour','type','confidence','tracking_id','session_id','zone'];
+  const rows = events.map(e => [
+    e.id, e.timestamp, e.date, e.hour, e.type,
+    (e.confidence != null ? e.confidence : 0).toFixed(4),
+    e.trackingId || e.tracking_id || '', e.sessionId || e.session_id || '', e.zone || ''
+  ]);
+  return [headers.join(',')].concat(rows.map(r => r.map(c => '"' + c + '"').join(','))).join('\n');
+}
+function downloadCSV(csv, filename) {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+async function exportCSV(all) {
+  let events;
+  if (all) events = await getAllEvents();
+  else {
+    const from = document.getElementById('export-from').value;
+    const to = document.getElementById('export-to').value;
+    if (!from || !to) { alert('Selecione o período'); return; }
+    events = await getEventsInRange(from, to);
+  }
+  if (events.length === 0) { alert('Nenhum evento no período'); return; }
+  downloadCSV(eventsToCSV(events), 'people_count_' + new Date().toISOString().slice(0, 10) + '.csv');
+}
+async function refreshDbCount() { dbCountEl.textContent = String(await countEvents()); }
+
+function setCountMode(mode) {
+  countMode = mode;
+  btnModePresence.classList.toggle('active', mode === 'presence');
+  btnModeLine.classList.toggle('active', mode === 'line');
+  btnModePresence.classList.toggle('text-gray-400', mode !== 'presence');
+  btnModeLine.classList.toggle('text-gray-400', mode !== 'line');
+  if (mode === 'presence') {
+    modeHint.textContent = 'Modo: Presença • Detecta à distância e conta quando sai da câmera';
+    lineOrientGroup.style.display = 'none';
+    drawLineLabel.style.display = 'none';
+  } else {
+    modeHint.textContent = 'Modo: Linha • Clique no vídeo para posicionar';
+    lineOrientGroup.style.display = 'flex';
+    drawLineLabel.style.display = 'flex';
+    drawLineCheck.checked = true;
+  }
+  saveSettings({ countMode: mode });
+  tracker.reset();
+}
+
+function setLineOrientation(orient) {
+  lineOrientation = orient;
+  btnLineH.classList.toggle('active', orient === 'horizontal');
+  btnLineV.classList.toggle('active', orient === 'vertical');
+  btnLineH.classList.toggle('text-gray-400', orient !== 'horizontal');
+  btnLineV.classList.toggle('text-gray-400', orient !== 'vertical');
+  saveSettings({ lineOrientation: orient });
+  tracker.reset();
+}
+
+function setupTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('border-primary-500', 'text-primary-400');
+        b.classList.add('border-transparent', 'text-gray-400');
+      });
+      btn.classList.add('border-primary-500', 'text-primary-400');
+      btn.classList.remove('border-transparent', 'text-gray-400');
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+      document.getElementById('tab-' + tab).classList.remove('hidden');
+      if (tab === 'history') loadHistoryLocal();
+      if (tab === 'reports') refreshStats();
+      if (tab === 'export') { refreshDbCount(); testSupabaseConnection(); }
+    });
+  });
+}
+
+function setupListeners() {
+  btnScreen.addEventListener('click', startScreenCapture);
+  btnCamera.addEventListener('click', startCamera);
+  btnStop.addEventListener('click', stopVideo);
+  btnModePresence.addEventListener('click', () => setCountMode('presence'));
+  btnModeLine.addEventListener('click', () => setCountMode('line'));
+  btnLineH.addEventListener('click', () => setLineOrientation('horizontal'));
+  btnLineV.addEventListener('click', () => setLineOrientation('vertical'));
+  confidenceSlider.addEventListener('input', () => {
+    confidenceValue.textContent = parseFloat(confidenceSlider.value).toFixed(2);
+    saveSettings({ confidenceThreshold: parseFloat(confidenceSlider.value) });
+  });
+  drawLineCheck.addEventListener('change', () => saveSettings({ drawLine: drawLineCheck.checked }));
+  blurFacesCheck.addEventListener('change', () => saveSettings({ blurFaces: blurFacesCheck.checked }));
+  syncSupabaseCheck.addEventListener('change', () => saveSettings({ syncSupabase: syncSupabaseCheck.checked }));
+
+  canvas.addEventListener('click', e => {
+    if (countMode !== 'line' || !drawLineCheck.checked) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const clickX = (e.clientX - rect.left) * scaleX;
+    const clickY = (e.clientY - rect.top) * scaleY;
+    linePos = lineOrientation === 'horizontal'
+      ? Math.max(0.05, Math.min(0.95, clickY / canvas.height))
+      : Math.max(0.05, Math.min(0.95, clickX / canvas.width));
+    saveSettings({ linePos });
+    tracker.reset();
+  });
+
+  document.getElementById('btn-filter').addEventListener('click', loadHistoryLocal);
+  document.getElementById('btn-filter-supabase').addEventListener('click', loadHistorySupabase);
+  document.getElementById('btn-export-csv').addEventListener('click', () => exportCSV(false));
+  document.getElementById('btn-export-all').addEventListener('click', () => exportCSV(true));
+  document.getElementById('btn-sync-pending').addEventListener('click', syncPendingLocalEvents);
+  document.getElementById('btn-test-supabase').addEventListener('click', async () => {
+    const ok = await testSupabaseConnection();
+    alert(ok ? 'Conexão OK!' : 'Falha na conexão. Verifique config.js e se a tabela people_count_events existe.');
+  });
+  document.getElementById('btn-clear-data').addEventListener('click', async () => {
+    if (confirm('Apagar TODOS os dados locais?')) {
+      await clearAllData(); await refreshStats(); await refreshDbCount();
+      liveEventsEl.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhum evento ainda</p>';
+      alert('Dados limpos.');
+    }
+  });
+
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('filter-date').value = today;
+  document.getElementById('export-from').value = today;
+  document.getElementById('export-to').value = today;
+}
+
+async function init() {
+  const settings = await getSettings();
+  confidenceSlider.value = settings.confidenceThreshold;
+  confidenceValue.textContent = settings.confidenceThreshold.toFixed(2);
+  drawLineCheck.checked = settings.drawLine;
+  blurFacesCheck.checked = settings.blurFaces;
+  syncSupabaseCheck.checked = settings.syncSupabase !== false;
+  countMode = settings.countMode || 'presence';
+  lineOrientation = settings.lineOrientation || 'horizontal';
+  linePos = settings.linePos != null ? settings.linePos : 0.5;
+  setCountMode(countMode);
+  setLineOrientation(lineOrientation);
+
+  await testSupabaseConnection();
+  await loadModel();
+  await refreshStats();
+  await refreshDbCount();
+  setupCharts();
+  setupTabs();
+  setupListeners();
+  await clearOldData(settings.retentionDays);
+}
+
+init().catch(console.error);
+</script>
+</body>
+</html>
