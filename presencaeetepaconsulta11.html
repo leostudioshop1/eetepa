@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SQL Chart Studio — PeopleCounter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: { 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' },
+            accent: { 400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed' }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.4s ease-out',
+            'slide-up': 'slideUp 0.35s ease-out',
+            'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
+            'shimmer': 'shimmer 1.5s infinite'
+          },
+          keyframes: {
+            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+            slideUp: { '0%': { opacity: '0', transform: 'translateY(12px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+            pulseSoft: { '0%, 100%': { opacity: '1' }, '50%': { opacity: '0.7' } },
+            shimmer: { '0%': { backgroundPosition: '-200% 0' }, '100%': { backgroundPosition: '200% 0' } }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0a0a0f; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+    #sql-input {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      resize: vertical;
+      min-height: 110px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    #sql-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+
+    .example-chip {
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-left: 3px solid transparent;
+    }
+    .example-chip:hover {
+      background: linear-gradient(90deg, rgba(59,130,246,0.15), transparent);
+      border-left-color: #3b82f6;
+      transform: translateX(2px);
+    }
+    .example-chip.active {
+      background: rgba(59,130,246,0.2);
+      border-left-color: #60a5fa;
+    }
+
+    .stat-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+
+    .chart-btn {
+      transition: all 0.15s ease;
+    }
+    .chart-btn.active {
+      background: #2563eb;
+      color: white;
+      box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
+    }
+
+    .btn-run {
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-run:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+    }
+    .btn-run:active { transform: translateY(0); }
+    .btn-run.loading::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      background-size: 200% 100%;
+      animation: shimmer 1.2s infinite;
+    }
+
+    .glow-border {
+      box-shadow: 0 0 0 1px rgba(59,130,246,0.3), 0 0 20px rgba(59,130,246,0.08);
+    }
+
+    .tab-example {
+      transition: all 0.15s;
+    }
+    .tab-example.active {
+      background: #1e3a5f;
+      color: #93c5fd;
+      border-color: #3b82f6;
+    }
+
+    @keyframes countUp {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .count-anim { animation: countUp 0.4s ease-out; }
+
+    .skeleton {
+      background: linear-gradient(90deg, #1a1a24 25%, #252532 50%, #1a1a24 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
+
+    .history-item {
+      transition: background 0.15s;
+    }
+    .history-item:hover { background: rgba(59,130,246,0.1); }
+
+    #table-body tr {
+      animation: fadeIn 0.3s ease-out;
+    }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+  <div id="app" class="flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="bg-gray-900/90 backdrop-blur border-b border-gray-800 px-5 py-3 flex items-center justify-between flex-wrap gap-2 sticky top-0 z-30">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-accent-600 flex items-center justify-center font-bold text-sm shadow-lg shadow-primary-500/30">SQL</div>
+        <div>
+          <h1 class="font-semibold text-lg leading-tight tracking-tight">SQL Chart Studio</h1>
+          <p class="text-xs text-gray-400">PeopleCounter · Consultas inteligentes · Visualização dinâmica</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span id="online-badge" class="px-3 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400">—</span>
+        <span id="supabase-badge" class="px-3 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400">Supabase: —</span>
+        <span id="latency-badge" class="px-3 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-500 hidden">0 ms</span>
+      </div>
+    </header>
+
+    <main class="flex-1 flex flex-col xl:flex-row overflow-hidden">
+      <!-- ========== PAINEL ESQUERDO ========== -->
+      <section class="xl:w-[42%] border-r border-gray-800 flex flex-col bg-gray-900/40 max-h-[50vh] xl:max-h-none">
+        <!-- Editor SQL -->
+        <div class="p-4 border-b border-gray-800">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-sm font-medium text-gray-200 flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-primary-400 animate-pulse-soft"></span>
+              Editor SQL
+            </h2>
+            <span class="text-[10px] text-gray-500 uppercase tracking-wider">Ctrl + Enter</span>
+          </div>
+          <textarea id="sql-input" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3.5 py-2.5 text-gray-100 focus:outline-none" spellcheck="false" placeholder="SELECT * FROM feiraprofissoes WHERE date = '2026-10-17' ORDER BY timestamp DESC LIMIT 100"></textarea>
+
+          <div class="flex flex-wrap gap-2 mt-3">
+            <button id="btn-run" class="btn-run px-5 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center gap-2">
+              <svg id="run-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Executar
+            </button>
+            <button id="btn-clear" class="px-3.5 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-xl text-sm border border-gray-700">Limpar</button>
+            <button id="btn-format" class="px-3.5 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-xl text-sm border border-gray-700" title="Formatar SQL">⌥ Format</button>
+            <button id="btn-test" class="px-3.5 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-xl text-sm border border-gray-700">🔌 Testar</button>
+            <button id="btn-export-csv" class="px-3.5 py-2.5 bg-emerald-900/50 hover:bg-emerald-800/60 rounded-xl text-sm border border-emerald-800 text-emerald-300" title="Exportar resultado atual">📥 CSV</button>
+          </div>
+          <p id="query-status" class="text-xs text-gray-500 mt-2.5 min-h-[1.25rem]"></p>
+        </div>
+
+        <!-- Exemplos categorizados -->
+        <div class="p-4 flex-1 overflow-auto">
+          <div class="flex gap-1.5 mb-3 flex-wrap">
+            <button class="tab-example active px-2.5 py-1 rounded-lg text-[11px] font-medium border border-gray-700 bg-gray-800" data-cat="all">Todos</button>
+            <button class="tab-example px-2.5 py-1 rounded-lg text-[11px] font-medium border border-gray-700 text-gray-400" data-cat="basic">Básicos</button>
+            <button class="tab-example px-2.5 py-1 rounded-lg text-[11px] font-medium border border-gray-700 text-gray-400" data-cat="filter">Filtros</button>
+            <button class="tab-example px-2.5 py-1 rounded-lg text-[11px] font-medium border border-gray-700 text-gray-400" data-cat="time">Tempo</button>
+            <button class="tab-example px-2.5 py-1 rounded-lg text-[11px] font-medium border border-gray-700 text-gray-400" data-cat="advanced">Avançados</button>
+          </div>
+
+          <div id="examples-list" class="space-y-1.5 text-xs">
+            <!-- preenchido via JS -->
+          </div>
+
+          <!-- Histórico de queries -->
+          <div class="mt-5">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-[11px] font-medium text-gray-400 uppercase tracking-wide">Histórico recente</h3>
+              <button id="btn-clear-history" class="text-[10px] text-gray-500 hover:text-red-400">limpar</button>
+            </div>
+            <div id="query-history" class="space-y-1 max-h-28 overflow-y-auto text-[11px] text-gray-500">
+              <p class="text-gray-600 italic">Nenhuma consulta ainda</p>
+            </div>
+          </div>
+
+          <!-- Colunas -->
+          <div class="mt-5 bg-gray-900/80 rounded-xl p-3.5 border border-gray-800">
+            <h3 class="text-xs font-medium text-gray-300 mb-2">Colunas da tabela</h3>
+            <div class="flex flex-wrap gap-1.5">
+              <span class="px-2 py-0.5 rounded-md bg-gray-800 text-[10px] font-mono text-blue-300">id</span>
+              <span class="px-2 py-0.5 rounded-md bg-gray-800 text-[10px] font-mono text-blue-300">timestamp</span>
+              <span class="px-2 py-0.5 rounded-md bg-gray-800 text-[10px] font-mono text-blue-300">date</span>
+              <span class="px-2 py-0.5 rounded-md bg-gray-800 text-[10px] font-mono text-blue-300">hour</span>
+              <span class="px-2 py-0.5 rounded-md bg-gray-800 text-[10px] font-mono text-green-300">type</span>
+              <span class="px-2 py-0.5 rounded-md bg-gray-800 text-[10px] font-mono text-yellow-300">confidence</span>
+              <span class="px-2 py-0.5 rounded-md bg-gray-800 text-[10px] font-mono text-purple-300">tracking_id</span>
+              <span class="px-2 py-0.5 rounded-md bg-gray-800 text-[10px] font-mono text-gray-400">session_id</span>
+              <span class="px-2 py-0.5 rounded-md bg-gray-800 text-[10px] font-mono text-cyan-300">zone</span>
+              <span class="px-2 py-0.5 rounded-md bg-gray-800 text-[10px] font-mono text-gray-400">source</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== PAINEL DIREITO ========== -->
+      <section class="xl:w-[58%] flex flex-col overflow-hidden">
+        <!-- Stats -->
+        <div class="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 border-b border-gray-800">
+          <div class="stat-card bg-gradient-to-br from-gray-900 to-gray-900/50 rounded-xl p-3.5 text-center border border-gray-800 glow-border">
+            <div class="text-2xl font-bold text-blue-400 count-anim" id="stat-rows">0</div>
+            <div class="text-[11px] text-gray-400 mt-0.5">Linhas</div>
+          </div>
+          <div class="stat-card bg-gradient-to-br from-gray-900 to-gray-900/50 rounded-xl p-3.5 text-center border border-gray-800">
+            <div class="text-2xl font-bold text-emerald-400 count-anim" id="stat-in">0</div>
+            <div class="text-[11px] text-gray-400 mt-0.5">Entradas</div>
+          </div>
+          <div class="stat-card bg-gradient-to-br from-gray-900 to-gray-900/50 rounded-xl p-3.5 text-center border border-gray-800">
+            <div class="text-2xl font-bold text-rose-400 count-anim" id="stat-out">0</div>
+            <div class="text-[11px] text-gray-400 mt-0.5">Saídas</div>
+          </div>
+          <div class="stat-card bg-gradient-to-br from-gray-900 to-gray-900/50 rounded-xl p-3.5 text-center border border-gray-800">
+            <div class="text-2xl font-bold text-amber-400 count-anim" id="stat-avg-conf">—</div>
+            <div class="text-[11px] text-gray-400 mt-0.5">Conf. média</div>
+          </div>
+        </div>
+
+        <!-- Controles do gráfico -->
+        <div class="px-4 pt-3 pb-2 flex flex-wrap items-center gap-2 border-b border-gray-800/80">
+          <h3 class="text-sm font-medium text-gray-200 mr-1">Visualização</h3>
+          <div class="flex items-center gap-1 bg-gray-900 rounded-lg p-0.5 border border-gray-800">
+            <button class="chart-btn active px-2.5 py-1 rounded-md text-[11px] font-medium" data-type="bar">Barras</button>
+            <button class="chart-btn px-2.5 py-1 rounded-md text-[11px] font-medium text-gray-400" data-type="line">Linha</button>
+            <button class="chart-btn px-2.5 py-1 rounded-md text-[11px] font-medium text-gray-400" data-type="area">Área</button>
+            <button class="chart-btn px-2.5 py-1 rounded-md text-[11px] font-medium text-gray-400" data-type="pie">Pizza</button>
+            <button class="chart-btn px-2.5 py-1 rounded-md text-[11px] font-medium text-gray-400" data-type="doughnut">Rosca</button>
+            <button class="chart-btn px-2.5 py-1 rounded-md text-[11px] font-medium text-gray-400" data-type="polarArea">Polar</button>
+            <button class="chart-btn px-2.5 py-1 rounded-md text-[11px] font-medium text-gray-400" data-type="radar">Radar</button>
+          </div>
+          <div class="flex items-center gap-1.5 ml-auto flex-wrap">
+            <label class="text-[11px] text-gray-400">Agrupar:</label>
+            <select id="chart-group" class="bg-gray-900 border border-gray-700 rounded-lg px-2 py-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-primary-500">
+              <option value="type">Tipo (in/out)</option>
+              <option value="hour">Hora do dia</option>
+              <option value="date">Data</option>
+              <option value="zone">Zona</option>
+              <option value="confidence_bucket">Faixa de confiança</option>
+            </select>
+            <label class="flex items-center gap-1 text-[11px] text-gray-400 cursor-pointer ml-1">
+              <input type="checkbox" id="chart-animate" checked class="rounded accent-primary-500" />
+              Animar
+            </label>
+            <label class="flex items-center gap-1 text-[11px] text-gray-400 cursor-pointer">
+              <input type="checkbox" id="chart-labels" class="rounded accent-primary-500" />
+              Rótulos
+            </label>
+          </div>
+        </div>
+
+        <!-- Canvas do gráfico -->
+        <div class="px-4 py-3 border-b border-gray-800">
+          <div class="bg-gray-900/80 rounded-2xl p-4 border border-gray-800 relative overflow-hidden" style="min-height: 280px;">
+            <div id="chart-loading" class="absolute inset-0 flex items-center justify-center bg-gray-900/80 z-10 hidden">
+              <div class="flex flex-col items-center gap-2">
+                <div class="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+                <span class="text-xs text-gray-400">Atualizando gráfico…</span>
+              </div>
+            </div>
+            <canvas id="result-chart" height="240"></canvas>
+            <p id="chart-empty" class="absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
+              <span class="text-center">
+                <span class="block text-3xl mb-2 opacity-40">📊</span>
+                Execute uma consulta para visualizar o gráfico
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Mini insights + tabela -->
+        <div class="flex-1 overflow-auto p-4 space-y-4">
+          <!-- Insights rápidos -->
+          <div id="insights-box" class="hidden bg-gradient-to-r from-primary-900/20 to-accent-900/10 rounded-xl p-3.5 border border-primary-800/40 animate-slide-up">
+            <h4 class="text-xs font-medium text-primary-300 mb-1.5 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z"/></svg>
+              Insights rápidos
+            </h4>
+            <p id="insights-text" class="text-xs text-gray-300 leading-relaxed"></p>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-medium text-gray-200">Resultados <span id="result-count" class="text-gray-500 font-normal text-xs"></span></h3>
+            <div class="flex items-center gap-2">
+              <input id="table-search" type="text" placeholder="Filtrar tabela…" class="bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1 text-xs w-36 focus:outline-none focus:ring-1 focus:ring-primary-500" />
+              <select id="table-page-size" class="bg-gray-900 border border-gray-700 rounded-lg px-2 py-1 text-[11px]">
+                <option value="25">25</option>
+                <option value="50" selected>50</option>
+                <option value="100">100</option>
+                <option value="all">Todos</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-gray-900/80 rounded-xl overflow-x-auto border border-gray-800">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-800/90 text-gray-400 sticky top-0 z-10">
+                <tr id="table-head">
+                  <th class="text-left px-4 py-3">—</th>
+                </tr>
+              </thead>
+              <tbody id="table-body">
+                <tr>
+                  <td class="px-4 py-10 text-center text-gray-500" colspan="10">
+                    <span class="block text-2xl mb-2 opacity-30">⌨️</span>
+                    Digite um SQL e clique em Executar
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="table-pagination" class="flex items-center justify-center gap-2 text-xs text-gray-400 hidden">
+            <button id="page-prev" class="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 disabled:opacity-40">←</button>
+            <span id="page-info">1 / 1</span>
+            <button id="page-next" class="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 disabled:opacity-40">→</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+<script>
+/* ========== SUPABASE ========== */
+if (!window.SUPABASE_CONFIG) {
+  alert("Erro: Configurações do Supabase não encontradas! Verifique o arquivo config.js");
+}
+
+const supabaseClient = supabase.createClient(
+  window.SUPABASE_CONFIG.url,
+  window.SUPABASE_CONFIG.key
+);
+
+let isOnline = navigator.onLine;
+let lastRows = [];
+let filteredRows = [];
+let chartInstance = null;
+let currentChartType = 'bar';
+let currentPage = 1;
+let queryHistory = JSON.parse(localStorage.getItem('sql_chart_history') || '[]');
+
+const TABLE = 'feiraprofissoes';
+
+/* ========== EXEMPLOS SQL CRIATIVOS ========== */
+const SQL_EXAMPLES = [
+  { cat: 'basic', icon: '📋', title: 'Últimos 50 eventos', sql: "SELECT * FROM feiraprofissoes ORDER BY timestamp DESC LIMIT 50" },
+  { cat: 'basic', icon: '📅', title: 'Eventos de hoje', sql: "SELECT * FROM feiraprofissoes WHERE date = 'YYYY-MM-DD' ORDER BY timestamp DESC LIMIT 200" },
+  { cat: 'basic', icon: '🔢', title: 'Amostra geral (100)', sql: "SELECT * FROM feiraprofissoes ORDER BY timestamp DESC LIMIT 100" },
+
+  { cat: 'filter', icon: '🟢', title: 'Somente entradas', sql: "SELECT * FROM feiraprofissoes WHERE type = 'in' ORDER BY timestamp DESC LIMIT 100" },
+  { cat: 'filter', icon: '🔴', title: 'Somente saídas', sql: "SELECT * FROM feiraprofissoes WHERE type = 'out' ORDER BY timestamp DESC LIMIT 100" },
+  { cat: 'filter', icon: '🎯', title: 'Alta confiança (≥ 70%)', sql: "SELECT * FROM feiraprofissoes WHERE confidence >= 0.7 ORDER BY confidence DESC LIMIT 80" },
+  { cat: 'filter', icon: '⚠️', title: 'Baixa confiança (< 40%)', sql: "SELECT * FROM feiraprofissoes WHERE confidence < 0.4 ORDER BY confidence ASC LIMIT 50" },
+  { cat: 'filter', icon: '🔀', title: 'Entradas de alta confiança', sql: "SELECT * FROM feiraprofissoes WHERE type = 'in' AND confidence >= 0.6 ORDER BY timestamp DESC LIMIT 80" },
+  { cat: 'filter', icon: '📍', title: 'Zona principal', sql: "SELECT * FROM feiraprofissoes WHERE zone = 'main' ORDER BY timestamp DESC LIMIT 100" },
+  { cat: 'filter', icon: '🎭', title: 'Modo presença', sql: "SELECT * FROM feiraprofissoes WHERE zone = 'presence' ORDER BY timestamp DESC LIMIT 80" },
+  { cat: 'filter', icon: '📏', title: 'Modo linha', sql: "SELECT * FROM feiraprofissoes WHERE zone = 'line' ORDER BY timestamp DESC LIMIT 80" },
+
+  { cat: 'time', icon: '🌅', title: 'Manhã (6h–12h)', sql: "SELECT * FROM feiraprofissoes WHERE hour >= 6 AND hour < 12 AND date = 'YYYY-MM-DD' ORDER BY hour ASC LIMIT 150" },
+  { cat: 'time', icon: '☀️', title: 'Tarde (12h–18h)', sql: "SELECT * FROM feiraprofissoes WHERE hour >= 12 AND hour < 18 AND date = 'YYYY-MM-DD' ORDER BY hour ASC LIMIT 150" },
+  { cat: 'time', icon: '🌙', title: 'Noite (18h–23h)', sql: "SELECT * FROM feiraprofissoes WHERE hour >= 18 AND hour <= 23 AND date = 'YYYY-MM-DD' ORDER BY hour ASC LIMIT 150" },
+  { cat: 'time', icon: '🏢', title: 'Horário comercial (8–18)', sql: "SELECT * FROM feiraprofissoes WHERE hour >= 8 AND hour <= 18 AND date = 'YYYY-MM-DD' ORDER BY timestamp ASC LIMIT 200" },
+  { cat: 'time', icon: '🌃', title: 'Madrugada (0–5h)', sql: "SELECT * FROM feiraprofissoes WHERE hour >= 0 AND hour <= 5 ORDER BY timestamp DESC LIMIT 50" },
+  { cat: 'time', icon: '⏰', title: 'Pico do almoço (11–14h)', sql: "SELECT * FROM feiraprofissoes WHERE hour >= 11 AND hour <= 14 AND date = 'YYYY-MM-DD' ORDER BY timestamp ASC LIMIT 100" },
+
+  { cat: 'advanced', icon: '🏆', title: 'Top confiança do dia', sql: "SELECT * FROM feiraprofissoes WHERE date = 'YYYY-MM-DD' ORDER BY confidence DESC LIMIT 20" },
+  { cat: 'advanced', icon: '📉', title: 'Menor confiança do dia', sql: "SELECT * FROM feiraprofissoes WHERE date = 'YYYY-MM-DD' ORDER BY confidence ASC LIMIT 20" },
+  { cat: 'advanced', icon: '🔄', title: 'Entradas + saídas (misturado)', sql: "SELECT * FROM feiraprofissoes WHERE type IN ('in', 'out') AND date = 'YYYY-MM-DD' ORDER BY timestamp DESC LIMIT 150" },
+  { cat: 'advanced', icon: '💎', title: 'Confiança excelente (≥ 85%)', sql: "SELECT * FROM feiraprofissoes WHERE confidence >= 0.85 ORDER BY timestamp DESC LIMIT 40" },
+  { cat: 'advanced', icon: '🔍', title: 'Faixa média de confiança', sql: "SELECT * FROM feiraprofissoes WHERE confidence >= 0.4 AND confidence < 0.7 ORDER BY timestamp DESC LIMIT 80" },
+  { cat: 'advanced', icon: '📊', title: 'Últimos 7 dias (amostra)', sql: "SELECT * FROM feiraprofissoes ORDER BY timestamp DESC LIMIT 300" },
+  { cat: 'advanced', icon: '🎲', title: 'Amostra aleatória visual', sql: "SELECT * FROM feiraprofissoes WHERE confidence >= 0.3 ORDER BY timestamp DESC LIMIT 120" },
+];
+
+/* ========== UI ONLINE / SUPABASE ========== */
+function updateOnlineUI() {
+  const badge = document.getElementById('online-badge');
+  if (isOnline) {
+    badge.textContent = '● Online';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-emerald-900/80 text-emerald-300';
+  } else {
+    badge.textContent = '○ Offline';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-orange-900/80 text-orange-300';
+  }
+}
+
+async function testSupabaseConnection() {
+  const badge = document.getElementById('supabase-badge');
+  if (!window.SUPABASE_CONFIG?.url || !window.SUPABASE_CONFIG?.key) {
+    badge.textContent = 'Supabase: sem config';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-red-900/80 text-red-300';
+    return false;
+  }
+  if (!isOnline) {
+    badge.textContent = 'Supabase: offline';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-orange-900/80 text-orange-300';
+    return false;
+  }
+  try {
+    const t0 = performance.now();
+    const { error } = await supabaseClient.from(TABLE).select('id').limit(1);
+    const ms = Math.round(performance.now() - t0);
+    const lat = document.getElementById('latency-badge');
+    lat.textContent = ms + ' ms';
+    lat.classList.remove('hidden');
+    if (error) {
+      badge.textContent = 'Supabase: erro';
+      badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-yellow-900/80 text-yellow-300';
+      return false;
+    }
+    badge.textContent = 'Supabase: OK';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-emerald-900/80 text-emerald-300';
+    return true;
+  } catch (err) {
+    badge.textContent = 'Supabase: erro';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-yellow-900/80 text-yellow-300';
+    return false;
+  }
+}
+
+window.addEventListener('online', () => { isOnline = true; updateOnlineUI(); testSupabaseConnection(); });
+window.addEventListener('offline', () => { isOnline = false; updateOnlineUI(); testSupabaseConnection(); });
+
+/* ========== PARSER SQL ========== */
+function parseSQL(sql) {
+  const original = sql.trim();
+  if (!original) throw new Error('Digite um comando SQL.');
+
+  let s = original.replace(/--.*$/gm, '').replace(/\s+/g, ' ').trim();
+  const upper = s.toUpperCase();
+
+  if (!upper.startsWith('SELECT')) throw new Error('Apenas comandos SELECT são permitidos.');
+
+  const fromMatch = s.match(/\bFROM\s+([a-zA-Z0-9_]+)/i);
+  if (!fromMatch) throw new Error('Falta a cláusula FROM.');
+  const table = fromMatch[1].toLowerCase();
+  if (table !== TABLE && table !== 'feiraprofissoes') {
+    throw new Error('Só é permitida a tabela feiraprofissoes.');
+  }
+
+  const selectPart = s.substring(6, s.search(/\bFROM\b/i)).trim();
+  let columns = '*';
+  if (selectPart && selectPart !== '*') {
+    columns = selectPart.split(',').map(c => c.trim()).filter(Boolean).join(',');
+  }
+
+  const whereMatch = s.match(/\bWHERE\s+(.+?)(?:\s+ORDER\s+BY|\s+LIMIT\s|$)/i);
+  const conditions = [];
+  if (whereMatch) {
+    const whereStr = whereMatch[1].trim();
+    if (/\bOR\b/i.test(whereStr)) throw new Error('OR não é suportado. Use apenas AND.');
+    const parts = whereStr.split(/\s+AND\s+/i);
+    for (const part of parts) {
+      const trimmed = part.trim();
+      const inMatch = trimmed.match(/^([a-zA-Z0-9_]+)\s+IN\s*\((.+)\)$/i);
+      if (inMatch) {
+        const col = inMatch[1].toLowerCase();
+        const vals = inMatch[2].split(',').map(v => stripQuotes(v.trim()));
+        conditions.push({ col, op: 'in', value: vals });
+        continue;
+      }
+      const opMatch = trimmed.match(/^([a-zA-Z0-9_]+)\s*(=|!=|<>|>=|<=|>|<|LIKE)\s*(.+)$/i);
+      if (!opMatch) throw new Error('Condição WHERE inválida: ' + trimmed);
+      let op = opMatch[2].toUpperCase();
+      if (op === '<>') op = '!=';
+      const value = stripQuotes(opMatch[3].trim());
+      conditions.push({ col: opMatch[1].toLowerCase(), op, value });
+    }
+  }
+
+  let orderBy = null;
+  const orderMatch = s.match(/\bORDER\s+BY\s+([a-zA-Z0-9_]+)(?:\s+(ASC|DESC))?/i);
+  if (orderMatch) {
+    orderBy = { col: orderMatch[1].toLowerCase(), asc: !(orderMatch[2] && orderMatch[2].toUpperCase() === 'DESC') };
+  }
+
+  // LIMIT opcional — sem limite artificial (null = trazer tudo)
+  let limit = null;
+  const limitMatch = s.match(/\bLIMIT\s+(\d+)/i);
+  if (limitMatch) limit = parseInt(limitMatch[1], 10);
+
+  return { columns, conditions, orderBy, limit };
+}
+
+function stripQuotes(v) {
+  if ((v.startsWith("'") && v.endsWith("'")) || (v.startsWith('"') && v.endsWith('"'))) return v.slice(1, -1);
+  if (/^-?\d+(\.\d+)?$/.test(v)) return Number(v);
+  if (v.toLowerCase() === 'true') return true;
+  if (v.toLowerCase() === 'false') return false;
+  return v;
+}
+
+/* ========== EXECUTAR NO SUPABASE ========== */
+async function runQuery(sql) {
+  const parsed = parseSQL(sql);
+
+  function buildBaseQuery() {
+    let query = supabaseClient.from(TABLE).select(parsed.columns === '*' ? '*' : parsed.columns);
+    for (const c of parsed.conditions) {
+      switch (c.op) {
+        case '=': query = query.eq(c.col, c.value); break;
+        case '!=': query = query.neq(c.col, c.value); break;
+        case '>': query = query.gt(c.col, c.value); break;
+        case '>=': query = query.gte(c.col, c.value); break;
+        case '<': query = query.lt(c.col, c.value); break;
+        case '<=': query = query.lte(c.col, c.value); break;
+        case 'LIKE': query = query.ilike(c.col, c.value); break;
+        case 'in': query = query.in(c.col, c.value); break;
+        default: throw new Error('Operador não suportado: ' + c.op);
+      }
+    }
+    if (parsed.orderBy) {
+      query = query.order(parsed.orderBy.col, { ascending: parsed.orderBy.asc });
+    } else {
+      query = query.order('timestamp', { ascending: false });
+    }
+    return query;
+  }
+
+  // O Supabase/PostgREST normalmente limita cada resposta (por exemplo, a 1000 linhas).
+  // Por isso, paginamos também quando o SQL contém LIMIT explícito.
+  // Sem LIMIT, buscamos todos os registros correspondentes; com LIMIT, respeitamos
+  // o limite pedido no SQL, mesmo quando ele é maior que o limite por resposta.
+  const pageSize = 1000;
+  const targetCount = parsed.limit != null && parsed.limit > 0
+    ? parsed.limit
+    : Infinity;
+  let from = 0;
+  const all = [];
+
+  while (all.length < targetCount) {
+    const remaining = targetCount - all.length;
+    const batchSize = Math.min(pageSize, remaining);
+    const { data, error } = await buildBaseQuery()
+      .range(from, from + batchSize - 1);
+
+    if (error) throw new Error(error.message);
+
+    const batch = data || [];
+    all.push(...batch);
+
+    // Uma página incompleta indica que não há mais registros.
+    if (batch.length < batchSize) break;
+    from += batch.length;
+  }
+
+  return all;
+}
+
+/* ========== STATS + INSIGHTS ========== */
+function animateValue(el, end, suffix = '') {
+  el.classList.remove('count-anim');
+  void el.offsetWidth;
+  el.classList.add('count-anim');
+  el.textContent = end + suffix;
+}
+
+function updateStats(rows) {
+  animateValue(document.getElementById('stat-rows'), rows.length);
+  const ins = rows.filter(r => r.type === 'in').length;
+  const outs = rows.filter(r => r.type === 'out').length;
+  animateValue(document.getElementById('stat-in'), ins);
+  animateValue(document.getElementById('stat-out'), outs);
+
+  const confs = rows.map(r => Number(r.confidence)).filter(n => !isNaN(n));
+  if (confs.length) {
+    const avg = confs.reduce((a, b) => a + b, 0) / confs.length;
+    animateValue(document.getElementById('stat-avg-conf'), (avg * 100).toFixed(0), '%');
+  } else {
+    document.getElementById('stat-avg-conf').textContent = '—';
+  }
+
+  // Insights
+  const box = document.getElementById('insights-box');
+  const text = document.getElementById('insights-text');
+  if (!rows.length) {
+    box.classList.add('hidden');
+    return;
+  }
+  box.classList.remove('hidden');
+  const parts = [];
+  const ratio = ins + outs > 0 ? ((ins / (ins + outs)) * 100).toFixed(0) : 0;
+  parts.push(`<strong>${ins}</strong> entradas e <strong>${outs}</strong> saídas (${ratio}% entradas).`);
+
+  if (confs.length) {
+    const maxC = Math.max(...confs);
+    const minC = Math.min(...confs);
+    parts.push(`Confiança entre <strong>${(minC * 100).toFixed(0)}%</strong> e <strong>${(maxC * 100).toFixed(0)}%</strong>.`);
+  }
+
+  const hours = {};
+  rows.forEach(r => { if (r.hour != null) hours[r.hour] = (hours[r.hour] || 0) + 1; });
+  const peakH = Object.entries(hours).sort((a, b) => b[1] - a[1])[0];
+  if (peakH) parts.push(`Horário de maior fluxo: <strong>${String(peakH[0]).padStart(2, '0')}h</strong> (${peakH[1]} eventos).`);
+
+  const dates = [...new Set(rows.map(r => r.date).filter(Boolean))];
+  if (dates.length > 1) parts.push(`Dados de <strong>${dates.length}</strong> dias distintos.`);
+
+  text.innerHTML = parts.join(' ');
+}
+
+/* ========== TABELA ========== */
+function getPageSize() {
+  const v = document.getElementById('table-page-size').value;
+  return v === 'all' ? Infinity : parseInt(v, 10);
+}
+
+function renderTable() {
+  const thead = document.getElementById('table-head');
+  const tbody = document.getElementById('table-body');
+  const countEl = document.getElementById('result-count');
+  const pagBox = document.getElementById('table-pagination');
+  const search = (document.getElementById('table-search').value || '').toLowerCase();
+
+  let rows = lastRows;
+  if (search) {
+    rows = rows.filter(r => JSON.stringify(r).toLowerCase().includes(search));
+  }
+  filteredRows = rows;
+
+  if (!rows.length) {
+    thead.innerHTML = '<th class="text-left px-4 py-3">—</th>';
+    tbody.innerHTML = '<tr><td class="px-4 py-8 text-center text-gray-500">Nenhum resultado</td></tr>';
+    countEl.textContent = '';
+    pagBox.classList.add('hidden');
+    return;
+  }
+
+  const preferred = ['timestamp', 'date', 'hour', 'type', 'confidence', 'tracking_id', 'session_id', 'zone', 'source', 'id'];
+  const keys = Object.keys(rows[0]);
+  const cols = preferred.filter(c => keys.includes(c)).concat(keys.filter(k => !preferred.includes(k)));
+
+  thead.innerHTML = cols.map(c => `<th class="text-left px-3 py-2.5 whitespace-nowrap text-[11px] uppercase tracking-wide">${c}</th>`).join('');
+
+  const pageSize = getPageSize();
+  const totalPages = Number.isFinite(pageSize)
+    ? Math.max(1, Math.ceil(rows.length / pageSize))
+    : 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+  const start = Number.isFinite(pageSize) ? (currentPage - 1) * pageSize : 0;
+  const pageRows = Number.isFinite(pageSize)
+    ? rows.slice(start, start + pageSize)
+    : rows;
+
+  tbody.innerHTML = pageRows.map((row, idx) => {
+    return '<tr class="hover:bg-gray-800/40 border-t border-gray-800/80" style="animation-delay:' + (idx * 20) + 'ms">' +
+      cols.map(c => {
+        let val = row[c];
+        if (val == null) val = '';
+        if (c === 'type') {
+          const cls = val === 'in' ? 'bg-emerald-900/80 text-emerald-300' : 'bg-rose-900/80 text-rose-300';
+          const label = val === 'in' ? 'Entrada' : (val === 'out' ? 'Saída' : val);
+          return `<td class="px-3 py-2"><span class="px-2 py-0.5 rounded-full text-[11px] font-medium ${cls}">${label}</span></td>`;
+        }
+        if (c === 'confidence' && typeof val === 'number') {
+          const pct = (val * 100).toFixed(0);
+          const color = val >= 0.7 ? 'text-emerald-400' : (val >= 0.4 ? 'text-amber-400' : 'text-rose-400');
+          return `<td class="px-3 py-2 ${color} font-medium">${pct}%</td>`;
+        }
+        if (c === 'timestamp' && val) {
+          try {
+            return `<td class="px-3 py-2 text-[11px] whitespace-nowrap text-gray-300">${new Date(val).toLocaleString('pt-BR')}</td>`;
+          } catch (_) {}
+        }
+        if (c === 'hour') return `<td class="px-3 py-2 text-xs font-mono">${String(val).padStart(2, '0')}h</td>`;
+        return `<td class="px-3 py-2 text-xs max-w-[160px] truncate text-gray-400" title="${String(val)}">${val}</td>`;
+      }).join('') + '</tr>';
+  }).join('');
+
+  countEl.textContent = `(${rows.length} linha${rows.length !== 1 ? 's' : ''})`;
+  if (totalPages > 1) {
+    pagBox.classList.remove('hidden');
+    document.getElementById('page-info').textContent = `${currentPage} / ${totalPages}`;
+    document.getElementById('page-prev').disabled = currentPage <= 1;
+    document.getElementById('page-next').disabled = currentPage >= totalPages;
+  } else {
+    pagBox.classList.add('hidden');
+  }
+}
+
+/* ========== GRÁFICO ========== */
+function aggregateForChart(rows, groupBy) {
+  const map = {};
+  for (const r of rows) {
+    let key;
+    if (groupBy === 'confidence_bucket') {
+      const c = Number(r.confidence);
+      if (isNaN(c)) key = '(sem conf.)';
+      else if (c >= 0.8) key = '≥ 80%';
+      else if (c >= 0.6) key = '60–79%';
+      else if (c >= 0.4) key = '40–59%';
+      else key = '< 40%';
+    } else {
+      key = r[groupBy];
+      if (key == null || key === '') key = '(vazio)';
+      if (groupBy === 'hour') key = String(key).padStart(2, '0') + 'h';
+      if (groupBy === 'type') key = key === 'in' ? 'Entrada' : (key === 'out' ? 'Saída' : key);
+    }
+    map[key] = (map[key] || 0) + 1;
+  }
+
+  let labels = Object.keys(map);
+  if (groupBy === 'hour') labels.sort((a, b) => parseInt(a) - parseInt(b));
+  else if (groupBy === 'date') labels.sort();
+  else if (groupBy === 'confidence_bucket') {
+    const order = ['≥ 80%', '60–79%', '40–59%', '< 40%', '(sem conf.)'];
+    labels.sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  } else labels.sort((a, b) => map[b] - map[a]);
+
+  return { labels, values: labels.map(l => map[l]) };
+}
+
+const CHART_COLORS = [
+  'rgba(59, 130, 246, 0.85)',
+  'rgba(34, 197, 94, 0.85)',
+  'rgba(244, 63, 94, 0.85)',
+  'rgba(234, 179, 8, 0.85)',
+  'rgba(168, 85, 247, 0.85)',
+  'rgba(6, 182, 212, 0.85)',
+  'rgba(249, 115, 22, 0.85)',
+  'rgba(236, 72, 153, 0.85)',
+  'rgba(20, 184, 166, 0.85)',
+  'rgba(99, 102, 241, 0.85)',
+];
+
+function renderChart(rows) {
+  const emptyEl = document.getElementById('chart-empty');
+  const canvas = document.getElementById('result-chart');
+  const loading = document.getElementById('chart-loading');
+
+  if (!rows.length) {
+    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+    canvas.classList.add('hidden');
+    emptyEl.classList.remove('hidden');
+    return;
+  }
+  canvas.classList.remove('hidden');
+  emptyEl.classList.add('hidden');
+  loading.classList.remove('hidden');
+
+  const groupBy = document.getElementById('chart-group').value;
+  const animate = document.getElementById('chart-animate').checked;
+  const showLabels = document.getElementById('chart-labels').checked;
+  const { labels, values } = aggregateForChart(rows, groupBy);
+
+  if (chartInstance) chartInstance.destroy();
+
+  const ctx = canvas.getContext('2d');
+  const isCircular = ['pie', 'doughnut', 'polarArea'].includes(currentChartType);
+  const isRadar = currentChartType === 'radar';
+  const isArea = currentChartType === 'area';
+  const type = isArea ? 'line' : currentChartType;
+
+  const bgColors = labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+  const borderColors = bgColors.map(c => c.replace('0.85', '1'));
+
+  chartInstance = new Chart(ctx, {
+    type,
+    data: {
+      labels,
+      datasets: [{
+        label: 'Quantidade',
+        data: values,
+        backgroundColor: isCircular || isRadar || currentChartType === 'bar' ? bgColors : (isArea ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.15)'),
+        borderColor: isCircular || isRadar ? borderColors : '#3b82f6',
+        borderWidth: isCircular ? 2 : 2.5,
+        fill: isArea || isRadar,
+        tension: 0.35,
+        pointRadius: (currentChartType === 'line' || isArea) ? 4 : (isRadar ? 3 : 0),
+        pointHoverRadius: 6,
+        pointBackgroundColor: '#3b82f6',
+        borderRadius: currentChartType === 'bar' ? 6 : 0,
+        hoverOffset: isCircular ? 12 : 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      animation: animate ? {
+        duration: 900,
+        easing: 'easeOutQuart',
+        animateRotate: true,
+        animateScale: true
+      } : false,
+      plugins: {
+        legend: {
+          display: isCircular || isRadar,
+          position: 'bottom',
+          labels: { color: '#9ca3af', boxWidth: 12, padding: 14, font: { size: 11 } }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(15, 15, 25, 0.95)',
+          titleColor: '#e5e7eb',
+          bodyColor: '#d1d5db',
+          borderColor: '#374151',
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            label: (ctx) => {
+              const v = ctx.raw;
+              const total = values.reduce((a, b) => a + b, 0);
+              const pct = total ? ((v / total) * 100).toFixed(1) : 0;
+              return ` ${v} eventos (${pct}%)`;
+            }
+          }
+        },
+        datalabels: showLabels && !isRadar ? {
+          color: '#e5e7eb',
+          font: { size: 10, weight: '600' },
+          formatter: (v) => v,
+          display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0
+        } : { display: false }
+      },
+      scales: isCircular ? {} : {
+        x: {
+          ticks: { color: '#9ca3af', maxRotation: 40, font: { size: 10 } },
+          grid: { color: 'rgba(31, 41, 55, 0.6)', drawBorder: false }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { color: '#9ca3af', precision: 0, font: { size: 10 } },
+          grid: { color: 'rgba(31, 41, 55, 0.6)', drawBorder: false }
+        },
+        ...(isRadar ? {
+          r: {
+            beginAtZero: true,
+            ticks: { color: '#6b7280', backdropColor: 'transparent', font: { size: 9 } },
+            grid: { color: 'rgba(55, 65, 81, 0.5)' },
+            pointLabels: { color: '#9ca3af', font: { size: 10 } }
+          }
+        } : {})
+      }
+    },
+    plugins: (typeof ChartDataLabels !== 'undefined' && showLabels) ? [ChartDataLabels] : []
+  });
+
+  setTimeout(() => loading.classList.add('hidden'), 200);
+}
+
+/* ========== HISTÓRICO ========== */
+function saveToHistory(sql) {
+  const entry = { sql: sql.trim(), at: new Date().toISOString() };
+  queryHistory = [entry, ...queryHistory.filter(h => h.sql !== entry.sql)].slice(0, 12);
+  localStorage.setItem('sql_chart_history', JSON.stringify(queryHistory));
+  renderHistory();
+}
+
+function renderHistory() {
+  const box = document.getElementById('query-history');
+  if (!queryHistory.length) {
+    box.innerHTML = '<p class="text-gray-600 italic">Nenhuma consulta ainda</p>';
+    return;
+  }
+  box.innerHTML = queryHistory.map((h, i) => {
+    const short = h.sql.length > 55 ? h.sql.slice(0, 55) + '…' : h.sql;
+    const time = new Date(h.at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return `<div class="history-item px-2 py-1.5 rounded-lg cursor-pointer font-mono truncate border border-transparent hover:border-gray-700" data-idx="${i}" title="${h.sql.replace(/"/g, '&quot;')}">
+      <span class="text-gray-600">${time}</span> ${short}
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.history-item').forEach(el => {
+    el.addEventListener('click', () => {
+      document.getElementById('sql-input').value = queryHistory[el.dataset.idx].sql;
+    });
+  });
+}
+
+/* ========== EXEMPLOS ========== */
+function renderExamples(cat) {
+  const list = document.getElementById('examples-list');
+  const today = new Date().toISOString().slice(0, 10);
+  const items = cat === 'all' ? SQL_EXAMPLES : SQL_EXAMPLES.filter(e => e.cat === cat);
+
+  list.innerHTML = items.map((ex, i) => {
+    const sql = ex.sql.replace(/YYYY-MM-DD/g, today);
+    return `<div class="example-chip bg-gray-800/60 rounded-lg px-3 py-2 border border-gray-700/80" data-sql="${sql.replace(/"/g, '&quot;')}">
+      <span class="mr-1.5">${ex.icon}</span>
+      <span class="text-gray-200 font-medium">${ex.title}</span>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.example-chip').forEach(el => {
+    el.addEventListener('click', () => {
+      list.querySelectorAll('.example-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('sql-input').value = el.dataset.sql;
+      document.getElementById('sql-input').focus();
+    });
+  });
+}
+
+/* ========== FORMAT SQL ========== */
+function formatSQL(sql) {
+  return sql
+    .replace(/\s+/g, ' ')
+    .replace(/\bSELECT\b/i, 'SELECT')
+    .replace(/\bFROM\b/i, '\nFROM')
+    .replace(/\bWHERE\b/i, '\nWHERE')
+    .replace(/\bAND\b/gi, '\n  AND')
+    .replace(/\bORDER BY\b/i, '\nORDER BY')
+    .replace(/\bLIMIT\b/i, '\nLIMIT')
+    .trim();
+}
+
+/* ========== EXPORT CSV ========== */
+function exportCSV() {
+  const rows = filteredRows.length ? filteredRows : lastRows;
+  if (!rows.length) { alert('Nenhum dado para exportar.'); return; }
+  const keys = Object.keys(rows[0]);
+  const header = keys.join(',');
+  const body = rows.map(r => keys.map(k => {
+    let v = r[k];
+    if (v == null) v = '';
+    return '"' + String(v).replace(/"/g, '""') + '"';
+  }).join(',')).join('\n');
+  const blob = new Blob([header + '\n' + body], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'feiraprofissoes_query_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ========== EXECUTAR ========== */
+async function execute() {
+  const status = document.getElementById('query-status');
+  const btn = document.getElementById('btn-run');
+  const sql = document.getElementById('sql-input').value;
+  status.textContent = 'Executando…';
+  status.className = 'text-xs text-amber-400 mt-2.5';
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  try {
+    if (!isOnline) throw new Error('Sem conexão com a internet.');
+    const t0 = performance.now();
+    const rows = await runQuery(sql);
+    const ms = Math.round(performance.now() - t0);
+
+    lastRows = rows;
+    currentPage = 1;
+    updateStats(rows);
+    renderTable();
+    renderChart(rows);
+    saveToHistory(sql);
+
+    document.getElementById('latency-badge').textContent = ms + ' ms';
+    document.getElementById('latency-badge').classList.remove('hidden');
+
+    status.textContent = `✓ ${rows.length} linha(s) em ${ms} ms`;
+    status.className = 'text-xs text-emerald-400 mt-2.5';
+  } catch (err) {
+    console.error(err);
+    status.textContent = '✗ ' + (err.message || String(err));
+    status.className = 'text-xs text-rose-400 mt-2.5';
+    lastRows = [];
+    updateStats([]);
+    renderTable();
+    renderChart([]);
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+/* ========== INIT ========== */
+function init() {
+  updateOnlineUI();
+  testSupabaseConnection();
+  renderExamples('all');
+  renderHistory();
+
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('sql-input').value =
+    `SELECT * FROM feiraprofissoes WHERE date = '${today}' ORDER BY timestamp DESC LIMIT 100`;
+
+  // Botões
+  document.getElementById('btn-run').addEventListener('click', execute);
+  document.getElementById('btn-clear').addEventListener('click', () => {
+    document.getElementById('sql-input').value = '';
+    document.getElementById('query-status').textContent = '';
+  });
+  document.getElementById('btn-format').addEventListener('click', () => {
+    const el = document.getElementById('sql-input');
+    el.value = formatSQL(el.value);
+  });
+  document.getElementById('btn-test').addEventListener('click', async () => {
+    const ok = await testSupabaseConnection();
+    alert(ok ? 'Conexão OK!' : 'Falha. Verifique internet, config.js e a tabela feiraprofissoes.');
+  });
+  document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
+  document.getElementById('btn-clear-history').addEventListener('click', () => {
+    queryHistory = [];
+    localStorage.removeItem('sql_chart_history');
+    renderHistory();
+  });
+
+  // Categorias de exemplos
+  document.querySelectorAll('.tab-example').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-example').forEach(b => {
+        b.classList.remove('active');
+        b.classList.add('text-gray-400');
+      });
+      btn.classList.add('active');
+      btn.classList.remove('text-gray-400');
+      renderExamples(btn.dataset.cat);
+    });
+  });
+
+  // Tipos de gráfico
+  document.querySelectorAll('.chart-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.chart-btn').forEach(b => {
+        b.classList.remove('active');
+        b.classList.add('text-gray-400');
+      });
+      btn.classList.add('active');
+      btn.classList.remove('text-gray-400');
+      currentChartType = btn.dataset.type;
+      renderChart(lastRows);
+    });
+  });
+
+  document.getElementById('chart-group').addEventListener('change', () => renderChart(lastRows));
+  document.getElementById('chart-animate').addEventListener('change', () => renderChart(lastRows));
+  document.getElementById('chart-labels').addEventListener('change', () => renderChart(lastRows));
+
+  // Tabela
+  document.getElementById('table-search').addEventListener('input', () => { currentPage = 1; renderTable(); });
+  document.getElementById('table-page-size').addEventListener('change', () => { currentPage = 1; renderTable(); });
+  document.getElementById('page-prev').addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTable(); } });
+  document.getElementById('page-next').addEventListener('click', () => {
+    const total = Math.ceil(filteredRows.length / getPageSize());
+    if (currentPage < total) { currentPage++; renderTable(); }
+  });
+
+  // Atalho
+  document.getElementById('sql-input').addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      execute();
+    }
+  });
+}
+
+init();
+</script>
+</body>
+</html>
