@@ -60,16 +60,6 @@
             <button id="btn-mode-line" class="mode-btn px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white">─ Linha</button>
           </div>
 
-          <div class="flex items-center gap-1 border border-gray-700 rounded-lg p-0.5" id="line-orient-group" style="display:none" title="Orientação da linha">
-            <button id="btn-line-h" class="mode-btn active px-2.5 py-1.5 rounded text-xs font-medium">H</button>
-            <button id="btn-line-v" class="mode-btn px-2.5 py-1.5 rounded text-xs font-medium text-gray-400">V</button>
-          </div>
-
-          <div class="flex items-center gap-1 border border-gray-700 rounded-lg p-0.5" id="line-dir-group" style="display:none" title="Qual sentido conta como Entrada">
-            <button id="btn-dir-forward" class="mode-btn active px-2.5 py-1.5 rounded text-xs font-medium" title="Horizontal: cima→baixo = Entrada | Vertical: esq→dir = Entrada">↓/→ In</button>
-            <button id="btn-dir-reverse" class="mode-btn px-2.5 py-1.5 rounded text-xs font-medium text-gray-400" title="Inverte o sentido de Entrada/Saída">↑/← In</button>
-          </div>
-
           <div class="flex items-center gap-2 ml-auto">
             <label class="text-xs text-gray-400">Confiança:</label>
             <input id="confidence" type="range" min="0.15" max="0.85" step="0.05" value="0.30" class="w-24" />
@@ -94,10 +84,23 @@
           </div>
           <div>Na cena: <strong id="current-count" class="text-primary-500">0</strong></div>
           <div class="text-xs text-gray-500" id="mode-hint">Modo: Presença</div>
-          <div class="ml-auto flex gap-4 flex-wrap">
+          <div class="ml-auto flex gap-4 flex-wrap items-center">
             <label class="flex items-center gap-2 cursor-pointer" id="draw-line-label" style="display:none">
               <input type="checkbox" id="draw-line" class="rounded" /><span>Linha</span>
             </label>
+            
+            <div class="flex items-center gap-1 border border-gray-700 rounded-lg p-0.5" id="line-orient-group" style="display:none">
+              <button id="btn-line-h" class="mode-btn active px-2 py-1 rounded text-xs">Horizontal</button>
+              <button id="btn-line-v" class="mode-btn px-2 py-1 rounded text-xs text-gray-400">Vertical</button>
+            </div>
+
+            <div class="flex items-center gap-1 border border-gray-700 rounded-lg p-0.5" id="line-dir-group" style="display:none">
+              <select id="select-direction" class="bg-gray-800 border-none text-xs rounded px-2 py-1 focus:ring-0">
+                <option value="normal">↓ / → Entrada</option>
+                <option value="reverse">↑ / ← Entrada</option>
+              </select>
+            </div>
+
             <label class="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" id="blur-faces" class="rounded" /><span>Blur</span>
             </label>
@@ -208,7 +211,6 @@
                 </button>
               </div>
               <p id="sync-result" class="text-xs text-gray-500 mt-3"></p>
-              <p class="text-xs text-gray-600 mt-2">Com internet e “Sync auto” ligado, cada evento vai direto ao banco. Sem internet, fica local e sobe quando a rede voltar (ou ao clicar em Sincronizar).</p>
             </div>
 
             <div class="bg-gray-900 rounded-xl p-5">
@@ -236,13 +238,11 @@
   </div>
 
 <script>
-/* ========== SUPABASE — mesmo padrão do acompanhamento.html (Livro Caixa) ========== */
-// Verificação de segurança da config (igual ao seu arquivo)
+/* ========== SUPABASE ========== */
 if (!window.SUPABASE_CONFIG) {
   alert("Erro: Configurações do Supabase não encontradas! Verifique o arquivo config.js");
 }
 
-// Cria o cliente Supabase (igual ao seu arquivo)
 const supabaseClient = supabase.createClient(
   window.SUPABASE_CONFIG.url,
   window.SUPABASE_CONFIG.key
@@ -284,7 +284,6 @@ async function testSupabaseConnection() {
     return false;
   }
   try {
-    // Mesmo estilo de query do seu acompanhamento.html (.from().select())
     const { data, error } = await supabaseClient
       .from('feiraprofissoes')
       .select('id')
@@ -328,7 +327,6 @@ function eventToRow(e) {
   };
 }
 
-/** Envia 1 evento — mesmo padrão .from().insert() do seu projeto */
 async function pushOneToSupabase(event) {
   if (!isOnline) return false;
   const row = eventToRow(event);
@@ -338,32 +336,20 @@ async function pushOneToSupabase(event) {
     .select();
 
   if (error) {
-    // se já existe (id duplicado), tenta update via upsert
     if (error.code === '23505' || (error.message && error.message.includes('duplicate'))) {
       const { error: err2 } = await supabaseClient
         .from('feiraprofissoes')
         .upsert([row], { onConflict: 'id' });
-      if (err2) {
-        console.error('Erro ao enviar para Supabase:', err2);
-        return false;
-      }
+      if (err2) return false;
       return true;
     }
-    console.error('Erro ao enviar para Supabase:', error);
     return false;
   }
   return true;
 }
 
-/** Sincroniza pendentes em lote */
 async function syncPendingEvents() {
-  if (syncInProgress) return;
-  if (!isOnline) {
-    const el = document.getElementById('sync-result');
-    if (el) el.textContent = 'Sem conexão — nada sincronizado.';
-    return;
-  }
-
+  if (syncInProgress || !isOnline) return;
   syncInProgress = true;
   const el = document.getElementById('sync-result');
   if (el) el.textContent = 'Sincronizando...';
@@ -385,13 +371,11 @@ async function syncPendingEvents() {
       const batch = toSync.slice(i, i + batchSize);
       const rows = batch.map(eventToRow);
 
-      // igual ao padrão de insert do seu arquivo, em lote
       const { error } = await supabaseClient
         .from('feiraprofissoes')
         .upsert(rows, { onConflict: 'id' });
 
       if (error) {
-        console.error(error);
         fail += batch.length;
       } else {
         await db.transaction('rw', db.events, async () => {
@@ -426,7 +410,6 @@ async function refreshPendingBadge() {
   }
 }
 
-/** Busca no Supabase — mesmo estilo .from().select().eq().order() do acompanhamento */
 async function fetchEventsFromSupabase(date, type) {
   if (!isOnline) {
     alert('Sem conexão com o Supabase.');
@@ -444,21 +427,17 @@ async function fetchEventsFromSupabase(date, type) {
   }
 
   const { data, error } = await query;
-
   if (error) {
-    console.error(error);
     alert('Erro ao carregar dados: ' + error.message);
     return [];
   }
   return data || [];
 }
 
-/* ========== ONLINE / OFFLINE ========== */
 window.addEventListener('online', async () => {
   isOnline = true;
   updateOnlineUI();
   await testSupabaseConnection();
-  // auto-sync quando a rede voltar
   if (document.getElementById('sync-supabase').checked) {
     await syncPendingEvents();
   }
@@ -478,7 +457,6 @@ function uuid() {
 }
 
 const db = new Dexie('PeopleCounterDB');
-// v2: campo synced (0 = pendente, 1 = no Supabase)
 db.version(1).stores({
   events: 'id, timestamp, date, hour, type, trackingId, sessionId',
   settings: 'id'
@@ -498,7 +476,7 @@ const DEFAULT_SETTINGS = {
   blurFaces: false,
   countMode: 'presence',
   lineOrientation: 'horizontal',
-  lineDirection: 'forward', // forward = ↓/→ = in | reverse = ↑/← = in
+  lineDirection: 'normal',
   linePos: 0.5,
   retentionDays: 30,
   syncSupabase: true
@@ -552,150 +530,134 @@ async function clearOldData(days) {
   await db.events.where('timestamp').below(cutoff.toISOString()).delete();
 }
 
-/* ========== TRACKER ========== */
-/**
- * Multi-object tracker estável para várias pessoas ao mesmo tempo.
- * - Matching guloso por distância (pares ordenados) → evita colisão de IDs
- * - Modo linha: detecta cruzamento e aplica direção configurável (in/out)
- * - Cooldown após contagem permite o mesmo indivíduo cruzar de novo depois
- */
+/* ========== TRACKER: ATÉ 15+ PESSOAS, REGISTRO ÚNICO AO SAIR DO ENQUADRAMENTO ========== */
 class PresenceTracker {
   constructor() {
     this.nextId = 1;
     this.tracks = new Map();
-    this.lostTimeout = 900;
-    this.minVisibleMs = 300;
-    this.maxMatchDist = 180;
-    this.countCooldownMs = 1200; // após contar, espera antes de poder contar de novo no mesmo track
+    this.lostTimeout = 1200; // Tempo em ms sem ver o indivíduo para confirmar saída da cena
+    this.minVisibleMs = 400; // Tempo mínimo de estabilidade
   }
-
-  update(detections, mode, lineOrientation, linePos, lineDirection, videoW, videoH) {
+  
+  update(detections, mode, lineOrientation, lineDirection, linePos, videoW, videoH) {
     const now = Date.now();
     const events = [];
-    const matchedDetections = [];
+    const trackEntries = Array.from(this.tracks.entries());
+    const matches = [];
 
-    // Prepara detecções com centroides
-    const dets = detections.map((det, i) => {
+    // Pareamento por distância e robustez contra oclusões (até 15+ pessoas)
+    detections.forEach((det, detIdx) => {
       const [x, y, w, h] = det.bbox;
-      return {
-        idx: i,
-        det,
-        cx: x + w / 2,
-        cy: y + h / 2,
-        area: w * h
-      };
+      const cx = x + w / 2, cy = y + h / 2;
+
+      trackEntries.forEach(([id, track]) => {
+        const dist = Math.hypot(cx - track.centroid.x, cy - track.centroid.y);
+        const maxDist = Math.max(180, Math.sqrt(w * h) * 1.8); 
+        if (dist <= maxDist) {
+          matches.push({ detIdx, trackId: id, dist });
+        }
+      });
     });
 
-    // Matching: gera todos os pares track↔det e escolhe os melhores sem reutilizar
-    const trackIds = [...this.tracks.keys()];
-    const pairs = [];
-    for (const id of trackIds) {
-      const track = this.tracks.get(id);
-      for (const d of dets) {
-        const dist = Math.hypot(d.cx - track.centroid.x, d.cy - track.centroid.y);
-        const adaptive = this.maxMatchDist + (d.area < 6000 ? 60 : 0) + (d.area > 40000 ? 40 : 0);
-        if (dist < adaptive) pairs.push({ id, detIdx: d.idx, dist });
-      }
-    }
-    pairs.sort((a, b) => a.dist - b.dist);
+    matches.sort((a, b) => a.dist - b.dist);
 
-    const usedTracks = new Set();
-    const usedDets = new Set();
-    const assignments = []; // { id, detIdx }
+    const assignedDetections = new Set();
+    const assignedTracks = new Set();
 
-    for (const p of pairs) {
-      if (usedTracks.has(p.id) || usedDets.has(p.detIdx)) continue;
-      usedTracks.add(p.id);
-      usedDets.add(p.detIdx);
-      assignments.push(p);
-    }
+    for (const match of matches) {
+      if (assignedDetections.has(match.detIdx) || assignedTracks.has(match.trackId)) continue;
 
-    // Aplica matches
-    for (const a of assignments) {
-      const track = this.tracks.get(a.id);
-      const d = dets[a.detIdx];
-      const prevX = track.centroid.x;
-      const prevY = track.centroid.y;
+      assignedDetections.add(match.detIdx);
+      assignedTracks.add(match.trackId);
 
+      const det = detections[match.detIdx];
+      const track = this.tracks.get(match.trackId);
+      const [x, y, w, h] = det.bbox;
+      const cx = x + w / 2, cy = y + h / 2;
+
+      // Monitoramento de cruzamento de linha ao longo da trajetória
       if (mode === 'line') {
-        const canCount = !track.lastCountAt || (now - track.lastCountAt) >= this.countCooldownMs;
-        if (canCount) {
-          const isH = lineOrientation === 'horizontal';
-          const absPos = isH ? linePos * videoH : linePos * videoW;
-          let crossed = null; // 'forward' | 'reverse'
+        const isH = lineOrientation === 'horizontal';
+        const absPos = isH ? linePos * videoH : linePos * videoW;
+        const currCoord = isH ? cy : cx;
+
+        if (!track.crossedLine) {
           if (isH) {
-            if (prevY < absPos && d.cy >= absPos) crossed = 'forward';
-            else if (prevY > absPos && d.cy <= absPos) crossed = 'reverse';
-          } else {
-            if (prevX < absPos && d.cx >= absPos) crossed = 'forward';
-            else if (prevX > absPos && d.cx <= absPos) crossed = 'reverse';
-          }
-          if (crossed) {
-            // lineDirection 'forward' → forward = in, reverse = out
-            // lineDirection 'reverse' → inverte
-            let type;
-            if (lineDirection === 'forward') {
-              type = crossed === 'forward' ? 'in' : 'out';
-            } else {
-              type = crossed === 'forward' ? 'out' : 'in';
+            if ((track.entryCoord < absPos && currCoord >= absPos) || (track.entryCoord > absPos && currCoord <= absPos)) {
+              track.crossedLine = true;
+              track.crossDirection = (currCoord > track.entryCoord) ? 'down_right' : 'up_left';
             }
-            track.lastCountAt = now;
-            events.push({ id: a.id, type, confidence: d.det.score });
+          } else {
+            if ((track.entryCoord < absPos && currCoord >= absPos) || (track.entryCoord > absPos && currCoord <= absPos)) {
+              track.crossedLine = true;
+              track.crossDirection = (currCoord > track.entryCoord) ? 'down_right' : 'up_left';
+            }
           }
         }
       }
 
-      track.centroid = { x: d.cx, y: d.cy };
-      track.prevCentroid = { x: prevX, y: prevY };
+      track.centroid = { x: cx, y: cy };
       track.lastSeen = now;
-      track.lastScore = d.det.score;
-      d.det.trackingId = a.id;
-      matchedDetections.push(d.det);
+      track.lastScore = det.score;
+      det.trackingId = track.id;
     }
 
-    // Novas detecções sem match → novos tracks
-    for (const d of dets) {
-      if (usedDets.has(d.idx)) continue;
-      const id = 't' + this.nextId++;
-      this.tracks.set(id, {
-        id,
-        centroid: { x: d.cx, y: d.cy },
-        prevCentroid: { x: d.cx, y: d.cy },
-        firstSeen: now,
-        lastSeen: now,
-        lastScore: d.det.score,
-        lastCountAt: 0
-      });
-      d.det.trackingId = id;
-      matchedDetections.push(d.det);
-    }
+    // Cria novas trilhas para pessoas recém-detectadas
+    detections.forEach((det, detIdx) => {
+      if (!assignedDetections.has(detIdx)) {
+        const [x, y, w, h] = det.bbox;
+        const cx = x + w / 2, cy = y + h / 2;
+        const id = 't' + this.nextId++;
+        const isH = lineOrientation === 'horizontal';
+        
+        this.tracks.set(id, {
+          id,
+          centroid: { x: cx, y: cy },
+          entryCoord: isH ? cy : cx,
+          firstSeen: now,
+          lastSeen: now,
+          lastScore: det.score,
+          crossedLine: false,
+          crossDirection: null,
+          counted: false
+        });
+        det.trackingId = id;
+      }
+    });
 
-    // Limpeza de tracks perdidos
-    if (mode === 'presence') {
-      for (const [id, track] of this.tracks) {
-        if (usedTracks.has(id)) continue;
-        if (now - track.lastSeen > this.lostTimeout) {
-          const dur = track.lastSeen - (track.firstSeen || track.lastSeen);
-          if (!track.lastCountAt && dur >= this.minVisibleMs) {
-            track.lastCountAt = now;
-            events.push({ id, type: 'in', confidence: track.lastScore || 0.5 });
+    // Verificação de saída do enquadramento (confirmação definitiva do evento)
+    for (const [id, track] of this.tracks) {
+      if (now - track.lastSeen > this.lostTimeout) {
+        const dur = track.lastSeen - track.firstSeen;
+        if (!track.counted && dur >= this.minVisibleMs) {
+          track.counted = true;
+          let finalType = 'in';
+
+          if (mode === 'presence') {
+            finalType = 'in';
+          } else if (mode === 'line') {
+            if (track.crossedLine) {
+              const isDownOrRight = track.crossDirection === 'down_right';
+              if (lineDirection === 'normal') {
+                finalType = isDownOrRight ? 'in' : 'out';
+              } else {
+                finalType = isDownOrRight ? 'out' : 'in';
+              }
+            } else {
+              continue;
+            }
           }
-          this.tracks.delete(id);
+
+          events.push({ id, type: finalType, confidence: track.lastScore || 0.5 });
         }
-      }
-    } else {
-      for (const [id, track] of this.tracks) {
-        if (now - track.lastSeen > this.lostTimeout * 2.5) this.tracks.delete(id);
+        this.tracks.delete(id);
       }
     }
 
-    return { detections: matchedDetections, events };
+    return { detections, events };
   }
 
-  reset() {
-    this.tracks.clear();
-    this.nextId = 1;
-  }
+  reset() { this.tracks.clear(); this.nextId = 1; }
 }
 
 /* ========== APP ========== */
@@ -711,8 +673,7 @@ const btnModePresence = document.getElementById('btn-mode-presence');
 const btnModeLine = document.getElementById('btn-mode-line');
 const btnLineH = document.getElementById('btn-line-h');
 const btnLineV = document.getElementById('btn-line-v');
-const btnDirForward = document.getElementById('btn-dir-forward');
-const btnDirReverse = document.getElementById('btn-dir-reverse');
+const selectDirection = document.getElementById('select-direction');
 const confidenceSlider = document.getElementById('confidence');
 const confidenceValue = document.getElementById('confidence-value');
 const drawLineCheck = document.getElementById('draw-line');
@@ -736,7 +697,7 @@ const dbCountEl = document.getElementById('db-count');
 let model = null, stream = null, animationId = null, sessionId = uuid();
 let tracker = new PresenceTracker();
 let isRunning = false, lastFpsTime = performance.now(), frameCount = 0;
-let countMode = 'presence', lineOrientation = 'horizontal', lineDirection = 'forward', linePos = 0.5;
+let countMode = 'presence', lineOrientation = 'horizontal', lineDirection = 'normal', linePos = 0.5;
 let liveChart = null, hourlyChart = null, weeklyChart = null;
 const minuteBuffer = [];
 
@@ -751,8 +712,7 @@ async function loadModel() {
 
 async function detectPeople(threshold) {
   if (!model || video.readyState < 2) return [];
-  // maxNumBoxes=40 para cenas com várias pessoas ao mesmo tempo
-  const predictions = await model.detect(video, 40);
+  const predictions = await model.detect(video, 20);
   return predictions.filter(p => p.class === 'person' && p.score >= threshold)
     .map(p => ({ bbox: p.bbox, class: p.class, score: p.score }));
 }
@@ -814,7 +774,7 @@ async function detectLoop() {
   const start = performance.now();
   try {
     const detections = await detectPeople(parseFloat(confidenceSlider.value));
-    const result = tracker.update(detections, countMode, lineOrientation, linePos, lineDirection, video.videoWidth, video.videoHeight);
+    const result = tracker.update(detections, countMode, lineOrientation, lineDirection, linePos, video.videoWidth, video.videoHeight);
     drawFrame(result.detections);
     for (const ev of result.events) await registerEvent(ev.type, ev.confidence, ev.id);
     currentCountEl.textContent = String(result.detections.length);
@@ -832,50 +792,32 @@ async function detectLoop() {
 function drawFrame(detections) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  
   if (countMode === 'line' && drawLineCheck.checked) {
     ctx.save();
     ctx.strokeStyle = '#22c55e';
     ctx.lineWidth = 3;
     ctx.setLineDash([10, 6]);
     ctx.beginPath();
-    // Labels claros: seta + ENTRADA/SAÍDA no sentido configurado
+    
     if (lineOrientation === 'horizontal') {
       const y = linePos * canvas.height;
       ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
       ctx.setLineDash([]);
-      ctx.font = 'bold 12px sans-serif';
-      // forward: cima→baixo = Entrada | reverse: baixo→cima = Entrada
-      if (lineDirection === 'forward') {
-        ctx.fillStyle = '#4ade80';
-        ctx.fillText('↓ ENTRADA', 10, y - 8);
-        ctx.fillStyle = '#f87171';
-        ctx.fillText('↑ SAÍDA', 10, y + 18);
-      } else {
-        ctx.fillStyle = '#f87171';
-        ctx.fillText('↓ SAÍDA', 10, y - 8);
-        ctx.fillStyle = '#4ade80';
-        ctx.fillText('↑ ENTRADA', 10, y + 18);
-      }
+      ctx.fillStyle = '#22c55e'; ctx.font = 'bold 13px sans-serif';
+      const dirText = lineDirection === 'normal' ? '↓ ENTRADA / ↑ SAÍDA' : '↑ ENTRADA / ↓ SAÍDA';
+      ctx.fillText('LINHA (' + dirText + ')', 10, y - 10);
     } else {
       const x = linePos * canvas.width;
       ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
       ctx.setLineDash([]);
-      ctx.font = 'bold 12px sans-serif';
-      // forward: esq→dir = Entrada | reverse: dir→esq = Entrada
-      if (lineDirection === 'forward') {
-        ctx.fillStyle = '#4ade80';
-        ctx.fillText('ENTRADA →', x + 8, 18);
-        ctx.fillStyle = '#f87171';
-        ctx.fillText('← SAÍDA', Math.max(8, x - 80), 18);
-      } else {
-        ctx.fillStyle = '#f87171';
-        ctx.fillText('SAÍDA →', x + 8, 18);
-        ctx.fillStyle = '#4ade80';
-        ctx.fillText('← ENTRADA', Math.max(8, x - 95), 18);
-      }
+      ctx.fillStyle = '#22c55e'; ctx.font = 'bold 13px sans-serif';
+      const dirText = lineDirection === 'normal' ? '→ ENTRADA / ← SAÍDA' : '← ENTRADA / → SAÍDA';
+      ctx.fillText('LINHA (' + dirText + ')', x + 8, 20);
     }
     ctx.restore();
   }
+
   for (const det of detections) {
     const [x, y, w, h] = det.bbox;
     if (blurFacesCheck.checked) {
@@ -892,21 +834,16 @@ function drawFrame(detections) {
     ctx.font = 'bold 12px sans-serif';
     ctx.fillText(label, x + 4, Math.max(14, y - 6));
   }
+
   if (countMode === 'presence' && detections.length > 0) {
     ctx.fillStyle = 'rgba(34,197,94,0.15)';
     ctx.fillRect(0, 0, canvas.width, 28);
     ctx.fillStyle = '#4ade80';
     ctx.font = '12px sans-serif';
-    ctx.fillText(detections.length + ' pessoa(s) • conta ao sair da câmera', 10, 18);
+    ctx.fillText(detections.length + ' pessoa(s) na cena • registro ao sair', 10, 18);
   }
 }
 
-/**
- * Fluxo offline-first:
- * 1. Sempre grava no IndexedDB (synced=0)
- * 2. Se online + Sync auto → tenta Supabase; se OK, synced=1
- * 3. Se offline ou falha → permanece pendente para sync depois
- */
 async function registerEvent(type, confidence, trackingId) {
   const now = new Date();
   const event = {
@@ -1039,11 +976,11 @@ async function loadHistoryLocal() {
   events.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
   renderHistoryRows(events);
 }
+
 async function loadHistorySupabase() {
   const date = document.getElementById('filter-date').value || new Date().toISOString().slice(0, 10);
   const type = document.getElementById('filter-type').value;
   const events = await fetchEventsFromSupabase(date, type);
-  // dados do servidor já estão “synced”
   renderHistoryRows(events.map(e => ({ ...e, synced: 1, trackingId: e.tracking_id })));
 }
 
@@ -1057,12 +994,14 @@ function eventsToCSV(events) {
   ]);
   return [headers.join(',')].concat(rows.map(r => r.map(c => '"' + c + '"').join(','))).join('\n');
 }
+
 function downloadCSV(csv, filename) {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
 }
+
 async function exportCSV(all) {
   let events;
   if (all) events = await getAllEvents();
@@ -1075,6 +1014,7 @@ async function exportCSV(all) {
   if (!events.length) { alert('Nenhum evento'); return; }
   downloadCSV(eventsToCSV(events), 'feiraprofissoes_' + new Date().toISOString().slice(0, 10) + '.csv');
 }
+
 async function refreshDbCount() { dbCountEl.textContent = String(await countEvents()); }
 
 function setCountMode(mode) {
@@ -1089,7 +1029,7 @@ function setCountMode(mode) {
     lineDirGroup.style.display = 'none';
     drawLineLabel.style.display = 'none';
   } else {
-    updateLineModeHint();
+    modeHint.textContent = 'Modo: Linha • cruzar e sair da cena';
     lineOrientGroup.style.display = 'flex';
     lineDirGroup.style.display = 'flex';
     drawLineLabel.style.display = 'flex';
@@ -1098,40 +1038,21 @@ function setCountMode(mode) {
   saveSettings({ countMode: mode });
   tracker.reset();
 }
+
 function setLineOrientation(orient) {
   lineOrientation = orient;
   btnLineH.classList.toggle('active', orient === 'horizontal');
   btnLineV.classList.toggle('active', orient === 'vertical');
   btnLineH.classList.toggle('text-gray-400', orient !== 'horizontal');
   btnLineV.classList.toggle('text-gray-400', orient !== 'vertical');
-  updateLineModeHint();
   saveSettings({ lineOrientation: orient });
   tracker.reset();
 }
+
 function setLineDirection(dir) {
   lineDirection = dir;
-  btnDirForward.classList.toggle('active', dir === 'forward');
-  btnDirReverse.classList.toggle('active', dir === 'reverse');
-  btnDirForward.classList.toggle('text-gray-400', dir !== 'forward');
-  btnDirReverse.classList.toggle('text-gray-400', dir !== 'reverse');
-  updateLineModeHint();
   saveSettings({ lineDirection: dir });
   tracker.reset();
-}
-function updateLineModeHint() {
-  if (countMode !== 'line') return;
-  const orient = lineOrientation === 'horizontal' ? 'Horizontal' : 'Vertical';
-  let dirText;
-  if (lineOrientation === 'horizontal') {
-    dirText = lineDirection === 'forward'
-      ? 'Entrada = cima→baixo · Saída = baixo→cima'
-      : 'Entrada = baixo→cima · Saída = cima→baixo';
-  } else {
-    dirText = lineDirection === 'forward'
-      ? 'Entrada = esq→dir · Saída = dir→esq'
-      : 'Entrada = dir→esq · Saída = esq→dir';
-  }
-  modeHint.textContent = 'Modo: Linha ' + orient + ' • ' + dirText + ' • clique no vídeo p/ posicionar';
 }
 
 function setupTabs() {
@@ -1161,8 +1082,8 @@ function setupListeners() {
   btnModeLine.addEventListener('click', () => setCountMode('line'));
   btnLineH.addEventListener('click', () => setLineOrientation('horizontal'));
   btnLineV.addEventListener('click', () => setLineOrientation('vertical'));
-  btnDirForward.addEventListener('click', () => setLineDirection('forward'));
-  btnDirReverse.addEventListener('click', () => setLineDirection('reverse'));
+  selectDirection.addEventListener('change', e => setLineDirection(e.target.value));
+
   confidenceSlider.addEventListener('input', () => {
     confidenceValue.textContent = parseFloat(confidenceSlider.value).toFixed(2);
     saveSettings({ confidenceThreshold: parseFloat(confidenceSlider.value) });
@@ -1218,11 +1139,13 @@ async function init() {
   syncSupabaseCheck.checked = settings.syncSupabase !== false;
   countMode = settings.countMode || 'presence';
   lineOrientation = settings.lineOrientation || 'horizontal';
-  lineDirection = settings.lineDirection || 'forward';
+  lineDirection = settings.lineDirection || 'normal';
   linePos = settings.linePos != null ? settings.linePos : 0.5;
+
+  selectDirection.value = lineDirection;
+
   setCountMode(countMode);
   setLineOrientation(lineOrientation);
-  setLineDirection(lineDirection);
 
   await testSupabaseConnection();
   await loadModel();
@@ -1234,7 +1157,6 @@ async function init() {
   setupListeners();
   await clearOldData(settings.retentionDays);
 
-  // se já estiver online com pendentes, sincroniza ao abrir
   if (isOnline && syncSupabaseCheck.checked) {
     setTimeout(() => syncPendingEvents(), 1500);
   }
