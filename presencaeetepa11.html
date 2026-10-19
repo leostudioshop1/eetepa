@@ -60,6 +60,16 @@
             <button id="btn-mode-line" class="mode-btn px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white">─ Linha</button>
           </div>
 
+          <div class="flex items-center gap-1 border border-gray-700 rounded-lg p-0.5" id="line-orient-group" style="display:none" title="Orientação da linha">
+            <button id="btn-line-h" class="mode-btn active px-2.5 py-1.5 rounded text-xs font-medium">H</button>
+            <button id="btn-line-v" class="mode-btn px-2.5 py-1.5 rounded text-xs font-medium text-gray-400">V</button>
+          </div>
+
+          <div class="flex items-center gap-1 border border-gray-700 rounded-lg p-0.5" id="line-dir-group" style="display:none" title="Qual sentido conta como Entrada">
+            <button id="btn-dir-forward" class="mode-btn active px-2.5 py-1.5 rounded text-xs font-medium" title="Horizontal: cima→baixo = Entrada | Vertical: esq→dir = Entrada">↓/→ In</button>
+            <button id="btn-dir-reverse" class="mode-btn px-2.5 py-1.5 rounded text-xs font-medium text-gray-400" title="Inverte o sentido de Entrada/Saída">↑/← In</button>
+          </div>
+
           <div class="flex items-center gap-2 ml-auto">
             <label class="text-xs text-gray-400">Confiança:</label>
             <input id="confidence" type="range" min="0.15" max="0.85" step="0.05" value="0.30" class="w-24" />
@@ -93,18 +103,6 @@
             </label>
             <label class="flex items-center gap-2 cursor-pointer" title="Quando online, envia cada evento ao Supabase">
               <input type="checkbox" id="sync-supabase" checked class="rounded" /><span>Sync auto</span>
-            </label>
-            <div class="flex items-center gap-1 border border-gray-700 rounded-lg p-0.5" id="line-orient-group" style="display:none">
-              <button id="btn-line-h" class="mode-btn active px-2 py-1 rounded text-xs" title="Linha horizontal">Horizontal</button>
-              <button id="btn-line-v" class="mode-btn px-2 py-1 rounded text-xs text-gray-400" title="Linha vertical">Vertical</button>
-            </div>
-            <label id="line-direction-wrap" class="items-center gap-2 text-xs text-gray-300" style="display:none">
-              Sentido:
-              <select id="line-direction" class="bg-gray-800 border border-gray-700 rounded px-2 py-1">
-                <option value="both">Entrada e saída</option>
-                <option value="in">Somente entrada</option>
-                <option value="out">Somente saída</option>
-              </select>
             </label>
           </div>
         </div>
@@ -500,8 +498,8 @@ const DEFAULT_SETTINGS = {
   blurFaces: false,
   countMode: 'presence',
   lineOrientation: 'horizontal',
+  lineDirection: 'forward', // forward = ↓/→ = in | reverse = ↑/← = in
   linePos: 0.5,
-  lineDirection: 'both',
   retentionDays: 30,
   syncSupabase: true
 };
@@ -555,81 +553,131 @@ async function clearOldData(days) {
 }
 
 /* ========== TRACKER ========== */
+/**
+ * Multi-object tracker estável para várias pessoas ao mesmo tempo.
+ * - Matching guloso por distância (pares ordenados) → evita colisão de IDs
+ * - Modo linha: detecta cruzamento e aplica direção configurável (in/out)
+ * - Cooldown após contagem permite o mesmo indivíduo cruzar de novo depois
+ */
 class PresenceTracker {
   constructor() {
     this.nextId = 1;
     this.tracks = new Map();
-    this.lostTimeout = 1400;
-    this.minVisibleMs = 250;
+    this.lostTimeout = 900;
+    this.minVisibleMs = 300;
     this.maxMatchDist = 180;
+    this.countCooldownMs = 1200; // após contar, espera antes de poder contar de novo no mesmo track
   }
 
-  update(detections, mode, lineOrientation, linePos, videoW, videoH, lineDirection = 'both') {
+  update(detections, mode, lineOrientation, linePos, lineDirection, videoW, videoH) {
     const now = Date.now();
     const events = [];
-    const usedTracks = new Set();
     const matchedDetections = [];
-    const candidates = [];
 
-    // Associação um-para-um: cada detecção e cada indivíduo são usados uma única vez por quadro.
-    for (const det of detections) {
+    // Prepara detecções com centroides
+    const dets = detections.map((det, i) => {
       const [x, y, w, h] = det.bbox;
-      const cx = x + w / 2, cy = y + h / 2;
-      for (const [id, track] of this.tracks) {
-        const dist = Math.hypot(cx - track.centroid.x, cy - track.centroid.y);
-        const adaptiveDist = this.maxMatchDist + (w * h < 5000 ? 70 : 0);
-        if (dist < adaptiveDist) candidates.push({ det, id, dist });
+      return {
+        idx: i,
+        det,
+        cx: x + w / 2,
+        cy: y + h / 2,
+        area: w * h
+      };
+    });
+
+    // Matching: gera todos os pares track↔det e escolhe os melhores sem reutilizar
+    const trackIds = [...this.tracks.keys()];
+    const pairs = [];
+    for (const id of trackIds) {
+      const track = this.tracks.get(id);
+      for (const d of dets) {
+        const dist = Math.hypot(d.cx - track.centroid.x, d.cy - track.centroid.y);
+        const adaptive = this.maxMatchDist + (d.area < 6000 ? 60 : 0) + (d.area > 40000 ? 40 : 0);
+        if (dist < adaptive) pairs.push({ id, detIdx: d.idx, dist });
       }
     }
-    candidates.sort((a, b) => a.dist - b.dist);
-    const detToTrack = new Map();
-    for (const c of candidates) {
-      if (detToTrack.has(c.det) || usedTracks.has(c.id)) continue;
-      detToTrack.set(c.det, c.id);
-      usedTracks.add(c.id);
+    pairs.sort((a, b) => a.dist - b.dist);
+
+    const usedTracks = new Set();
+    const usedDets = new Set();
+    const assignments = []; // { id, detIdx }
+
+    for (const p of pairs) {
+      if (usedTracks.has(p.id) || usedDets.has(p.detIdx)) continue;
+      usedTracks.add(p.id);
+      usedDets.add(p.detIdx);
+      assignments.push(p);
     }
 
-    for (const det of detections) {
-      const [x, y, w, h] = det.bbox;
-      const cx = x + w / 2, cy = y + h / 2;
-      let id = detToTrack.get(det);
-      if (!id) {
-        id = 't' + this.nextId++;
-        this.tracks.set(id, {
-          id, centroid: { x: cx, y: cy }, firstSeen: now, lastSeen: now,
-          lastScore: det.score, counted: false
-        });
-      } else {
-        const track = this.tracks.get(id);
-        const prevX = track.centroid.x, prevY = track.centroid.y;
-        if (mode === 'line' && !track.counted) {
+    // Aplica matches
+    for (const a of assignments) {
+      const track = this.tracks.get(a.id);
+      const d = dets[a.detIdx];
+      const prevX = track.centroid.x;
+      const prevY = track.centroid.y;
+
+      if (mode === 'line') {
+        const canCount = !track.lastCountAt || (now - track.lastCountAt) >= this.countCooldownMs;
+        if (canCount) {
           const isH = lineOrientation === 'horizontal';
-          const prev = isH ? prevY : prevX;
-          const curr = isH ? cy : cx;
-          const line = isH ? linePos * videoH : linePos * videoW;
-          let type = null;
-          if (prev < line && curr >= line) type = 'in';
-          else if (prev > line && curr <= line) type = 'out';
-          if (type && (lineDirection === 'both' || lineDirection === type)) {
-            track.counted = true;
-            events.push({ id, type, confidence: det.score });
+          const absPos = isH ? linePos * videoH : linePos * videoW;
+          let crossed = null; // 'forward' | 'reverse'
+          if (isH) {
+            if (prevY < absPos && d.cy >= absPos) crossed = 'forward';
+            else if (prevY > absPos && d.cy <= absPos) crossed = 'reverse';
+          } else {
+            if (prevX < absPos && d.cx >= absPos) crossed = 'forward';
+            else if (prevX > absPos && d.cx <= absPos) crossed = 'reverse';
+          }
+          if (crossed) {
+            // lineDirection 'forward' → forward = in, reverse = out
+            // lineDirection 'reverse' → inverte
+            let type;
+            if (lineDirection === 'forward') {
+              type = crossed === 'forward' ? 'in' : 'out';
+            } else {
+              type = crossed === 'forward' ? 'out' : 'in';
+            }
+            track.lastCountAt = now;
+            events.push({ id: a.id, type, confidence: d.det.score });
           }
         }
-        track.centroid = { x: cx, y: cy };
-        track.lastSeen = now;
-        track.lastScore = det.score;
       }
-      det.trackingId = id;
-      matchedDetections.push(det);
+
+      track.centroid = { x: d.cx, y: d.cy };
+      track.prevCentroid = { x: prevX, y: prevY };
+      track.lastSeen = now;
+      track.lastScore = d.det.score;
+      d.det.trackingId = a.id;
+      matchedDetections.push(d.det);
     }
 
+    // Novas detecções sem match → novos tracks
+    for (const d of dets) {
+      if (usedDets.has(d.idx)) continue;
+      const id = 't' + this.nextId++;
+      this.tracks.set(id, {
+        id,
+        centroid: { x: d.cx, y: d.cy },
+        prevCentroid: { x: d.cx, y: d.cy },
+        firstSeen: now,
+        lastSeen: now,
+        lastScore: d.det.score,
+        lastCountAt: 0
+      });
+      d.det.trackingId = id;
+      matchedDetections.push(d.det);
+    }
+
+    // Limpeza de tracks perdidos
     if (mode === 'presence') {
       for (const [id, track] of this.tracks) {
         if (usedTracks.has(id)) continue;
         if (now - track.lastSeen > this.lostTimeout) {
           const dur = track.lastSeen - (track.firstSeen || track.lastSeen);
-          if (!track.counted && dur >= this.minVisibleMs) {
-            track.counted = true;
+          if (!track.lastCountAt && dur >= this.minVisibleMs) {
+            track.lastCountAt = now;
             events.push({ id, type: 'in', confidence: track.lastScore || 0.5 });
           }
           this.tracks.delete(id);
@@ -637,13 +685,17 @@ class PresenceTracker {
       }
     } else {
       for (const [id, track] of this.tracks) {
-        if (now - track.lastSeen > this.lostTimeout * 2) this.tracks.delete(id);
+        if (now - track.lastSeen > this.lostTimeout * 2.5) this.tracks.delete(id);
       }
     }
+
     return { detections: matchedDetections, events };
   }
 
-  reset() { this.tracks.clear(); this.nextId = 1; }
+  reset() {
+    this.tracks.clear();
+    this.nextId = 1;
+  }
 }
 
 /* ========== APP ========== */
@@ -659,8 +711,8 @@ const btnModePresence = document.getElementById('btn-mode-presence');
 const btnModeLine = document.getElementById('btn-mode-line');
 const btnLineH = document.getElementById('btn-line-h');
 const btnLineV = document.getElementById('btn-line-v');
-const lineDirectionSelect = document.getElementById('line-direction');
-const lineDirectionWrap = document.getElementById('line-direction-wrap');
+const btnDirForward = document.getElementById('btn-dir-forward');
+const btnDirReverse = document.getElementById('btn-dir-reverse');
 const confidenceSlider = document.getElementById('confidence');
 const confidenceValue = document.getElementById('confidence-value');
 const drawLineCheck = document.getElementById('draw-line');
@@ -668,6 +720,7 @@ const blurFacesCheck = document.getElementById('blur-faces');
 const syncSupabaseCheck = document.getElementById('sync-supabase');
 const modeHint = document.getElementById('mode-hint');
 const lineOrientGroup = document.getElementById('line-orient-group');
+const lineDirGroup = document.getElementById('line-dir-group');
 const drawLineLabel = document.getElementById('draw-line-label');
 const fpsEl = document.getElementById('fps');
 const currentCountEl = document.getElementById('current-count');
@@ -683,7 +736,7 @@ const dbCountEl = document.getElementById('db-count');
 let model = null, stream = null, animationId = null, sessionId = uuid();
 let tracker = new PresenceTracker();
 let isRunning = false, lastFpsTime = performance.now(), frameCount = 0;
-let countMode = 'presence', lineOrientation = 'horizontal', linePos = 0.5, lineDirection = 'both';
+let countMode = 'presence', lineOrientation = 'horizontal', lineDirection = 'forward', linePos = 0.5;
 let liveChart = null, hourlyChart = null, weeklyChart = null;
 const minuteBuffer = [];
 
@@ -698,7 +751,8 @@ async function loadModel() {
 
 async function detectPeople(threshold) {
   if (!model || video.readyState < 2) return [];
-  const predictions = await model.detect(video, 20);
+  // maxNumBoxes=40 para cenas com várias pessoas ao mesmo tempo
+  const predictions = await model.detect(video, 40);
   return predictions.filter(p => p.class === 'person' && p.score >= threshold)
     .map(p => ({ bbox: p.bbox, class: p.class, score: p.score }));
 }
@@ -760,7 +814,7 @@ async function detectLoop() {
   const start = performance.now();
   try {
     const detections = await detectPeople(parseFloat(confidenceSlider.value));
-    const result = tracker.update(detections, countMode, lineOrientation, linePos, video.videoWidth, video.videoHeight, lineDirection);
+    const result = tracker.update(detections, countMode, lineOrientation, linePos, lineDirection, video.videoWidth, video.videoHeight);
     drawFrame(result.detections);
     for (const ev of result.events) await registerEvent(ev.type, ev.confidence, ev.id);
     currentCountEl.textContent = String(result.detections.length);
@@ -784,18 +838,41 @@ function drawFrame(detections) {
     ctx.lineWidth = 3;
     ctx.setLineDash([10, 6]);
     ctx.beginPath();
+    // Labels claros: seta + ENTRADA/SAÍDA no sentido configurado
     if (lineOrientation === 'horizontal') {
       const y = linePos * canvas.height;
       ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = '#22c55e'; ctx.font = 'bold 13px sans-serif';
-      ctx.fillText('LINHA', 10, y - 10);
+      ctx.font = 'bold 12px sans-serif';
+      // forward: cima→baixo = Entrada | reverse: baixo→cima = Entrada
+      if (lineDirection === 'forward') {
+        ctx.fillStyle = '#4ade80';
+        ctx.fillText('↓ ENTRADA', 10, y - 8);
+        ctx.fillStyle = '#f87171';
+        ctx.fillText('↑ SAÍDA', 10, y + 18);
+      } else {
+        ctx.fillStyle = '#f87171';
+        ctx.fillText('↓ SAÍDA', 10, y - 8);
+        ctx.fillStyle = '#4ade80';
+        ctx.fillText('↑ ENTRADA', 10, y + 18);
+      }
     } else {
       const x = linePos * canvas.width;
       ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = '#22c55e'; ctx.font = 'bold 13px sans-serif';
-      ctx.fillText('LINHA', x + 8, 20);
+      ctx.font = 'bold 12px sans-serif';
+      // forward: esq→dir = Entrada | reverse: dir→esq = Entrada
+      if (lineDirection === 'forward') {
+        ctx.fillStyle = '#4ade80';
+        ctx.fillText('ENTRADA →', x + 8, 18);
+        ctx.fillStyle = '#f87171';
+        ctx.fillText('← SAÍDA', Math.max(8, x - 80), 18);
+      } else {
+        ctx.fillStyle = '#f87171';
+        ctx.fillText('SAÍDA →', x + 8, 18);
+        ctx.fillStyle = '#4ade80';
+        ctx.fillText('← ENTRADA', Math.max(8, x - 95), 18);
+      }
     }
     ctx.restore();
   }
@@ -1009,12 +1086,12 @@ function setCountMode(mode) {
   if (mode === 'presence') {
     modeHint.textContent = 'Modo: Presença • conta ao sair da câmera';
     lineOrientGroup.style.display = 'none';
-    lineDirectionWrap.style.display = 'none';
+    lineDirGroup.style.display = 'none';
     drawLineLabel.style.display = 'none';
   } else {
-    modeHint.textContent = 'Modo: Linha • clique no vídeo';
+    updateLineModeHint();
     lineOrientGroup.style.display = 'flex';
-    lineDirectionWrap.style.display = 'flex';
+    lineDirGroup.style.display = 'flex';
     drawLineLabel.style.display = 'flex';
     drawLineCheck.checked = true;
   }
@@ -1027,7 +1104,34 @@ function setLineOrientation(orient) {
   btnLineV.classList.toggle('active', orient === 'vertical');
   btnLineH.classList.toggle('text-gray-400', orient !== 'horizontal');
   btnLineV.classList.toggle('text-gray-400', orient !== 'vertical');
+  updateLineModeHint();
   saveSettings({ lineOrientation: orient });
+  tracker.reset();
+}
+function setLineDirection(dir) {
+  lineDirection = dir;
+  btnDirForward.classList.toggle('active', dir === 'forward');
+  btnDirReverse.classList.toggle('active', dir === 'reverse');
+  btnDirForward.classList.toggle('text-gray-400', dir !== 'forward');
+  btnDirReverse.classList.toggle('text-gray-400', dir !== 'reverse');
+  updateLineModeHint();
+  saveSettings({ lineDirection: dir });
+  tracker.reset();
+}
+function updateLineModeHint() {
+  if (countMode !== 'line') return;
+  const orient = lineOrientation === 'horizontal' ? 'Horizontal' : 'Vertical';
+  let dirText;
+  if (lineOrientation === 'horizontal') {
+    dirText = lineDirection === 'forward'
+      ? 'Entrada = cima→baixo · Saída = baixo→cima'
+      : 'Entrada = baixo→cima · Saída = cima→baixo';
+  } else {
+    dirText = lineDirection === 'forward'
+      ? 'Entrada = esq→dir · Saída = dir→esq'
+      : 'Entrada = dir→esq · Saída = esq→dir';
+  }
+  modeHint.textContent = 'Modo: Linha ' + orient + ' • ' + dirText + ' • clique no vídeo p/ posicionar';
 }
 
 function setupTabs() {
@@ -1057,10 +1161,8 @@ function setupListeners() {
   btnModeLine.addEventListener('click', () => setCountMode('line'));
   btnLineH.addEventListener('click', () => setLineOrientation('horizontal'));
   btnLineV.addEventListener('click', () => setLineOrientation('vertical'));
-  lineDirectionSelect.addEventListener('change', () => {
-    lineDirection = lineDirectionSelect.value;
-    saveSettings({ lineDirection });
-  });
+  btnDirForward.addEventListener('click', () => setLineDirection('forward'));
+  btnDirReverse.addEventListener('click', () => setLineDirection('reverse'));
   confidenceSlider.addEventListener('input', () => {
     confidenceValue.textContent = parseFloat(confidenceSlider.value).toFixed(2);
     saveSettings({ confidenceThreshold: parseFloat(confidenceSlider.value) });
@@ -1116,11 +1218,11 @@ async function init() {
   syncSupabaseCheck.checked = settings.syncSupabase !== false;
   countMode = settings.countMode || 'presence';
   lineOrientation = settings.lineOrientation || 'horizontal';
+  lineDirection = settings.lineDirection || 'forward';
   linePos = settings.linePos != null ? settings.linePos : 0.5;
-  lineDirection = settings.lineDirection || 'both';
-  lineDirectionSelect.value = lineDirection;
   setCountMode(countMode);
   setLineOrientation(lineOrientation);
+  setLineDirection(lineDirection);
 
   await testSupabaseConnection();
   await loadModel();
