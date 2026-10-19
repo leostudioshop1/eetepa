@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PeopleCounter Surveillance</title>
+  <title>CONTADOR PRESENÇA EETEPA</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
@@ -36,7 +36,7 @@
       <div class="flex items-center gap-3">
         <div class="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center font-bold text-sm">PC</div>
         <div>
-          <h1 class="font-semibold text-lg leading-tight">PeopleCounter Surveillance</h1>
+          <h1 class="font-semibold text-lg leading-tight">CONTADOR DE PRESENÇA EETEPA</h1>
           <p class="text-xs text-gray-400">Offline-first • Sync automático com Supabase</p>
         </div>
       </div>
@@ -84,20 +84,29 @@
           </div>
           <div>Na cena: <strong id="current-count" class="text-primary-500">0</strong></div>
           <div class="text-xs text-gray-500" id="mode-hint">Modo: Presença</div>
-          <div class="ml-auto flex gap-4 flex-wrap">
+          <div class="ml-auto flex gap-4 flex-wrap items-center">
             <label class="flex items-center gap-2 cursor-pointer" id="draw-line-label" style="display:none">
               <input type="checkbox" id="draw-line" class="rounded" /><span>Linha</span>
             </label>
+            
+            <div class="flex items-center gap-1 border border-gray-700 rounded-lg p-0.5" id="line-orient-group" style="display:none">
+              <button id="btn-line-h" class="mode-btn active px-2 py-1 rounded text-xs">Horizontal</button>
+              <button id="btn-line-v" class="mode-btn px-2 py-1 rounded text-xs text-gray-400">Vertical</button>
+            </div>
+
+            <div class="flex items-center gap-1 border border-gray-700 rounded-lg p-0.5" id="line-dir-group" style="display:none">
+              <select id="select-direction" class="bg-gray-800 border-none text-xs rounded px-2 py-1 focus:ring-0">
+                <option value="normal">↓ / → Entrada</option>
+                <option value="reverse">↑ / ← Entrada</option>
+              </select>
+            </div>
+
             <label class="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" id="blur-faces" class="rounded" /><span>Blur</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer" title="Quando online, envia cada evento ao Supabase">
               <input type="checkbox" id="sync-supabase" checked class="rounded" /><span>Sync auto</span>
             </label>
-            <div class="flex items-center gap-1 border border-gray-700 rounded-lg p-0.5" id="line-orient-group" style="display:none">
-              <button id="btn-line-h" class="mode-btn active px-2 py-1 rounded text-xs">H</button>
-              <button id="btn-line-v" class="mode-btn px-2 py-1 rounded text-xs text-gray-400">V</button>
-            </div>
           </div>
         </div>
       </section>
@@ -202,7 +211,6 @@
                 </button>
               </div>
               <p id="sync-result" class="text-xs text-gray-500 mt-3"></p>
-              <p class="text-xs text-gray-600 mt-2">Com internet e “Sync auto” ligado, cada evento vai direto ao banco. Sem internet, fica local e sobe quando a rede voltar (ou ao clicar em Sincronizar).</p>
             </div>
 
             <div class="bg-gray-900 rounded-xl p-5">
@@ -230,13 +238,11 @@
   </div>
 
 <script>
-/* ========== SUPABASE — mesmo padrão do acompanhamento.html (Livro Caixa) ========== */
-// Verificação de segurança da config (igual ao seu arquivo)
+/* ========== SUPABASE ========== */
 if (!window.SUPABASE_CONFIG) {
   alert("Erro: Configurações do Supabase não encontradas! Verifique o arquivo config.js");
 }
 
-// Cria o cliente Supabase (igual ao seu arquivo)
 const supabaseClient = supabase.createClient(
   window.SUPABASE_CONFIG.url,
   window.SUPABASE_CONFIG.key
@@ -278,9 +284,8 @@ async function testSupabaseConnection() {
     return false;
   }
   try {
-    // Mesmo estilo de query do seu acompanhamento.html (.from().select())
     const { data, error } = await supabaseClient
-      .from('people_count_events')
+      .from('feiraprofissoes')
       .select('id')
       .limit(1);
 
@@ -322,42 +327,29 @@ function eventToRow(e) {
   };
 }
 
-/** Envia 1 evento — mesmo padrão .from().insert() do seu projeto */
 async function pushOneToSupabase(event) {
   if (!isOnline) return false;
   const row = eventToRow(event);
   const { data, error } = await supabaseClient
-    .from('people_count_events')
+    .from('feiraprofissoes')
     .insert([row])
     .select();
 
   if (error) {
-    // se já existe (id duplicado), tenta update via upsert
     if (error.code === '23505' || (error.message && error.message.includes('duplicate'))) {
       const { error: err2 } = await supabaseClient
-        .from('people_count_events')
+        .from('feiraprofissoes')
         .upsert([row], { onConflict: 'id' });
-      if (err2) {
-        console.error('Erro ao enviar para Supabase:', err2);
-        return false;
-      }
+      if (err2) return false;
       return true;
     }
-    console.error('Erro ao enviar para Supabase:', error);
     return false;
   }
   return true;
 }
 
-/** Sincroniza pendentes em lote */
 async function syncPendingEvents() {
-  if (syncInProgress) return;
-  if (!isOnline) {
-    const el = document.getElementById('sync-result');
-    if (el) el.textContent = 'Sem conexão — nada sincronizado.';
-    return;
-  }
-
+  if (syncInProgress || !isOnline) return;
   syncInProgress = true;
   const el = document.getElementById('sync-result');
   if (el) el.textContent = 'Sincronizando...';
@@ -379,13 +371,11 @@ async function syncPendingEvents() {
       const batch = toSync.slice(i, i + batchSize);
       const rows = batch.map(eventToRow);
 
-      // igual ao padrão de insert do seu arquivo, em lote
       const { error } = await supabaseClient
-        .from('people_count_events')
+        .from('feiraprofissoes')
         .upsert(rows, { onConflict: 'id' });
 
       if (error) {
-        console.error(error);
         fail += batch.length;
       } else {
         await db.transaction('rw', db.events, async () => {
@@ -420,7 +410,6 @@ async function refreshPendingBadge() {
   }
 }
 
-/** Busca no Supabase — mesmo estilo .from().select().eq().order() do acompanhamento */
 async function fetchEventsFromSupabase(date, type) {
   if (!isOnline) {
     alert('Sem conexão com o Supabase.');
@@ -428,7 +417,7 @@ async function fetchEventsFromSupabase(date, type) {
   }
 
   let query = supabaseClient
-    .from('people_count_events')
+    .from('feiraprofissoes')
     .select('*')
     .eq('date', date)
     .order('timestamp', { ascending: false });
@@ -438,21 +427,17 @@ async function fetchEventsFromSupabase(date, type) {
   }
 
   const { data, error } = await query;
-
   if (error) {
-    console.error(error);
     alert('Erro ao carregar dados: ' + error.message);
     return [];
   }
   return data || [];
 }
 
-/* ========== ONLINE / OFFLINE ========== */
 window.addEventListener('online', async () => {
   isOnline = true;
   updateOnlineUI();
   await testSupabaseConnection();
-  // auto-sync quando a rede voltar
   if (document.getElementById('sync-supabase').checked) {
     await syncPendingEvents();
   }
@@ -472,7 +457,6 @@ function uuid() {
 }
 
 const db = new Dexie('PeopleCounterDB');
-// v2: campo synced (0 = pendente, 1 = no Supabase)
 db.version(1).stores({
   events: 'id, timestamp, date, hour, type, trackingId, sessionId',
   settings: 'id'
@@ -492,6 +476,7 @@ const DEFAULT_SETTINGS = {
   blurFaces: false,
   countMode: 'presence',
   lineOrientation: 'horizontal',
+  lineDirection: 'normal',
   linePos: 0.5,
   retentionDays: 30,
   syncSupabase: true
@@ -545,81 +530,123 @@ async function clearOldData(days) {
   await db.events.where('timestamp').below(cutoff.toISOString()).delete();
 }
 
-/* ========== TRACKER ========== */
+/* ========== TRACKER SUPORTA MÚLTIPLOS INDIVÍDUOS ========== */
 class PresenceTracker {
   constructor() {
     this.nextId = 1;
     this.tracks = new Map();
-    this.lostTimeout = 800;
-    this.minVisibleMs = 350;
-    this.maxMatchDist = 140;
+    this.lostTimeout = 1000;
+    this.minVisibleMs = 300;
   }
-  update(detections, mode, lineOrientation, linePos, videoW, videoH) {
+  
+  update(detections, mode, lineOrientation, lineDirection, linePos, videoW, videoH) {
     const now = Date.now();
     const events = [];
-    const usedTracks = new Set();
-    const matchedDetections = [];
 
-    for (const det of detections) {
+    // Matriz de distâncias para pareamento multifiltro
+    const trackEntries = Array.from(this.tracks.entries());
+    const matches = [];
+
+    detections.forEach((det, detIdx) => {
       const [x, y, w, h] = det.bbox;
-      const cx = x + w / 2, cy = y + h / 2, area = w * h;
-      let bestId = null, bestDist = this.maxMatchDist;
-      const adaptiveDist = this.maxMatchDist + (area < 5000 ? 50 : 0);
+      const cx = x + w / 2, cy = y + h / 2;
 
-      for (const [id, track] of this.tracks) {
-        if (usedTracks.has(id)) continue;
+      trackEntries.forEach(([id, track]) => {
         const dist = Math.hypot(cx - track.centroid.x, cy - track.centroid.y);
-        if (dist < bestDist && dist < adaptiveDist) { bestDist = dist; bestId = id; }
+        const maxDist = Math.max(160, Math.sqrt(w * h) * 1.5); // Adaptativo ao tamanho do indivíduo
+        if (dist <= maxDist) {
+          matches.push({ detIdx, trackId: id, dist });
+        }
+      });
+    });
+
+    // Ordena combinações do mais próximo para o mais distante
+    matches.sort((a, b) => a.dist - b.dist);
+
+    const assignedDetections = new Set();
+    const assignedTracks = new Set();
+
+    for (const match of matches) {
+      if (assignedDetections.has(match.detIdx) || assignedTracks.has(match.trackId)) continue;
+
+      assignedDetections.add(match.detIdx);
+      assignedTracks.add(match.trackId);
+
+      const det = detections[match.detIdx];
+      const track = this.tracks.get(match.trackId);
+      const [x, y, w, h] = det.bbox;
+      const cx = x + w / 2, cy = y + h / 2;
+
+      const prevX = track.centroid.x;
+      const prevY = track.centroid.y;
+
+      if (mode === 'line' && !track.counted) {
+        const isH = lineOrientation === 'horizontal';
+        const absPos = isH ? linePos * videoH : linePos * videoW;
+        let type = null;
+
+        if (isH) {
+          if (prevY < absPos && cy >= absPos) {
+            type = (lineDirection === 'normal') ? 'in' : 'out';
+          } else if (prevY > absPos && cy <= absPos) {
+            type = (lineDirection === 'normal') ? 'out' : 'in';
+          }
+        } else {
+          if (prevX < absPos && cx >= absPos) {
+            type = (lineDirection === 'normal') ? 'in' : 'out';
+          } else if (prevX > absPos && cx <= absPos) {
+            type = (lineDirection === 'normal') ? 'out' : 'in';
+          }
+        }
+
+        if (type) {
+          track.counted = true;
+          events.push({ id: track.id, type, confidence: det.score });
+        }
       }
 
-      if (bestId) {
-        const track = this.tracks.get(bestId);
-        const prevX = track.centroid.x, prevY = track.centroid.y;
-        if (mode === 'line' && !track.counted) {
-          const isH = lineOrientation === 'horizontal';
-          const absPos = isH ? linePos * videoH : linePos * videoW;
-          let type = null;
-          if (isH) {
-            if (prevY < absPos && cy >= absPos) type = 'in';
-            else if (prevY > absPos && cy <= absPos) type = 'out';
-          } else {
-            if (prevX < absPos && cx >= absPos) type = 'in';
-            else if (prevX > absPos && cx <= absPos) type = 'out';
-          }
-          if (type) { track.counted = true; events.push({ id: bestId, type, confidence: det.score }); }
-        }
-        track.centroid = { x: cx, y: cy };
-        track.lastSeen = now;
-        track.lastScore = det.score;
-        usedTracks.add(bestId);
-        det.trackingId = bestId;
-      } else {
-        const id = 't' + this.nextId++;
-        this.tracks.set(id, { id, centroid: { x: cx, y: cy }, firstSeen: now, lastSeen: now, lastScore: det.score, counted: false });
-        det.trackingId = id;
-      }
-      matchedDetections.push(det);
+      track.centroid = { x: cx, y: cy };
+      track.lastSeen = now;
+      track.lastScore = det.score;
+      det.trackingId = track.id;
     }
 
-    if (mode === 'presence') {
-      for (const [id, track] of this.tracks) {
-        if (usedTracks.has(id)) continue;
-        if (now - track.lastSeen > this.lostTimeout) {
-          const dur = track.lastSeen - (track.firstSeen || track.lastSeen);
+    // Cria novas trilhas para indivíduos não pareados
+    detections.forEach((det, detIdx) => {
+      if (!assignedDetections.has(detIdx)) {
+        const [x, y, w, h] = det.bbox;
+        const cx = x + w / 2, cy = y + h / 2;
+        const id = 't' + this.nextId++;
+        
+        this.tracks.set(id, {
+          id,
+          centroid: { x: cx, y: cy },
+          firstSeen: now,
+          lastSeen: now,
+          lastScore: det.score,
+          counted: false
+        });
+        det.trackingId = id;
+      }
+    });
+
+    // Trata rastros perdidos e saídas do modo Presença
+    for (const [id, track] of this.tracks) {
+      if (now - track.lastSeen > this.lostTimeout) {
+        if (mode === 'presence') {
+          const dur = track.lastSeen - track.firstSeen;
           if (!track.counted && dur >= this.minVisibleMs) {
             track.counted = true;
             events.push({ id, type: 'in', confidence: track.lastScore || 0.5 });
           }
-          this.tracks.delete(id);
         }
-      }
-    } else {
-      for (const [id, track] of this.tracks) {
-        if (now - track.lastSeen > this.lostTimeout * 2) this.tracks.delete(id);
+        this.tracks.delete(id);
       }
     }
-    return { detections: matchedDetections, events };
+
+    return { detections, events };
   }
+
   reset() { this.tracks.clear(); this.nextId = 1; }
 }
 
@@ -636,6 +663,7 @@ const btnModePresence = document.getElementById('btn-mode-presence');
 const btnModeLine = document.getElementById('btn-mode-line');
 const btnLineH = document.getElementById('btn-line-h');
 const btnLineV = document.getElementById('btn-line-v');
+const selectDirection = document.getElementById('select-direction');
 const confidenceSlider = document.getElementById('confidence');
 const confidenceValue = document.getElementById('confidence-value');
 const drawLineCheck = document.getElementById('draw-line');
@@ -643,6 +671,7 @@ const blurFacesCheck = document.getElementById('blur-faces');
 const syncSupabaseCheck = document.getElementById('sync-supabase');
 const modeHint = document.getElementById('mode-hint');
 const lineOrientGroup = document.getElementById('line-orient-group');
+const lineDirGroup = document.getElementById('line-dir-group');
 const drawLineLabel = document.getElementById('draw-line-label');
 const fpsEl = document.getElementById('fps');
 const currentCountEl = document.getElementById('current-count');
@@ -658,7 +687,7 @@ const dbCountEl = document.getElementById('db-count');
 let model = null, stream = null, animationId = null, sessionId = uuid();
 let tracker = new PresenceTracker();
 let isRunning = false, lastFpsTime = performance.now(), frameCount = 0;
-let countMode = 'presence', lineOrientation = 'horizontal', linePos = 0.5;
+let countMode = 'presence', lineOrientation = 'horizontal', lineDirection = 'normal', linePos = 0.5;
 let liveChart = null, hourlyChart = null, weeklyChart = null;
 const minuteBuffer = [];
 
@@ -673,7 +702,7 @@ async function loadModel() {
 
 async function detectPeople(threshold) {
   if (!model || video.readyState < 2) return [];
-  const predictions = await model.detect(video, 20);
+  const predictions = await model.detect(video, 30);
   return predictions.filter(p => p.class === 'person' && p.score >= threshold)
     .map(p => ({ bbox: p.bbox, class: p.class, score: p.score }));
 }
@@ -735,7 +764,7 @@ async function detectLoop() {
   const start = performance.now();
   try {
     const detections = await detectPeople(parseFloat(confidenceSlider.value));
-    const result = tracker.update(detections, countMode, lineOrientation, linePos, video.videoWidth, video.videoHeight);
+    const result = tracker.update(detections, countMode, lineOrientation, lineDirection, linePos, video.videoWidth, video.videoHeight);
     drawFrame(result.detections);
     for (const ev of result.events) await registerEvent(ev.type, ev.confidence, ev.id);
     currentCountEl.textContent = String(result.detections.length);
@@ -753,27 +782,32 @@ async function detectLoop() {
 function drawFrame(detections) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  
   if (countMode === 'line' && drawLineCheck.checked) {
     ctx.save();
     ctx.strokeStyle = '#22c55e';
     ctx.lineWidth = 3;
     ctx.setLineDash([10, 6]);
     ctx.beginPath();
+    
     if (lineOrientation === 'horizontal') {
       const y = linePos * canvas.height;
       ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
       ctx.setLineDash([]);
       ctx.fillStyle = '#22c55e'; ctx.font = 'bold 13px sans-serif';
-      ctx.fillText('LINHA', 10, y - 10);
+      const dirText = lineDirection === 'normal' ? '↓ ENTRADA / ↑ SAÍDA' : '↑ ENTRADA / ↓ SAÍDA';
+      ctx.fillText('LINHA (' + dirText + ')', 10, y - 10);
     } else {
       const x = linePos * canvas.width;
       ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
       ctx.setLineDash([]);
       ctx.fillStyle = '#22c55e'; ctx.font = 'bold 13px sans-serif';
-      ctx.fillText('LINHA', x + 8, 20);
+      const dirText = lineDirection === 'normal' ? '→ ENTRADA / ← SAÍDA' : '← ENTRADA / → SAÍDA';
+      ctx.fillText('LINHA (' + dirText + ')', x + 8, 20);
     }
     ctx.restore();
   }
+
   for (const det of detections) {
     const [x, y, w, h] = det.bbox;
     if (blurFacesCheck.checked) {
@@ -790,6 +824,7 @@ function drawFrame(detections) {
     ctx.font = 'bold 12px sans-serif';
     ctx.fillText(label, x + 4, Math.max(14, y - 6));
   }
+
   if (countMode === 'presence' && detections.length > 0) {
     ctx.fillStyle = 'rgba(34,197,94,0.15)';
     ctx.fillRect(0, 0, canvas.width, 28);
@@ -799,12 +834,6 @@ function drawFrame(detections) {
   }
 }
 
-/**
- * Fluxo offline-first:
- * 1. Sempre grava no IndexedDB (synced=0)
- * 2. Se online + Sync auto → tenta Supabase; se OK, synced=1
- * 3. Se offline ou falha → permanece pendente para sync depois
- */
 async function registerEvent(type, confidence, trackingId) {
   const now = new Date();
   const event = {
@@ -937,11 +966,11 @@ async function loadHistoryLocal() {
   events.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
   renderHistoryRows(events);
 }
+
 async function loadHistorySupabase() {
   const date = document.getElementById('filter-date').value || new Date().toISOString().slice(0, 10);
   const type = document.getElementById('filter-type').value;
   const events = await fetchEventsFromSupabase(date, type);
-  // dados do servidor já estão “synced”
   renderHistoryRows(events.map(e => ({ ...e, synced: 1, trackingId: e.tracking_id })));
 }
 
@@ -955,12 +984,14 @@ function eventsToCSV(events) {
   ]);
   return [headers.join(',')].concat(rows.map(r => r.map(c => '"' + c + '"').join(','))).join('\n');
 }
+
 function downloadCSV(csv, filename) {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
 }
+
 async function exportCSV(all) {
   let events;
   if (all) events = await getAllEvents();
@@ -971,8 +1002,9 @@ async function exportCSV(all) {
     events = await getEventsInRange(from, to);
   }
   if (!events.length) { alert('Nenhum evento'); return; }
-  downloadCSV(eventsToCSV(events), 'people_count_' + new Date().toISOString().slice(0, 10) + '.csv');
+  downloadCSV(eventsToCSV(events), 'feiraprofissoes_' + new Date().toISOString().slice(0, 10) + '.csv');
 }
+
 async function refreshDbCount() { dbCountEl.textContent = String(await countEvents()); }
 
 function setCountMode(mode) {
@@ -984,16 +1016,19 @@ function setCountMode(mode) {
   if (mode === 'presence') {
     modeHint.textContent = 'Modo: Presença • conta ao sair da câmera';
     lineOrientGroup.style.display = 'none';
+    lineDirGroup.style.display = 'none';
     drawLineLabel.style.display = 'none';
   } else {
     modeHint.textContent = 'Modo: Linha • clique no vídeo';
     lineOrientGroup.style.display = 'flex';
+    lineDirGroup.style.display = 'flex';
     drawLineLabel.style.display = 'flex';
     drawLineCheck.checked = true;
   }
   saveSettings({ countMode: mode });
   tracker.reset();
 }
+
 function setLineOrientation(orient) {
   lineOrientation = orient;
   btnLineH.classList.toggle('active', orient === 'horizontal');
@@ -1001,6 +1036,12 @@ function setLineOrientation(orient) {
   btnLineH.classList.toggle('text-gray-400', orient !== 'horizontal');
   btnLineV.classList.toggle('text-gray-400', orient !== 'vertical');
   saveSettings({ lineOrientation: orient });
+  tracker.reset();
+}
+
+function setLineDirection(dir) {
+  lineDirection = dir;
+  saveSettings({ lineDirection: dir });
   tracker.reset();
 }
 
@@ -1031,6 +1072,8 @@ function setupListeners() {
   btnModeLine.addEventListener('click', () => setCountMode('line'));
   btnLineH.addEventListener('click', () => setLineOrientation('horizontal'));
   btnLineV.addEventListener('click', () => setLineOrientation('vertical'));
+  selectDirection.addEventListener('change', e => setLineDirection(e.target.value));
+
   confidenceSlider.addEventListener('input', () => {
     confidenceValue.textContent = parseFloat(confidenceSlider.value).toFixed(2);
     saveSettings({ confidenceThreshold: parseFloat(confidenceSlider.value) });
@@ -1058,7 +1101,7 @@ function setupListeners() {
   document.getElementById('btn-sync-now').addEventListener('click', syncPendingEvents);
   document.getElementById('btn-test-supabase').addEventListener('click', async () => {
     const ok = await testSupabaseConnection();
-    alert(ok ? 'Conexão OK!' : 'Falha. Verifique internet, config.js e a tabela people_count_events.');
+    alert(ok ? 'Conexão OK!' : 'Falha. Verifique internet, config.js e a tabela feiraprofissoes.');
   });
   document.getElementById('btn-clear-data').addEventListener('click', async () => {
     if (confirm('Apagar TODOS os dados locais?')) {
@@ -1086,7 +1129,11 @@ async function init() {
   syncSupabaseCheck.checked = settings.syncSupabase !== false;
   countMode = settings.countMode || 'presence';
   lineOrientation = settings.lineOrientation || 'horizontal';
+  lineDirection = settings.lineDirection || 'normal';
   linePos = settings.linePos != null ? settings.linePos : 0.5;
+
+  selectDirection.value = lineDirection;
+
   setCountMode(countMode);
   setLineOrientation(lineOrientation);
 
@@ -1100,7 +1147,6 @@ async function init() {
   setupListeners();
   await clearOldData(settings.retentionDays);
 
-  // se já estiver online com pendentes, sincroniza ao abrir
   if (isOnline && syncSupabaseCheck.checked) {
     setTimeout(() => syncPendingEvents(), 1500);
   }
