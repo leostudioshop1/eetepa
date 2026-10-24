@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Total de Entradas — EETEPA</title>
+  <script src="https://cdn.jsdelivr.net/npm/dexie@4.0.10/dist/dexie.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0a0f;
+      color: #f1f5f9;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .bg-glow {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 40%, rgba(34, 197, 94, 0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 50% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .container {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 2rem;
+      width: 100%;
+      max-width: 100vw;
+    }
+    .label {
+      font-size: clamp(1rem, 3vw, 1.75rem);
+      font-weight: 500;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: #86efac;
+      margin-bottom: 0.5rem;
+      opacity: 0.9;
+    }
+    .sublabel {
+      font-size: clamp(0.75rem, 1.8vw, 1.1rem);
+      color: #64748b;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.08em;
+    }
+    .number-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    #total {
+      font-size: clamp(5rem, 28vw, 18rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      color: #f8fafc;
+      text-shadow:
+        0 0 40px rgba(34, 197, 94, 0.35),
+        0 0 80px rgba(34, 197, 94, 0.15);
+      transition: transform 0.25s ease, color 0.3s ease;
+      font-variant-numeric: tabular-nums;
+    }
+    #total.bump {
+      transform: scale(1.06);
+      color: #4ade80;
+    }
+    .meta {
+      margin-top: 2.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem 2.5rem;
+      justify-content: center;
+      align-items: center;
+      font-size: clamp(0.7rem, 1.5vw, 0.95rem);
+      color: #64748b;
+    }
+    .meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .dot.offline { background: #f97316; box-shadow: 0 0 8px #f97316; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.45; }
+    }
+    .footer {
+      position: absolute;
+      bottom: 1.25rem;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 0.7rem;
+      color: #334155;
+      letter-spacing: 0.05em;
+    }
+    /* Fullscreen hint */
+    .fs-hint {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-size: 0.7rem;
+      color: #475569;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <div class="fs-hint">Pressione F11 para tela cheia</div>
+
+  <div class="container">
+    <div class="label">Entradas</div>
+    <div class="sublabel">Total registrado no banco</div>
+    <div class="number-wrap">
+      <div id="total">—</div>
+    </div>
+    <div class="meta">
+      <span><span class="dot" id="status-dot"></span> <span id="status-text">Conectando…</span></span>
+      <span id="last-update">—</span>
+      <span id="today-info"></span>
+    </div>
+  </div>
+
+  <div class="footer">CONTADOR DE PRESENÇA EETEPA · sincroniza com o mesmo IndexedDB</div>
+
+  <script>
+    // Mesmo banco e schema do contador original
+    const db = new Dexie('PeopleCounterDB');
+    db.version(1).stores({
+      events: 'id, timestamp, date, hour, type, trackingId, sessionId',
+      settings: 'id'
+    });
+    db.version(2).stores({
+      events: 'id, timestamp, date, hour, type, trackingId, sessionId, synced',
+      settings: 'id'
+    });
+
+    const totalEl = document.getElementById('total');
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const lastUpdateEl = document.getElementById('last-update');
+    const todayInfoEl = document.getElementById('today-info');
+
+    let lastTotal = -1;
+    let refreshTimer = null;
+
+    function formatNumber(n) {
+      return n.toLocaleString('pt-BR');
+    }
+
+    function timeStr() {
+      return new Date().toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
+
+    async function loadTotal() {
+      try {
+        const allIn = await db.events.where('type').equals('in').count();
+        const today = new Date().toISOString().slice(0, 10);
+        const todayIn = await db.events
+          .where('date').equals(today)
+          .and(e => e.type === 'in')
+          .count();
+
+        // Animação quando o número muda
+        if (lastTotal >= 0 && allIn !== lastTotal) {
+          totalEl.classList.add('bump');
+          setTimeout(() => totalEl.classList.remove('bump'), 280);
+        }
+        lastTotal = allIn;
+
+        totalEl.textContent = formatNumber(allIn);
+        lastUpdateEl.textContent = 'Atualizado: ' + timeStr();
+        todayInfoEl.textContent = 'Hoje: ' + formatNumber(todayIn);
+        statusDot.classList.remove('offline');
+        statusText.textContent = 'Online · IndexedDB';
+      } catch (err) {
+        console.error(err);
+        statusDot.classList.add('offline');
+        statusText.textContent = 'Erro ao ler banco';
+        if (lastTotal < 0) totalEl.textContent = '—';
+      }
+    }
+
+    async function init() {
+      try {
+        await db.open();
+        await loadTotal();
+        // Atualiza a cada 2 segundos
+        refreshTimer = setInterval(loadTotal, 2000);
+      } catch (err) {
+        console.error(err);
+        statusDot.classList.add('offline');
+        statusText.textContent = 'Banco não encontrado';
+        totalEl.textContent = '0';
+      }
+    }
+
+    // Também atualiza quando a aba volta a ficar visível
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') loadTotal();
+    });
+
+    init();
+  </script>
+</body>
+</html>
