@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Vídeos</title>
+  <title>Vídeos - Diálogo com </title>
   <style>
     * {
       margin: 0;
@@ -133,16 +133,186 @@
   </button>
 
   <script>
-    const TOTAL_VIDEOS = 40;
     const SPONSORS_FILE = 'patrocinadores.mp4';
 
-    const numberWords = {
-      'zero': 0, 'oi bit': 1, 'uma': 1, 'como você está': 2, 'oi': 2, 'três': 3, 'tres': 3,
-      'quatro': 4, 'cinco': 5, 'seis': 6, 'sete': 7, 'oito': 8, 'nove': 9,
-      'dez': 10, 'onze': 11, 'doze': 12, 'treze': 13, 'quatorze': 14, 'catorze': 14,
-      'quinze': 15, 'dezesseis': 16, 'dezessete': 17, 'dezoito': 18, 'dezenove': 19,
-      'vinte': 20, 'trinta': 30, 'quarenta': 40
+    // =====================================================
+    // FRASES INTERROGATIVAS DE DIÁLOGO FICTÍCIO COM A 
+    // Cada frase dispara um vídeo específico
+    // =====================================================
+    const phraseMap = {
+      // Vídeos 1 a 10
+      "quem é voce": 1,
+      "voce pode me mostrar o video do bit": 1,
+      "tem alguem ai": 1,
+
+      "como voce esta": 2,
+      "oi oi oi": 2,
+      "tem alguem ai": 2,
+
+      "voce petista": 3,
+      "voce estuda": 3,
+      "aparece ai": 3,
+
+      " o que aconteceu no video quatro": 4,
+      "me mostra o video quatro por favor": 4,
+      "pode tocar o video quatro": 4,
+
+      " me conta sobre o video cinco": 5,
+      "o que tem no quinto video": 5,
+      "voce pode abrir o video cinco": 5,
+
+      " o que aconteceu no video seis": 6,
+      "me mostra o video seis": 6,
+      "pode reproduzir o sexto video": 6,
+
+      " me mostra o video sete": 7,
+      "o que tem no video sete": 7,
+      "voce pode tocar o video sete": 7,
+
+      " o que aconteceu no video oito": 8,
+      "me mostra o oitavo video": 8,
+      "pode abrir o video oito": 8,
+
+      " alguma novidade": 9,
+      "estou com fome": 9,
+      "tem comida ai": 9,
+
+      " esta ocupado": 10,
+      "calor danado": 10,
+      "uma chuva caia bem": 10,
+
+      // Vídeos 11 a 20
+      " o que aconteceu no video onze": 11,
+      "me mostra o video onze": 11,
+      "voce pode tocar o video onze": 11,
+
+      " me conta sobre o video doze": 12,
+      "o que tem no video doze": 12,
+      "pode abrir o video doze": 12,
+
+      " o que aconteceu no video treze": 13,
+      "me mostra o video treze": 13,
+      "voce pode reproduzir o video treze": 13,
+
+      " me mostra o video quatorze": 14,
+      "o que tem no video quatorze": 14,
+      "pode tocar o video quatorze": 14,
+
+      " o que aconteceu no video quinze": 15,
+      "me conta sobre o video quinze": 15,
+      "voce pode mostrar o video quinze": 15,
+
+      " me mostra o video dezesseis": 16,
+      "o que tem no video dezesseis": 16,
+      "pode abrir o video dezesseis": 16,
+
+      " o que aconteceu no video dezessete": 17,
+      "me mostra o video dezessete": 17,
+      "voce pode tocar o video dezessete": 17,
+
+      " me conta o que tem no video dezoito": 18,
+      "o que aconteceu no video dezoito": 18,
+      "pode reproduzir o video dezoito": 18,
+
+      " o que tem no video dezenove": 19,
+      "me mostra o video dezenove": 19,
+      "voce pode abrir o video dezenove": 19,
+
+      " o que aconteceu no video vinte": 20,
+      "me mostra o video vinte": 20,
+      "pode tocar o video vinte": 20,
+
+      // Vídeos 21 a 30
+      " o que aconteceu no video vinte e um": 21,
+      "me mostra o video vinte e um": 21,
+      "voce pode reproduzir o video vinte e um": 21,
+
+      " me conta sobre o video vinte e dois": 22,
+      "o que tem no video vinte e dois": 22,
+      "pode abrir o video vinte e dois": 22,
+
+      " o que aconteceu no video vinte e tres": 23,
+      "me mostra o video vinte e tres": 23,
+      "voce pode tocar o video vinte e tres": 23,
+
+      " me mostra o video vinte e quatro": 24,
+      "o que tem no video vinte e quatro": 24,
+      "pode reproduzir o video vinte e quatro": 24,
+
+      " o que aconteceu no video vinte e cinco": 25,
+      "me conta o que tem no video vinte e cinco": 25,
+      "voce pode mostrar o video vinte e cinco": 25,
+
+      " me mostra o video vinte e seis": 26,
+      "o que tem no video vinte e seis": 26,
+      "pode abrir o video vinte e seis": 26,
+
+      " o que aconteceu no video vinte e sete": 27,
+      "me mostra o video vinte e sete": 27,
+      "voce pode tocar o video vinte e sete": 27,
+
+      " me conta sobre o video vinte e oito": 28,
+      "o que tem no video vinte e oito": 28,
+      "pode reproduzir o video vinte e oito": 28,
+
+      " o que aconteceu no video vinte e nove": 29,
+      "me mostra o video vinte e nove": 29,
+      "voce pode abrir o video vinte e nove": 29,
+
+      " o que tem no video trinta": 30,
+      "me mostra o video trinta": 30,
+      "pode tocar o video trinta": 30,
+
+      // Vídeos 31 a 40
+      " o que aconteceu no video trinta e um": 31,
+      "me mostra o video trinta e um": 31,
+      "voce pode reproduzir o video trinta e um": 31,
+
+      " me conta sobre o video trinta e dois": 32,
+      "o que tem no video trinta e dois": 32,
+      "pode abrir o video trinta e dois": 32,
+
+      " o que aconteceu no video trinta e tres": 33,
+      "me mostra o video trinta e tres": 33,
+      "voce pode tocar o video trinta e tres": 33,
+
+      " me mostra o video trinta e quatro": 34,
+      "o que tem no video trinta e quatro": 34,
+      "pode reproduzir o video trinta e quatro": 34,
+
+      " o que aconteceu no video trinta e cinco": 35,
+      "me conta o que tem no video trinta e cinco": 35,
+      "voce pode mostrar o video trinta e cinco": 35,
+
+      " me mostra o video trinta e seis": 36,
+      "o que tem no video trinta e seis": 36,
+      "pode abrir o video trinta e seis": 36,
+
+      " o que aconteceu no video trinta e sete": 37,
+      "me mostra o video trinta e sete": 37,
+      "voce pode tocar o video trinta e sete": 37,
+
+      " me conta sobre o video trinta e oito": 38,
+      "o que tem no video trinta e oito": 38,
+      "pode reproduzir o video trinta e oito": 38,
+
+      " o que aconteceu no video trinta e nove": 39,
+      "me mostra o video trinta e nove": 39,
+      "voce pode abrir o video trinta e nove": 39,
+
+      " o que tem no video quarenta": 40,
+      "me mostra o video quarenta": 40,
+      "pode tocar o video quarenta": 40,
+
+      // Frase para voltar aos patrocinadores (opcional)
+      " volta para os patrocinadores": "sponsors",
+      "mostrar patrocinadores": "sponsors",
+      "voltar para o inicio": "sponsors"
     };
+
+    // =====================================================
+    // RESTANTE DO CÓDIGO
+    // =====================================================
 
     const player = document.getElementById('player');
     const btnToggle = document.getElementById('btnToggle');
@@ -166,52 +336,26 @@
       }, 4000);
     }
 
-    function extractNumber(transcript) {
-      const text = transcript.toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^\w\s]/g, ' ')
+    // Normaliza o texto para facilitar a comparação
+    function normalizeText(text) {
+      return text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // remove acentos
+        .replace(/[^\w\s]/g, ' ')       // remove pontuação
         .replace(/\s+/g, ' ')
         .trim();
+    }
 
-      const digitMatch = text.match(/\b([1-9]|[1-3][0-9]|40)\b/);
-      if (digitMatch) {
-        const num = parseInt(digitMatch[1], 10);
-        if (num >= 1 && num <= TOTAL_VIDEOS) return num;
-      }
+    // Procura se alguma frase do mapa está contida no que foi falado
+    function findMatchingPhrase(transcript) {
+      const normalized = normalizeText(transcript);
 
-      const compounds = [
-        { re: /\bvinte\s+e\s+um\b/, n: 21 },
-        { re: /\bvinte\s+e\s+dois\b/, n: 22 },
-        { re: /\bvinte\s+e\s+tres\b/, n: 23 },
-        { re: /\bvinte\s+e\s+quatro\b/, n: 24 },
-        { re: /\bvinte\s+e\s+cinco\b/, n: 25 },
-        { re: /\bvinte\s+e\s+seis\b/, n: 26 },
-        { re: /\bvinte\s+e\s+sete\b/, n: 27 },
-        { re: /\bvinte\s+e\s+oito\b/, n: 28 },
-        { re: /\bvinte\s+e\s+nove\b/, n: 29 },
-        { re: /\btrinta\s+e\s+um\b/, n: 31 },
-        { re: /\btrinta\s+e\s+dois\b/, n: 32 },
-        { re: /\btrinta\s+e\s+tres\b/, n: 33 },
-        { re: /\btrinta\s+e\s+quatro\b/, n: 34 },
-        { re: /\btrinta\s+e\s+cinco\b/, n: 35 },
-        { re: /\btrinta\s+e\s+seis\b/, n: 36 },
-        { re: /\btrinta\s+e\s+sete\b/, n: 37 },
-        { re: /\btrinta\s+e\s+oito\b/, n: 38 },
-        { re: /\btrinta\s+e\s+nove\b/, n: 39 }
-      ];
-
-      for (const c of compounds) {
-        if (c.re.test(text)) return c.n;
-      }
-
-      const words = text.split(' ');
-      for (const word of words) {
-        if (numberWords[word] !== undefined) {
-          const n = numberWords[word];
-          if (n >= 1 && n <= TOTAL_VIDEOS) return n;
+      for (const [phrase, value] of Object.entries(phraseMap)) {
+        if (normalized.includes(phrase)) {
+          return value;
         }
       }
-
       return null;
     }
 
@@ -325,10 +469,16 @@
         if (!last.isFinal) return;
 
         const transcript = last[0].transcript.trim();
-        const number = extractNumber(transcript);
+        console.log('Falado:', transcript); // útil para debug
 
-        if (number !== null) {
-          playVideo(number);
+        const match = findMatchingPhrase(transcript);
+
+        if (match !== null) {
+          if (match === 'sponsors') {
+            playSponsors();
+          } else {
+            playVideo(match);
+          }
         }
       };
 
