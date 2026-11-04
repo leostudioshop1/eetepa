@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Contador de Pessoas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dexie@4.0.10/dist/dexie.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    body { font-family: system-ui, -apple-system, sans-serif; overscroll-behavior: none; }
+    #canvas { touch-action: none; }
+    .big-num { font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+    .flash-in { animation: flash-in 0.5s ease-out; }
+    .flash-out { animation: flash-out 0.5s ease-out; }
+    @keyframes flash-in { 0% { background-color: rgba(34,197,94,0.35); } 100% { background-color: transparent; } }
+    @keyframes flash-out { 0% { background-color: rgba(239,68,68,0.35); } 100% { background-color: transparent; } }
+  </style>
+</head>
+<body class="bg-gray-950 text-white min-h-screen flex flex-col">
+
+  <!-- STATUS BAR -->
+  <header class="px-4 pt-3 pb-2 flex items-center justify-between gap-2 text-xs">
+    <div class="font-semibold text-sm tracking-wide">👥 CONTADOR</div>
+    <div class="flex items-center gap-2">
+      <span id="online-badge" class="px-2.5 py-1 rounded-full bg-gray-800 text-gray-400">—</span>
+      <span id="status-badge" class="px-2.5 py-1 rounded-full bg-gray-800 text-gray-400">Parado</span>
+    </div>
+  </header>
+
+  <!-- NÚMEROS PRINCIPAIS -->
+  <section class="px-4 pt-2 pb-3 grid grid-cols-2 gap-3">
+    <div class="bg-gray-900 rounded-2xl p-4 text-center border border-gray-800">
+      <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Na cena</div>
+      <div id="current-count" class="big-num text-6xl font-bold text-cyan-400 leading-none">0</div>
+    </div>
+    <div class="bg-gray-900 rounded-2xl p-4 text-center border border-gray-800">
+      <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Pico hoje</div>
+      <div id="peak-hour" class="big-num text-4xl font-bold text-yellow-400 leading-none mt-2">--</div>
+    </div>
+  </section>
+
+  <section class="px-4 pb-3 grid grid-cols-2 gap-3">
+    <div id="card-in" class="bg-gray-900 rounded-2xl p-5 text-center border border-gray-800">
+      <div class="text-xs text-green-500/80 uppercase tracking-wider mb-1">Entradas</div>
+      <div id="total-in" class="big-num text-5xl font-bold text-green-400 leading-none">0</div>
+      <div class="text-[10px] text-gray-500 mt-1">hoje</div>
+    </div>
+    <div id="card-out" class="bg-gray-900 rounded-2xl p-5 text-center border border-gray-800">
+      <div class="text-xs text-red-500/80 uppercase tracking-wider mb-1">Saídas</div>
+      <div id="total-out" class="big-num text-5xl font-bold text-red-400 leading-none">0</div>
+      <div class="text-[10px] text-gray-500 mt-1">hoje</div>
+    </div>
+  </section>
+
+  <!-- VÍDEO -->
+  <section class="flex-1 relative bg-black mx-3 rounded-2xl overflow-hidden border border-gray-800 min-h-[180px]">
+    <video id="video" class="absolute inset-0 w-full h-full object-contain hidden" playsinline muted></video>
+    <canvas id="canvas" class="absolute inset-0 w-full h-full object-contain"></canvas>
+    <div id="placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 p-6 text-center">
+      <div class="text-4xl mb-3">📹</div>
+      <p class="text-sm font-medium">Toque em Iniciar</p>
+      <p class="text-xs mt-1 text-gray-600">Câmera do celular</p>
+    </div>
+  </section>
+
+  <!-- CONTROLES -->
+  <section class="px-4 py-4 space-y-3">
+    <div class="flex gap-3">
+      <button id="btn-start" class="flex-1 py-4 rounded-2xl bg-blue-600 active:bg-blue-700 text-lg font-semibold">
+        ▶ Iniciar
+      </button>
+      <button id="btn-stop" class="flex-1 py-4 rounded-2xl bg-red-700 active:bg-red-800 text-lg font-semibold hidden">
+        ⏹ Parar
+      </button>
+    </div>
+
+    <div class="flex items-center justify-between text-sm text-gray-400 px-1">
+      <span>Confiança</span>
+      <div class="flex items-center gap-2">
+        <input id="confidence" type="range" min="0.15" max="0.85" step="0.05" value="0.30" class="w-28 accent-blue-500" />
+        <span id="confidence-value" class="w-8 text-right">0.30</span>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between text-xs text-gray-500 px-1">
+      <span>FPS: <strong id="fps" class="text-gray-300">0</strong></span>
+      <span id="pending-text">0 pendente</span>
+      <span id="supabase-text">Supabase —</span>
+    </div>
+  </section>
+
+  <!-- ÚLTIMOS EVENTOS (compacto) -->
+  <section class="px-4 pb-6">
+    <div class="text-xs text-gray-500 mb-2 uppercase tracking-wider">Últimos eventos</div>
+    <div id="live-events" class="space-y-1.5 max-h-28 overflow-y-auto text-sm">
+      <p class="text-gray-600 text-center py-2">Nenhum ainda</p>
+    </div>
+  </section>
+
+<script>
+/* ========== SUPABASE ========== */
+if (!window.SUPABASE_CONFIG) {
+  console.warn("config.js não encontrado — modo só local");
+}
+const supabaseClient = window.SUPABASE_CONFIG
+  ? supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key)
+  : null;
+
+let supabaseOk = false;
+let isOnline = navigator.onLine;
+let syncInProgress = false;
+
+function updateOnlineUI() {
+  const badge = document.getElementById('online-badge');
+  if (isOnline) {
+    badge.textContent = '● Online';
+    badge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-green-900 text-green-300';
+  } else {
+    badge.textContent = '○ Offline';
+    badge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-orange-900 text-orange-300';
+  }
+}
+
+async function testSupabaseConnection() {
+  const el = document.getElementById('supabase-text');
+  if (!supabaseClient || !isOnline) {
+    el.textContent = isOnline ? 'Supabase: sem config' : 'Supabase: offline';
+    supabaseOk = false;
+    return false;
+  }
+  try {
+    const { error } = await supabaseClient.from('feiraprofissoes').select('id').limit(1);
+    if (error) {
+      el.textContent = 'Supabase: erro';
+      supabaseOk = false;
+      return false;
+    }
+    el.textContent = 'Supabase: OK';
+    supabaseOk = true;
+    return true;
+  } catch {
+    el.textContent = 'Supabase: erro';
+    supabaseOk = false;
+    return false;
+  }
+}
+
+function eventToRow(e) {
+  return {
+    id: e.id,
+    timestamp: e.timestamp,
+    date: e.date,
+    hour: e.hour,
+    type: e.type,
+    confidence: e.confidence,
+    tracking_id: e.trackingId,
+    session_id: e.sessionId,
+    zone: e.zone || 'main',
+    source: e.zone || 'presence'
+  };
+}
+
+async function pushOneToSupabase(event) {
+  if (!isOnline || !supabaseClient) return false;
+  const row = eventToRow(event);
+  const { error } = await supabaseClient.from('feiraprofissoes').insert([row]).select();
+  if (error) {
+    if (error.code === '23505' || (error.message && error.message.includes('duplicate'))) {
+      const { error: err2 } = await supabaseClient.from('feiraprofissoes').upsert([row], { onConflict: 'id' });
+      return !err2;
+    }
+    return false;
+  }
+  return true;
+}
+
+async function syncPendingEvents() {
+  if (syncInProgress || !isOnline || !supabaseClient) return;
+  syncInProgress = true;
+  try {
+    const all = await getAllEvents();
+    const toSync = all.filter(e => e.synced !== 1 && e.synced !== true);
+    if (toSync.length === 0) return;
+    const batchSize = 50;
+    for (let i = 0; i < toSync.length; i += batchSize) {
+      const batch = toSync.slice(i, i + batchSize);
+      const rows = batch.map(eventToRow);
+      const { error } = await supabaseClient.from('feiraprofissoes').upsert(rows, { onConflict: 'id' });
+      if (!error) {
+        await db.transaction('rw', db.events, async () => {
+          for (const e of batch) await db.events.update(e.id, { synced: 1 });
+        });
+      }
+    }
+    await refreshPendingBadge();
+  } finally {
+    syncInProgress = false;
+  }
+}
+
+async function refreshPendingBadge() {
+  const all = await getAllEvents();
+  const pending = all.filter(e => e.synced !== 1 && e.synced !== true).length;
+  document.getElementById('pending-text').textContent = pending + ' pendente' + (pending !== 1 ? 's' : '');
+}
+
+window.addEventListener('online', async () => {
+  isOnline = true;
+  updateOnlineUI();
+  await testSupabaseConnection();
+  await syncPendingEvents();
+});
+window.addEventListener('offline', () => {
+  isOnline = false;
+  updateOnlineUI();
+  testSupabaseConnection();
+});
+
+/* ========== DB ========== */
+function uuid() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+const db = new Dexie('PeopleCounterDB');
+db.version(1).stores({ events: 'id, timestamp, date, hour, type, trackingId, sessionId', settings: 'id' });
+db.version(2).stores({ events: 'id, timestamp, date, hour, type, trackingId, sessionId, synced', settings: 'id' })
+  .upgrade(tx => tx.table('events').toCollection().modify(e => { if (e.synced === undefined) e.synced = 0; }));
+
+async function addEvent(event) { await db.events.add(event); }
+async function getEventsByDate(date) { return db.events.where('date').equals(date).toArray(); }
+async function getAllEvents() { return db.events.orderBy('timestamp').toArray(); }
+
+async function getTodayStats() {
+  const today = new Date().toISOString().slice(0, 10);
+  const events = await getEventsByDate(today);
+  const totalIn = events.filter(e => e.type === 'in').length;
+  const totalOut = events.filter(e => e.type === 'out').length;
+  const byHour = {};
+  events.forEach(e => { byHour[e.hour] = (byHour[e.hour] || 0) + 1; });
+  let peakHour = -1, peakCount = 0;
+  Object.entries(byHour).forEach(([h, c]) => { if (c > peakCount) { peakCount = c; peakHour = Number(h); } });
+  return { totalIn, totalOut, peakHour };
+}
+
+/* ========== TRACKER (só presença) ========== */
+class PresenceTracker {
+  constructor() {
+    this.nextId = 1;
+    this.tracks = new Map();
+    this.lostTimeout = 800;
+    this.minVisibleMs = 350;
+    this.maxMatchDist = 140;
+  }
+  update(detections) {
+    const now = Date.now();
+    const events = [];
+    const usedTracks = new Set();
+
+    for (const det of detections) {
+      const [x, y, w, h] = det.bbox;
+      const cx = x + w / 2, cy = y + h / 2, area = w * h;
+      let bestId = null, bestDist = this.maxMatchDist;
+      const adaptiveDist = this.maxMatchDist + (area < 5000 ? 50 : 0);
+
+      for (const [id, track] of this.tracks) {
+        if (usedTracks.has(id)) continue;
+        const dist = Math.hypot(cx - track.centroid.x, cy - track.centroid.y);
+        if (dist < bestDist && dist < adaptiveDist) { bestDist = dist; bestId = id; }
+      }
+
+      if (bestId) {
+        const track = this.tracks.get(bestId);
+        track.centroid = { x: cx, y: cy };
+        track.lastSeen = now;
+        track.lastScore = det.score;
+        usedTracks.add(bestId);
+        det.trackingId = bestId;
+      } else {
+        const id = 't' + this.nextId++;
+        this.tracks.set(id, { id, centroid: { x: cx, y: cy }, firstSeen: now, lastSeen: now, lastScore: det.score, counted: false });
+        det.trackingId = id;
+      }
+    }
+
+    for (const [id, track] of this.tracks) {
+      if (usedTracks.has(id)) continue;
+      if (now - track.lastSeen > this.lostTimeout) {
+        const dur = track.lastSeen - (track.firstSeen || track.lastSeen);
+        if (!track.counted && dur >= this.minVisibleMs) {
+          track.counted = true;
+          events.push({ id, type: 'in', confidence: track.lastScore || 0.5 });
+        }
+        this.tracks.delete(id);
+      }
+    }
+    return { detections, events };
+  }
+  reset() { this.tracks.clear(); this.nextId = 1; }
+}
+
+/* ========== APP ========== */
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const placeholder = document.getElementById('placeholder');
+const statusBadge = document.getElementById('status-badge');
+const btnStart = document.getElementById('btn-start');
+const btnStop = document.getElementById('btn-stop');
+const confidenceSlider = document.getElementById('confidence');
+const confidenceValue = document.getElementById('confidence-value');
+const fpsEl = document.getElementById('fps');
+const currentCountEl = document.getElementById('current-count');
+const totalInEl = document.getElementById('total-in');
+const totalOutEl = document.getElementById('total-out');
+const peakHourEl = document.getElementById('peak-hour');
+const liveEventsEl = document.getElementById('live-events');
+const cardIn = document.getElementById('card-in');
+const cardOut = document.getElementById('card-out');
+
+let model = null, stream = null, animationId = null, sessionId = uuid();
+let tracker = new PresenceTracker();
+let isRunning = false, lastFpsTime = performance.now(), frameCount = 0;
+
+async function loadModel() {
+  if (model) return;
+  statusBadge.textContent = 'Carregando IA...';
+  statusBadge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-900 text-yellow-300';
+  model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
+  statusBadge.textContent = 'Pronto';
+  statusBadge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400';
+}
+
+async function detectPeople(threshold) {
+  if (!model || video.readyState < 2) return [];
+  const predictions = await model.detect(video, 15);
+  return predictions
+    .filter(p => p.class === 'person' && p.score >= threshold)
+    .map(p => ({ bbox: p.bbox, class: p.class, score: p.score }));
+}
+
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+    startVideo(stream);
+  } catch (e) {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      startVideo(stream);
+    } catch (e2) {
+      alert('Não foi possível acessar a câmera.');
+    }
+  }
+}
+
+function startVideo(mediaStream) {
+  video.srcObject = mediaStream;
+  video.classList.remove('hidden');
+  placeholder.classList.add('hidden');
+  btnStop.classList.remove('hidden');
+  btnStart.classList.add('hidden');
+  video.onloadedmetadata = () => {
+    video.play();
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    isRunning = true;
+    sessionId = uuid();
+    tracker.reset();
+    statusBadge.textContent = '● Monitorando';
+    statusBadge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-green-900 text-green-300';
+    detectLoop();
+  };
+  mediaStream.getVideoTracks()[0].onended = () => stopVideo();
+}
+
+function stopVideo() {
+  isRunning = false;
+  if (animationId) cancelAnimationFrame(animationId);
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  video.srcObject = null;
+  video.classList.add('hidden');
+  placeholder.classList.remove('hidden');
+  btnStop.classList.add('hidden');
+  btnStart.classList.remove('hidden');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  statusBadge.textContent = 'Parado';
+  statusBadge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400';
+  currentCountEl.textContent = '0';
+}
+
+async function detectLoop() {
+  if (!isRunning) return;
+  const start = performance.now();
+  try {
+    const detections = await detectPeople(parseFloat(confidenceSlider.value));
+    const result = tracker.update(detections);
+    drawFrame(result.detections);
+    for (const ev of result.events) await registerEvent(ev.type, ev.confidence, ev.id);
+    currentCountEl.textContent = String(result.detections.length);
+    frameCount++;
+    if (performance.now() - lastFpsTime >= 1000) {
+      fpsEl.textContent = String(frameCount);
+      frameCount = 0;
+      lastFpsTime = performance.now();
+    }
+  } catch (e) { console.error(e); }
+  const delay = Math.max(0, 40 - (performance.now() - start));
+  setTimeout(() => { animationId = requestAnimationFrame(detectLoop); }, delay);
+}
+
+function drawFrame(detections) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  for (const det of detections) {
+    const [x, y, w, h] = det.bbox;
+    ctx.strokeStyle = '#22d3ee';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x, y, w, h);
+    const label = (det.score * 100).toFixed(0) + '%';
+    ctx.fillStyle = 'rgba(34,211,238,0.9)';
+    ctx.fillRect(x, Math.max(0, y - 22), ctx.measureText(label).width + 10, 22);
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText(label, x + 5, Math.max(16, y - 6));
+  }
+}
+
+async function registerEvent(type, confidence, trackingId) {
+  const now = new Date();
+  const event = {
+    id: uuid(),
+    timestamp: now.toISOString(),
+    date: now.toISOString().slice(0, 10),
+    hour: now.getHours(),
+    type,
+    confidence,
+    trackingId,
+    sessionId,
+    zone: 'presence',
+    synced: 0
+  };
+
+  await addEvent(event);
+  addLiveEvent(event);
+  await refreshStats();
+  await refreshPendingBadge();
+
+  if (isOnline && supabaseClient) {
+    const ok = await pushOneToSupabase(event);
+    if (ok) {
+      await db.events.update(event.id, { synced: 1 });
+      await refreshPendingBadge();
+    }
+  }
+}
+
+function addLiveEvent(event) {
+  const empty = liveEventsEl.querySelector('p');
+  if (empty) empty.remove();
+  const div = document.createElement('div');
+  div.className = 'flex items-center justify-between px-3 py-2 rounded-xl bg-gray-900 ' + (event.type === 'in' ? 'flash-in' : 'flash-out');
+  div.innerHTML =
+    '<div class="flex items-center gap-2">' +
+      '<span class="text-lg">' + (event.type === 'in' ? '🟢' : '🔴') + '</span>' +
+      '<span class="font-medium">' + (event.type === 'in' ? 'Entrada' : 'Saída') + '</span>' +
+    '</div>' +
+    '<div class="text-xs text-gray-400">' + new Date(event.timestamp).toLocaleTimeString('pt-BR') + '</div>';
+  liveEventsEl.prepend(div);
+  while (liveEventsEl.children.length > 8) liveEventsEl.lastChild.remove();
+
+  if (event.type === 'in') {
+    cardIn.classList.add('flash-in');
+    setTimeout(() => cardIn.classList.remove('flash-in'), 500);
+  } else {
+    cardOut.classList.add('flash-out');
+    setTimeout(() => cardOut.classList.remove('flash-out'), 500);
+  }
+}
+
+async function refreshStats() {
+  const stats = await getTodayStats();
+  totalInEl.textContent = String(stats.totalIn);
+  totalOutEl.textContent = String(stats.totalOut);
+  peakHourEl.textContent = stats.peakHour >= 0 ? stats.peakHour + 'h' : '--';
+}
+
+btnStart.addEventListener('click', startCamera);
+btnStop.addEventListener('click', stopVideo);
+confidenceSlider.addEventListener('input', () => {
+  confidenceValue.textContent = parseFloat(confidenceSlider.value).toFixed(2);
+});
+
+async function init() {
+  updateOnlineUI();
+  await testSupabaseConnection();
+  await loadModel();
+  await refreshStats();
+  await refreshPendingBadge();
+  if (isOnline) setTimeout(() => syncPendingEvents(), 1200);
+}
+
+init().catch(console.error);
+</script>
+</body>
+</html>
