@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Total de Entradas — EETEPA</title>
-  <script src="https://cdn.jsdelivr.net/npm/dexie@4.0.10/dist/dexie.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
@@ -97,6 +98,7 @@
       animation: pulse 2s ease-in-out infinite;
     }
     .dot.offline { background: #f97316; box-shadow: 0 0 8px #f97316; }
+    .dot.error { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.45; }
@@ -111,7 +113,6 @@
       color: #334155;
       letter-spacing: 0.05em;
     }
-    /* Fullscreen hint */
     .fs-hint {
       position: absolute;
       top: 1rem;
@@ -128,7 +129,7 @@
 
   <div class="container">
     <div class="label">Entradas</div>
-    <div class="sublabel">Total registrado no banco</div>
+    <div class="sublabel">Total registrado no Supabase</div>
     <div class="number-wrap">
       <div id="total">—</div>
     </div>
@@ -139,19 +140,18 @@
     </div>
   </div>
 
-  <div class="footer">CONTADOR DE PRESENÇA EETEPA · sincroniza com o mesmo IndexedDB</div>
+  <div class="footer">CONTADOR DE PRESENÇA EETEPA · dados em tempo real da tabela feiraprofissoes</div>
 
   <script>
-    // Mesmo banco e schema do contador original
-    const db = new Dexie('PeopleCounterDB');
-    db.version(1).stores({
-      events: 'id, timestamp, date, hour, type, trackingId, sessionId',
-      settings: 'id'
-    });
-    db.version(2).stores({
-      events: 'id, timestamp, date, hour, type, trackingId, sessionId, synced',
-      settings: 'id'
-    });
+    if (!window.SUPABASE_CONFIG) {
+      document.getElementById('status-text').textContent = 'config.js ausente';
+      document.getElementById('status-dot').classList.add('error');
+      console.error('config.js não encontrado');
+    }
+
+    const supabaseClient = window.SUPABASE_CONFIG
+      ? supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key)
+      : null;
 
     const totalEl = document.getElementById('total');
     const statusDot = document.getElementById('status-dot');
@@ -174,16 +174,46 @@
       });
     }
 
-    async function loadTotal() {
-      try {
-        const allIn = await db.events.where('type').equals('in').count();
-        const today = new Date().toISOString().slice(0, 10);
-        const todayIn = await db.events
-          .where('date').equals(today)
-          .and(e => e.type === 'in')
-          .count();
+    async function countFromSupabase(filter) {
+      if (!supabaseClient) throw new Error('Sem cliente Supabase');
 
-        // Animação quando o número muda
+      let query = supabaseClient
+        .from('feiraprofissoes')
+        .select('*', { count: 'exact', head: true })
+        .eq('type', 'in');
+
+      if (filter && filter.date) {
+        query = query.eq('date', filter.date);
+      }
+
+      const { count, error } = await query;
+      if (error) throw error;
+      return count ?? 0;
+    }
+
+    async function loadTotal() {
+      if (!supabaseClient) {
+        statusDot.classList.add('error');
+        statusDot.classList.remove('offline');
+        statusText.textContent = 'Sem config Supabase';
+        return;
+      }
+
+      if (!navigator.onLine) {
+        statusDot.classList.add('offline');
+        statusDot.classList.remove('error');
+        statusText.textContent = 'Sem internet';
+        return;
+      }
+
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+
+        const [allIn, todayIn] = await Promise.all([
+          countFromSupabase(),
+          countFromSupabase({ date: today })
+        ]);
+
         if (lastTotal >= 0 && allIn !== lastTotal) {
           totalEl.classList.add('bump');
           setTimeout(() => totalEl.classList.remove('bump'), 280);
@@ -193,33 +223,32 @@
         totalEl.textContent = formatNumber(allIn);
         lastUpdateEl.textContent = 'Atualizado: ' + timeStr();
         todayInfoEl.textContent = 'Hoje: ' + formatNumber(todayIn);
-        statusDot.classList.remove('offline');
-        statusText.textContent = 'Online · IndexedDB';
+
+        statusDot.classList.remove('offline', 'error');
+        statusText.textContent = 'Online · Supabase';
       } catch (err) {
         console.error(err);
-        statusDot.classList.add('offline');
-        statusText.textContent = 'Erro ao ler banco';
+        statusDot.classList.add('error');
+        statusDot.classList.remove('offline');
+        statusText.textContent = 'Erro: ' + (err.message || 'falha na consulta');
         if (lastTotal < 0) totalEl.textContent = '—';
       }
     }
 
     async function init() {
-      try {
-        await db.open();
-        await loadTotal();
-        // Atualiza a cada 2 segundos
-        refreshTimer = setInterval(loadTotal, 2000);
-      } catch (err) {
-        console.error(err);
-        statusDot.classList.add('offline');
-        statusText.textContent = 'Banco não encontrado';
-        totalEl.textContent = '0';
-      }
+      await loadTotal();
+      refreshTimer = setInterval(loadTotal, 3000);
     }
 
-    // Também atualiza quando a aba volta a ficar visível
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') loadTotal();
+    });
+
+    window.addEventListener('online', () => loadTotal());
+    window.addEventListener('offline', () => {
+      statusDot.classList.add('offline');
+      statusDot.classList.remove('error');
+      statusText.textContent = 'Sem internet';
     });
 
     init();
