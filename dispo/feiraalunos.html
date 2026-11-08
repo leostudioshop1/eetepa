@@ -229,7 +229,7 @@
                             <p class="text-xs text-slate-500">Lista completa de participantes e atribuições</p>
                         </div>
                         
-                        <div class="flex items-center space-x-2 no-print">
+                      //  <div class="flex items-center space-x-2 no-print">
                           //  <button onclick="confirmClearAll()" 
                             //        class="text-xs font-medium text-slate-500 hover:text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 transition-all border border-transparent hover:border-red-100">
                              //   <i class="fa-regular fa-trash-can mr-1"></i> Limpar Tudo
@@ -469,26 +469,26 @@
        //  }
 
         // Limpar todos os cadastros
-        async function confirmClearAll() {
-            if (students.length === 0) return;
+      //  async function confirmClearAll() {
+        //    if (students.length === 0) return;
             
-            if (confirm('Tem certeza de que deseja apagar TODOS os alunos cadastrados no banco de dados? Esta ação não pode ser desfeita.')) {
-                showToast('Limpando', 'Removendo todos os registros...', 'info');
+          //  if (confirm('Tem certeza de que deseja apagar TODOS os alunos cadastrados no banco de dados? Esta ação não pode ser desfeita.')) {
+            //    showToast('Limpando', 'Removendo todos os registros...', 'info');
 
-                const { error } = await supabaseClient
-                    .from('feira_alunos')
-                    .delete()
-                    .neq('id', 0); // Deleta todos
+              //  const { error } = await supabaseClient
+                //    .from('feira_alunos')
+                  //  .delete()
+                   // .neq('id', 0); // Deleta todos
 
-                if (error) {
-                    console.error("Erro ao limpar tabela:", error);
-                    showToast('Erro', 'Falha ao limpar os dados.', 'error');
-                    return;
-                }
+                //if (error) {
+                  //  console.error("Erro ao limpar tabela:", error);
+                //    showToast('Erro', 'Falha ao limpar os dados.', 'error');
+                  //  return;
+              //  }
 
-                await carregarAlunosDoSupabase();
-                showToast('Lista Limpa', 'Todos os cadastros foram removidos.', 'info');
-            }
+               // await carregarAlunosDoSupabase();
+              //  showToast('Lista Limpa', 'Todos os cadastros foram removidos.', 'info');
+            //}
         }
 
         // Atualizar Renderização da Interface
