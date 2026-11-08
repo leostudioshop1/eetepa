@@ -229,7 +229,7 @@
                             <p class="text-xs text-slate-500">Lista completa de participantes e atribuições</p>
                         </div>
                         
-                      //  <div class="flex items-center space-x-2 no-print">
+                        <div class="flex items-center space-x-2 no-print">
                           //  <button onclick="confirmClearAll()" 
                             //        class="text-xs font-medium text-slate-500 hover:text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 transition-all border border-transparent hover:border-red-100">
                              //   <i class="fa-regular fa-trash-can mr-1"></i> Limpar Tudo
@@ -452,7 +452,7 @@
             // if (!confirm('Deseja realmente remover este aluno?')) return;
 
           //   showToast('Removendo', 'Excluindo registro...', 'info');
- //
+ 
          //    const { error } = await supabaseClient
         //         .from('feira_alunos')
           //       .delete()
@@ -464,9 +464,9 @@
                  //return;
             // }
 
- //            await carregarAlunosDoSupabase();
+             await carregarAlunosDoSupabase();
     //         showToast('Removido', 'Cadastro do aluno removido com sucesso.', 'info');
-       //  }
+         }
 
         // Limpar todos os cadastros
       //  async function confirmClearAll() {
@@ -488,7 +488,7 @@
 
                // await carregarAlunosDoSupabase();
               //  showToast('Lista Limpa', 'Todos os cadastros foram removidos.', 'info');
-            //}
+            }
         }
 
         // Atualizar Renderização da Interface
