@@ -448,25 +448,25 @@
         }
 
         // Excluir Aluno do Supabase
-        async function deleteStudent(id) {
-            if (!confirm('Deseja realmente remover este aluno?')) return;
+         //async function deleteStudent(id) {
+            // if (!confirm('Deseja realmente remover este aluno?')) return;
 
-            showToast('Removendo', 'Excluindo registro...', 'info');
+          //   showToast('Removendo', 'Excluindo registro...', 'info');
+ //
+         //    const { error } = await supabaseClient
+        //         .from('feira_alunos')
+          //       .delete()
+          //       .eq('id', id);
 
-            const { error } = await supabaseClient
-                .from('feira_alunos')
-                .delete()
-                .eq('id', id);
+            // if (error) {
+               //  console.error("Erro ao deletar:", error);
+                 //showToast('Erro', 'Não foi possível remover o registro.', 'error');
+                 //return;
+            // }
 
-            if (error) {
-                console.error("Erro ao deletar:", error);
-                showToast('Erro', 'Não foi possível remover o registro.', 'error');
-                return;
-            }
-
-            await carregarAlunosDoSupabase();
-            showToast('Removido', 'Cadastro do aluno removido com sucesso.', 'info');
-        }
+ //            await carregarAlunosDoSupabase();
+    //         showToast('Removido', 'Cadastro do aluno removido com sucesso.', 'info');
+       //  }
 
         // Limpar todos os cadastros
         async function confirmClearAll() {
