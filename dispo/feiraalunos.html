@@ -76,7 +76,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full space-y-8">
         
         <!-- Mensagem de Alerta/Notificação -->
         <div id="toast" class="hidden fixed top-5 right-5 z-50 max-w-md p-4 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-0 flex items-start gap-3 border">
@@ -239,7 +239,7 @@
                     </div>
 
                     <!-- Container para o Relatório (Utilizado pelo HTML2PDF) -->
-                    <div id="pdf-container" class="bg-white">
+                    <div id="pdf-container" class="bg-white space-y-6">
                         
                         <!-- Cabeçalho Exclusivo do PDF (Fica invisível na tela normal) -->
                         <div class="print-only mb-6 pb-4 border-b-2 border-slate-800">
@@ -255,7 +255,7 @@
                             </div>
                         </div>
 
-                        <!-- Tabela Responsiva -->
+                        <!-- Tabela Responsiva Principal -->
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
                                 <thead>
@@ -280,6 +280,55 @@
                             <p class="text-xs text-slate-400 max-w-xs mt-1">Preencha o formulário ao lado para cadastrar os alunos participantes da feira.</p>
                         </div>
                         
+                        <!-- SEÇÃO NOVA: Relatório Detalhado por Turno e Funções Pendentes -->
+                        <div id="report-section" class="mt-8 pt-6 border-t border-slate-200 hidden">
+                            <h3 class="text-md font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-chart-pie text-brand-600"></i> Relatório por Turno e Funções Pendentes
+                            </h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                <!-- Bloco Turno Manhã -->
+                                <div class="bg-amber-50/50 border border-amber-200/60 rounded-xl p-4">
+                                    <h4 class="text-xs font-bold text-amber-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                        <i class="fa-regular fa-sun"></i> Turno Manhã (<span id="count-manha">0</span>)
+                                    </h4>
+                                    <ul id="list-manha" class="text-xs text-slate-700 space-y-1 list-disc list-inside">
+                                        <li class="text-slate-400 italic">Nenhum aluno</li>
+                                    </ul>
+                                </div>
+
+                                <!-- Bloco Turno Tarde -->
+                                <div class="bg-orange-50/50 border border-orange-200/60 rounded-xl p-4">
+                                    <h4 class="text-xs font-bold text-orange-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-cloud-sun"></i> Turno Tarde (<span id="count-tarde">0</span>)
+                                    </h4>
+                                    <ul id="list-tarde" class="text-xs text-slate-700 space-y-1 list-disc list-inside">
+                                        <li class="text-slate-400 italic">Nenhum aluno</li>
+                                    </ul>
+                                </div>
+
+                                <!-- Bloco Turno Noite -->
+                                <div class="bg-indigo-50/50 border border-indigo-200/60 rounded-xl p-4">
+                                    <h4 class="text-xs font-bold text-indigo-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                        <i class="fa-regular fa-moon"></i> Turno Noite (<span id="count-noite">0</span>)
+                                    </h4>
+                                    <ul id="list-noite" class="text-xs text-slate-700 space-y-1 list-disc list-inside">
+                                        <li class="text-slate-400 italic">Nenhum aluno</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Funções sem Alunos Lotados -->
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Funções sem Alunos Atribuídos
+                                </h4>
+                                <div id="unassigned-roles" class="flex flex-wrap gap-2 text-xs">
+                                    <span class="text-slate-400 italic">Todas as funções possuem alunos.</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Rodapé do PDF -->
                         <div class="print-only mt-8 pt-4 border-t border-slate-200 text-center text-xs text-slate-400">
                             Documento emitido automaticamente pelo Sistema de Gestão da Feira Tecnológica.
@@ -314,15 +363,22 @@
             window.SUPABASE_CONFIG.key
         );
 
-        // Array global armazenando os alunos
+        // Lista de todas as funções possíveis cadastradas no sistema
+        const TODAS_AS_FUNCOES = [
+            "Apresentador", 
+            "Suporte Técnico", 
+            "Organização/Logística", 
+            "Recepção", 
+            "Monitor de Stand", 
+            "Fotógrafo/Mídia"
+        ];
+
         let students = [];
 
-        // Inicialização ao carregar a página
         document.addEventListener('DOMContentLoaded', () => {
             carregarAlunosDoSupabase();
         });
 
-        // Buscar alunos do Supabase
         async function carregarAlunosDoSupabase() {
             showToast('Carregando', 'Buscando dados do Supabase...', 'info');
             
@@ -342,7 +398,6 @@
             dismissToast();
         }
 
-        // Validação dinâmica dos checkboxes e limites
         function validateCheckboxes(name, maxLimit, countElementId) {
             const checkboxes = document.querySelectorAll(`input[name="${name}"]`);
             const checked = document.querySelectorAll(`input[name="${name}"]:checked`);
@@ -377,7 +432,6 @@
             });
         }
 
-        // Processar submissão do formulário e salvar no Supabase
         async function handleFormSubmit(event) {
             event.preventDefault();
 
@@ -431,10 +485,8 @@
                 return;
             }
 
-            // Recarregar lista do banco
             await carregarAlunosDoSupabase();
 
-            // Resetar Formulário
             document.getElementById('student-form').reset();
             validateCheckboxes('shifts', 2, 'shift-count');
             validateCheckboxes('roles', 3, 'role-count');
@@ -442,24 +494,27 @@
             showToast('Sucesso!', `${name} foi cadastrado(a) com sucesso no Supabase.`, 'success');
         }
 
-        // Atualizar Renderização da Interface (sem coluna de Ações/Deletar)
         function updateUI() {
             const listContainer = document.getElementById('student-list');
             const emptyState = document.getElementById('empty-state');
             const totalCount = document.getElementById('total-count');
+            const reportSection = document.getElementById('report-section');
 
             totalCount.innerText = students.length;
 
             if (students.length === 0) {
                 listContainer.innerHTML = '';
                 emptyState.classList.remove('hidden');
+                reportSection.classList.add('hidden');
                 return;
             }
 
             emptyState.classList.add('hidden');
+            reportSection.classList.remove('hidden');
 
+            // Renderizar Tabela Principal
             listContainer.innerHTML = students.map(student => `
-                <tr class="hover:bg-slate-50/80 transition-colors">
+                <tr class="hover:bg-slate-50/85 transition-colors">
                     <td class="py-3 px-4 font-semibold text-slate-800">
                         ${escapeHtml(student.name)}
                     </td>
@@ -475,9 +530,62 @@
                     </td>
                 </tr>
             `).join('');
+
+            // Atualizar Relatório por Turno e Funções Pendentes
+            atualizarRelatorioTurnosEFuncoes();
         }
 
-        // Renderizadores de Badges/Tags estilizadas
+        function atualizarRelatorioTurnosEFuncoes() {
+            const alunosManhã = [];
+            const alunosTarde = [];
+            const alunosNoite = [];
+            const funcoesOcupadas = new Set();
+
+            students.forEach(s => {
+                if (s.shifts && s.shifts.includes('Manhã')) alunosManhã.push(s.name);
+                if (s.shifts && s.shifts.includes('Tarde')) alunosTarde.push(s.name);
+                if (s.shifts && s.shifts.includes('Noite')) alunosNoite.push(s.name);
+
+                if (s.roles) {
+                    s.roles.forEach(r => funcoesOcupadas.add(r));
+                }
+            });
+
+            // Preencher listas de turnos
+            document.getElementById('count-manha').innerText = alunosManhã.length;
+            document.getElementById('list-manha').innerHTML = alunosManhã.length > 0 
+                ? alunosManhã.map(n => `<li>${escapeHtml(n)}</li>`).join('')
+                : '<li class="text-slate-400 italic">Nenhum aluno no turno</li>';
+
+            document.getElementById('count-tarde').innerText = alunosTarde.length;
+            document.getElementById('list-tarde').innerHTML = alunosTarde.length > 0 
+                ? alunosTarde.map(n => `<li>${escapeHtml(n)}</li>`).join('')
+                : '<li class="text-slate-400 italic">Nenhum aluno no turno</li>';
+
+            document.getElementById('count-noite').innerText = alunosNoite.length;
+            document.getElementById('list-noite').innerHTML = alunosNoite.length > 0 
+                ? alunosNoite.map(n => `<li>${escapeHtml(n)}</li>`).join('')
+                : '<li class="text-slate-400 italic">Nenhum aluno no turno</li>';
+
+            // Identificar funções sem nenhum aluno
+            const funcoesPendentes = TODAS_AS_FUNCOES.filter(f => !funcoesOcupadas.has(f));
+            const unassignedContainer = document.getElementById('unassigned-roles');
+
+            if (funcoesPendentes.length > 0) {
+                unassignedContainer.innerHTML = funcoesPendentes.map(f => `
+                    <span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-md font-medium border border-amber-200">
+                        <i class="fa-solid fa-circle-exclamation mr-1"></i> ${f}
+                    </span>
+                `).join('');
+            } else {
+                unassignedContainer.innerHTML = `
+                    <span class="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-md font-medium border border-emerald-200">
+                        <i class="fa-solid fa-circle-check mr-1"></i> Todas as funções possuem pelo menos um aluno atribuído!
+                    </span>
+                `;
+            }
+        }
+
         function getShiftBadge(shift) {
             const styles = {
                 'Manhã': 'bg-amber-50 text-amber-700 border-amber-200/60',
@@ -498,7 +606,6 @@
             return div.innerHTML;
         }
 
-        // Sistema de Mensagens/Toasts
         function showToast(title, message, type = 'info') {
             const toast = document.getElementById('toast');
             const toastTitle = document.getElementById('toast-title');
@@ -530,7 +637,6 @@
             document.getElementById('toast').classList.add('hidden');
         }
 
-        // GERAÇÃO DE PDF VIA HTML2PDF.JS
         function generatePDF() {
             if (students.length === 0) {
                 showToast('Atenção', 'Cadastre ao menos um aluno antes de gerar o relatório em PDF.', 'warning');
