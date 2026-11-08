@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Vídeos - Diálogo com </title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    #player {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+      z-index: 1;
+    }
+
+    #btnToggle {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 100;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(30, 30, 40, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      transition: all 0.25s ease;
+      outline: none;
+    }
+
+    #btnToggle:hover {
+      transform: scale(1.08);
+      background: rgba(50, 50, 70, 0.85);
+    }
+
+    #btnToggle.active {
+      background: rgba(220, 38, 38, 0.85);
+      box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.25);
+    }
+
+    #btnToggle.active:hover {
+      background: rgba(239, 68, 68, 0.9);
+    }
+
+    .mic-icon {
+      width: 28px;
+      height: 28px;
+      fill: currentColor;
+    }
+
+    #listeningDot {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #22c55e;
+      opacity: 0;
+      transition: opacity 0.3s;
+      box-shadow: 0 0 8px #22c55e;
+    }
+
+    #listeningDot.visible {
+      opacity: 1;
+      animation: pulse 1.4s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.7; }
+    }
+
+    #errorMsg {
+      position: fixed;
+      bottom: 110px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.75);
+      color: #f87171;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      max-width: 90%;
+      text-align: center;
+    }
+
+    #errorMsg.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <video id="player" playsinline loop muted></video>
+
+  <div id="listeningDot"></div>
+  <div id="errorMsg"></div>
+
+  <button id="btnToggle" title="Ativar / Desativar microfone">
+    <svg class="mic-icon" viewBox="0 0 24 24">
+      <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+      <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+    </svg>
+  </button>
+
+  <script>
+    const SPONSORS_FILE = 'patrocinadores.mp4';
+
+    // =====================================================
+    // FRASES INTERROGATIVAS DE DIÁLOGO FICTÍCIO COM A 
+    // Cada frase dispara um vídeo específico
+    // =====================================================
+    const phraseMap = {
+      // Vídeos 1 a 10
+      "quem e voce": 1,
+      "bit": 1,
+      "tem alguem ai": 1,
+
+      "como voce esta": 2,
+      "oi oi oi": 2,
+      "tem alguem ai": 2,
+
+      "voce petista": 3,
+      "voce estuda": 3,
+      "aparece ai": 3,
+
+      "vamos fofocar": 4,
+      "tenho uma fofoca para voce": 4,
+      "pode tocar o video quatro": 4,
+
+      "mas que calor": 5,
+      "esta pegando fogo": 5,
+      "nossa que calor": 5,
+
+      "voce gosta de estar aqui": 6,
+      "esta feliz aqui": 6,
+      "canta ai": 6,
+
+      "bit": 7,
+      "aaaaaaaaaahhhhhhhhhhh": 7,
+      "psiu": 7,
+
+      "petista": 8,
+      "votou em quem": 8,
+      "pode abrir o video oito": 8,
+
+      " alguma novidade": 9,
+      "estou com fome": 9,
+      "tem comida ai": 9,
+
+      " esta ocupado": 10,
+      "calor danado": 10,
+      "uma chuva caia bem": 10,
+
+      // Vídeos 11 a 20
+      "patrocinadores": 11,
+      "me mostra o video onze": 11,
+      "voce pode tocar o video onze": 11,
+
+      "voce estuda": 12,
+      "faz algum curso": 12,
+      "pode abrir o video doze": 12,
+
+      "voce trabalhou nessa feira": 13,
+      "voce trabalha": 13,
+      "trabalhou": 13,
+
+      "vamos conversar": 14,
+      "voce tem quantos anos": 14,
+      "pode tocar o video quatorze": 14,
+
+      "vamos sair": 15,
+      "me conta sobre o video quinze": 15,
+      "voce pode mostrar o video quinze": 15,
+
+      "canta uma cancao": 16,
+      "canta uma musica": 16,
+      "pode abrir o video dezesseis": 16,
+
+      "o que achou de mim": 17,
+      "eu sou bonito": 17,
+      "voce pode tocar o video dezessete": 17,
+
+      "sera que chove hoje": 18,
+      "vai chover": 18,
+      "pode reproduzir o video dezoito": 18,
+
+      "fala comigo": 19,
+      "voce e timido": 19,
+      "voce pode abrir o video dezenove": 19,
+
+      "me da um presente": 20,
+      "quero um presente": 20,
+      "pode tocar o video vinte": 20,
+
+      // Vídeos 21 a 30
+      " vamos tirar uma foto": 21,
+      "tira uma foto comigo": 21,
+      "voce pode reproduzir o video vinte e um": 21,
+
+      " me conta sobre o video vinte e dois": 22,
+      "o que tem no video vinte e dois": 22,
+      "pode abrir o video vinte e dois": 22,
+
+      " o que aconteceu no video vinte e tres": 23,
+      "me mostra o video vinte e tres": 23,
+      "voce pode tocar o video vinte e tres": 23,
+
+      " me mostra o video vinte e quatro": 24,
+      "o que tem no video vinte e quatro": 24,
+      "pode reproduzir o video vinte e quatro": 24,
+
+      " o que aconteceu no video vinte e cinco": 25,
+      "me conta o que tem no video vinte e cinco": 25,
+      "voce pode mostrar o video vinte e cinco": 25,
+
+      " me mostra o video vinte e seis": 26,
+      "o que tem no video vinte e seis": 26,
+      "pode abrir o video vinte e seis": 26,
+
+      " o que aconteceu no video vinte e sete": 27,
+      "me mostra o video vinte e sete": 27,
+      "voce pode tocar o video vinte e sete": 27,
+
+      " me conta sobre o video vinte e oito": 28,
+      "o que tem no video vinte e oito": 28,
+      "pode reproduzir o video vinte e oito": 28,
+
+      " o que aconteceu no video vinte e nove": 29,
+      "me mostra o video vinte e nove": 29,
+      "voce pode abrir o video vinte e nove": 29,
+
+      "comeu o lanche do colega": 30,
+      "quebrou algo": 30,
+      "e briguento": 30,
+
+      // Vídeos 31 a 40
+      "gosta de carinho": 31,
+      "dengoso": 31,
+      "voce pode reproduzir o video trinta e um": 31,
+
+      "ja lanchou": 32,
+      "barriga": 32,
+      "vamos lanchar": 32,
+
+      "vamos brincar": 33,
+      "como esta": 33,
+      "esta feliz": 33,
+
+      "voce esta gordo": 34,
+      "essa gordura": 34,
+      "vamos comer uma pizza": 34,
+
+      " conta uma piada": 35,
+      "piada": 35,
+      "rir": 35,
+
+      "qual seu sonho": 36,
+      "voce sonha": 36,
+      "sonhou": 36,
+
+      " o que tem pra hoje": 37,
+      "vamos aprontar": 37,
+      "vamos dominar o mundo": 37,
+
+      " bate aqui": 38,
+      "flw": 38,
+      "obrigado": 38,
+
+      " noticia": 39,
+      "novidade": 39,
+      "novidades": 39,
+
+      "vamos correr": 40,
+      "voce faz atividade fisica": 40,
+      "faz academia": 40,
+
+      // Frase para voltar aos patrocinadores (opcional)
+      " volta para os patrocinadores": "sponsors",
+      "mostrar patrocinadores": "sponsors",
+      "voltar para o inicio": "sponsors"
+    };
+
+    // =====================================================
+    // RESTANTE DO CÓDIGO
+    // =====================================================
+
+    const player = document.getElementById('player');
+    const btnToggle = document.getElementById('btnToggle');
+    const listeningDot = document.getElementById('listeningDot');
+    const errorMsg = document.getElementById('errorMsg');
+
+    let recognition = null;
+    let isListening = false;
+    let currentMode = 'idle';
+    let restartTimeout = null;
+    let errorTimeout = null;
+    let hasUserInteracted = false;
+    let micPermissionGranted = false;
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.classList.add('visible');
+      clearTimeout(errorTimeout);
+      errorTimeout = setTimeout(() => {
+        errorMsg.classList.remove('visible');
+      }, 4000);
+    }
+
+    // Normaliza o texto para facilitar a comparação
+    function normalizeText(text) {
+      return text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // remove acentos
+        .replace(/[^\w\s]/g, ' ')       // remove pontuação
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    // Procura se alguma frase do mapa está contida no que foi falado
+    function findMatchingPhrase(transcript) {
+      const normalized = normalizeText(transcript);
+
+      for (const [phrase, value] of Object.entries(phraseMap)) {
+        if (normalized.includes(phrase)) {
+          return value;
+        }
+      }
+      return null;
+    }
+
+    function playVideo(number) {
+      const src = `video${number}.mp4`;
+      currentMode = 'video';
+      player.loop = false;
+      player.muted = !hasUserInteracted;
+      player.src = src;
+      player.load();
+
+      const playPromise = player.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.error('Erro ao reproduzir vídeo:', err);
+          if (!player.muted) {
+            player.muted = true;
+            player.play().catch(() => {
+              showError(`Não foi possível carregar video${number}.mp4`);
+              setTimeout(playSponsors, 1000);
+            });
+          } else {
+            showError(`Não foi possível carregar video${number}.mp4`);
+            setTimeout(playSponsors, 1000);
+          }
+        });
+      }
+    }
+
+    function playSponsors() {
+      currentMode = 'sponsors';
+      player.loop = true;
+      player.muted = !hasUserInteracted;
+      player.src = SPONSORS_FILE;
+      player.load();
+
+      const playPromise = player.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.error('Erro ao reproduzir patrocinadores:', err);
+          player.muted = true;
+          player.play().catch(err2 => {
+            console.error('Falha definitiva:', err2);
+            showError('Não foi possível carregar patrocinadores.mp4. Verifique se o arquivo está na mesma pasta.');
+          });
+        });
+      }
+    }
+
+    player.addEventListener('ended', () => {
+      if (currentMode === 'video') {
+        playSponsors();
+      }
+    });
+
+    function enableSound() {
+      if (!hasUserInteracted) {
+        hasUserInteracted = true;
+        player.muted = false;
+      }
+    }
+
+    function initRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        showError('Navegador não suporta reconhecimento de voz. Use Chrome ou Edge.');
+        return null;
+      }
+
+      const rec = new SpeechRecognition();
+      rec.lang = 'pt-BR';
+      rec.continuous = true;
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+
+      rec.onstart = () => {
+        isListening = true;
+        btnToggle.classList.add('active');
+        listeningDot.classList.add('visible');
+      };
+
+      rec.onend = () => {
+        isListening = false;
+        listeningDot.classList.remove('visible');
+
+        if (btnToggle.classList.contains('active')) {
+          clearTimeout(restartTimeout);
+          restartTimeout = setTimeout(() => {
+            try {
+              rec.start();
+            } catch (e) {}
+          }, 300);
+        }
+      };
+
+      rec.onerror = (event) => {
+        if (event.error === 'not-allowed') {
+          showError('Permissão do microfone negada. Permita o acesso e recarregue a página.');
+          btnToggle.classList.remove('active');
+          listeningDot.classList.remove('visible');
+          micPermissionGranted = false;
+        } else if (event.error === 'no-speech') {
+          // silencioso
+        } else if (event.error !== 'aborted') {
+          console.warn('Speech error:', event.error);
+        }
+      };
+
+      rec.onresult = (event) => {
+        const last = event.results[event.results.length - 1];
+        if (!last.isFinal) return;
+
+        const transcript = last[0].transcript.trim();
+        console.log('Falado:', transcript); // útil para debug
+
+        const match = findMatchingPhrase(transcript);
+
+        if (match !== null) {
+          if (match === 'sponsors') {
+            playSponsors();
+          } else {
+            playVideo(match);
+          }
+        }
+      };
+
+      return rec;
+    }
+
+    async function ensureMicPermission() {
+      if (micPermissionGranted) {
+        return true;
+      }
+
+      try {
+        if (navigator.permissions && navigator.permissions.query) {
+          const result = await navigator.permissions.query({ name: 'microphone' });
+          if (result.state === 'granted') {
+            micPermissionGranted = true;
+            return true;
+          }
+          if (result.state === 'denied') {
+            showError('Microfone bloqueado. Permita o acesso nas configurações do navegador e recarregue.');
+            return false;
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+        micPermissionGranted = true;
+        return true;
+      } catch (err) {
+        console.warn('Mic permission error:', err);
+        showError('Permissão do microfone necessária. Clique em Permitir quando o navegador pedir.');
+        return false;
+      }
+    }
+
+    btnToggle.addEventListener('click', async () => {
+      enableSound();
+
+      if (!recognition) {
+        const ok = await ensureMicPermission();
+        if (!ok) return;
+
+        recognition = initRecognition();
+        if (!recognition) return;
+      }
+
+      if (btnToggle.classList.contains('active')) {
+        btnToggle.classList.remove('active');
+        listeningDot.classList.remove('visible');
+        try {
+          recognition.stop();
+        } catch (e) {}
+      } else {
+        try {
+          recognition.start();
+        } catch (e) {
+          recognition = initRecognition();
+          if (recognition) {
+            try { recognition.start(); } catch (e2) {}
+          }
+        }
+      }
+    });
+
+    document.addEventListener('click', enableSound);
+    document.addEventListener('touchstart', enableSound);
+
+    window.addEventListener('load', () => {
+      playSponsors();
+    });
+
+    let fullscreenRequested = false;
+    document.addEventListener('click', () => {
+      if (!fullscreenRequested) {
+        fullscreenRequested = true;
+        const el = document.documentElement;
+        if (el.requestFullscreen) {
+          el.requestFullscreen().catch(() => {});
+        } else if (el.webkitRequestFullscreen) {
+          el.webkitRequestFullscreen();
+        }
+      }
+    }, { once: true });
+  </script>
+</body>
+</html>
