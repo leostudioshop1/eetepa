@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Vídeos - Diálogo com </title>
+  <title>Vídeos - Diálogo</title>
   <style>
     * {
       margin: 0;
@@ -135,184 +135,51 @@
   <script>
     const SPONSORS_FILE = 'patrocinadores.mp4';
 
-    // =====================================================
-    // FRASES INTERROGATIVAS DE DIÁLOGO FICTÍCIO COM A 
-    // Cada frase dispara um vídeo específico
-    // =====================================================
     const phraseMap = {
-      // Vídeos 1 a 10
-      "quem e voce": 1,
-      "bit": 1,
-      "tem alguem ai": 1,
-
-      "como voce esta": 2,
-      "oi oi oi": 2,
-      "tem alguem ai": 2,
-
-      "voce petista": 3,
-      "voce estuda": 3,
-      "aparece ai": 3,
-
-      " o que aconteceu no video quatro": 4,
-      "me mostra o video quatro por favor": 4,
-      "pode tocar o video quatro": 4,
-
-      " me conta sobre o video cinco": 5,
-      "o que tem no quinto video": 5,
-      "voce pode abrir o video cinco": 5,
-
-      " o que aconteceu no video seis": 6,
-      "me mostra o video seis": 6,
-      "pode reproduzir o sexto video": 6,
-
-      " me mostra o video sete": 7,
-      "o que tem no video sete": 7,
-      "voce pode tocar o video sete": 7,
-
-      "petista": 8,
-      "me mostra o oitavo video": 8,
-      "pode abrir o video oito": 8,
-
-      " alguma novidade": 9,
-      "estou com fome": 9,
-      "tem comida ai": 9,
-
-      " esta ocupado": 10,
-      "calor danado": 10,
-      "uma chuva caia bem": 10,
-
-      // Vídeos 11 a 20
-      " o que aconteceu no video onze": 11,
-      "me mostra o video onze": 11,
-      "voce pode tocar o video onze": 11,
-
-      " me conta sobre o video doze": 12,
-      "o que tem no video doze": 12,
-      "pode abrir o video doze": 12,
-
-      " o que aconteceu no video treze": 13,
-      "me mostra o video treze": 13,
-      "voce pode reproduzir o video treze": 13,
-
-      " me mostra o video quatorze": 14,
-      "o que tem no video quatorze": 14,
-      "pode tocar o video quatorze": 14,
-
-      " o que aconteceu no video quinze": 15,
-      "me conta sobre o video quinze": 15,
-      "voce pode mostrar o video quinze": 15,
-
-      " me mostra o video dezesseis": 16,
-      "o que tem no video dezesseis": 16,
-      "pode abrir o video dezesseis": 16,
-
-      " o que aconteceu no video dezessete": 17,
-      "me mostra o video dezessete": 17,
-      "voce pode tocar o video dezessete": 17,
-
-      " me conta o que tem no video dezoito": 18,
-      "o que aconteceu no video dezoito": 18,
-      "pode reproduzir o video dezoito": 18,
-
-      " o que tem no video dezenove": 19,
-      "me mostra o video dezenove": 19,
-      "voce pode abrir o video dezenove": 19,
-
-      " o que aconteceu no video vinte": 20,
-      "me mostra o video vinte": 20,
-      "pode tocar o video vinte": 20,
-
-      // Vídeos 21 a 30
-      " o que aconteceu no video vinte e um": 21,
-      "me mostra o video vinte e um": 21,
-      "voce pode reproduzir o video vinte e um": 21,
-
-      " me conta sobre o video vinte e dois": 22,
-      "o que tem no video vinte e dois": 22,
-      "pode abrir o video vinte e dois": 22,
-
-      " o que aconteceu no video vinte e tres": 23,
-      "me mostra o video vinte e tres": 23,
-      "voce pode tocar o video vinte e tres": 23,
-
-      " me mostra o video vinte e quatro": 24,
-      "o que tem no video vinte e quatro": 24,
-      "pode reproduzir o video vinte e quatro": 24,
-
-      " o que aconteceu no video vinte e cinco": 25,
-      "me conta o que tem no video vinte e cinco": 25,
-      "voce pode mostrar o video vinte e cinco": 25,
-
-      " me mostra o video vinte e seis": 26,
-      "o que tem no video vinte e seis": 26,
-      "pode abrir o video vinte e seis": 26,
-
-      " o que aconteceu no video vinte e sete": 27,
-      "me mostra o video vinte e sete": 27,
-      "voce pode tocar o video vinte e sete": 27,
-
-      " me conta sobre o video vinte e oito": 28,
-      "o que tem no video vinte e oito": 28,
-      "pode reproduzir o video vinte e oito": 28,
-
-      " o que aconteceu no video vinte e nove": 29,
-      "me mostra o video vinte e nove": 29,
-      "voce pode abrir o video vinte e nove": 29,
-
-      " o que tem no video trinta": 30,
-      "me mostra o video trinta": 30,
-      "pode tocar o video trinta": 30,
-
-      // Vídeos 31 a 40
-      " o que aconteceu no video trinta e um": 31,
-      "me mostra o video trinta e um": 31,
-      "voce pode reproduzir o video trinta e um": 31,
-
-      " me conta sobre o video trinta e dois": 32,
-      "o que tem no video trinta e dois": 32,
-      "pode abrir o video trinta e dois": 32,
-
-      " o que aconteceu no video trinta e tres": 33,
-      "me mostra o video trinta e tres": 33,
-      "voce pode tocar o video trinta e tres": 33,
-
-      " me mostra o video trinta e quatro": 34,
-      "o que tem no video trinta e quatro": 34,
-      "pode reproduzir o video trinta e quatro": 34,
-
-      " o que aconteceu no video trinta e cinco": 35,
-      "me conta o que tem no video trinta e cinco": 35,
-      "voce pode mostrar o video trinta e cinco": 35,
-
-      " me mostra o video trinta e seis": 36,
-      "o que tem no video trinta e seis": 36,
-      "pode abrir o video trinta e seis": 36,
-
-      " o que aconteceu no video trinta e sete": 37,
-      "me mostra o video trinta e sete": 37,
-      "voce pode tocar o video trinta e sete": 37,
-
-      " me conta sobre o video trinta e oito": 38,
-      "o que tem no video trinta e oito": 38,
-      "pode reproduzir o video trinta e oito": 38,
-
-      " o que aconteceu no video trinta e nove": 39,
-      "me mostra o video trinta e nove": 39,
-      "voce pode abrir o video trinta e nove": 39,
-
-      " o que tem no video quarenta": 40,
-      "me mostra o video quarenta": 40,
-      "pode tocar o video quarenta": 40,
-
-      // Frase para voltar aos patrocinadores (opcional)
-      " volta para os patrocinadores": "sponsors",
+      "quem e voce": 1, "bit": 1, "tem alguem ai": 1,
+      "como voce esta": 2, "oi oi oi": 2,
+      "voce petista": 3, "voce estuda": 3, "aparece ai": 3,
+      "vamos fofocar": 4, "tenho uma fofoca para voce": 4, "pode tocar o video quatro": 4,
+      "mas que calor": 5, "esta pegando fogo": 5, "nossa que calor": 5,
+      "voce gosta de estar aqui": 6, "esta feliz aqui": 6, "canta ai": 6,
+      "aaaaaaaaaahhhhhhhhhhh": 7, "psiu": 7,
+      "petista": 8, "votou em quem": 8, "pode abrir o video oito": 8,
+      "alguma novidade": 9, "estou com fome": 9, "tem comida ai": 9,
+      "esta ocupado": 10, "calor danado": 10, "uma chuva caia bem": 10,
+      "patrocinadores": 11, "me mostra o video onze": 11, "voce pode tocar o video onze": 11,
+      "faz algum curso": 12, "pode abrir o video doze": 12,
+      "voce trabalhou nessa feira": 13, "voce trabalha": 13, "trabalhou": 13,
+      "vamos conversar": 14, "voce tem quantos anos": 14, "pode tocar o video quatorze": 14,
+      "vamos sair": 15, "me conta sobre o video quinze": 15, "voce pode mostrar o video quinze": 15,
+      "canta uma cancao": 16, "canta uma musica": 16, "pode abrir o video dezesseis": 16,
+      "o que achou de mim": 17, "eu sou bonito": 17, "voce pode tocar o video dezessete": 17,
+      "sera que chove hoje": 18, "vai chover": 18, "pode reproduzir o video dezoito": 18,
+      "fala comigo": 19, "voce e timido": 19, "voce pode abrir o video dezenove": 19,
+      "me da um presente": 20, "quero um presente": 20, "pode tocar o video vinte": 20,
+      "vamos tirar uma foto": 21, "tira uma foto comigo": 21, "voce pode reproduzir o video vinte e um": 21,
+      "me conta sobre o video vinte e dois": 22, "o que tem no video vinte e dois": 22, "pode abrir o video vinte e dois": 22,
+      "o que aconteceu no video vinte e tres": 23, "me mostra o video vinte e tres": 23, "voce pode tocar o video vinte e tres": 23,
+      "o que tem no video vinte e quatro": 24, "pode reproduzir o video vinte e quatro": 24,
+      "o que aconteceu no video vinte e cinco": 25, "me conta o que tem no video vinte e cinco": 25, "voce pode mostrar o video vinte e cinco": 25,
+      "o que tem no video vinte e seis": 26, "pode abrir o video vinte e seis": 26,
+      "o que aconteceu no video vinte e sete": 27, "me mostra o video vinte e sete": 27, "voce pode tocar o video vinte e sete": 27,
+      "me conta sobre o video vinte e oito": 28, "o que tem no video vinte e oito": 28, "pode reproduzir o video vinte e oito": 28,
+      "o que aconteceu no video vinte e nove": 29, "me mostra o video vinte e nove": 29, "pode abrir o video vinte e nove": 29,
+      "comeu o lanche do colega": 30, "quebrou algo": 30, "e briguento": 30,
+      "gosta de carinho": 31, "dengoso": 31, "voce pode reproduzir o video trinta e um": 31,
+      "ja lanchou": 32, "barriga": 32, "vamos lanchar": 32,
+      "vamos brincar": 33, "como esta": 33, "esta feliz": 33,
+      "voce esta gordo": 34, "essa gordura": 34, "vamos comer uma pizza": 34,
+      "conta uma piada": 35, "piada": 35, "rir": 35,
+      "qual seu sonho": 36, "voce sonha": 36, "sonhou": 36,
+      "o que tem pra hoje": 37, "vamos aprontar": 37, "vamos dominar o mundo": 37,
+      "bate aqui": 38, "flw": 38, "obrigado": 38,
+      "noticia": 39, "novidade": 39, "novidades": 39,
+      "vamos correr": 40, "voce faz atividade fisica": 40, "faz academia": 40,
+      "volta para os patrocinadores": "sponsors",
       "mostrar patrocinadores": "sponsors",
       "voltar para o inicio": "sponsors"
     };
-
-    // =====================================================
-    // RESTANTE DO CÓDIGO
-    // =====================================================
 
     const player = document.getElementById('player');
     const btnToggle = document.getElementById('btnToggle');
@@ -320,12 +187,14 @@
     const errorMsg = document.getElementById('errorMsg');
 
     let recognition = null;
-    let isListening = false;
-    let currentMode = 'idle';
+    let isListeningActive = false; 
     let restartTimeout = null;
     let errorTimeout = null;
+    let watchdogInterval = null;
+    let lastActivityTime = Date.now();
     let hasUserInteracted = false;
     let micPermissionGranted = false;
+    let currentMode = 'idle';
 
     function showError(msg) {
       errorMsg.textContent = msg;
@@ -336,21 +205,18 @@
       }, 4000);
     }
 
-    // Normaliza o texto para facilitar a comparação
     function normalizeText(text) {
       return text
         .toLowerCase()
         .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // remove acentos
-        .replace(/[^\w\s]/g, ' ')       // remove pontuação
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\w\s]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
     }
 
-    // Procura se alguma frase do mapa está contida no que foi falado
     function findMatchingPhrase(transcript) {
       const normalized = normalizeText(transcript);
-
       for (const [phrase, value] of Object.entries(phraseMap)) {
         if (normalized.includes(phrase)) {
           return value;
@@ -367,22 +233,19 @@
       player.src = src;
       player.load();
 
-      const playPromise = player.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(err => {
-          console.error('Erro ao reproduzir vídeo:', err);
-          if (!player.muted) {
-            player.muted = true;
-            player.play().catch(() => {
-              showError(`Não foi possível carregar video${number}.mp4`);
-              setTimeout(playSponsors, 1000);
-            });
-          } else {
+      player.play().catch(err => {
+        console.error('Erro ao reproduzir vídeo:', err);
+        if (!player.muted) {
+          player.muted = true;
+          player.play().catch(() => {
             showError(`Não foi possível carregar video${number}.mp4`);
             setTimeout(playSponsors, 1000);
-          }
-        });
-      }
+          });
+        } else {
+          showError(`Não foi possível carregar video${number}.mp4`);
+          setTimeout(playSponsors, 1000);
+        }
+      });
     }
 
     function playSponsors() {
@@ -392,17 +255,14 @@
       player.src = SPONSORS_FILE;
       player.load();
 
-      const playPromise = player.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(err => {
-          console.error('Erro ao reproduzir patrocinadores:', err);
-          player.muted = true;
-          player.play().catch(err2 => {
-            console.error('Falha definitiva:', err2);
-            showError('Não foi possível carregar patrocinadores.mp4. Verifique se o arquivo está na mesma pasta.');
-          });
+      player.play().catch(err => {
+        console.error('Erro ao reproduzir patrocinadores:', err);
+        player.muted = true;
+        player.play().catch(err2 => {
+          console.error('Falha definitiva:', err2);
+          showError('Não foi possível carregar patrocinadores.mp4.');
         });
-      }
+      });
     }
 
     player.addEventListener('ended', () => {
@@ -418,6 +278,7 @@
       }
     }
 
+    // Gerenciamento e watchdog para evitar congelamento após longos períodos
     function initRecognition() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
@@ -425,54 +286,60 @@
         return null;
       }
 
+      if (recognition) {
+        try { recognition.abort(); } catch(e) {}
+      }
+
       const rec = new SpeechRecognition();
       rec.lang = 'pt-BR';
-      rec.continuous = true;
+      rec.continuous = false; 
       rec.interimResults = false;
       rec.maxAlternatives = 1;
 
       rec.onstart = () => {
-        isListening = true;
-        btnToggle.classList.add('active');
+        lastActivityTime = Date.now();
         listeningDot.classList.add('visible');
       };
 
       rec.onend = () => {
-        isListening = false;
         listeningDot.classList.remove('visible');
 
-        if (btnToggle.classList.contains('active')) {
+        if (isListeningActive) {
           clearTimeout(restartTimeout);
           restartTimeout = setTimeout(() => {
-            try {
-              rec.start();
-            } catch (e) {}
-          }, 300);
+            if (isListeningActive) {
+              try {
+                rec.start();
+              } catch (e) {
+                recognition = initRecognition();
+                if (recognition && isListeningActive) {
+                  try { recognition.start(); } catch(err) {}
+                }
+              }
+            }
+          }, 200);
         }
       };
 
       rec.onerror = (event) => {
         if (event.error === 'not-allowed') {
-          showError('Permissão do microfone negada. Permita o acesso e recarregue a página.');
-          btnToggle.classList.remove('active');
-          listeningDot.classList.remove('visible');
+          showError('Permissão do microfone negada.');
+          stopListeningState();
           micPermissionGranted = false;
-        } else if (event.error === 'no-speech') {
-          // silencioso
-        } else if (event.error !== 'aborted') {
-          console.warn('Speech error:', event.error);
+        } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
+          console.warn('Speech warning:', event.error);
         }
       };
 
       rec.onresult = (event) => {
+        lastActivityTime = Date.now();
         const last = event.results[event.results.length - 1];
         if (!last.isFinal) return;
 
         const transcript = last[0].transcript.trim();
-        console.log('Falado:', transcript); // útil para debug
+        console.log('Reconhecido:', transcript);
 
         const match = findMatchingPhrase(transcript);
-
         if (match !== null) {
           if (match === 'sponsors') {
             playSponsors();
@@ -485,33 +352,67 @@
       return rec;
     }
 
-    async function ensureMicPermission() {
-      if (micPermissionGranted) {
-        return true;
-      }
-
-      try {
-        if (navigator.permissions && navigator.permissions.query) {
-          const result = await navigator.permissions.query({ name: 'microphone' });
-          if (result.state === 'granted') {
-            micPermissionGranted = true;
-            return true;
-          }
-          if (result.state === 'denied') {
-            showError('Microfone bloqueado. Permita o acesso nas configurações do navegador e recarregue.');
-            return false;
+    // Watchdog para reviver o microfone caso ele fique travado silenciosamente por mais de 30 segundos
+    function startWatchdog() {
+      clearInterval(watchdogInterval);
+      watchdogInterval = setInterval(() => {
+        if (isListeningActive) {
+          const elapsed = Date.now() - lastActivityTime;
+          // Se passou mais de 35 segundos sem nenhum ciclo ou evento de voz/término, reseta a instância
+          if (elapsed > 35000) {
+            console.log('Watchdog: Reiniciando motor de voz por inatividade prolongada...');
+            lastActivityTime = Date.now();
+            try {
+              if (recognition) recognition.abort();
+            } catch (e) {}
+            recognition = initRecognition();
+            if (recognition) {
+              try { recognition.start(); } catch (e) {}
+            }
           }
         }
-      } catch (e) {}
+      }, 10000);
+    }
 
+    function startListeningState() {
+      isListeningActive = true;
+      lastActivityTime = Date.now();
+      btnToggle.classList.add('active');
+      if (!recognition) {
+        recognition = initRecognition();
+      }
+      if (recognition) {
+        try {
+          recognition.start();
+        } catch (e) {
+          recognition = initRecognition();
+          try { recognition.start(); } catch (err) {}
+        }
+      }
+      startWatchdog();
+    }
+
+    function stopListeningState() {
+      isListeningActive = false;
+      btnToggle.classList.remove('active');
+      listeningDot.classList.remove('visible');
+      clearInterval(watchdogInterval);
+      if (recognition) {
+        try {
+          recognition.abort();
+        } catch (e) {}
+      }
+    }
+
+    async function ensureMicPermission() {
+      if (micPermissionGranted) return true;
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         stream.getTracks().forEach(track => track.stop());
         micPermissionGranted = true;
         return true;
       } catch (err) {
-        console.warn('Mic permission error:', err);
-        showError('Permissão do microfone necessária. Clique em Permitir quando o navegador pedir.');
+        showError('Permissão do microfone necessária.');
         return false;
       }
     }
@@ -519,34 +420,17 @@
     btnToggle.addEventListener('click', async () => {
       enableSound();
 
-      if (!recognition) {
+      if (!isListeningActive) {
         const ok = await ensureMicPermission();
         if (!ok) return;
-
-        recognition = initRecognition();
-        if (!recognition) return;
-      }
-
-      if (btnToggle.classList.contains('active')) {
-        btnToggle.classList.remove('active');
-        listeningDot.classList.remove('visible');
-        try {
-          recognition.stop();
-        } catch (e) {}
+        startListeningState();
       } else {
-        try {
-          recognition.start();
-        } catch (e) {
-          recognition = initRecognition();
-          if (recognition) {
-            try { recognition.start(); } catch (e2) {}
-          }
-        }
+        stopListeningState();
       }
     });
 
-    document.addEventListener('click', enableSound);
-    document.addEventListener('touchstart', enableSound);
+    document.addEventListener('click', enableSound, { once: true });
+    document.addEventListener('touchstart', enableSound, { once: true });
 
     window.addEventListener('load', () => {
       playSponsors();
