@@ -8,7 +8,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dexie@4.0.10/dist/dexie.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -35,7 +37,7 @@
         <div class="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center font-bold text-sm">PC</div>
         <div>
           <h1 class="font-semibold text-lg leading-tight">CONTADOR DE PRESENÇA EETEPA</h1>
-          <p class="text-xs text-gray-400">localStorage • Sync a cada 15 min (opcional)</p>
+          <p class="text-xs text-gray-400">Offline-first • localStorage + Supabase a cada 15 min</p>
         </div>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
@@ -71,7 +73,7 @@
           <div id="placeholder" class="text-center text-gray-500 p-8">
             <div class="text-5xl mb-4">📹</div>
             <p class="text-lg font-medium">Nenhuma fonte de vídeo selecionada</p>
-            <p class="text-sm mt-2">Tudo fica no localStorage. Se o Supabase estiver configurado, sincroniza a cada 15 minutos.</p>
+            <p class="text-sm mt-2">Salva localmente primeiro • Supabase sincroniza em lotes a cada 15 minutos.</p>
           </div>
         </div>
 
@@ -86,7 +88,7 @@
             <label class="flex items-center gap-2 cursor-pointer" id="draw-line-label" style="display:none">
               <input type="checkbox" id="draw-line" class="rounded" /><span>Linha</span>
             </label>
-
+            
             <div class="flex items-center gap-1 border border-gray-700 rounded-lg p-0.5" id="line-orient-group" style="display:none">
               <button id="btn-line-h" class="mode-btn active px-2 py-1 rounded text-xs">Horizontal</button>
               <button id="btn-line-v" class="mode-btn px-2 py-1 rounded text-xs text-gray-400">Vertical</button>
@@ -102,8 +104,8 @@
             <label class="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" id="blur-faces" class="rounded" /><span>Blur</span>
             </label>
-            <label class="flex items-center gap-2 cursor-pointer" title="Sincroniza com Supabase a cada 15 minutos quando online">
-              <input type="checkbox" id="sync-supabase" checked class="rounded" /><span>Sync 15min</span>
+            <label class="flex items-center gap-2 cursor-pointer" title="Quando ativado, sincroniza os eventos locais com o Supabase a cada 15 minutos">
+              <input type="checkbox" id="sync-supabase" checked class="rounded" /><span>Sync auto</span>
             </label>
           </div>
         </div>
@@ -196,11 +198,10 @@
 
           <div id="tab-export" class="tab-content hidden space-y-6">
             <div class="bg-gray-900 rounded-xl p-5">
-              <h3 class="font-medium mb-2">Sincronização local → Supabase</h3>
+              <h3 class="font-medium mb-2">Sincronização localStorage → Supabase (a cada 15 minutos)</h3>
               <p class="text-sm text-gray-400 mb-1">Status rede: <strong id="net-status">—</strong></p>
               <p class="text-sm text-gray-400 mb-1">Supabase: <strong id="supabase-status-text">—</strong></p>
-              <p class="text-sm text-gray-400 mb-1">Eventos pendentes: <strong id="pending-count">0</strong></p>
-              <p class="text-sm text-gray-400 mb-4">Próximo sync auto: <strong id="next-sync">—</strong></p>
+              <p class="text-sm text-gray-400 mb-4">Eventos pendentes (localStorage): <strong id="pending-count">0</strong></p>
               <div class="flex flex-wrap gap-3">
                 <button id="btn-sync-now" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium">
                   ☁ Sincronizar agora
@@ -210,17 +211,6 @@
                 </button>
               </div>
               <p id="sync-result" class="text-xs text-gray-500 mt-3"></p>
-              <p class="text-xs text-gray-600 mt-2">Os eventos ficam só no localStorage. O envio online ocorre a cada 15 minutos (se marcado Sync 15min e houver credenciais).</p>
-            </div>
-
-            <div class="bg-gray-900 rounded-xl p-5">
-              <h3 class="font-medium mb-3">Credenciais Supabase (opcional)</h3>
-              <p class="text-xs text-gray-500 mb-3">Salvas só neste navegador. Deixe em branco para modo 100% local.</p>
-              <div class="space-y-2 mb-3">
-                <input id="sb-url" type="text" placeholder="https://xxxx.supabase.co" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm" />
-                <input id="sb-key" type="password" placeholder="anon key" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm" />
-              </div>
-              <button id="btn-save-supabase" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm">Salvar credenciais</button>
             </div>
 
             <div class="bg-gray-900 rounded-xl p-5">
@@ -248,38 +238,21 @@
   </div>
 
 <script>
-/* ========== SUPABASE (opcional, sem config.js) ========== */
-const LS_SB_URL = 'PeopleCounter_sb_url';
-const LS_SB_KEY = 'PeopleCounter_sb_key';
-const SYNC_INTERVAL_MS = 15 * 60 * 1000; // 15 minutos
+/* ========== SUPABASE ========== */
+if (!window.SUPABASE_CONFIG) {
+  alert("Erro: Configurações do Supabase não encontradas! Verifique o arquivo config.js");
+}
 
-let supabaseClient = null;
+const supabaseClient = supabase.createClient(
+  window.SUPABASE_CONFIG.url,
+  window.SUPABASE_CONFIG.key
+);
+
 let supabaseOk = false;
 let isOnline = navigator.onLine;
 let syncInProgress = false;
-let syncTimerId = null;
-let nextSyncAt = null;
-
-function loadSupabaseCredentials() {
-  return {
-    url: localStorage.getItem(LS_SB_URL) || (window.SUPABASE_URL || ''),
-    key: localStorage.getItem(LS_SB_KEY) || (window.SUPABASE_KEY || '')
-  };
-}
-
-function initSupabaseClient() {
-  const { url, key } = loadSupabaseCredentials();
-  supabaseClient = null;
-  if (url && key && typeof supabase !== 'undefined') {
-    try {
-      supabaseClient = supabase.createClient(url, key);
-    } catch (e) {
-      console.warn('Supabase não inicializado:', e);
-      supabaseClient = null;
-    }
-  }
-  return !!supabaseClient;
-}
+const SYNC_INTERVAL_MS = 15 * 60 * 1000;
+let syncTimer = null;
 
 function updateOnlineUI() {
   const badge = document.getElementById('online-badge');
@@ -291,34 +264,17 @@ function updateOnlineUI() {
   } else {
     badge.textContent = '○ Offline';
     badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-orange-900 text-orange-300';
-    if (netStatus) netStatus.textContent = 'Offline — dados só locais';
+    if (netStatus) netStatus.textContent = 'Offline — dados ficam locais';
   }
-}
-
-function updateNextSyncLabel() {
-  const el = document.getElementById('next-sync');
-  if (!el) return;
-  if (!nextSyncAt) {
-    el.textContent = '—';
-    return;
-  }
-  const ms = nextSyncAt - Date.now();
-  if (ms <= 0) {
-    el.textContent = 'em breve';
-    return;
-  }
-  const min = Math.floor(ms / 60000);
-  const sec = Math.floor((ms % 60000) / 1000);
-  el.textContent = min + 'm ' + sec + 's';
 }
 
 async function testSupabaseConnection() {
   const badge = document.getElementById('supabase-badge');
   const statusText = document.getElementById('supabase-status-text');
-  if (!supabaseClient) {
-    badge.textContent = 'Supabase: local only';
-    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400';
-    if (statusText) statusText.textContent = 'Modo local (sem credenciais)';
+  if (!window.SUPABASE_CONFIG || !window.SUPABASE_CONFIG.url || !window.SUPABASE_CONFIG.key) {
+    badge.textContent = 'Supabase: sem config';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-red-900 text-red-300';
+    if (statusText) statusText.textContent = 'config.js ausente ou incompleto';
     supabaseOk = false;
     return false;
   }
@@ -330,7 +286,11 @@ async function testSupabaseConnection() {
     return false;
   }
   try {
-    const { error } = await supabaseClient.from('feiraprofissoes').select('id').limit(1);
+    const { data, error } = await supabaseClient
+      .from('feiraprofissoes')
+      .select('id')
+      .limit(1);
+
     if (error) {
       console.error(error);
       badge.textContent = 'Supabase: erro';
@@ -369,30 +329,8 @@ function eventToRow(e) {
   };
 }
 
-async function pushBatchToSupabase(events) {
-  if (!supabaseClient || !events.length) return { ok: 0, fail: events.length };
-  const rows = events.map(eventToRow);
-  const { error } = await supabaseClient.from('feiraprofissoes').upsert(rows, { onConflict: 'id' });
-  if (error) {
-    console.error(error);
-    return { ok: 0, fail: events.length };
-  }
-  return { ok: events.length, fail: 0 };
-}
-
 async function syncPendingEvents() {
-  if (syncInProgress) return;
-  if (!isOnline) {
-    const el = document.getElementById('sync-result');
-    if (el) el.textContent = 'Sem internet — sync adiado.';
-    return;
-  }
-  if (!supabaseClient) {
-    const el = document.getElementById('sync-result');
-    if (el) el.textContent = 'Supabase não configurado — modo local.';
-    return;
-  }
-
+  if (syncInProgress || !isOnline || !document.getElementById('sync-supabase').checked) return;
   syncInProgress = true;
   const el = document.getElementById('sync-result');
   if (el) el.textContent = 'Sincronizando...';
@@ -412,12 +350,20 @@ async function syncPendingEvents() {
 
     for (let i = 0; i < toSync.length; i += batchSize) {
       const batch = toSync.slice(i, i + batchSize);
-      const result = await pushBatchToSupabase(batch);
-      if (result.ok > 0) {
-        await markEventsSynced(batch.map(e => e.id));
-        ok += result.ok;
+      const rows = batch.map(eventToRow);
+
+      const { error } = await supabaseClient
+        .from('feiraprofissoes')
+        .upsert(rows, { onConflict: 'id' });
+
+      if (error) {
+        fail += batch.length;
+      } else {
+        for (const e of batch) {
+          await updateEvent(e.id, { synced: 1 });
+        }
+        ok += batch.length;
       }
-      fail += result.fail;
     }
 
     if (el) el.textContent = 'Sincronizados: ' + ok + (fail ? ' • Falhas: ' + fail : ' • OK');
@@ -425,30 +371,7 @@ async function syncPendingEvents() {
     await testSupabaseConnection();
   } finally {
     syncInProgress = false;
-    scheduleNextSync();
   }
-}
-
-function scheduleNextSync() {
-  if (syncTimerId) {
-    clearTimeout(syncTimerId);
-    syncTimerId = null;
-  }
-  const wantSync = document.getElementById('sync-supabase') && document.getElementById('sync-supabase').checked;
-  if (!wantSync || !supabaseClient) {
-    nextSyncAt = null;
-    updateNextSyncLabel();
-    return;
-  }
-  nextSyncAt = Date.now() + SYNC_INTERVAL_MS;
-  updateNextSyncLabel();
-  syncTimerId = setTimeout(async () => {
-    if (document.getElementById('sync-supabase').checked && isOnline && supabaseClient) {
-      await syncPendingEvents();
-    } else {
-      scheduleNextSync();
-    }
-  }, SYNC_INTERVAL_MS);
 }
 
 async function refreshPendingBadge() {
@@ -456,6 +379,7 @@ async function refreshPendingBadge() {
   const pending = all.filter(e => e.synced !== 1 && e.synced !== true).length;
   const badge = document.getElementById('pending-badge');
   const countEl = document.getElementById('pending-count');
+  if (!badge) return;
   if (countEl) countEl.textContent = String(pending);
   if (pending > 0) {
     badge.textContent = pending + ' pendente' + (pending > 1 ? 's' : '');
@@ -467,20 +391,21 @@ async function refreshPendingBadge() {
 }
 
 async function fetchEventsFromSupabase(date, type) {
-  if (!supabaseClient) {
-    alert('Supabase não configurado. Use o filtro Local.');
-    return [];
-  }
   if (!isOnline) {
-    alert('Sem conexão com a internet.');
+    alert('Sem conexão com o Supabase.');
     return [];
   }
+
   let query = supabaseClient
     .from('feiraprofissoes')
     .select('*')
     .eq('date', date)
     .order('timestamp', { ascending: false });
-  if (type && type !== 'all') query = query.eq('type', type);
+
+  if (type && type !== 'all') {
+    query = query.eq('type', type);
+  }
+
   const { data, error } = await query;
   if (error) {
     alert('Erro ao carregar dados: ' + error.message);
@@ -493,9 +418,7 @@ window.addEventListener('online', async () => {
   isOnline = true;
   updateOnlineUI();
   await testSupabaseConnection();
-  if (document.getElementById('sync-supabase').checked) {
-    scheduleNextSync();
-  }
+  await refreshPendingBadge();
 });
 window.addEventListener('offline', () => {
   isOnline = false;
@@ -503,7 +426,7 @@ window.addEventListener('offline', () => {
   testSupabaseConnection();
 });
 
-/* ========== UTIL + localStorage ========== */
+/* ========== UTIL + DB ========== */
 function uuid() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = Math.random() * 16 | 0;
@@ -511,8 +434,87 @@ function uuid() {
   });
 }
 
-const LS_EVENTS_KEY = 'PeopleCounter_events';
-const LS_SETTINGS_KEY = 'PeopleCounter_settings';
+const STORAGE_KEYS = {
+  events: 'PeopleCounterDB.events.v1',
+  settings: 'PeopleCounterDB.settings.v1',
+  migrated: 'PeopleCounterDB.migratedFromIndexedDB.v1'
+};
+
+function readLocalJSON(key, fallback) {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch (error) {
+    console.error('Erro ao ler armazenamento local:', error);
+    return fallback;
+  }
+}
+
+function writeLocalJSON(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (error) {
+    console.error('Não foi possível salvar no localStorage:', error);
+    const message = error && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')
+      ? 'O armazenamento local está cheio. Exporte os dados para evitar perda.'
+      : 'Falha ao salvar os dados neste navegador.';
+    const result = document.getElementById('sync-result');
+    if (result) result.textContent = message;
+    alert(message);
+    return false;
+  }
+}
+
+function readEvents() {
+  const events = readLocalJSON(STORAGE_KEYS.events, []);
+  return Array.isArray(events) ? events : [];
+}
+
+function writeEvents(events) {
+  return writeLocalJSON(STORAGE_KEYS.events, events);
+}
+
+async function migrateLegacyIndexedDB() {
+  if (localStorage.getItem(STORAGE_KEYS.migrated) === '1') return;
+  try {
+    const legacy = new Dexie('PeopleCounterDB');
+    legacy.version(1).stores({
+      events: 'id, timestamp, date, hour, type, trackingId, sessionId',
+      settings: 'id'
+    });
+    legacy.version(2).stores({
+      events: 'id, timestamp, date, hour, type, trackingId, sessionId, synced',
+      settings: 'id'
+    }).upgrade(tx => tx.table('events').toCollection().modify(e => {
+      if (e.synced === undefined) e.synced = 0;
+    }));
+
+    await legacy.open();
+    const oldEvents = await legacy.table('events').toArray();
+    const oldSettings = await legacy.table('settings').get('main');
+
+    const currentEvents = readEvents();
+    const ids = new Set(currentEvents.map(e => e.id));
+    for (const event of oldEvents) {
+      if (!ids.has(event.id)) currentEvents.push({ ...event, synced: event.synced === 1 || event.synced === true ? 1 : 0 });
+    }
+
+    if (!writeEvents(currentEvents)) {
+      await legacy.close();
+      return;
+    }
+
+    if (oldSettings && !localStorage.getItem(STORAGE_KEYS.settings)) {
+      writeLocalJSON(STORAGE_KEYS.settings, { ...DEFAULT_SETTINGS, ...oldSettings });
+    }
+
+    localStorage.setItem(STORAGE_KEYS.migrated, '1');
+    await legacy.close();
+  } catch (error) {
+    console.warn('Migração do IndexedDB antigo não concluída:', error);
+  }
+}
 
 const DEFAULT_SETTINGS = {
   confidenceThreshold: 0.30,
@@ -526,79 +528,43 @@ const DEFAULT_SETTINGS = {
   syncSupabase: true
 };
 
-function loadEventsFromLS() {
-  try {
-    const raw = localStorage.getItem(LS_EVENTS_KEY);
-    if (!raw) return [];
-    const arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr : [];
-  } catch (e) {
-    console.error('Erro ao ler eventos', e);
-    return [];
-  }
-}
-
-function saveEventsToLS(events) {
-  try {
-    localStorage.setItem(LS_EVENTS_KEY, JSON.stringify(events));
-  } catch (e) {
-    console.error('Erro ao gravar localStorage', e);
-    alert('Não foi possível salvar no localStorage (quota?).');
-  }
-}
-
 async function getSettings() {
-  try {
-    const raw = localStorage.getItem(LS_SETTINGS_KEY);
-    if (!raw) return { ...DEFAULT_SETTINGS };
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
-  } catch (e) {
-    return { ...DEFAULT_SETTINGS };
-  }
+  const settings = readLocalJSON(STORAGE_KEYS.settings, {});
+  return { ...DEFAULT_SETTINGS, ...(settings || {}) };
 }
 
 async function saveSettings(partial) {
   const current = await getSettings();
-  const next = { ...current, ...partial };
-  try {
-    localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(next));
-  } catch (e) {
-    console.error('Erro ao gravar settings', e);
-  }
+  writeLocalJSON(STORAGE_KEYS.settings, { ...current, ...partial });
 }
 
 async function addEvent(event) {
-  const events = loadEventsFromLS();
+  const events = readEvents();
+  if (events.some(item => item.id === event.id)) return;
   events.push(event);
-  saveEventsToLS(events);
+  writeEvents(events);
 }
 
-async function markEventsSynced(ids) {
-  if (!ids || !ids.length) return;
-  const idSet = new Set(ids);
-  const events = loadEventsFromLS();
-  let changed = false;
-  for (const e of events) {
-    if (idSet.has(e.id) && e.synced !== 1) {
-      e.synced = 1;
-      changed = true;
-    }
-  }
-  if (changed) saveEventsToLS(events);
+async function updateEvent(id, partial) {
+  const events = readEvents();
+  const index = events.findIndex(event => event.id === id);
+  if (index < 0) return;
+  events[index] = { ...events[index], ...partial };
+  writeEvents(events);
 }
 
 async function getEventsByDate(date, type) {
-  let events = loadEventsFromLS().filter(e => e.date === date);
-  if (type && type !== 'all') events = events.filter(e => e.type === type);
+  let events = readEvents().filter(event => event.date === date);
+  if (type && type !== 'all') events = events.filter(event => event.type === type);
   return events;
 }
 
 async function getEventsInRange(from, to) {
-  return loadEventsFromLS().filter(e => e.date >= from && e.date <= to);
+  return readEvents().filter(event => event.date >= from && event.date <= to);
 }
 
 async function getAllEvents() {
-  return loadEventsFromLS().slice().sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''));
+  return readEvents().sort((a, b) => String(a.timestamp).localeCompare(String(b.timestamp)));
 }
 
 async function getTodayStats() {
@@ -609,9 +575,7 @@ async function getTodayStats() {
   const byHour = {};
   events.forEach(e => { byHour[e.hour] = (byHour[e.hour] || 0) + 1; });
   let peakHour = -1, peakCount = 0;
-  Object.entries(byHour).forEach(([h, c]) => {
-    if (c > peakCount) { peakCount = c; peakHour = Number(h); }
-  });
+  Object.entries(byHour).forEach(([h, c]) => { if (c > peakCount) { peakCount = c; peakHour = Number(h); } });
   return { totalIn, totalOut, total: events.length, peakHour, byHour };
 }
 
@@ -622,29 +586,24 @@ async function getLast7DaysStats() {
     d.setDate(d.getDate() - i);
     const date = d.toISOString().slice(0, 10);
     const events = await getEventsByDate(date);
-    days.push({
-      date,
-      in: events.filter(e => e.type === 'in').length,
-      out: events.filter(e => e.type === 'out').length
-    });
+    days.push({ date, in: events.filter(e => e.type === 'in').length, out: events.filter(e => e.type === 'out').length });
   }
   return days;
 }
 
 async function clearAllData() {
-  localStorage.removeItem(LS_EVENTS_KEY);
+  writeEvents([]);
 }
 
 async function countEvents() {
-  return loadEventsFromLS().length;
+  return readEvents().length;
 }
 
 async function clearOldData(days) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
-  const cutoffIso = cutoff.toISOString();
-  const events = loadEventsFromLS().filter(e => (e.timestamp || '') >= cutoffIso);
-  saveEventsToLS(events);
+  const cutoffISO = cutoff.toISOString();
+  writeEvents(readEvents().filter(event => event.synced !== 1 && event.synced !== true || !event.timestamp || event.timestamp >= cutoffISO));
 }
 
 /* ========== TRACKER ========== */
@@ -652,11 +611,10 @@ class PresenceTracker {
   constructor() {
     this.nextId = 1;
     this.tracks = new Map();
-    // Faster confirm of exit so people walking through aren't dropped
-    this.lostTimeout = 800;
-    this.minVisibleMs = 250;
+    this.lostTimeout = 1000; // Tempo em ms sem ver o indivíduo para confirmar saída
+    this.minVisibleMs = 250; // Reduzido para garantir captura rápida
   }
-
+  
   update(detections, mode, lineOrientation, lineDirection, linePos, videoW, videoH) {
     const now = Date.now();
     const events = [];
@@ -666,20 +624,24 @@ class PresenceTracker {
     detections.forEach((det, detIdx) => {
       const [x, y, w, h] = det.bbox;
       const cx = x + w / 2, cy = y + h / 2;
+
       trackEntries.forEach(([id, track]) => {
         const dist = Math.hypot(cx - track.centroid.x, cy - track.centroid.y);
-        // Larger gate helps when frames are skipped / people move fast on screen share
-        const maxDist = Math.max(220, Math.sqrt(w * h) * 2.2);
-        if (dist <= maxDist) matches.push({ detIdx, trackId: id, dist });
+        const maxDist = Math.max(180, Math.sqrt(w * h) * 1.8); 
+        if (dist <= maxDist) {
+          matches.push({ detIdx, trackId: id, dist });
+        }
       });
     });
 
     matches.sort((a, b) => a.dist - b.dist);
+
     const assignedDetections = new Set();
     const assignedTracks = new Set();
 
     for (const match of matches) {
       if (assignedDetections.has(match.detIdx) || assignedTracks.has(match.trackId)) continue;
+
       assignedDetections.add(match.detIdx);
       assignedTracks.add(match.trackId);
 
@@ -692,10 +654,18 @@ class PresenceTracker {
         const isH = lineOrientation === 'horizontal';
         const absPos = isH ? linePos * videoH : linePos * videoW;
         const currCoord = isH ? cy : cx;
+
         if (!track.crossedLine) {
-          if ((track.entryCoord < absPos && currCoord >= absPos) || (track.entryCoord > absPos && currCoord <= absPos)) {
-            track.crossedLine = true;
-            track.crossDirection = (currCoord > track.entryCoord) ? 'down_right' : 'up_left';
+          if (isH) {
+            if ((track.entryCoord < absPos && currCoord >= absPos) || (track.entryCoord > absPos && currCoord <= absPos)) {
+              track.crossedLine = true;
+              track.crossDirection = (currCoord > track.entryCoord) ? 'down_right' : 'up_left';
+            }
+          } else {
+            if ((track.entryCoord < absPos && currCoord >= absPos) || (track.entryCoord > absPos && currCoord <= absPos)) {
+              track.crossedLine = true;
+              track.crossDirection = (currCoord > track.entryCoord) ? 'down_right' : 'up_left';
+            }
           }
         }
       }
@@ -712,6 +682,7 @@ class PresenceTracker {
         const cx = x + w / 2, cy = y + h / 2;
         const id = 't' + this.nextId++;
         const isH = lineOrientation === 'horizontal';
+        
         this.tracks.set(id, {
           id,
           centroid: { x: cx, y: cy },
@@ -733,18 +704,22 @@ class PresenceTracker {
         if (!track.counted && dur >= this.minVisibleMs) {
           track.counted = true;
           let finalType = 'in';
+
           if (mode === 'presence') {
             finalType = 'in';
           } else if (mode === 'line') {
             if (track.crossedLine) {
               const isDownOrRight = track.crossDirection === 'down_right';
-              finalType = lineDirection === 'normal'
-                ? (isDownOrRight ? 'in' : 'out')
-                : (isDownOrRight ? 'out' : 'in');
+              if (lineDirection === 'normal') {
+                finalType = isDownOrRight ? 'in' : 'out';
+              } else {
+                finalType = isDownOrRight ? 'out' : 'in';
+              }
             } else {
               continue;
             }
           }
+
           events.push({ id, type: finalType, confidence: track.lastScore || 0.5 });
         }
         this.tracks.delete(id);
@@ -798,97 +773,67 @@ let countMode = 'presence', lineOrientation = 'horizontal', lineDirection = 'nor
 let liveChart = null, hourlyChart = null, weeklyChart = null;
 const minuteBuffer = [];
 
-// Performance: detect on a small offscreen canvas, not full HD
-const DETECT_MAX_W = 480;
-const TARGET_DETECT_FPS = 12; // enough for people walking past
-const detectCanvas = document.createElement('canvas');
-const detectCtx = detectCanvas.getContext('2d', { willReadFrequently: true });
-let detectScale = 1;
-let lastDetections = [];
-let detectBusy = false;
-let lastDetectTs = 0;
-let pendingEventsQueue = [];
-let flushingEvents = false;
+// Canvas auxiliar otimizado (DOWNSCALING) para aliviar o processamento de IA ao capturar outras janelas
+const offscreenCanvas = document.createElement('canvas');
+const offCtx = offscreenCanvas.getContext('2d');
 
 async function loadModel() {
   if (model) return;
   statusBadge.textContent = 'Carregando IA...';
   statusBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-yellow-900 text-yellow-300';
-  // lite_mobilenet_v2 = fastest COCO-SSD variant in browser
   model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
   statusBadge.textContent = 'Modelo pronto';
   statusBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400';
 }
 
-function setupDetectSize(vw, vh) {
-  if (!vw || !vh) return;
-  if (vw > DETECT_MAX_W) {
-    detectScale = DETECT_MAX_W / vw;
-    detectCanvas.width = DETECT_MAX_W;
-    detectCanvas.height = Math.round(vh * detectScale);
-  } else {
-    detectScale = 1;
-    detectCanvas.width = vw;
-    detectCanvas.height = vh;
-  }
-}
-
 async function detectPeople(threshold) {
-  if (!model || video.readyState < 2 || !detectCanvas.width) return lastDetections;
-  // Draw downscaled frame for inference (much faster than full window capture)
-  detectCtx.drawImage(video, 0, 0, detectCanvas.width, detectCanvas.height);
-  const predictions = await model.detect(detectCanvas, 15);
-  const inv = detectScale > 0 ? (1 / detectScale) : 1;
+  if (!model || video.readyState < 2) return [];
+
+  // Reduz a resolução do quadro enviado à IA para o máximo de 640px mantendo proporção (Extremamente leve)
+  const maxAiWidth = 640;
+  const scale = Math.min(1, maxAiWidth / video.videoWidth);
+  const w = Math.round(video.videoWidth * scale);
+  const h = Math.round(video.videoHeight * scale);
+
+  if (offscreenCanvas.width !== w || offscreenCanvas.height !== h) {
+    offscreenCanvas.width = w;
+    offscreenCanvas.height = h;
+  }
+
+  offCtx.drawImage(video, 0, 0, w, h);
+
+  // Executa detecção no canvas redimensionado
+  const predictions = await model.detect(offscreenCanvas, 10);
+  
+  // Reampera as coordenadas de volta para o tamanho real do vídeo/canvas principal
+  const invScale = 1 / scale;
   return predictions
     .filter(p => p.class === 'person' && p.score >= threshold)
-    .map(p => {
-      const [x, y, w, h] = p.bbox;
-      return {
-        bbox: [x * inv, y * inv, w * inv, h * inv],
-        class: p.class,
-        score: p.score
-      };
-    });
+    .map(p => ({
+      bbox: [p.bbox[0] * invScale, p.bbox[1] * invScale, p.bbox[2] * invScale, p.bbox[3] * invScale],
+      class: p.class,
+      score: p.score
+    }));
 }
 
 async function startScreenCapture() {
   try {
-    // Prefer lower frame rate from the source when the browser allows it
-    stream = await navigator.mediaDevices.getDisplayMedia({
-      video: {
-        frameRate: { ideal: 15, max: 20 },
-        width: { max: 1280 },
-        height: { max: 720 }
-      },
-      audio: false
+    stream = await navigator.mediaDevices.getDisplayMedia({ 
+      video: { frameRate: { ideal: 30, max: 30 } }, 
+      audio: false 
     });
     startVideo(stream, 'screen');
-  } catch (e) {
-    // Fallback without constraints (some browsers reject them on getDisplayMedia)
-    try {
-      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
-      startVideo(stream, 'screen');
-    } catch (e2) {
-      alert('Não foi possível capturar a janela.');
-    }
-  }
+  } catch (e) { alert('Não foi possível capturar a janela.'); }
 }
 
 async function startCamera() {
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: 'environment',
-        width: { ideal: 960 },
-        height: { ideal: 540 },
-        frameRate: { ideal: 15, max: 24 }
-      },
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } }, 
       audio: false
     });
     startVideo(stream, 'camera');
-  } catch (e) {
-    alert('Não foi possível acessar a câmera.');
-  }
+  } catch (e) { alert('Não foi possível acessar a câmera.'); }
 }
 
 function startVideo(mediaStream, source) {
@@ -902,11 +847,7 @@ function startVideo(mediaStream, source) {
     video.play();
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    setupDetectSize(video.videoWidth, video.videoHeight);
     isRunning = true;
-    detectBusy = false;
-    lastDetections = [];
-    lastDetectTs = 0;
     sessionId = uuid();
     tracker.reset();
     statusBadge.textContent = 'Monitorando (' + source + ')';
@@ -918,7 +859,6 @@ function startVideo(mediaStream, source) {
 
 function stopVideo() {
   isRunning = false;
-  detectBusy = false;
   if (animationId) cancelAnimationFrame(animationId);
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
   video.srcObject = null;
@@ -931,81 +871,51 @@ function stopVideo() {
   statusBadge.textContent = 'Aguardando fonte';
   statusBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400';
   currentCountEl.textContent = '0';
-  lastDetections = [];
-}
-
-async function flushPendingEvents() {
-  if (flushingEvents) return;
-  flushingEvents = true;
-  try {
-    while (pendingEventsQueue.length) {
-      const ev = pendingEventsQueue.shift();
-      await registerEvent(ev.type, ev.confidence, ev.id);
-    }
-  } finally {
-    flushingEvents = false;
-  }
 }
 
 async function detectLoop() {
   if (!isRunning) return;
-  const now = performance.now();
-  const minInterval = 1000 / TARGET_DETECT_FPS;
 
   try {
-    // Always draw last known boxes so UI stays smooth even while inference runs
-    if (video.readyState >= 2) {
-      drawFrame(lastDetections);
+    const detections = await detectPeople(parseFloat(confidenceSlider.value));
+    const result = tracker.update(detections, countMode, lineOrientation, lineDirection, linePos, video.videoWidth, video.videoHeight);
+    
+    drawFrame(result.detections);
+    
+    for (const ev of result.events) {
+      await registerEvent(ev.type, ev.confidence, ev.id);
     }
+    
+    currentCountEl.textContent = String(result.detections.length);
+    frameCount++;
 
-    // Throttle inference; skip if previous detect still running
-    if (!detectBusy && (now - lastDetectTs) >= minInterval) {
-      detectBusy = true;
-      lastDetectTs = now;
-      const threshold = parseFloat(confidenceSlider.value);
-      detectPeople(threshold).then(detections => {
-        if (!isRunning) { detectBusy = false; return; }
-        lastDetections = detections;
-        const result = tracker.update(
-          detections, countMode, lineOrientation, lineDirection, linePos,
-          video.videoWidth || 1, video.videoHeight || 1
-        );
-        currentCountEl.textContent = String(result.detections.length);
-        if (result.events.length) {
-          for (const ev of result.events) pendingEventsQueue.push(ev);
-          flushPendingEvents();
-        }
-        frameCount++;
-        detectBusy = false;
-      }).catch(err => {
-        console.error(err);
-        detectBusy = false;
-      });
-    }
-
+    const now = performance.now();
     if (now - lastFpsTime >= 1000) {
       fpsEl.textContent = String(frameCount);
       frameCount = 0;
       lastFpsTime = now;
     }
-  } catch (e) {
-    console.error(e);
-    detectBusy = false;
+  } catch (e) { 
+    console.error(e); 
   }
 
-  animationId = requestAnimationFrame(detectLoop);
+  // Utiliza requestAnimationFrame para fluidez máxima sincronizada com o refresh rate da tela
+  if (isRunning) {
+    animationId = requestAnimationFrame(detectLoop);
+  }
 }
 
 function drawFrame(detections) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
+  
   if (countMode === 'line' && drawLineCheck.checked) {
     ctx.save();
     ctx.strokeStyle = '#22c55e';
     ctx.lineWidth = 3;
     ctx.setLineDash([10, 6]);
     ctx.beginPath();
+    
     if (lineOrientation === 'horizontal') {
       const y = linePos * canvas.height;
       ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
@@ -1065,7 +975,6 @@ async function registerEvent(type, confidence, trackingId) {
     synced: 0
   };
 
-  // Sempre grava só no localStorage — NUNCA envia no momento do evento
   await addEvent(event);
   addLiveEvent(event);
   await refreshStats();
@@ -1078,7 +987,7 @@ function addLiveEvent(event) {
   if (empty) empty.remove();
   const div = document.createElement('div');
   div.className = 'flex items-center justify-between px-3 py-2 rounded-lg bg-gray-800 ' + (event.type === 'in' ? 'flash-in' : 'flash-out');
-  const syncIcon = event.synced === 1 ? '☁' : '📴';
+  const syncIcon = event.synced === 1 ? '☁' : (isOnline ? '…' : '📴');
   div.innerHTML =
     '<div class="flex items-center gap-2">' +
       '<span>' + (event.type === 'in' ? '🟢' : '🔴') + '</span>' +
@@ -1140,10 +1049,7 @@ function updateLiveChart() {
   const label = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   const last = minuteBuffer[minuteBuffer.length - 1];
   if (last && last.time === label) last.count++;
-  else {
-    minuteBuffer.push({ time: label, count: 1 });
-    if (minuteBuffer.length > 30) minuteBuffer.shift();
-  }
+  else { minuteBuffer.push({ time: label, count: 1 }); if (minuteBuffer.length > 30) minuteBuffer.shift(); }
   if (liveChart) {
     liveChart.data.labels = minuteBuffer.map(m => m.time);
     liveChart.data.datasets[0].data = minuteBuffer.map(m => m.count);
@@ -1186,7 +1092,7 @@ async function loadHistorySupabase() {
 }
 
 function eventsToCSV(events) {
-  const headers = ['id', 'timestamp', 'date', 'hour', 'type', 'confidence', 'tracking_id', 'session_id', 'zone', 'synced'];
+  const headers = ['id','timestamp','date','hour','type','confidence','tracking_id','session_id','zone','synced'];
   const rows = events.map(e => [
     e.id, e.timestamp, e.date, e.hour, e.type,
     (e.confidence != null ? e.confidence : 0).toFixed(4),
@@ -1199,10 +1105,7 @@ function eventsToCSV(events) {
 function downloadCSV(csv, filename) {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
+  const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
 }
 
@@ -1219,9 +1122,7 @@ async function exportCSV(all) {
   downloadCSV(eventsToCSV(events), 'feiraprofissoes_' + new Date().toISOString().slice(0, 10) + '.csv');
 }
 
-async function refreshDbCount() {
-  dbCountEl.textContent = String(await countEvents());
-}
+async function refreshDbCount() { dbCountEl.textContent = String(await countEvents()); }
 
 function setCountMode(mode) {
   countMode = mode;
@@ -1275,15 +1176,7 @@ function setupTabs() {
       document.getElementById('tab-' + tab).classList.remove('hidden');
       if (tab === 'history') loadHistoryLocal();
       if (tab === 'reports') refreshStats();
-      if (tab === 'export') {
-        refreshDbCount();
-        refreshPendingBadge();
-        testSupabaseConnection();
-        updateNextSyncLabel();
-        const creds = loadSupabaseCredentials();
-        document.getElementById('sb-url').value = creds.url || '';
-        document.getElementById('sb-key').value = creds.key || '';
-      }
+      if (tab === 'export') { refreshDbCount(); refreshPendingBadge(); testSupabaseConnection(); }
     });
   });
 }
@@ -1304,23 +1197,13 @@ function setupListeners() {
   });
   drawLineCheck.addEventListener('change', () => saveSettings({ drawLine: drawLineCheck.checked }));
   blurFacesCheck.addEventListener('change', () => saveSettings({ blurFaces: blurFacesCheck.checked }));
-  syncSupabaseCheck.addEventListener('change', () => {
-    saveSettings({ syncSupabase: syncSupabaseCheck.checked });
-    if (syncSupabaseCheck.checked) scheduleNextSync();
-    else {
-      if (syncTimerId) clearTimeout(syncTimerId);
-      syncTimerId = null;
-      nextSyncAt = null;
-      updateNextSyncLabel();
-    }
-  });
+  syncSupabaseCheck.addEventListener('change', () => saveSettings({ syncSupabase: syncSupabaseCheck.checked }));
 
   canvas.addEventListener('click', e => {
     if (countMode !== 'line' || !drawLineCheck.checked) return;
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
-    const clickX = (e.clientX - rect.left) * scaleX;
-    const clickY = (e.clientY - rect.top) * scaleY;
+    const clickX = (e.clientX - rect.left) * scaleX, clickY = (e.clientY - rect.top) * scaleY;
     linePos = lineOrientation === 'horizontal'
       ? Math.max(0.05, Math.min(0.95, clickY / canvas.height))
       : Math.max(0.05, Math.min(0.95, clickX / canvas.width));
@@ -1335,24 +1218,10 @@ function setupListeners() {
   document.getElementById('btn-sync-now').addEventListener('click', syncPendingEvents);
   document.getElementById('btn-test-supabase').addEventListener('click', async () => {
     const ok = await testSupabaseConnection();
-    alert(ok
-      ? 'Conexão OK!'
-      : (supabaseClient ? 'Falha. Verifique internet e a tabela feiraprofissoes.' : 'Supabase não configurado — app em modo local.'));
-  });
-  document.getElementById('btn-save-supabase').addEventListener('click', () => {
-    const url = document.getElementById('sb-url').value.trim();
-    const key = document.getElementById('sb-key').value.trim();
-    if (url) localStorage.setItem(LS_SB_URL, url);
-    else localStorage.removeItem(LS_SB_URL);
-    if (key) localStorage.setItem(LS_SB_KEY, key);
-    else localStorage.removeItem(LS_SB_KEY);
-    initSupabaseClient();
-    testSupabaseConnection();
-    if (syncSupabaseCheck.checked) scheduleNextSync();
-    alert(supabaseClient ? 'Credenciais salvas. Supabase ativo.' : 'Credenciais limpas. Modo local.');
+    alert(ok ? 'Conexão OK!' : 'Falha. Verifique internet, config.js e a tabela feiraprofissoes.');
   });
   document.getElementById('btn-clear-data').addEventListener('click', async () => {
-    if (confirm('Apagar TODOS os dados locais?')) {
+    if (confirm('Apagar TODOS os dados locais? Esta ação também remove eventos ainda não sincronizados.')) {
       await clearAllData();
       await refreshStats();
       await refreshDbCount();
@@ -1365,15 +1234,11 @@ function setupListeners() {
   document.getElementById('filter-date').value = today;
   document.getElementById('export-from').value = today;
   document.getElementById('export-to').value = today;
-
-  // Atualiza contador "próximo sync" a cada 15s
-  setInterval(updateNextSyncLabel, 15000);
 }
 
 async function init() {
   updateOnlineUI();
-  initSupabaseClient();
-
+  await migrateLegacyIndexedDB();
   const settings = await getSettings();
   confidenceSlider.value = settings.confidenceThreshold;
   confidenceValue.textContent = settings.confidenceThreshold.toFixed(2);
@@ -1384,6 +1249,7 @@ async function init() {
   lineOrientation = settings.lineOrientation || 'horizontal';
   lineDirection = settings.lineDirection || 'normal';
   linePos = settings.linePos != null ? settings.linePos : 0.5;
+
   selectDirection.value = lineDirection;
 
   setCountMode(countMode);
@@ -1399,10 +1265,12 @@ async function init() {
   setupListeners();
   await clearOldData(settings.retentionDays);
 
-  // Sync automático a cada 15 minutos (não envia a cada evento)
-  if (syncSupabaseCheck.checked) {
-    scheduleNextSync();
-  }
+  if (syncTimer) clearInterval(syncTimer);
+  syncTimer = setInterval(() => {
+    if (syncSupabaseCheck.checked && isOnline) syncPendingEvents();
+  }, SYNC_INTERVAL_MS);
+
+  await refreshPendingBadge();
 }
 
 init().catch(console.error);
