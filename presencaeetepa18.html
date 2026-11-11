@@ -238,15 +238,16 @@
   </div>
 
 <script>
-/* ========== SUPABASE ========== */
-if (!window.SUPABASE_CONFIG) {
-  alert("Erro: Configurações do Supabase não encontradas! Verifique o arquivo config.js");
+/* ========== SUPABASE (usa config.js se existir; app funciona sem ele) ========== */
+let supabaseClient = null;
+try {
+  if (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url && window.SUPABASE_CONFIG.key && typeof supabase !== 'undefined') {
+    supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
+  }
+} catch (e) {
+  console.warn('Supabase não inicializado:', e);
+  supabaseClient = null;
 }
-
-const supabaseClient = supabase.createClient(
-  window.SUPABASE_CONFIG.url,
-  window.SUPABASE_CONFIG.key
-);
 
 let supabaseOk = false;
 let isOnline = navigator.onLine;
@@ -271,10 +272,10 @@ function updateOnlineUI() {
 async function testSupabaseConnection() {
   const badge = document.getElementById('supabase-badge');
   const statusText = document.getElementById('supabase-status-text');
-  if (!window.SUPABASE_CONFIG || !window.SUPABASE_CONFIG.url || !window.SUPABASE_CONFIG.key) {
-    badge.textContent = 'Supabase: sem config';
-    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-red-900 text-red-300';
-    if (statusText) statusText.textContent = 'config.js ausente ou incompleto';
+  if (!supabaseClient) {
+    badge.textContent = 'Supabase: local only';
+    badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400';
+    if (statusText) statusText.textContent = 'Sem config.js — modo localStorage';
     supabaseOk = false;
     return false;
   }
@@ -331,6 +332,11 @@ function eventToRow(e) {
 
 async function syncPendingEvents() {
   if (syncInProgress || !isOnline || !document.getElementById('sync-supabase').checked) return;
+  if (!supabaseClient) {
+    const el = document.getElementById('sync-result');
+    if (el) el.textContent = 'Supabase não configurado (config.js). Dados só no localStorage.';
+    return;
+  }
   syncInProgress = true;
   const el = document.getElementById('sync-result');
   if (el) el.textContent = 'Sincronizando...';
@@ -478,6 +484,10 @@ function writeEvents(events) {
 
 async function migrateLegacyIndexedDB() {
   if (localStorage.getItem(STORAGE_KEYS.migrated) === '1') return;
+  if (typeof Dexie === 'undefined') {
+    localStorage.setItem(STORAGE_KEYS.migrated, '1');
+    return;
+  }
 
   // Preserva registros da versão anterior, que usava Dexie/IndexedDB.
   try {
@@ -615,9 +625,8 @@ class PresenceTracker {
   constructor() {
     this.nextId = 1;
     this.tracks = new Map();
-    // Tolera falhas pontuais da IA sem perder a identidade da pessoa.
-    this.lostTimeout = 1800;
-    this.minVisibleMs = 180;
+    this.lostTimeout = 800; // confirma saída mais rápido (pessoas andando)
+    this.minVisibleMs = 250; // menos tempo mínimo na cena
   }
   
   update(detections, mode, lineOrientation, lineDirection, linePos, videoW, videoH) {
@@ -633,7 +642,7 @@ class PresenceTracker {
 
       trackEntries.forEach(([id, track]) => {
         const dist = Math.hypot(cx - track.centroid.x, cy - track.centroid.y);
-        const maxDist = Math.max(180, Math.sqrt(w * h) * 1.8); 
+        const maxDist = Math.max(220, Math.sqrt(w * h) * 2.2); 
         if (dist <= maxDist) {
           matches.push({ detIdx, trackId: id, dist });
         }
@@ -782,76 +791,89 @@ let countMode = 'presence', lineOrientation = 'horizontal', lineDirection = 'nor
 let liveChart = null, hourlyChart = null, weeklyChart = null;
 const minuteBuffer = [];
 
-// A IA trabalha em uma cópia reduzida do vídeo: evita processar telas 1080p/4K
-// inteiras e reduz bastante o uso de CPU/GPU ao capturar outra janela.
-const DETECTION_MAX_WIDTH = 640;
-const DETECTION_INTERVAL_MS = 110; // aproximadamente 9 análises por segundo
-const detectionCanvas = document.createElement('canvas');
-const detectionCtx = detectionCanvas.getContext('2d', { alpha: false, desynchronized: true });
-let lastStatsRefresh = 0;
-let lastPendingRefresh = 0;
+// Performance: IA em resolução reduzida + FPS limitado
+const DETECT_MAX_W = 480;
+const TARGET_DETECT_FPS = 12;
+const detectCanvas = document.createElement('canvas');
+const detectCtx = detectCanvas.getContext('2d', { willReadFrequently: true });
+let detectScale = 1;
+let lastDetections = [];
+let detectBusy = false;
+let lastDetectTs = 0;
+let pendingEventsQueue = [];
+let flushingEvents = false;
 
 async function loadModel() {
   if (model) return;
   statusBadge.textContent = 'Carregando IA...';
   statusBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-yellow-900 text-yellow-300';
-
-  // WebGL costuma ser mais rápido que CPU em computadores com GPU disponível.
-  try {
-    await tf.setBackend('webgl');
-    await tf.ready();
-  } catch (err) {
-    console.warn('WebGL indisponível; usando backend padrão.', err);
-  }
-
   model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
   statusBadge.textContent = 'Modelo pronto';
   statusBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400';
 }
 
-async function detectPeople(threshold) {
-  if (!model || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return [];
-
-  const scale = Math.min(1, DETECTION_MAX_WIDTH / video.videoWidth);
-  const width = Math.max(1, Math.round(video.videoWidth * scale));
-  const height = Math.max(1, Math.round(video.videoHeight * scale));
-
-  if (detectionCanvas.width !== width || detectionCanvas.height !== height) {
-    detectionCanvas.width = width;
-    detectionCanvas.height = height;
+function setupDetectSize(vw, vh) {
+  if (!vw || !vh) return;
+  if (vw > DETECT_MAX_W) {
+    detectScale = DETECT_MAX_W / vw;
+    detectCanvas.width = DETECT_MAX_W;
+    detectCanvas.height = Math.round(vh * detectScale);
+  } else {
+    detectScale = 1;
+    detectCanvas.width = vw;
+    detectCanvas.height = vh;
   }
+}
 
-  detectionCtx.drawImage(video, 0, 0, width, height);
-
-  // Mais caixas disponíveis ajuda em cenas com várias pessoas.
-  const predictions = await model.detect(detectionCanvas, 30);
-  const invScale = 1 / scale;
-
+async function detectPeople(threshold) {
+  if (!model || video.readyState < 2 || !detectCanvas.width) return lastDetections;
+  detectCtx.drawImage(video, 0, 0, detectCanvas.width, detectCanvas.height);
+  const predictions = await model.detect(detectCanvas, 15);
+  const inv = detectScale > 0 ? (1 / detectScale) : 1;
   return predictions
     .filter(p => p.class === 'person' && p.score >= threshold)
-    .map(p => ({
-      bbox: p.bbox.map(value => value * invScale),
-      class: p.class,
-      score: p.score
-    }));
+    .map(p => {
+      const [x, y, w, h] = p.bbox;
+      return { bbox: [x * inv, y * inv, w * inv, h * inv], class: p.class, score: p.score };
+    });
 }
 
 async function startScreenCapture() {
   try {
     stream = await navigator.mediaDevices.getDisplayMedia({
-      video: { frameRate: { ideal: 15, max: 20 } },
+      video: {
+        frameRate: { ideal: 15, max: 20 },
+        width: { max: 1280 },
+        height: { max: 720 }
+      },
       audio: false
     });
     startVideo(stream, 'screen');
-  } catch (e) { alert('Não foi possível capturar a janela.'); }
+  } catch (e) {
+    try {
+      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      startVideo(stream, 'screen');
+    } catch (e2) {
+      alert('Não foi possível capturar a janela.');
+    }
+  }
 }
+
 async function startCamera() {
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false
+      video: {
+        facingMode: 'environment',
+        width: { ideal: 960 },
+        height: { ideal: 540 },
+        frameRate: { ideal: 15, max: 24 }
+      },
+      audio: false
     });
     startVideo(stream, 'camera');
-  } catch (e) { alert('Não foi possível acessar a câmera.'); }
+  } catch (e) {
+    alert('Não foi possível acessar a câmera.');
+  }
 }
 
 function startVideo(mediaStream, source) {
@@ -865,13 +887,13 @@ function startVideo(mediaStream, source) {
     video.play();
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
+    setupDetectSize(video.videoWidth, video.videoHeight);
     isRunning = true;
+    detectBusy = false;
+    lastDetections = [];
+    lastDetectTs = 0;
     sessionId = uuid();
     tracker.reset();
-    lastFpsTime = performance.now();
-    frameCount = 0;
-    lastStatsRefresh = 0;
-    lastPendingRefresh = 0;
     statusBadge.textContent = 'Monitorando (' + source + ')';
     statusBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-green-900 text-green-300';
     detectLoop();
@@ -881,8 +903,8 @@ function startVideo(mediaStream, source) {
 
 function stopVideo() {
   isRunning = false;
-  if (animationId) clearTimeout(animationId);
-  animationId = null;
+  detectBusy = false;
+  if (animationId) cancelAnimationFrame(animationId);
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
   video.srcObject = null;
   video.classList.add('hidden');
@@ -894,51 +916,67 @@ function stopVideo() {
   statusBadge.textContent = 'Aguardando fonte';
   statusBadge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-gray-800 text-gray-400';
   currentCountEl.textContent = '0';
+  lastDetections = [];
+}
+
+async function flushPendingEvents() {
+  if (flushingEvents) return;
+  flushingEvents = true;
+  try {
+    while (pendingEventsQueue.length) {
+      const ev = pendingEventsQueue.shift();
+      await registerEvent(ev.type, ev.confidence, ev.id);
+    }
+  } finally {
+    flushingEvents = false;
+  }
 }
 
 async function detectLoop() {
   if (!isRunning) return;
-  const start = performance.now();
+  const now = performance.now();
+  const minInterval = 1000 / TARGET_DETECT_FPS;
 
   try {
-    const detections = await detectPeople(parseFloat(confidenceSlider.value));
-    if (!isRunning) return;
+    if (video.readyState >= 2) {
+      drawFrame(lastDetections);
+    }
 
-    const result = tracker.update(
-      detections, countMode, lineOrientation, lineDirection, linePos,
-      video.videoWidth, video.videoHeight
-    );
+    if (!detectBusy && (now - lastDetectTs) >= minInterval) {
+      detectBusy = true;
+      lastDetectTs = now;
+      const threshold = parseFloat(confidenceSlider.value);
+      detectPeople(threshold).then(detections => {
+        if (!isRunning) { detectBusy = false; return; }
+        lastDetections = detections;
+        const result = tracker.update(
+          detections, countMode, lineOrientation, lineDirection, linePos,
+          video.videoWidth || 1, video.videoHeight || 1
+        );
+        currentCountEl.textContent = String(result.detections.length);
+        if (result.events.length) {
+          for (const ev of result.events) pendingEventsQueue.push(ev);
+          flushPendingEvents();
+        }
+        frameCount++;
+        detectBusy = false;
+      }).catch(err => {
+        console.error(err);
+        detectBusy = false;
+      });
+    }
 
-    drawFrame(result.detections);
-    currentCountEl.textContent = String(result.detections.length);
-
-    // Grava os eventos sem recalcular relatórios completos a cada pessoa.
-    for (const ev of result.events) await registerEvent(ev.type, ev.confidence, ev.id, true);
-
-    const now = performance.now();
-    frameCount++;
     if (now - lastFpsTime >= 1000) {
-      fpsEl.textContent = String(Math.round(frameCount * 1000 / (now - lastFpsTime)));
+      fpsEl.textContent = String(frameCount);
       frameCount = 0;
       lastFpsTime = now;
     }
-
-    // Atualizações secundárias ficam fora do caminho crítico da detecção.
-    if (result.events.length && now - lastStatsRefresh > 1500) {
-      lastStatsRefresh = now;
-      refreshStats();
-    }
-    if (result.events.length && now - lastPendingRefresh > 5000) {
-      lastPendingRefresh = now;
-      refreshPendingBadge();
-    }
   } catch (e) {
-    console.error('Falha na análise do vídeo:', e);
+    console.error(e);
+    detectBusy = false;
   }
 
-  // Não sobrepõe inferências: aguarda o tempo configurado após cada análise.
-  const delay = Math.max(0, DETECTION_INTERVAL_MS - (performance.now() - start));
-  animationId = setTimeout(detectLoop, delay);
+  animationId = requestAnimationFrame(detectLoop);
 }
 
 function drawFrame(detections) {
@@ -996,7 +1034,7 @@ function drawFrame(detections) {
   }
 }
 
-async function registerEvent(type, confidence, trackingId, fromDetection = false) {
+async function registerEvent(type, confidence, trackingId) {
   const now = new Date();
   const event = {
     id: uuid(),
@@ -1013,14 +1051,12 @@ async function registerEvent(type, confidence, trackingId, fromDetection = false
 
   await addEvent(event);
   addLiveEvent(event);
+  await refreshStats();
   updateLiveChart();
+  await refreshPendingBadge();
 
-  // A detecção não deve ficar esperando gráficos e consultas ao histórico.
-  if (!fromDetection) {
-    await refreshStats();
-    await refreshPendingBadge();
-  }
-  // O evento fica primeiro no armazenamento local; a sincronização é feita em lote.
+  // O evento fica primeiro no localStorage. O envio online ocorre pelo ciclo de 15 minutos.
+
 }
 
 function addLiveEvent(event) {
@@ -1259,7 +1295,7 @@ function setupListeners() {
   document.getElementById('btn-sync-now').addEventListener('click', syncPendingEvents);
   document.getElementById('btn-test-supabase').addEventListener('click', async () => {
     const ok = await testSupabaseConnection();
-    alert(ok ? 'Conexão OK!' : 'Falha. Verifique internet, config.js e a tabela feiraprofissoes.');
+    alert(ok ? 'Conexão OK!' : (supabaseClient ? 'Falha. Verifique internet e a tabela feiraprofissoes.' : 'config.js ausente — app em modo localStorage.'));
   });
   document.getElementById('btn-clear-data').addEventListener('click', async () => {
     if (confirm('Apagar TODOS os dados locais? Esta ação também remove eventos ainda não sincronizados.')) {
