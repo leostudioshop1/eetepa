@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feira das Profissões EETEPA - Justificativa de Nota</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Configuração do Supabase (externo) -->
+    <script src="config.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 font-sans min-h-screen text-slate-800 flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-slate-900 via-brand-900 to-indigo-900 text-white shadow-lg">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-3 bg-brand-500/20 backdrop-blur-md rounded-xl border border-brand-500/30">
+                    <i class="fa-solid fa-graduation-cap text-2xl text-cyan-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">Feira das Profissões</h1>
+                    <p class="text-xs text-slate-300">EETEPA • Justificativa de Nota (Supabase)</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-800/80 px-4 py-2 rounded-lg border border-slate-700 flex items-center space-x-3">
+                <i class="fa-solid fa-comments text-cyan-400"></i>
+                <div>
+                    <span class="text-xs text-slate-400 block">Total de Justificativas</span>
+                    <span id="total-count" class="text-lg font-bold text-white">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+
+        <!-- Toast -->
+        <div id="toast" class="hidden fixed top-5 right-5 z-50 max-w-md p-4 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-0 flex items-start gap-3 border">
+            <i id="toast-icon" class="text-xl mt-0.5"></i>
+            <div class="flex-grow">
+                <h4 id="toast-title" class="font-semibold text-sm"></h4>
+                <p id="toast-message" class="text-xs mt-0.5 opacity-90"></p>
+            </div>
+            <button onclick="dismissToast()" class="text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Formulário -->
+        <section class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200/80 mb-8">
+            <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-pen-to-square text-brand-600 text-lg"></i>
+                    <h2 class="text-lg font-bold text-slate-900">Enviar Justificativa</h2>
+                </div>
+                <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium">Máx. 30 caracteres</span>
+            </div>
+
+            <form id="justificativa-form" class="space-y-6" onsubmit="handleFormSubmit(event)">
+                
+                <!-- Nome -->
+                <div>
+                    <label for="student-name" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">
+                        Nome Completo do Aluno <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative rounded-xl shadow-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-regular fa-user"></i>
+                        </div>
+                        <input type="text" id="student-name" required placeholder="Ex: Maria Clara Silva" 
+                               class="block w-full pl-10 pr-4 py-3 text-sm text-slate-900 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all outline-none">
+                    </div>
+                </div>
+
+                <!-- Justificativa -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label for="justificativa" class="block text-xs font-semibold uppercase tracking-wider text-slate-700">
+                            Justificativa da Nota <span class="text-red-500">*</span>
+                        </label>
+                        <span id="char-count" class="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                            0 / 30
+                        </span>
+                    </div>
+                    <textarea id="justificativa" required maxlength="30" rows="3"
+                              placeholder="Escreva em até 30 caracteres o motivo da sua nota..."
+                              oninput="updateCharCount()"
+                              class="block w-full px-4 py-3 text-sm text-slate-900 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all outline-none resize-none"></textarea>
+                    <p class="text-xs text-slate-500 mt-1.5">Seja objetivo. O nome será exibido de forma anônima na lista pública.</p>
+                </div>
+
+                <!-- Device ID (somente leitura) -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">
+                        ID Único do Dispositivo
+                    </label>
+                    <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                        <i class="fa-solid fa-fingerprint text-slate-400"></i>
+                        <code id="device-id-display" class="text-xs text-slate-600 font-mono break-all flex-1">Gerando...</code>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-1.5">Identificador gerado automaticamente e armazenado localmente neste dispositivo.</p>
+                </div>
+
+                <!-- Botão -->
+                <button type="submit" id="submit-btn"
+                        class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-brand-500/20 transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>Enviar Justificativa</span>
+                </button>
+            </form>
+        </section>
+
+        <!-- Lista de Justificativas (Anônimas) -->
+        <section class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200/80">
+            <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">Justificativas Enviadas</h2>
+                    <p class="text-xs text-slate-500">Nomes ocultados com * para preservar o anonimato</p>
+                </div>
+            </div>
+
+            <div id="justificativas-list" class="space-y-3">
+                <!-- Conteúdo dinâmico -->
+            </div>
+
+            <!-- Estado vazio -->
+            <div id="empty-state" class="py-12 text-center flex flex-col items-center justify-center">
+                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3 text-slate-400">
+                    <i class="fa-regular fa-comment-dots text-2xl"></i>
+                </div>
+                <h3 class="text-base font-semibold text-slate-700">Nenhuma justificativa ainda</h3>
+                <p class="text-xs text-slate-400 max-w-xs mt-1">As justificativas enviadas aparecerão aqui de forma anônima.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+        <div class="max-w-4xl mx-auto px-4 text-center text-xs text-slate-500">
+            &copy; Feira das Profissões EETEPA • Justificativas anônimas via Supabase
+        </div>
+    </footer>
+
+    <script>
+        // Verificação de segurança da config
+        if (!window.SUPABASE_CONFIG) {
+            alert("Erro: Configurações do Supabase não encontradas! Verifique o arquivo config.js");
+        }
+
+        // Cria o cliente Supabase
+        const supabaseClient = supabase.createClient(
+            window.SUPABASE_CONFIG.url,
+            window.SUPABASE_CONFIG.key
+        );
+
+        let justificativas = [];
+        let deviceId = '';
+
+        // Gera ou recupera ID único do dispositivo (UUID persistente no localStorage)
+        function getDeviceId() {
+            let id = localStorage.getItem('eetepa_device_id');
+            if (!id) {
+                if (crypto.randomUUID) {
+                    id = crypto.randomUUID();
+                } else {
+                    // Fallback simples
+                    id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                        const r = Math.random() * 16 | 0;
+                        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                        return v.toString(16);
+                    });
+                }
+                localStorage.setItem('eetepa_device_id', id);
+            }
+            return id;
+        }
+
+        // Contador de caracteres
+        function updateCharCount() {
+            const textarea = document.getElementById('justificativa');
+            const countEl = document.getElementById('char-count');
+            const len = textarea.value.length;
+            countEl.innerText = `${len} / 30`;
+            if (len >= 28) {
+                countEl.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800";
+            } else {
+                countEl.className = "text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600";
+            }
+        }
+
+        // Anonimiza o nome: "Maria Clara Silva" → "M**** C**** S****"
+        function anonymizeName(name) {
+            if (!name) return '*****';
+            return name.trim().split(/\s+/).map(word => {
+                if (word.length <= 1) return '*';
+                return word[0].toUpperCase() + '*'.repeat(Math.max(word.length - 1, 1));
+            }).join(' ');
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.innerText = text;
+            return div.innerHTML;
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            deviceId = getDeviceId();
+            document.getElementById('device-id-display').textContent = deviceId;
+            carregarJustificativas();
+        });
+
+        // Buscar justificativas do Supabase
+        async function carregarJustificativas() {
+            showToast('Carregando', 'Buscando justificativas...', 'info');
+
+            const { data, error } = await supabaseClient
+                .from('feira_justificativas')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error("Erro ao carregar:", error);
+                showToast('Erro', 'Não foi possível carregar as justificativas.', 'error');
+                return;
+            }
+
+            justificativas = data || [];
+            updateUI();
+            dismissToast();
+        }
+
+        // Enviar formulário
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+
+            const nameInput = document.getElementById('student-name');
+            const justInput = document.getElementById('justificativa');
+            const name = nameInput.value.trim();
+            const justificativa = justInput.value.trim();
+
+            if (!name) {
+                showToast('Campo Obrigatório', 'Informe o nome completo do aluno.', 'error');
+                return;
+            }
+
+            if (!justificativa) {
+                showToast('Campo Obrigatório', 'Escreva a justificativa.', 'warning');
+                return;
+            }
+
+            if (justificativa.length > 30) {
+                showToast('Limite Excedido', 'A justificativa deve ter no máximo 30 caracteres.', 'error');
+                return;
+            }
+
+            const registro = {
+                name: name,
+                device_id: deviceId,
+                justificativa: justificativa
+            };
+
+            showToast('Salvando', 'Enviando justificativa...', 'info');
+
+            const { data, error } = await supabaseClient
+                .from('feira_justificativas')
+                .insert([registro])
+                .select();
+
+            if (error) {
+                console.error("Erro ao inserir:", error);
+                showToast('Erro', 'Falha ao salvar: ' + error.message, 'error');
+                return;
+            }
+
+            // Limpa formulário e recarrega
+            document.getElementById('justificativa-form').reset();
+            updateCharCount();
+            await carregarJustificativas();
+
+            showToast('Sucesso!', 'Sua justificativa foi registrada com sucesso.', 'success');
+        }
+
+        // Atualiza a lista (sempre anônima)
+        function updateUI() {
+            const listContainer = document.getElementById('justificativas-list');
+            const emptyState = document.getElementById('empty-state');
+            const totalCount = document.getElementById('total-count');
+
+            totalCount.innerText = justificativas.length;
+
+            if (justificativas.length === 0) {
+                listContainer.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            listContainer.innerHTML = justificativas.map(item => {
+                const maskedName = anonymizeName(item.name);
+                const dataFormatada = item.created_at 
+                    ? new Date(item.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                    : '';
+
+                return `
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-3 p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-700">
+                                <i class="fa-solid fa-user-secret text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow min-w-0">
+                            <div class="flex flex-wrap items-center gap-2 mb-1">
+                                <span class="text-sm font-semibold text-slate-700 font-mono tracking-wide">${escapeHtml(maskedName)}</span>
+                                ${dataFormatada ? `<span class="text-xs text-slate-400">• ${dataFormatada}</span>` : ''}
+                            </div>
+                            <p class="text-sm text-slate-800 leading-relaxed">"${escapeHtml(item.justificativa)}"</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Sistema de Toasts (mesmo padrão do HTML anterior)
+        function showToast(title, message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastTitle = document.getElementById('toast-title');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            const config = {
+                success: { bg: 'bg-emerald-50 text-emerald-900 border-emerald-200', icon: 'fa-solid fa-circle-check text-emerald-600' },
+                error:   { bg: 'bg-red-50 text-red-900 border-red-200', icon: 'fa-solid fa-circle-exclamation text-red-600' },
+                warning: { bg: 'bg-amber-50 text-amber-900 border-amber-200', icon: 'fa-solid fa-triangle-exclamation text-amber-600' },
+                info:    { bg: 'bg-sky-50 text-sky-900 border-sky-200', icon: 'fa-solid fa-circle-info text-sky-600' }
+            };
+
+            const currentConfig = config[type] || config.info;
+
+            toast.className = `fixed top-5 right-5 z-50 max-w-md p-4 rounded-xl shadow-xl transition-all duration-300 transform border ${currentConfig.bg}`;
+            toastIcon.className = `${currentConfig.icon} text-xl mt-0.5`;
+            toastTitle.innerText = title;
+            toastMsg.innerText = message;
+
+            toast.classList.remove('hidden');
+
+            setTimeout(() => {
+                dismissToast();
+            }, 4000);
+        }
+
+        function dismissToast() {
+            document.getElementById('toast').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
