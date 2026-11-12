@@ -84,7 +84,7 @@
                     <i class="fa-solid fa-pen-to-square text-brand-600 text-lg"></i>
                     <h2 class="text-lg font-bold text-slate-900">Enviar Justificativa</h2>
                 </div>
-                <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium">Máx. 30 caracteres</span>
+                <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium">Máx. 100 caracteres</span>
             </div>
 
             <form id="justificativa-form" class="space-y-6" onsubmit="handleFormSubmit(event)">
@@ -110,11 +110,11 @@
                             Justificativa da Nota <span class="text-red-500">*</span>
                         </label>
                         <span id="char-count" class="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                            0 / 30
+                            0 / 100
                         </span>
                     </div>
-                    <textarea id="justificativa" required maxlength="30" rows="3"
-                              placeholder="Escreva em até 30 caracteres o motivo da sua nota..."
+                    <textarea id="justificativa" required maxlength="100" rows="4"
+                              placeholder="Escreva em até 100 caracteres o motivo da sua nota..."
                               oninput="updateCharCount()"
                               class="block w-full px-4 py-3 text-sm text-slate-900 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all outline-none resize-none"></textarea>
                     <p class="text-xs text-slate-500 mt-1.5">Seja objetivo. O nome será exibido de forma anônima na lista pública.</p>
@@ -206,13 +206,13 @@
             return id;
         }
 
-        // Contador de caracteres
+        // Contador de caracteres (agora 100)
         function updateCharCount() {
             const textarea = document.getElementById('justificativa');
             const countEl = document.getElementById('char-count');
             const len = textarea.value.length;
-            countEl.innerText = `${len} / 30`;
-            if (len >= 28) {
+            countEl.innerText = `${len} / 100`;
+            if (len >= 95) {
                 countEl.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800";
             } else {
                 countEl.className = "text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600";
@@ -281,8 +281,8 @@
                 return;
             }
 
-            if (justificativa.length > 30) {
-                showToast('Limite Excedido', 'A justificativa deve ter no máximo 30 caracteres.', 'error');
+            if (justificativa.length > 100) {
+                showToast('Limite Excedido', 'A justificativa deve ter no máximo 100 caracteres.', 'error');
                 return;
             }
 
@@ -354,7 +354,7 @@
             }).join('');
         }
 
-        // Sistema de Toasts (mesmo padrão do HTML anterior)
+        // Sistema de Toasts
         function showToast(title, message, type = 'info') {
             const toast = document.getElementById('toast');
             const toastTitle = document.getElementById('toast-title');
