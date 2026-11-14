@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Câmera Remota P2P</title>
+    <!-- Biblioteca PeerJS para conexão direta entre dispositivos -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .card {
+            background: #1e1e1e;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            max-width: 500px;
+            width: 100%;
+        }
+        button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+            width: 100%;
+            font-weight: bold;
+        }
+        button:hover { background-color: #1d4ed8; }
+        button.secondary { background-color: #10b981; }
+        button.secondary:hover { background-color: #059669; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #2a2a2a;
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        video {
+            width: 100%;
+            max-height: 70vh;
+            background: #000;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .code-display {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            color: #38bdf8;
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            user-select: all;
+        }
+        .hidden { display: none; }
+        #status { color: #9ca3af; font-size: 14px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Câmera Remota WebRTC</h2>
+
+        <!-- Tela Inicial de Escolha -->
+        <div id="menu">
+            <p>Escolha a função deste dispositivo:</p>
+            <button onclick="iniciarComputador()">💻 Abrir no Computador (Receptor)</button>
+            <button class="secondary" onclick="iniciarTelefone()">📱 Abrir no Telefone (Câmera)</button>
+        </div>
+
+        <!-- Interface do Computador -->
+        <div id="tela-pc" class="hidden">
+            <p>Digite este código no seu telefone:</p>
+            <div id="meu-id" class="code-display">Gerando...</div>
+            <video id="video-remoto" autoplay playsinline></video>
+        </div>
+
+        <!-- Interface do Telefone -->
+        <div id="tela-celular" class="hidden">
+            <p>Digite o código que aparece na tela do computador:</p>
+            <input type="text" id="input-id" placeholder="Ex: A1B2C" maxlength="6" autocapitalize="characters">
+            <button class="secondary" onclick="conectarETransmitir()">Transmitir Câmera</button>
+            <button onclick="alternarCamera()" style="background:#4b5563; font-size: 14px; padding: 8px;">🔄 Inverter Câmera</button>
+            <video id="video-local" autoplay playsinline muted></video>
+        </div>
+
+        <div id="status">Aguardando seleção...</div>
+    </div>
+
+    <script>
+        let peer = null;
+        let streamLocal = null;
+        let usandoCameraTraseira = true;
+
+        // Gera um código curto de 5 letras/números para facilitar digitar no celular
+        function gerarCodigoCurto() {
+            return Math.random().toString(36).substring(2, 7).toUpperCase();
+        }
+
+        function atualizarStatus(msg) {
+            document.getElementById('status').innerText = msg;
+        }
+
+        // --- LÓGICA DO COMPUTADOR ---
+        function iniciarComputador() {
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('tela-pc').classList.remove('hidden');
+            
+            const codigo = gerarCodigoCurto();
+            // Prefixo para evitar colisão no servidor público gratuito do PeerJS
+            peer = new Peer('cam-remota-' + codigo);
+
+            peer.on('open', () => {
+                document.getElementById('meu-id').innerText = codigo;
+                atualizarStatus('Aguardando conexão do telefone...');
+            });
+
+            // Quando o telefone ligar para o computador
+            peer.on('call', (call) => {
+                atualizarStatus('Recebendo transmissão...');
+                call.answer(); // Atende a chamada sem enviar vídeo de volta
+                call.on('stream', (streamRemoto) => {
+                    const videoEl = document.getElementById('video-remoto');
+                    videoEl.srcObject = streamRemoto;
+                    atualizarStatus('Conectado e transmitindo ao vivo!');
+                });
+            });
+
+            peer.on('error', (err) => {
+                atualizarStatus('Erro: ' + err.type + '. Recarregue a página.');
+            });
+        }
+
+        // --- LÓGICA DO TELEFONE ---
+        async function iniciarTelefone() {
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('tela-celular').classList.remove('hidden');
+            peer = new Peer(); // Gera ID automático para o celular
+            await ligarCamera();
+        }
+
+        async function ligarCamera() {
+            if (streamLocal) {
+                streamLocal.getTracks().forEach(track => track.stop());
+            }
+
+            try {
+                streamLocal = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: usandoCameraTraseira ? 'environment' : 'user' },
+                    audio: false // Mude para true se quiser transmitir áudio também
+                });
+                document.getElementById('video-local').srcObject = streamLocal;
+                atualizarStatus('Câmera pronta. Digite o código do PC.');
+            } catch (err) {
+                atualizarStatus('Erro ao acessar câmera. Verifique se está usando HTTPS e deu permissão.');
+                console.error(err);
+            }
+        }
+
+        async function alternarCamera() {
+            usandoCameraTraseira = !usandoCameraTraseira;
+            await ligarCamera();
+            // Se já estiver conectado, reconecta com a nova câmera
+            if (document.getElementById('input-id').value.trim() !== '') {
+                conectarETransmitir();
+            }
+        }
+
+        function conectarETransmitir() {
+            const codigoPC = document.getElementById('input-id').value.trim().toUpperCase();
+            if (!codigoPC) {
+                alert('Digite o código exibido no computador!');
+                return;
+            }
+            if (!streamLocal) {
+                alert('A câmera ainda não está ativa.');
+                return;
+            }
+
+            atualizarStatus('Conectando ao computador...');
+            // Faz a chamada de vídeo para o ID do computador
+            const call = peer.call('cam-remota-' + codigoPC, streamLocal);
+            
+            call.on('error', (err) => {
+                atualizarStatus('Falha na conexão: ' + err);
+            });
+            
+            setTimeout(() => {
+                atualizarStatus('Transmitindo para o PC (' + codigoPC + ')');
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
