@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Câmera Remota P2P + Gravação</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .card {
+            background: #1e1e1e;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            max-width: 600px;
+            width: 100%;
+        }
+        button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px 0;
+            width: 100%;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #1d4ed8; }
+        button.secondary { background-color: #10b981; }
+        button.secondary:hover { background-color: #059669; }
+        button.dark-mode-btn { background-color: #374151; border: 1px solid #4b5563; }
+        button.danger { background-color: #dc2626; animation: pulse 1.5s infinite; }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #2a2a2a;
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        video {
+            width: 100%;
+            max-height: 65vh;
+            background: #000;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .code-display {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            color: #38bdf8;
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            user-select: all;
+        }
+        .hidden { display: none !important; }
+        #status { color: #9ca3af; font-size: 14px; margin-top: 12px; }
+        .controles-gravacao {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        /* Cortina preta total para simular tela desligada sem cortar a câmera */
+        #cortina-preta {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000000;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding-bottom: 40px;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        #cortina-preta span {
+            color: #1f2937; /* Texto quase invisível para não emitir luz */
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Tela Preta Simulada (Aparece no celular ao ativar o modo discreto) -->
+    <div id="cortina-preta" class="hidden" ondblclick="desativarTelaPreta()">
+        <span>Transmitindo... Toque duplo rápido na tela para acordar</span>
+    </div>
+
+    <div class="card">
+        <h2>Câmera Remota WebRTC</h2>
+
+        <!-- Tela Inicial -->
+        <div id="menu">
+            <p>Escolha a função deste dispositivo:</p>
+            <button onclick="iniciarComputador()">💻 Abrir no Computador (Receptor)</button>
+            <button class="secondary" onclick="iniciarTelefone()">📱 Abrir no Telefone (Câmera)</button>
+        </div>
+
+        <!-- Interface do Computador -->
+        <div id="tela-pc" class="hidden">
+            <p>Digite este código no seu telefone:</p>
+            <div id="meu-id" class="code-display">Gerando...</div>
+            <video id="video-remoto" autoplay playsinline></video>
+            
+            <div id="controles-pc" class="controles-gravacao hidden">
+                <button id="btn-gravar" class="secondary" onclick="iniciarGravacao()">🔴 Iniciar Gravação</button>
+                <button id="btn-parar" class="danger hidden" onclick="pararESalvarGravacao()">⏹️ Parar e Baixar Vídeo</button>
+            </div>
+        </div>
+
+        <!-- Interface do Telefone -->
+        <div id="tela-celular" class="hidden">
+            <p>Digite o código que aparece na tela do computador:</p>
+            <input type="text" id="input-id" placeholder="Ex: A1B2C" maxlength="6" autocapitalize="characters">
+            <button class="secondary" onclick="conectarETransmitir()">Transmitir Câmera</button>
+            <button class="dark-mode-btn" onclick="ativarTelaPreta()">🌑 Modo Tela Apagada (Manter Câmera Ativa)</button>
+            <button onclick="alternarCamera()" style="background:#4b5563; font-size: 14px; padding: 8px;">🔄 Inverter Câmera</button>
+            <video id="video-local" autoplay playsinline muted></video>
+        </div>
+
+        <div id="status">Aguardando seleção...</div>
+    </div>
+
+    <script>
+        let peer = null;
+        let streamLocal = null;
+        let streamRemotoGlobal = null;
+        let mediaRecorder = null;
+        let pedacosDeVideo = [];
+        let usandoCameraTraseira = true;
+        let wakeLock = null;
+        let audioCtx = null;
+
+        function gerarCodigoCurto() {
+            return Math.random().toString(36).substring(2, 7).toUpperCase();
+        }
+
+        function atualizarStatus(msg) {
+            document.getElementById('status').innerText = msg;
+        }
+
+        // ==========================================
+        // LÓGICA DO COMPUTADOR (RECEPTOR + GRAVAÇÃO)
+        // ==========================================
+        function iniciarComputador() {
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('tela-pc').classList.remove('hidden');
+            
+            const codigo = gerarCodigoCurto();
+            peer = new Peer('cam-remota-' + codigo);
+
+            peer.on('open', () => {
+                document.getElementById('meu-id').innerText = codigo;
+                atualizarStatus('Aguardando conexão do telefone...');
+            });
+
+            peer.on('call', (call) => {
+                atualizarStatus('Recebendo transmissão...');
+                call.answer();
+                call.on('stream', (streamRemoto) => {
+                    streamRemotoGlobal = streamRemoto;
+                    const videoEl = document.getElementById('video-remoto');
+                    videoEl.srcObject = streamRemoto;
+                    
+                    document.getElementById('controles-pc').classList.remove('hidden');
+                    atualizarStatus('Conectado e transmitindo ao vivo!');
+                });
+            });
+
+            peer.on('error', (err) => {
+                atualizarStatus('Erro: ' + err.type + '. Recarregue a página.');
+            });
+        }
+
+        function iniciarGravacao() {
+            if (!streamRemotoGlobal) return;
+            pedacosDeVideo = [];
+            
+            const opcoes = MediaRecorder.isTypeSupported('video/webm; codecs=vp9') 
+                ? { mimeType: 'video/webm; codecs=vp9' } 
+                : { mimeType: 'video/webm' };
+
+            try {
+                mediaRecorder = new MediaRecorder(streamRemotoGlobal, opcoes);
+            } catch (e) {
+                mediaRecorder = new MediaRecorder(streamRemotoGlobal);
+            }
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    pedacosDeVideo.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(pedacosDeVideo, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `gravacao-camera-${timestamp}.webm`;
+                document.body.appendChild(a);
+                a.click();
+                
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+
+                atualizarStatus('Vídeo salvo na pasta Downloads do PC!');
+            };
+
+            mediaRecorder.start(1000);
+            document.getElementById('btn-gravar').classList.add('hidden');
+            document.getElementById('btn-parar').classList.remove('hidden');
+            atualizarStatus('🔴 Gravando transmissão...');
+        }
+
+        function pararESalvarGravacao() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                document.getElementById('btn-parar').classList.add('hidden');
+                document.getElementById('btn-gravar').classList.remove('hidden');
+            }
+        }
+
+        // ==========================================
+        // LÓGICA DO TELEFONE (CÂMERA + SEGUNDO PLANO)
+        // ==========================================
+        async function iniciarTelefone() {
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('tela-celular').classList.remove('hidden');
+            peer = new Peer();
+            await ligarCamera();
+            ativarWakeLock();
+        }
+
+        async function ligarCamera() {
+            if (streamLocal) {
+                streamLocal.getTracks().forEach(track => track.stop());
+            }
+
+            try {
+                streamLocal = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: usandoCameraTraseira ? 'environment' : 'user' },
+                    audio: true // Captura áudio para a gravação no PC
+                });
+                document.getElementById('video-local').srcObject = streamLocal;
+                atualizarStatus('Câmera pronta. Digite o código do PC.');
+            } catch (err) {
+                atualizarStatus('Erro ao acessar câmera. Verifique se está usando HTTPS e deu permissão.');
+                console.error(err);
+            }
+        }
+
+        async function alternarCamera() {
+            usandoCameraTraseira = !usandoCameraTraseira;
+            await ligarCamera();
+            if (document.getElementById('input-id').value.trim() !== '') {
+                conectarETransmitir();
+            }
+        }
+
+        function conectarETransmitir() {
+            const codigoPC = document.getElementById('input-id').value.trim().toUpperCase();
+            if (!codigoPC) {
+                alert('Digite o código exibido no computador!');
+                return;
+            }
+            if (!streamLocal) {
+                alert('A câmera ainda não está ativa.');
+                return;
+            }
+
+            ativarWakeLock();
+            iniciarAudioSilencioso();
+            atualizarStatus('Conectando ao computador...');
+            
+            const call = peer.call('cam-remota-' + codigoPC, streamLocal);
+            
+            call.on('error', (err) => {
+                atualizarStatus('Falha na conexão: ' + err);
+            });
+            
+            setTimeout(() => {
+                atualizarStatus('Transmitindo para o PC (' + codigoPC + ')');
+            }, 1500);
+        }
+
+        // Impede que a tela do celular bloqueie sozinha
+        async function ativarWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                } catch (err) {
+                    console.log('WakeLock não suportado ou negado:', err);
+                }
+            }
+        }
+
+        // Reativa o WakeLock caso o usuário saia e volte para a aba
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && streamLocal) {
+                ativarWakeLock();
+            }
+        });
+
+        // Cria um oscilador de áudio mudo para manter o processo do navegador ativo
+        function iniciarAudioSilencioso() {
+            if (audioCtx) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                gainNode.gain.value = 0.001; // Volume praticamente zero
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.start();
+            } catch (e) {
+                console.log('Áudio de fundo não iniciado:', e);
+            }
+        }
+
+        // Ativa a tela 100% preta (simula tela desligada)
+        function ativarTelaPreta() {
+            ativarWakeLock();
+            document.getElementById('cortina-preta').classList.remove('hidden');
+            // Tenta entrar em tela cheia para esconder a barra de endereços do navegador
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+        }
+
+        function desativarTelaPreta() {
+            document.getElementById('cortina-preta').classList.add('hidden');
+            if (document.exitFullscreen && document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            }
+        }
+    </script>
+</body>
+</html>
