@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Câmera Remota P2P com Gravação</title>
+    <title>Câmera Remota P2P</title>
+    <!-- Biblioteca PeerJS para conexão direta entre dispositivos -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         body {
@@ -25,7 +26,7 @@
             padding: 25px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            max-width: 600px;
+            max-width: 500px;
             width: 100%;
         }
         button {
@@ -36,23 +37,13 @@
             font-size: 16px;
             border-radius: 8px;
             cursor: pointer;
-            margin: 8px 0;
+            margin: 10px 5px;
             width: 100%;
             font-weight: bold;
-            transition: background 0.2s;
         }
         button:hover { background-color: #1d4ed8; }
         button.secondary { background-color: #10b981; }
         button.secondary:hover { background-color: #059669; }
-        button.danger { background-color: #dc2626; animation: pulse 1.5s infinite; }
-        button.danger:hover { background-color: #b91c1c; }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.8; }
-            100% { opacity: 1; }
-        }
-
         input {
             width: 100%;
             padding: 12px;
@@ -67,7 +58,7 @@
         }
         video {
             width: 100%;
-            max-height: 65vh;
+            max-height: 70vh;
             background: #000;
             border-radius: 8px;
             margin-top: 15px;
@@ -84,12 +75,7 @@
             user-select: all;
         }
         .hidden { display: none; }
-        #status { color: #9ca3af; font-size: 14px; margin-top: 12px; }
-        .controles-gravacao {
-            display: flex;
-            gap: 10px;
-            margin-top: 12px;
-        }
+        #status { color: #9ca3af; font-size: 14px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -97,7 +83,7 @@
     <div class="card">
         <h2>Câmera Remota WebRTC</h2>
 
-        <!-- Tela Inicial -->
+        <!-- Tela Inicial de Escolha -->
         <div id="menu">
             <p>Escolha a função deste dispositivo:</p>
             <button onclick="iniciarComputador()">💻 Abrir no Computador (Receptor)</button>
@@ -109,12 +95,6 @@
             <p>Digite este código no seu telefone:</p>
             <div id="meu-id" class="code-display">Gerando...</div>
             <video id="video-remoto" autoplay playsinline></video>
-            
-            <!-- Controles de Gravação (aparecem quando o vídeo conecta) -->
-            <div id="controles-pc" class="controles-gravacao hidden">
-                <button id="btn-gravar" class="secondary" onclick="iniciarGravacao()">🔴 Iniciar Gravação</button>
-                <button id="btn-parar" class="danger hidden" onclick="pararESalvarGravacao()">⏹️ Parar e Baixar Vídeo</button>
-            </div>
         </div>
 
         <!-- Interface do Telefone -->
@@ -132,11 +112,9 @@
     <script>
         let peer = null;
         let streamLocal = null;
-        let streamRemotoGlobal = null;
-        let mediaRecorder = null;
-        let pedacosDeVideo = [];
         let usandoCameraTraseira = true;
 
+        // Gera um código curto de 5 letras/números para facilitar digitar no celular
         function gerarCodigoCurto() {
             return Math.random().toString(36).substring(2, 7).toUpperCase();
         }
@@ -151,6 +129,7 @@
             document.getElementById('tela-pc').classList.remove('hidden');
             
             const codigo = gerarCodigoCurto();
+            // Prefixo para evitar colisão no servidor público gratuito do PeerJS
             peer = new Peer('cam-remota-' + codigo);
 
             peer.on('open', () => {
@@ -158,16 +137,13 @@
                 atualizarStatus('Aguardando conexão do telefone...');
             });
 
+            // Quando o telefone ligar para o computador
             peer.on('call', (call) => {
                 atualizarStatus('Recebendo transmissão...');
-                call.answer();
+                call.answer(); // Atende a chamada sem enviar vídeo de volta
                 call.on('stream', (streamRemoto) => {
-                    streamRemotoGlobal = streamRemoto;
                     const videoEl = document.getElementById('video-remoto');
                     videoEl.srcObject = streamRemoto;
-                    
-                    // Libera os controles de gravação no PC
-                    document.getElementById('controles-pc').classList.remove('hidden');
                     atualizarStatus('Conectado e transmitindo ao vivo!');
                 });
             });
@@ -177,72 +153,11 @@
             });
         }
 
-        // --- FUNÇÕES DE GRAVAÇÃO NO PC ---
-        function iniciarGravacao() {
-            if (!streamRemotoGlobal) return;
-
-            pedacosDeVideo = [];
-            
-            // Tenta usar VP9 ou fallback padrão do navegador
-            const opcoes = MediaRecorder.isTypeSupported('video/webm; codecs=vp9') 
-                ? { mimeType: 'video/webm; codecs=vp9' } 
-                : { mimeType: 'video/webm' };
-
-            try {
-                mediaRecorder = new MediaRecorder(streamRemotoGlobal, opcoes);
-            } catch (e) {
-                mediaRecorder = new MediaRecorder(streamRemotoGlobal);
-            }
-
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data && event.data.size > 0) {
-                    pedacosDeVideo.push(event.data);
-                }
-            };
-
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(pedacosDeVideo, { type: 'video/webm' });
-                const url = URL.createObjectURL(blob);
-                
-                // Gera nome de arquivo com data e hora
-                const agora = new Date();
-                const timestamp = agora.toISOString().replace(/[:.]/g, '-').slice(0, 19);
-                
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = `gravacao-camera-${timestamp}.webm`;
-                document.body.appendChild(a);
-                a.click();
-                
-                setTimeout(() => {
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                }, 100);
-
-                atualizarStatus('Vídeo salvo no computador!');
-            };
-
-            mediaRecorder.start(1000); // Coleta dados a cada 1 segundo
-            
-            document.getElementById('btn-gravar').classList.add('hidden');
-            document.getElementById('btn-parar').classList.remove('hidden');
-            atualizarStatus('🔴 Gravando transmissão...');
-        }
-
-        function pararESalvarGravacao() {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-                document.getElementById('btn-parar').classList.add('hidden');
-                document.getElementById('btn-gravar').classList.remove('hidden');
-            }
-        }
-
         // --- LÓGICA DO TELEFONE ---
         async function iniciarTelefone() {
             document.getElementById('menu').classList.add('hidden');
             document.getElementById('tela-celular').classList.remove('hidden');
-            peer = new Peer();
+            peer = new Peer(); // Gera ID automático para o celular
             await ligarCamera();
         }
 
@@ -254,12 +169,12 @@
             try {
                 streamLocal = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: usandoCameraTraseira ? 'environment' : 'user' },
-                    audio: true // Ativado para caso queira gravar com som; mude para false se não precisar
+                    audio: false // Mude para true se quiser transmitir áudio também
                 });
                 document.getElementById('video-local').srcObject = streamLocal;
                 atualizarStatus('Câmera pronta. Digite o código do PC.');
             } catch (err) {
-                atualizarStatus('Erro ao acessar câmera. Verifique HTTPS e permissões.');
+                atualizarStatus('Erro ao acessar câmera. Verifique se está usando HTTPS e deu permissão.');
                 console.error(err);
             }
         }
@@ -267,6 +182,7 @@
         async function alternarCamera() {
             usandoCameraTraseira = !usandoCameraTraseira;
             await ligarCamera();
+            // Se já estiver conectado, reconecta com a nova câmera
             if (document.getElementById('input-id').value.trim() !== '') {
                 conectarETransmitir();
             }
@@ -284,6 +200,7 @@
             }
 
             atualizarStatus('Conectando ao computador...');
+            // Faz a chamada de vídeo para o ID do computador
             const call = peer.call('cam-remota-' + codigoPC, streamLocal);
             
             call.on('error', (err) => {
