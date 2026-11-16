@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DATA QUEST • AV4 - EETEPA XINGUARA</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --neon-cyan: #22d3ee;
+      --neon-blue: #3b82f6;
+      --neon-purple: #a855f7;
+      --neon-green: #22c55e;
+      --neon-red: #ef4444;
+    }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background-color: #050814;
+      color: #f1f5f9;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.14) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(168, 85, 247, 0.14) 0%, transparent 45%),
+        linear-gradient(rgba(34, 211, 238, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34, 211, 238, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+    }
+    .font-arcade { font-family: 'Orbitron', sans-serif; }
+    .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(34, 211, 238, 0.04);
+    }
+
+    .neon-glow-cyan { box-shadow: 0 0 18px rgba(34, 211, 238, 0.35); }
+    .neon-glow-green { box-shadow: 0 0 22px rgba(34, 197, 94, 0.45); }
+    .neon-glow-red { box-shadow: 0 0 22px rgba(239, 68, 68, 0.45); }
+
+    .option-btn {
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(30, 41, 59, 0.65);
+    }
+    .option-btn:hover:not(:disabled) {
+      transform: translateX(6px);
+      border-color: #22d3ee;
+      background: rgba(34, 211, 238, 0.12);
+      box-shadow: 0 0 15px rgba(34, 211, 238, 0.25);
+    }
+    .option-btn.correct {
+      background: rgba(22, 163, 74, 0.28) !important;
+      border-color: #22c55e !important;
+      box-shadow: 0 0 22px rgba(34, 197, 94, 0.45);
+      color: #dcfce7;
+    }
+    .option-btn.wrong {
+      background: rgba(220, 38, 38, 0.28) !important;
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 22px rgba(239, 68, 68, 0.45);
+      color: #fee2e2;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+    }
+    .animate-shake { animation: shake 0.42s ease-in-out; }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.92) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .animate-pop { animation: popIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+    @keyframes floatScore {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-48px) scale(1.25); }
+    }
+    .floating-points {
+      position: fixed;
+      pointer-events: none;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      z-index: 60;
+      animation: floatScore 0.95s ease-out forwards;
+    }
+
+    #particles-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-slate-950">
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- TOP HEADER / STATUS BAR -->
+  <header class="border-b border-slate-800/90 bg-slate-950/85 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center font-arcade font-black text-slate-950 text-lg shadow-lg shadow-cyan-500/20">
+          DB
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-arcade font-extrabold text-sm sm:text-base tracking-wider text-cyan-400">DATA QUEST • AV4</h1>
+            <span class="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded bg-blue-950 border border-blue-700 text-blue-300 font-semibold">EETEPA XINGUARA</span>
+          </div>
+          <p class="text-xs text-slate-400">Ciência de Dados • 1º Ano Vespertino • Prof. Léo</p>
+        </div>
+      </div>
+
+      <!-- STATUS BADGES (Padrão presencaeetepa) -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <span id="online-badge" class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-400">—</span>
+        <span id="pending-badge" class="px-2.5 py-1 rounded-full text-xs font-medium bg-orange-950 text-orange-300 border border-orange-700/50 hidden">0 pendentes</span>
+        <span id="supabase-badge" class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-400">Supabase: —</span>
+        <button id="btn-sound-toggle" title="Ativar/Desativar Som" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-cyan-300 transition">
+          🔊 Som ON
+        </button>
+        <button id="btn-open-ranking" class="px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 text-xs font-semibold transition flex items-center gap-1">
+          🏆 Ranking
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-6 flex flex-col justify-center">
+
+    <!-- SCREEN 1: START / LOGIN -->
+    <section id="screen-start" class="glass-panel rounded-2xl p-6 sm:p-10 animate-pop">
+      <div class="text-center max-w-2xl mx-auto">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 text-xs font-mono-code mb-4">
+          <span>SELECT * FROM conhecimento WHERE nota = 10;</span>
+        </div>
+        <h2 class="font-arcade text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 mb-3">
+          DESAFIO SQL & DADOS
+        </h2>
+        <p class="text-slate-300 text-sm sm:text-base mb-6 leading-relaxed">
+          Responda às <strong>8 questões objetivas</strong> com agilidade para acumular combos e complete as <strong>2 missões discursivas</strong> da Feira das Profissões para registrar seu nome no Ranking Oficial!
+        </p>
+      </div>
+
+      <div class="max-w-md mx-auto space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-cyan-400 mb-1.5">Nome Completo do(a) Aluno(a)</label>
+          <input id="input-player-name" type="text" maxlength="45" placeholder="Ex: João Pedro Silva"
+            class="w-full px-4 py-3 rounded-xl bg-slate-900/90 border border-slate-700 focus:border-cyan-400 focus:outline-none text-white placeholder-slate-500 text-base transition" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Turma</label>
+          <input id="input-player-turma" type="text" value="1º ANO - CIÊNCIA DE DADOS (TARDE)"
+            class="w-full px-4 py-2.5 rounded-xl bg-slate-900/60 border border-slate-800 text-slate-300 text-sm focus:border-cyan-400 focus:outline-none" />
+        </div>
+
+        <div class="pt-2 flex flex-col sm:flex-row gap-3">
+          <button id="btn-start-game" class="flex-1 py-3.5 px-6 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-arcade font-black text-sm sm:text-base tracking-wider shadow-lg shadow-cyan-500/25 transition transform hover:scale-[1.02] active:scale-[0.98]">
+            ▶ INICIAR MISSÃO
+          </button>
+          <button id="btn-sync-pending" class="py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 hidden">
+            ☁ Sincronizar Pendentes
+          </button>
+        </div>
+      </div>
+
+      <!-- MINI PREVIEW TOP 3 -->
+      <div class="mt-8 pt-6 border-t border-slate-800/80">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-arcade text-amber-400 tracking-wider">⚡ TOP 3 LÍDERES ONLINE</span>
+          <button id="btn-refresh-mini-rank" class="text-xs text-cyan-400 hover:underline">Atualizar</button>
+        </div>
+        <div id="mini-ranking-list" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+          <div class="p-3 rounded-xl bg-slate-900/70 border border-slate-800 text-slate-500 text-center">Carregando ranking...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 2: QUIZ GAMEPLAY -->
+    <section id="screen-game" class="hidden space-y-4">
+      <!-- HUD BAR -->
+      <div class="glass-panel rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700">
+            <span class="text-[10px] uppercase text-slate-400 block">Questão</span>
+            <span id="hud-question-num" class="font-arcade font-bold text-cyan-400 text-base">1 / 10</span>
+          </div>
+          <div class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700">
+            <span class="text-[10px] uppercase text-slate-400 block">Acertos</span>
+            <span id="hud-hits" class="font-arcade font-bold text-green-400 text-base">0</span>
+          </div>
+        </div>
+
+        <!-- PROGRESS BAR -->
+        <div class="flex-1 min-w-[140px]">
+          <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+            <span id="hud-player-label" class="truncate max-w-[150px]">Jogador</span>
+            <span id="hud-combo-badge" class="font-arcade text-amber-400 font-bold">COMBO x1</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+            <div id="hud-progress-bar" class="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all duration-300" style="width: 10%"></div>
+          </div>
+        </div>
+
+        <!-- SCORE -->
+        <div class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-blue-950 to-purple-950 border border-cyan-500/40 text-right">
+          <span class="text-[10px] uppercase text-cyan-300 block">Pontuação</span>
+          <span id="hud-score" class="font-arcade font-black text-xl text-white">0</span>
+        </div>
+      </div>
+
+      <!-- QUESTION CARD -->
+      <div id="question-card" class="glass-panel rounded-2xl p-6 sm:p-8 animate-pop">
+        <div class="flex items-center justify-between gap-2 mb-4">
+          <span id="q-category-badge" class="px-3 py-1 rounded-full text-xs font-mono-code bg-cyan-950 text-cyan-300 border border-cyan-700/50">
+            SQL • FUNDAMENTOS
+          </span>
+          <span id="q-points-badge" class="text-xs font-arcade text-amber-400">+100 PTS</span>
+        </div>
+
+        <h3 id="q-text" class="text-lg sm:text-xl font-bold text-white leading-snug mb-6">
+          Carregando questão...
+        </h3>
+
+        <!-- MULTIPLE CHOICE CONTAINER -->
+        <div id="q-options-container" class="space-y-3"></div>
+
+        <!-- DISCURSIVE CONTAINER (Q9 & Q10) -->
+        <div id="q-discursive-container" class="hidden space-y-4">
+          <div class="p-3.5 rounded-xl bg-purple-950/40 border border-purple-500/30 text-xs text-purple-200">
+            ✍️ <strong>Questão Discursiva Oficial (AV4):</strong> Sua resposta será salva diretamente no banco de dados para avaliação do Professor Léo. Escreva com clareza!
+          </div>
+          <textarea id="q-discursive-input" rows="5" placeholder="Digite sua resposta completa aqui..."
+            class="w-full p-4 rounded-xl bg-slate-900/90 border border-slate-700 focus:border-cyan-400 focus:outline-none text-white text-sm sm:text-base leading-relaxed"></textarea>
+          <div class="flex justify-between items-center text-xs text-slate-400">
+            <span id="q-char-count">0 caracteres</span>
+            <span>Bônus de conclusão: +150 pts</span>
+          </div>
+          <button id="btn-submit-discursive" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-400 hover:to-cyan-400 text-slate-950 font-arcade font-black text-sm tracking-wider shadow-lg transition">
+            CONFIRMAR RESPOSTA ➔
+          </button>
+        </div>
+
+        <!-- FEEDBACK BAR -->
+        <div id="q-feedback-box" class="hidden mt-6 p-4 rounded-xl border text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <p id="q-feedback-title" class="font-bold text-base mb-0.5"></p>
+            <p id="q-feedback-desc" class="text-xs opacity-90"></p>
+          </div>
+          <button id="btn-next-question" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-white text-slate-950 font-arcade font-bold text-xs tracking-wider hover:bg-cyan-300 transition shrink-0">
+            PRÓXIMA ➔
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 3: FINAL RESULTS -->
+    <section id="screen-result" class="hidden glass-panel rounded-2xl p-6 sm:p-10 text-center animate-pop">
+      <div class="inline-block px-4 py-1 rounded-full bg-green-950 border border-green-500/40 text-green-300 text-xs font-arcade mb-3">
+        MISSÃO CONCLUÍDA!
+      </div>
+      <h2 id="res-player-name" class="font-arcade text-2xl sm:text-3xl font-black text-white mb-1">ALUNO</h2>
+      <p id="res-sync-status" class="text-xs text-cyan-400 mb-6">Enviando pontuação para o Supabase...</p>
+
+      <div class="grid grid-cols-3 gap-3 max-w-lg mx-auto mb-8">
+        <div class="p-4 rounded-2xl bg-slate-900/90 border border-cyan-500/30">
+          <span class="text-[11px] text-slate-400 block">PONTUAÇÃO</span>
+          <span id="res-score" class="font-arcade text-2xl sm:text-3xl font-black text-cyan-400">0</span>
+        </div>
+        <div class="p-4 rounded-2xl bg-slate-900/90 border border-green-500/30">
+          <span class="text-[11px] text-slate-400 block">ACERTOS (OBJ)</span>
+          <span id="res-hits" class="font-arcade text-2xl sm:text-3xl font-black text-green-400">0/8</span>
+        </div>
+        <div class="p-4 rounded-2xl bg-slate-900/90 border border-amber-500/30">
+          <span class="text-[11px] text-slate-400 block">COMBO MÁX</span>
+          <span id="res-combo" class="font-arcade text-2xl sm:text-3xl font-black text-amber-400">x1</span>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-3">
+        <button id="btn-view-full-ranking" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-arcade font-black text-sm tracking-wider shadow-lg transition">
+          🏆 VER RANKING OFICIAL
+        </button>
+        <button id="btn-play-again" class="px-6 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-arcade font-bold text-xs tracking-wider transition">
+          ↻ JOGAR NOVAMENTE
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: RANKING ONLINE SUPABASE -->
+  <div id="modal-ranking" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-panel rounded-2xl max-w-2xl w-full max-h-[88vh] flex flex-col overflow-hidden animate-pop">
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+        <div>
+          <h3 class="font-arcade text-lg font-black text-amber-400 flex items-center gap-2">
+            🏆 RANKING ONLINE • AV4
+          </h3>
+          <p class="text-xs text-slate-400">Dados sincronizados em tempo real via Supabase</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btn-reload-ranking" class="px-3 py-1.5 rounded-lg bg-cyan-950 hover:bg-cyan-900 border border-cyan-700 text-cyan-300 text-xs font-semibold">
+            ↻ Atualizar
+          </button>
+          <button id="btn-close-ranking" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-red-900 text-slate-300 hover:text-white font-bold">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <div class="p-4 overflow-y-auto flex-1">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="text-[11px] uppercase text-slate-400 border-b border-slate-800">
+              <th class="py-2.5 px-3">#</th>
+              <th class="py-2.5 px-3">Aluno(a)</th>
+              <th class="py-2.5 px-3 text-center">Acertos</th>
+              <th class="py-2.5 px-3 text-center">Combo</th>
+              <th class="py-2.5 px-3 text-right">Pontos</th>
+            </tr>
+          </thead>
+          <tbody id="ranking-table-body" class="text-sm divide-y divide-slate-800/60">
+            <tr><td colspan="5" class="py-8 text-center text-slate-500">Carregando dados do Supabase...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-900 py-3 px-4 text-center text-[11px] text-slate-500">
+    EETEPA Xinguara • Técnico em Ciência de Dados • Armazenamento, Manipulação e Transformação de Dados
+  </footer>
+
+<script>
+/* ==========================================================================
+   1. BANCO DE QUESTÕES OFICIAL (AV4 - 1º ANO CIÊNCIA DE DADOS)
+   ========================================================================== */
+const QUESTIONS = [
+  {
+    id: 1,
+    type: 'mc',
+    category: 'INTEGRAÇÃO WEB & DB',
+    text: '1 - Para integrar uma página HTML a um banco de dados, o método mais comum é:',
+    options: [
+      { letter: 'A', text: 'Colocar a senha no arquivo HTML' },
+      { letter: 'B', text: 'Usar apenas tags HTML sem nenhuma linguagem adicional' },
+      { letter: 'C', text: 'Utilizar uma API' },
+      { letter: 'D', text: 'Enviar os dados por e-mail' },
+      { letter: 'E', text: 'Nenhuma das alternativas' }
+    ],
+    correct: 'C',
+    explanation: 'Páginas HTML precisam de uma API (como REST ou SDKs como o Supabase) para se comunicar com segurança com o servidor de banco de dados.'
+  },
+  {
+    id: 2,
+    type: 'mc',
+    category: 'SQL • DQL',
+    text: '2 - Qual comando SQL é usado para consultar (buscar) dados em uma tabela?',
+    options: [
+      { letter: 'A', text: 'INSERT' },
+      { letter: 'B', text: 'UPDATE' },
+      { letter: 'C', text: 'SELECT' },
+      { letter: 'D', text: 'DELETE' },
+      { letter: 'E', text: 'CREATE' }
+    ],
+    correct: 'C',
+    explanation: 'O comando SELECT é utilizado para realizar consultas e recuperar registros armazenados nas tabelas.'
+  },
+  {
+    id: 3,
+    type: 'mc',
+    category: 'SQL • DML',
+    text: '3 - O comando usado para inserir novos registros em uma tabela é:',
+    options: [
+      { letter: 'A', text: 'SELECT' },
+      { letter: 'B', text: 'UPDATE' },
+      { letter: 'C', text: 'DELETE' },
+      { letter: 'D', text: 'INSERT INTO' },
+      { letter: 'E', text: 'DROP' }
+    ],
+    correct: 'D',
+    explanation: 'INSERT INTO adiciona novas linhas (registros) dentro de uma tabela específica.'
+  },
+  {
+    id: 4,
+    type: 'mc',
+    category: 'SQL • DML',
+    text: '4 - Para alterar dados já existentes em uma tabela, utilizamos o comando:',
+    options: [
+      { letter: 'A', text: 'SELECT' },
+      { letter: 'B', text: 'INSERT' },
+      { letter: 'C', text: 'UPDATE' },
+      { letter: 'D', text: 'CREATE' },
+      { letter: 'E', text: 'Nenhuma das alternativas' }
+    ],
+    correct: 'C',
+    explanation: 'UPDATE modifica valores de registros já cadastrados (geralmente acompanhado da cláusula WHERE).'
+  },
+  {
+    id: 5,
+    type: 'mc',
+    category: 'SQL • DML',
+    text: '5 - Qual comando apaga registros de uma tabela?',
+    options: [
+      { letter: 'A', text: 'DROP' },
+      { letter: 'B', text: 'DELETE' },
+      { letter: 'C', text: 'SUAVE' },
+      { letter: 'D', text: 'ERROR' },
+      { letter: 'E', text: 'Nenhuma das alternativas' }
+    ],
+    correct: 'B',
+    explanation: 'DELETE remove registros (linhas) de uma tabela, enquanto DROP apaga a estrutura inteira da tabela ou banco.'
+  },
+  {
+    id: 6,
+    type: 'mc',
+    category: 'SQL • DDL',
+    text: '6 - O comando CREATE TABLE serve para:',
+    options: [
+      { letter: 'A', text: 'Inserir dados' },
+      { letter: 'B', text: 'Criar uma nova tabela no banco' },
+      { letter: 'C', text: 'Apagar uma tabela' },
+      { letter: 'D', text: 'Consultar dados' },
+      { letter: 'E', text: 'Atualizar registros' }
+    ],
+    correct: 'B',
+    explanation: 'CREATE TABLE define a estrutura de uma nova tabela, suas colunas e tipos de dados.'
+  },
+  {
+    id: 7,
+    type: 'mc',
+    category: 'SQL • DDL',
+    text: '7 - Qual dos comandos abaixo é usado para alterar uma tabela?',
+    options: [
+      { letter: 'A', text: 'MOVE' },
+      { letter: 'B', text: 'ALTER TABLE' },
+      { letter: 'C', text: 'INSERT' },
+      { letter: 'D', text: 'SELECT' },
+      { letter: 'E', text: 'Nenhuma das alternativas' }
+    ],
+    correct: 'B',
+    explanation: 'ALTER TABLE permite adicionar, remover ou modificar colunas e restrições em uma tabela existente.'
+  },
+  {
+    id: 8,
+    type: 'mc',
+    category: 'ARQUITETURA DE DADOS',
+    text: '8 - Ao armazenar milhões de registros de clientes, a opção mais adequada é:',
+    options: [
+      { letter: 'A', text: 'Bloco de Notas' },
+      { letter: 'B', text: 'Paint' },
+      { letter: 'C', text: 'Banco de Dados SQL' },
+      { letter: 'D', text: 'Calculadora' },
+      { letter: 'E', text: 'Compactador de Arquivos' }
+    ],
+    correct: 'C',
+    explanation: 'Um Banco de Dados SQL oferece indexação, integridade, consultas rápidas e segurança para grandes volumes de dados.'
+  },
+  {
+    id: 9,
+    type: 'discursive',
+    category: 'DISCURSIVA • PROJETO',
+    text: '9 - Discorra sobre seu projeto apresentado na Feira das Profissões e a integração dele com banco de dados:'
+  },
+  {
+    id: 10,
+    type: 'discursive',
+    category: 'DISCURSIVA • AUTOAVALIAÇÃO',
+    text: '10 - Justifique sua nota na Feira das Profissões citando suas atividades na preparação do estande e durante o dia da feira:'
+  }
+];
+
+/* ==========================================================================
+   2. CONEXÃO SUPABASE (EXATAMENTE IGUAL AO presencaeetepa11.html)
+   ========================================================================== */
+const TABLE_NAME = 'ranking_av4';
+const LOCAL_QUEUE_KEY = 'eetepa_av4_pending_scores';
+
+let supabaseClient = null;
+let supabaseOk = false;
+let isOnline = navigator.onLine;
+
+if (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url && window.SUPABASE_CONFIG.key && window.supabase) {
+  supabaseClient = window.supabase.createClient(
+    window.SUPABASE_CONFIG.url,
+    window.SUPABASE_CONFIG.key
+  );
+} else {
+  console.warn('config.js não encontrado ou incompleto. Modo offline ativado.');
+}
+
+function updateOnlineUI() {
+  const badge = document.getElementById('online-badge');
+  if (isOnline) {
+    badge.textContent = '● Online';
+    badge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-green-950 text-green-300 border border-green-700/50';
+  } else {
+    badge.textContent = '○ Offline';
+    badge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-orange-950 text-orange-300 border border-orange-700/50';
+  }
+}
+
+async function testSupabaseConnection() {
+  const badge = document.getElementById('supabase-badge');
+  if (!supabaseClient) {
+    badge.textContent = 'Supabase: sem config.js';
+    badge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-red-950 text-red-300 border border-red-700/50';
+    supabaseOk = false;
+    return false;
+  }
+  if (!isOnline) {
+    badge.textContent = 'Supabase: offline';
+    badge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-orange-950 text-orange-300 border border-orange-700/50';
+    supabaseOk = false;
+    return false;
+  }
+  try {
+    const { error } = await supabaseClient
+      .from(TABLE_NAME)
+      .select('id')
+      .limit(1);
+
+    if (error) {
+      console.error('Erro Supabase:', error);
+      badge.textContent = 'Supabase: erro tabela';
+      badge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-950 text-yellow-300 border border-yellow-700/50';
+      supabaseOk = false;
+      return false;
+    }
+    badge.textContent = 'Supabase: OK';
+    badge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-green-950 text-green-300 border border-green-700/50';
+    supabaseOk = true;
+    return true;
+  } catch (err) {
+    badge.textContent = 'Supabase: falha';
+    badge.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-red-950 text-red-300';
+    supabaseOk = false;
+    return false;
+  }
+}
+
+function getPendingQueue() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_QUEUE_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function setPendingQueue(list) {
+  localStorage.setItem(LOCAL_QUEUE_KEY, JSON.stringify(list));
+  refreshPendingBadge();
+}
+
+function refreshPendingBadge() {
+  const pending = getPendingQueue();
+  const badge = document.getElementById('pending-badge');
+  const btnSync = document.getElementById('btn-sync-pending');
+  if (pending.length > 0) {
+    badge.textContent = `${pending.length} pendente${pending.length > 1 ? 's' : ''}`;
+    badge.classList.remove('hidden');
+    if (btnSync) btnSync.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+    if (btnSync) btnSync.classList.add('hidden');
+  }
+}
+
+async function saveScoreToSupabase(record) {
+  if (!isOnline || !supabaseClient) {
+    const q = getPendingQueue();
+    q.push(record);
+    setPendingQueue(q);
+    return { ok: false, offline: true };
+  }
+
+  const { error } = await supabaseClient
+    .from(TABLE_NAME)
+    .insert([record]);
+
+  if (error) {
+    console.error('Erro ao salvar no Supabase:', error);
+    const q = getPendingQueue();
+    q.push(record);
+    setPendingQueue(q);
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
+}
+
+async function syncPendingScores() {
+  const pending = getPendingQueue();
+  if (!pending.length || !isOnline || !supabaseClient) return;
+
+  const { error } = await supabaseClient
+    .from(TABLE_NAME)
+    .insert(pending);
+
+  if (!error) {
+    setPendingQueue([]);
+    await testSupabaseConnection();
+    await loadRankingData();
+  }
+}
+
+async function loadRankingData() {
+  const tbody = document.getElementById('ranking-table-body');
+  const miniList = document.getElementById('mini-ranking-list');
+
+  if (!supabaseClient || !isOnline) {
+    const offlineMsg = 'Modo offline: conecte-se à internet com config.js para ver o ranking.';
+    if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400 text-xs">${offlineMsg}</td></tr>`;
+    if (miniList) miniList.innerHTML = `<div class="col-span-3 p-3 rounded-xl bg-slate-900/70 border border-slate-800 text-slate-400 text-center">${offlineMsg}</div>`;
+    return;
+  }
+
+  const { data, error } = await supabaseClient
+    .from(TABLE_NAME)
+    .select('id, aluno, turma, pontuacao, acertos, combo_max, created_at')
+    .order('pontuacao', { ascending: false })
+    .order('acertos', { ascending: false })
+    .order('created_at', { ascending: true })
+    .limit(50);
+
+  if (error) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-red-400 text-xs">Erro ao consultar tabela "${TABLE_NAME}": ${error.message}</td></tr>`;
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">Nenhum registro ainda. Seja o 1º no pódio!</td></tr>`;
+    if (miniList) miniList.innerHTML = `<div class="col-span-3 p-3 rounded-xl bg-slate-900/70 border border-slate-800 text-slate-400 text-center">Nenhum aluno no ranking ainda. Jogue para estrear o pódio!</div>`;
+    return;
+  }
+
+  // Render Mini Top 3
+  if (miniList) {
+    const medals = ['🥇', '🥈', '🥉'];
+    miniList.innerHTML = data.slice(0, 3).map((row, idx) => `
+      <div class="p-3 rounded-xl bg-slate-900/90 border ${idx === 0 ? 'border-amber-500/50' : 'border-slate-800'} flex items-center justify-between gap-2">
+        <div class="truncate">
+          <span class="mr-1">${medals[idx]}</span>
+          <strong class="text-slate-200">${escapeHtml(row.aluno)}</strong>
+        </div>
+        <span class="font-arcade font-bold text-cyan-400 shrink-0">${row.pontuacao} pts</span>
+      </div>
+    `).join('');
+  }
+
+  // Render Full Table
+  if (tbody) {
+    tbody.innerHTML = data.map((row, idx) => {
+      const pos = idx + 1;
+      const badge = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `<span class="text-slate-500 font-mono-code">${pos}º</span>`;
+      const rowHighlight = pos <= 3 ? 'bg-amber-500/5' : '';
+      return `
+        <tr class="${rowHighlight} hover:bg-slate-800/40 transition">
+          <td class="py-3 px-3 font-bold">${badge}</td>
+          <td class="py-3 px-3">
+            <div class="font-semibold text-white">${escapeHtml(row.aluno)}</div>
+            <div class="text-[10px] text-slate-400">${escapeHtml(row.turma || '')}</div>
+          </td>
+          <td class="py-3 px-3 text-center font-mono-code text-green-400">${row.acertos}/8</td>
+          <td class="py-3 px-3 text-center font-mono-code text-amber-400">x${row.combo_max || 1}</td>
+          <td class="py-3 px-3 text-right font-arcade font-bold text-cyan-400">${row.pontuacao}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+}
+
+window.addEventListener('online', async () => {
+  isOnline = true;
+  updateOnlineUI();
+  await testSupabaseConnection();
+  await syncPendingScores();
+});
+window.addEventListener('offline', () => {
+  isOnline = false;
+  updateOnlineUI();
+  testSupabaseConnection();
+});
+
+/* ==========================================================================
+   3. SINTETIZADOR DE EFEITOS SONOROS (WEB AUDIO API - ZERO ARQUIVOS EXTERNOS)
+   ========================================================================== */
+let soundEnabled = true;
+let audioCtx = null;
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playTone(freq, type, duration, startTimeOffset = 0, vol = 0.18) {
+  if (!soundEnabled) return;
+  initAudio();
+  const now = audioCtx.currentTime + startTimeOffset;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, now);
+  gain.gain.setValueAtTime(vol, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(now);
+  osc.stop(now + duration);
+}
+
+const SFX = {
+  click: () => playTone(620, 'sine', 0.08, 0, 0.12),
+  start: () => {
+    playTone(330, 'triangle', 0.12, 0, 0.18);
+    playTone(440, 'triangle', 0.12, 0.1, 0.18);
+    playTone(660, 'triangle', 0.25, 0.2, 0.2);
+  },
+  correct: (combo) => {
+    const boost = Math.min(combo * 35, 250);
+    playTone(523.25 + boost, 'triangle', 0.12, 0, 0.2);
+    playTone(659.25 + boost, 'triangle', 0.12, 0.09, 0.2);
+    playTone(783.99 + boost, 'sine', 0.26, 0.18, 0.22);
+  },
+  wrong: () => {
+    playTone(210, 'sawtooth', 0.18, 0, 0.18);
+    playTone(155, 'sawtooth', 0.28, 0.14, 0.18);
+  },
+  victory: () => {
+    const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50];
+    notes.forEach((n, i) => playTone(n, 'triangle', i === 5 ? 0.45 : 0.14, i * 0.12, 0.2));
+  }
+};
+
+/* ==========================================================================
+   4. SISTEMA DE PARTÍCULAS E EFEITOS VISUAIS
+   ========================================================================== */
+const pCanvas = document.getElementById('particles-canvas');
+const pCtx = pCanvas.getContext('2d');
+let particles = [];
+
+function resizeParticles() {
+  pCanvas.width = window.innerWidth;
+  pCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeParticles);
+resizeParticles();
+
+function spawnParticles(x, y, color, count = 28) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 2 + Math.random() * 6;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 1.5,
+      size: 3 + Math.random() * 4,
+      color,
+      alpha: 1,
+      decay: 0.018 + Math.random() * 0.02
+    });
+  }
+}
+
+function animateParticles() {
+  pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.12;
+    p.alpha -= p.decay;
+    if (p.alpha <= 0) {
+      particles.splice(i, 1);
+      continue;
+    }
+    pCtx.globalAlpha = p.alpha;
+    pCtx.fillStyle = p.color;
+    pCtx.fillRect(p.x, p.y, p.size, p.size);
+  }
+  pCtx.globalAlpha = 1;
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+function showFloatingPoints(x, y, text, colorClass = 'text-green-400') {
+  const el = document.createElement('div');
+  el.className = `floating-points text-xl ${colorClass}`;
+  el.style.left = `${x}px`;
+  el.style.top = `${y}px`;
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 950);
+}
+
+/* ==========================================================================
+   5. MOTOR DO JOGO
+   ========================================================================== */
+let state = {
+  playerName: '',
+  playerTurma: '',
+  currentIndex: 0,
+  score: 0,
+  hits: 0,
+  combo: 1,
+  maxCombo: 1,
+  questionStartTime: 0,
+  answeredCurrent: false,
+  respostaQ9: '',
+  respostaQ10: ''
+};
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function switchScreen(screenId) {
+  ['screen-start', 'screen-game', 'screen-result'].forEach(id => {
+    document.getElementById(id).classList.add('hidden');
+  });
+  document.getElementById(screenId).classList.remove('hidden');
+}
+
+function startGame() {
+  const nameInput = document.getElementById('input-player-name').value.trim();
+  const turmaInput = document.getElementById('input-player-turma').value.trim();
+
+  if (!nameInput) {
+    SFX.wrong();
+    const inp = document.getElementById('input-player-name');
+    inp.classList.add('border-red-500', 'animate-shake');
+    inp.focus();
+    setTimeout(() => inp.classList.remove('border-red-500', 'animate-shake'), 500);
+    return;
+  }
+
+  state = {
+    playerName: nameInput,
+    playerTurma: turmaInput || '1º ANO - CIÊNCIA DE DADOS',
+    currentIndex: 0,
+    score: 0,
+    hits: 0,
+    combo: 1,
+    maxCombo: 1,
+    questionStartTime: performance.now(),
+    answeredCurrent: false,
+    respostaQ9: '',
+    respostaQ10: ''
+  };
+
+  SFX.start();
+  document.getElementById('hud-player-label').textContent = state.playerName;
+  switchScreen('screen-game');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = QUESTIONS[state.currentIndex];
+  state.answeredCurrent = false;
+  state.questionStartTime = performance.now();
+
+  // Atualiza HUD
+  document.getElementById('hud-question-num').textContent = `${state.currentIndex + 1} / ${QUESTIONS.length}`;
+  document.getElementById('hud-hits').textContent = state.hits;
+  document.getElementById('hud-score').textContent = state.score;
+  document.getElementById('hud-combo-badge').textContent = `COMBO x${state.combo}`;
+  document.getElementById('hud-progress-bar').style.width = `${((state.currentIndex + 1) / QUESTIONS.length) * 100}%`;
+
+  const card = document.getElementById('question-card');
+  card.classList.remove('animate-pop');
+  void card.offsetWidth;
+  card.classList.add('animate-pop');
+
+  document.getElementById('q-category-badge').textContent = q.category;
+  document.getElementById('q-points-badge').textContent = q.type === 'mc' ? `+${100 * state.combo} PTS` : '+150 PTS BÔNUS';
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('q-feedback-box').classList.add('hidden');
+
+  const mcContainer = document.getElementById('q-options-container');
+  const discContainer = document.getElementById('q-discursive-container');
+
+  if (q.type === 'mc') {
+    mcContainer.classList.remove('hidden');
+    discContainer.classList.add('hidden');
+    mcContainer.innerHTML = q.options.map(opt => `
+      <button data-letter="${opt.letter}" class="option-btn w-full text-left p-4 rounded-xl flex items-center gap-3.5 group">
+        <span class="w-8 h-8 rounded-lg bg-slate-800 group-hover:bg-cyan-500 group-hover:text-slate-950 font-arcade font-bold text-xs flex items-center justify-center text-cyan-400 transition shrink-0">
+          ${opt.letter}
+        </span>
+        <span class="text-sm sm:text-base font-medium text-slate-100">${escapeHtml(opt.text)}</span>
+      </button>
+    `).join('');
+
+    mcContainer.querySelectorAll('.option-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => handleMultipleChoice(btn.dataset.letter, btn, e));
+    });
+  } else {
+    mcContainer.classList.add('hidden');
+    discContainer.classList.remove('hidden');
+    const textarea = document.getElementById('q-discursive-input');
+    textarea.value = '';
+    document.getElementById('q-char-count').textContent = '0 caracteres';
+    textarea.focus();
+  }
+}
+
+function handleMultipleChoice(selectedLetter, btnEl, event) {
+  if (state.answeredCurrent) return;
+  state.answeredCurrent = true;
+
+  const q = QUESTIONS[state.currentIndex];
+  const isCorrect = selectedLetter === q.correct;
+  const allBtns = document.querySelectorAll('#q-options-container .option-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  const rect = btnEl.getBoundingClientRect();
+  const clickX = event.clientX || (rect.left + rect.width / 2);
+  const clickY = event.clientY || rect.top;
+
+  const fbBox = document.getElementById('q-feedback-box');
+  const fbTitle = document.getElementById('q-feedback-title');
+  const fbDesc = document.getElementById('q-feedback-desc');
+
+  if (isCorrect) {
+    btnEl.classList.add('correct');
+    const elapsedSec = (performance.now() - state.questionStartTime) / 1000;
+    const speedBonus = Math.max(0, Math.round((15 - elapsedSec) * 4));
+    const gained = (100 * state.combo) + speedBonus;
+
+    state.score += gained;
+    state.hits++;
+    state.combo++;
+    if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+
+    SFX.correct(state.combo);
+    spawnParticles(clickX, clickY, '#22c55e', 32);
+    showFloatingPoints(clickX, clickY - 10, `+${gained} PTS!`, 'text-green-400');
+
+    fbBox.className = 'mt-6 p-4 rounded-xl border border-green-500/50 bg-green-950/50 text-green-100 text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-pop';
+    fbTitle.textContent = `✅ Resposta Correta! (+${gained} pts)`;
+    fbDesc.textContent = q.explanation;
+  } else {
+    btnEl.classList.add('wrong');
+    allBtns.forEach(b => {
+      if (b.dataset.letter === q.correct) b.classList.add('correct');
+    });
+
+    state.combo = 1;
+    SFX.wrong();
+    spawnParticles(clickX, clickY, '#ef4444', 20);
+    showFloatingPoints(clickX, clickY - 10, 'COMBO PERDIDO!', 'text-red-400');
+    document.getElementById('question-card').classList.add('animate-shake');
+    setTimeout(() => document.getElementById('question-card').classList.remove('animate-shake'), 450);
+
+    fbBox.className = 'mt-6 p-4 rounded-xl border border-red-500/50 bg-red-950/50 text-red-100 text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-pop';
+    fbTitle.textContent = `❌ Ops! A alternativa correta era a (${q.correct})`;
+    fbDesc.textContent = q.explanation;
+  }
+
+  document.getElementById('hud-hits').textContent = state.hits;
+  document.getElementById('hud-score').textContent = state.score;
+  document.getElementById('hud-combo-badge').textContent = `COMBO x${state.combo}`;
+  fbBox.classList.remove('hidden');
+}
+
+function handleDiscursiveSubmit() {
+  if (state.answeredCurrent) return;
+  const text = document.getElementById('q-discursive-input').value.trim();
+
+  if (text.length < 10) {
+    SFX.wrong();
+    const ta = document.getElementById('q-discursive-input');
+    ta.classList.add('border-red-500', 'animate-shake');
+    setTimeout(() => ta.classList.remove('border-red-500', 'animate-shake'), 500);
+    return;
+  }
+
+  state.answeredCurrent = true;
+  const q = QUESTIONS[state.currentIndex];
+  if (q.id === 9) state.respostaQ9 = text;
+  if (q.id === 10) state.respostaQ10 = text;
+
+  state.score += 150;
+  SFX.correct(state.combo);
+  spawnParticles(window.innerWidth / 2, window.innerHeight / 2, '#a855f7', 35);
+  showFloatingPoints(window.innerWidth / 2 - 40, window.innerHeight / 2 - 30, '+150 PTS!', 'text-purple-400');
+
+  nextQuestion();
+}
+
+function nextQuestion() {
+  SFX.click();
+  state.currentIndex++;
+  if (state.currentIndex < QUESTIONS.length) {
+    renderQuestion();
+  } else {
+    finishGame();
+  }
+}
+
+async function finishGame() {
+  switchScreen('screen-result');
+  SFX.victory();
+  spawnParticles(window.innerWidth * 0.3, window.innerHeight * 0.4, '#22d3ee', 40);
+  spawnParticles(window.innerWidth * 0.7, window.innerHeight * 0.4, '#f59e0b', 40);
+
+  document.getElementById('res-player-name').textContent = state.playerName;
+  document.getElementById('res-score').textContent = state.score;
+  document.getElementById('res-hits').textContent = `${state.hits}/8`;
+  document.getElementById('res-combo').textContent = `x${state.maxCombo}`;
+
+  const statusEl = document.getElementById('res-sync-status');
+  statusEl.textContent = '☁ Salvando resultado no banco de dados Supabase...';
+
+  const record = {
+    aluno: state.playerName,
+    turma: state.playerTurma,
+    pontuacao: state.score,
+    acertos: state.hits,
+    combo_max: state.maxCombo,
+    resposta_q9: state.respostaQ9,
+    resposta_q10: state.respostaQ10
+  };
+
+  const result = await saveScoreToSupabase(record);
+  if (result.ok) {
+    statusEl.textContent = '✅ Pontuação e respostas discursivas registradas no Ranking Online!';
+    statusEl.className = 'text-xs text-green-400 mb-6 font-medium';
+    await loadRankingData();
+  } else if (result.offline) {
+    statusEl.textContent = '📴 Sem internet: salvo localmente e será enviado automaticamente quando reconectar.';
+    statusEl.className = 'text-xs text-orange-400 mb-6 font-medium';
+  } else {
+    statusEl.textContent = `⚠️ Salvo na fila local (Erro Supabase: ${result.error})`;
+    statusEl.className = 'text-xs text-amber-400 mb-6 font-medium';
+  }
+}
+
+/* ==========================================================================
+   6. EVENT LISTENERS E INICIALIZAÇÃO
+   ========================================================================== */
+document.getElementById('btn-start-game').addEventListener('click', startGame);
+document.getElementById('input-player-name').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') startGame();
+});
+
+document.getElementById('btn-next-question').addEventListener('click', nextQuestion);
+document.getElementById('btn-submit-discursive').addEventListener('click', handleDiscursiveSubmit);
+
+document.getElementById('q-discursive-input').addEventListener('input', (e) => {
+  document.getElementById('q-char-count').textContent = `${e.target.value.length} caracteres`;
+});
+
+document.getElementById('btn-sound-toggle').addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+  const btn = document.getElementById('btn-sound-toggle');
+  btn.textContent = soundEnabled ? '🔊 Som ON' : '🔇 Som OFF';
+  if (soundEnabled) SFX.click();
+});
+
+// Modal Ranking
+const modalRanking = document.getElementById('modal-ranking');
+document.getElementById('btn-open-ranking').addEventListener('click', async () => {
+  SFX.click();
+  modalRanking.classList.remove('hidden');
+  await loadRankingData();
+});
+document.getElementById('btn-view-full-ranking').addEventListener('click', async () => {
+  SFX.click();
+  modalRanking.classList.remove('hidden');
+  await loadRankingData();
+});
+document.getElementById('btn-close-ranking').addEventListener('click', () => {
+  SFX.click();
+  modalRanking.classList.add('hidden');
+});
+document.getElementById('btn-reload-ranking').addEventListener('click', async () => {
+  SFX.click();
+  await loadRankingData();
+});
+document.getElementById('btn-refresh-mini-rank').addEventListener('click', async () => {
+  SFX.click();
+  await loadRankingData();
+});
+
+document.getElementById('btn-sync-pending').addEventListener('click', async () => {
+  SFX.click();
+  await syncPendingScores();
+});
+
+document.getElementById('btn-play-again').addEventListener('click', () => {
+  SFX.click();
+  switchScreen('screen-start');
+  loadRankingData();
+});
+
+// Init
+(async function init() {
+  updateOnlineUI();
+  refreshPendingBadge();
+  await testSupabaseConnection();
+  if (isOnline && supabaseOk) {
+    await syncPendingScores();
+  }
+  await loadRankingData();
+})();
+</script>
+</body>
+</html>
