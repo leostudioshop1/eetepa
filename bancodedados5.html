@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PROTOTYPE QUEST - Banco de Dados (1º Ano DS)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@500;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            pixel: ['"Press Start 2P"', 'monospace'],
+            tech: ['"Chakra Petch"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Press Start 2P', monospace;
+      background: #0d0b1e;
+      color: #f3f4f6;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+    .gamemaker-window {
+      background: #181425;
+      border: 4px solid #3b82f6;
+      box-shadow: 0 0 0 4px #181425, 0 0 0 8px #1e3a8a, 0 10px 25px rgba(0,0,0,0.8);
+      transition: transform 0.05s ease;
+    }
+    .gamemaker-btn {
+      background: #1e3a8a;
+      border: 3px solid #60a5fa;
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,0.5);
+      transition: all 0.1s ease;
+      cursor: pointer;
+    }
+    .gamemaker-btn:hover {
+      background: #2563eb;
+      border-color: #93c5fd;
+      transform: translateY(-2px);
+    }
+    .gamemaker-btn:active {
+      transform: translateY(2px);
+      box-shadow: inset 0 -1px 0 rgba(0,0,0,0.5);
+    }
+    .scanline {
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0.3));
+      background-size: 100% 4px;
+    }
+    @keyframes shake {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      20% { transform: translate(-8px, 6px) rotate(-1deg); }
+      40% { transform: translate(8px, -6px) rotate(1deg); }
+      60% { transform: translate(-6px, -4px) rotate(0deg); }
+      80% { transform: translate(6px, 4px) rotate(1deg); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }
+    .screen-shake {
+      animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+    }
+    .particle {
+      position: absolute;
+      pointer-events: none;
+      animation: floatUp 0.8s ease-out forwards;
+      font-size: 10px;
+      font-family: 'Press Start 2P', monospace;
+    }
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-60px) scale(1.5); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-3 sm:p-6 scanline relative">
+
+  <!-- HUD SUPERIOR -->
+  <header class="gamemaker-window rounded-xl p-3 sm:p-4 max-w-4xl w-full mx-auto flex items-center justify-between flex-wrap gap-3 z-20">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-blue-600 border-2 border-blue-400 flex items-center justify-center text-xs text-white font-bold shadow animate-pulse">SQL</div>
+      <div>
+        <h1 class="text-[9px] sm:text-xs text-blue-300 tracking-wider leading-relaxed">ROOM: rm_banco_dados</h1>
+        <p class="text-[7px] sm:text-[8px] text-gray-400 font-tech uppercase">EEEP Jordame Corrêa · 1º Ano DS (Matutino)</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap">
+      <span id="db-status" class="px-2 py-1 text-[7px] sm:text-[8px] bg-blue-950 text-red-400 border-2 border-red-500 rounded">CONNECTING...</span>
+      <button onclick="sfxClick(); toggleAdminPanel()" class="gamemaker-btn px-3 py-1.5 text-[7px] sm:text-[8px] text-blue-200 rounded">ADMIN.ini</button>
+    </div>
+  </header>
+
+  <!-- ÁREA CENTRAL -->
+  <main id="main-container" class="flex-1 max-w-4xl w-full mx-auto my-4 sm:my-6 flex flex-col justify-center relative">
+    
+    <!-- TELA DE LOGIN -->
+    <div id="screen-login" class="gamemaker-window rounded-xl p-5 sm:p-8 space-y-5 relative overflow-hidden">
+      <div class="absolute right-4 top-4 text-3xl sm:text-5xl opacity-20 select-none">🗄️</div>
+      <div class="space-y-2">
+        <span class="text-[7px] sm:text-[8px] text-blue-400 tracking-widest uppercase animate-pulse">--- 4ª AVALIAÇÃO: BANCO DE DADOS ---</span>
+        <h2 class="text-[11px] sm:text-sm text-white font-bold leading-relaxed">PROTOTYPE QUEST: SQL EDITION</h2>
+        <p class="text-[8px] sm:text-[9px] text-gray-300 font-tech leading-relaxed">
+          Disciplina: Banco de Dados · Professor: Léo<br>Insira seu nome completo para iniciar e salvar os resultados na tabela <code class="text-blue-400">gamejogos3</code>.
+        </p>
+      </div>
+
+      <div class="space-y-4 pt-2">
+        <div>
+          <label class="block text-[7px] sm:text-[8px] text-blue-300 mb-2 uppercase">ALUNO(A):</label>
+          <input type="text" id="input-nome" placeholder="EX: MARIA SILVA" class="w-full bg-[#0d0b1e] border-2 border-blue-600 rounded px-4 py-3 text-[10px] sm:text-xs text-white font-tech focus:outline-none focus:border-blue-400" />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[7px] sm:text-[8px] text-gray-400 mb-1 uppercase">CURSO / TURMA:</label>
+            <input type="text" value="1º Ano DS (Matutino)" disabled class="w-full bg-[#0d0b1e]/50 border-2 border-blue-950 rounded px-3 py-2 text-[9px] text-gray-500 font-tech cursor-not-allowed" />
+          </div>
+          <div>
+            <label class="block text-[7px] sm:text-[8px] text-gray-400 mb-1 uppercase">PROFESSOR:</label>
+            <input type="text" value="Léo" disabled class="w-full bg-[#0d0b1e]/50 border-2 border-blue-950 rounded px-3 py-2 text-[9px] text-gray-500 font-tech cursor-not-allowed" />
+          </div>
+        </div>
+        <button onclick="sfxStart(); startMission()" class="gamemaker-btn w-full py-4 text-[10px] sm:text-xs text-white font-bold tracking-widest uppercase rounded mt-2">
+          ▶ INICIALIZAR AVALIAÇÃO SQL
+        </button>
+      </div>
+    </div>
+
+    <!-- TELA DE JOGO -->
+    <div id="screen-game" class="hidden space-y-4">
+      <div class="gamemaker-window rounded-xl p-3 sm:p-4 flex items-center justify-between">
+        <div>
+          <span id="quest-counter" class="text-[7px] sm:text-[8px] text-blue-400 tracking-wider block mb-1">QUESTÃO 1 / 10</span>
+          <h3 id="quest-title" class="text-[9px] sm:text-xs text-white">OBJETIVO: Múltipla Escolha</h3>
+        </div>
+        <div class="text-right">
+          <span class="text-[7px] sm:text-[8px] text-gray-400 block">PONTUAÇÃO</span>
+          <strong id="quest-score" class="text-[10px] sm:text-sm text-emerald-400">0 XP</strong>
+        </div>
+      </div>
+
+      <div class="gamemaker-window rounded-xl p-4 sm:p-8 space-y-5 relative">
+        <div class="bg-[#0d0b1e] border-2 border-blue-600 rounded-lg p-4 sm:p-6 shadow-inner">
+          <p id="quest-enunciado" class="text-[9px] sm:text-xs text-gray-200 font-tech leading-loose">
+            Carregando enunciado...
+          </p>
+        </div>
+
+        <div id="quest-options" class="space-y-2.5">
+          <!-- Alternativas geradas via JS -->
+        </div>
+
+        <div id="quest-discursive-container" class="hidden space-y-3">
+          <textarea id="quest-discursive-input" rows="4" class="w-full bg-[#0d0b1e] border-2 border-blue-600 rounded p-4 text-[9px] sm:text-xs text-white font-tech focus:outline-none focus:border-blue-400" placeholder="Escreva sua resposta dissertativa completa e detalhada aqui..."></textarea>
+          <button onclick="sfxClick(); submitDiscursive()" class="gamemaker-btn w-full py-3 text-[9px] sm:text-[10px] text-white font-bold uppercase rounded">
+            ENVIAR RESPOSTA E AVANÇAR ➔
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TELA DE VITÓRIA -->
+    <div id="screen-result" class="hidden gamemaker-window rounded-xl p-6 sm:p-8 text-center space-y-5">
+      <div class="w-16 h-16 bg-emerald-500/20 border-2 border-emerald-400 text-emerald-400 rounded-full flex items-center justify-center text-2xl mx-auto animate-bounce">🏆</div>
+      <div class="space-y-2">
+        <span class="text-[7px] sm:text-[8px] text-emerald-400 tracking-widest uppercase">*** AVALIAÇÃO CONCLUÍDA ***</span>
+        <h2 class="text-[10px] sm:text-sm text-white font-bold">RESPOSTAS ENVIADAS COM SUCESSO!</h2>
+        <p class="text-[8px] sm:text-[9px] text-gray-300 font-tech leading-relaxed">Seu gabarito e respostas discursivas foram salvos na tabela <code class="text-emerald-400">gamejogos3</code>.</p>
+      </div>
+      <div class="bg-[#0d0b1e] border-2 border-blue-600 rounded-xl p-4 max-w-sm mx-auto text-left space-y-2 text-[8px] sm:text-[9px] font-tech">
+        <div class="flex justify-between"><span class="text-gray-400">ALUNO(A):</span> <strong id="res-nome" class="text-white">—</strong></div>
+        <div class="flex justify-between"><span class="text-gray-400">PONTUAÇÃO:</span> <strong id="res-acertos" class="text-emerald-400">—</strong></div>
+        <div class="flex justify-between"><span class="text-gray-400">STATUS DB:</span> <strong class="text-emerald-400">ONLINE ☁️</strong></div>
+      </div>
+      <button onclick="sfxClick(); location.reload()" class="gamemaker-btn px-6 py-3 text-[9px] sm:text-[10px] text-white font-bold uppercase rounded inline-block">
+        NOVA TENTATIVA
+      </button>
+    </div>
+
+  </main>
+
+  <!-- PAINEL ADMIN -->
+  <div id="admin-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+    <div class="gamemaker-window rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div class="px-5 py-3 bg-blue-950 border-b-2 border-blue-600 flex items-center justify-between">
+        <h3 class="text-[9px] sm:text-[10px] text-blue-300">DEBUG_OVERLAY // Tabela: gamejogos3 (1º Ano DS)</h3>
+        <button onclick="sfxClick(); toggleAdminPanel()" class="text-gray-400 hover:text-white text-xs">X</button>
+      </div>
+      <div class="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="sfxClick(); loadAdminData()" class="gamemaker-btn px-4 py-2 text-[7px] sm:text-[8px] text-white rounded">🔄 REFRESH DATA</button>
+          <button onclick="sfxClick(); exportCSV()" class="gamemaker-btn px-4 py-2 text-[7px] sm:text-[8px] text-emerald-400 rounded">📥 EXPORT CSV</button>
+        </div>
+        <div class="bg-[#0d0b1e] border-2 border-blue-600 rounded-xl overflow-x-auto">
+          <table class="w-full text-left text-[8px] sm:text-[9px] font-tech whitespace-nowrap">
+            <thead class="bg-blue-950 text-gray-300">
+              <tr>
+                <th class="p-3">TIME</th>
+                <th class="p-3">ALUNO(A)</th>
+                <th class="p-3">PONTUAÇÃO</th>
+                <th class="p-3">DATA</th>
+              </tr>
+            </thead>
+            <tbody id="admin-table-body">
+              <tr><td colspan="4" class="p-6 text-center text-gray-500">Clique em "REFRESH DATA".</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center py-3 text-[6px] sm:text-[7px] text-gray-500 font-tech">
+    EEEP Jordame Corrêa Queiroz Filho · Xinguara, Pará · Banco de Dados (1º Ano DS)
+  </footer>
+
+<script>
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  function playTone(freq, type, duration) {
+    try {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch(e) {}
+  }
+
+  function sfxClick() {
+    playTone(440, 'square', 0.08);
+    if (navigator.vibrate) navigator.vibrate(30);
+  }
+
+  function sfxStart() {
+    playTone(587.33, 'triangle', 0.15);
+    setTimeout(() => playTone(880, 'triangle', 0.25), 150);
+    if (navigator.vibrate) navigator.vibrate([40, 50, 80]);
+  }
+
+  function sfxSuccess() {
+    playTone(523.25, 'square', 0.1);
+    setTimeout(() => playTone(659.25, 'square', 0.1), 100);
+    setTimeout(() => playTone(783.99, 'square', 0.2), 200);
+    setTimeout(() => playTone(1046.50, 'square', 0.3), 300);
+    if (navigator.vibrate) navigator.vibrate([50, 40, 50, 40, 100]);
+  }
+
+  function sfxError() {
+    playTone(150, 'sawtooth', 0.25);
+    setTimeout(() => playTone(100, 'sawtooth', 0.3), 120);
+    if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
+    triggerScreenShake();
+  }
+
+  function triggerScreenShake() {
+    const container = document.getElementById('main-container');
+    container.classList.add('screen-shake');
+    setTimeout(() => container.classList.remove('screen-shake'), 300);
+  }
+
+  function spawnParticle(text, x, y, color = '#60a5fa') {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = x + 'px';
+    p.style.top = y + 'px';
+    p.style.color = color;
+    p.textContent = text;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 800);
+  }
+
+  if (!window.SUPABASE_CONFIG) {
+    alert("Erro crítico: config.js ausente ou sem credenciais do Supabase!");
+  }
+  const supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
+
+  async function testSupabase() {
+    const badge = document.getElementById('db-status');
+    try {
+      const { error } = await supabaseClient.from('gamejogos3').select('id').limit(1);
+      if (error) throw error;
+      badge.textContent = 'ONLINE (gamejogos3)';
+      badge.className = 'px-2 py-1 text-[7px] sm:text-[8px] bg-blue-950 text-emerald-400 border-2 border-emerald-500 rounded';
+    } catch (err) {
+      console.error(err);
+      badge.textContent = 'ERROR DB';
+      badge.className = 'px-2 py-1 text-[7px] sm:text-[8px] bg-blue-950 text-red-400 border-2 border-red-500 rounded';
+    }
+  }
+  testSupabase();
+
+  // ==========================================
+  // 10 QUESTÕES OFICIAIS DA AVALIAÇÃO DE BANCO DE DADOS
+  // ==========================================
+  const questions = [
+    { 
+      type: 'obj', 
+      q: "1. Para integrar uma página HTML a um banco de dados, o método mais comum é:", 
+      options: [
+        "Colocar a senha no arquivo HTML", 
+        "Usar apenas tags HTML sem nenhuma linguagem adicional", 
+        "Utilizar uma API", 
+        "Enviar os dados por e-mail", 
+        "Nenhuma das alternativas"
+      ], 
+      correct: 2 
+    },
+    { 
+      type: 'obj', 
+      q: "2. Qual comando SQL é usado para consultar (buscar) dados em uma tabela?", 
+      options: [
+        "INSERT", 
+        "UPDATE", 
+        "SELECT", 
+        "DELETE", 
+        "CREATE"
+      ], 
+      correct: 2 
+    },
+    { 
+      type: 'obj', 
+      q: "3. O comando usado para inserir novos registros em uma tabela é:", 
+      options: [
+        "SELECT", 
+        "UPDATE", 
+        "DELETE", 
+        "INSERT INTO", 
+        "DROP"
+      ], 
+      correct: 3 
+    },
+    { 
+      type: 'obj', 
+      q: "4. Para alterar dados já existentes em uma tabela, utilizamos o comando:", 
+      options: [
+        "SELECT", 
+        "INSERT", 
+        "UPDATE", 
+        "CREATE", 
+        "Nenhuma das alternativas"
+      ], 
+      correct: 2 
+    },
+    { 
+      type: 'obj', 
+      q: "5. Qual comando apaga registros de uma tabela?", 
+      options: [
+        "DROP", 
+        "DELETE", 
+        "SUAVE", 
+        "ERROR", 
+        "Nenhuma das alternativas"
+      ], 
+      correct: 1 
+    },
+    { 
+      type: 'obj', 
+      q: "6. O comando CREATE TABLE serve para:", 
+      options: [
+        "Inserir dados", 
+        "Criar uma nova tabela no banco", 
+        "Apagar uma tabela", 
+        "Consultar dados", 
+        "Atualizar registros"
+      ], 
+      correct: 1 
+    },
+    { 
+      type: 'obj', 
+      q: "7. Qual dos comandos abaixo é usado para alterar uma tabela?", 
+      options: [
+        "MOVE", 
+        "ALTER TABLE", 
+        "INSERT", 
+        "SELECT", 
+        "Nenhuma das alternativas"
+      ], 
+      correct: 1 
+    },
+    { 
+      type: 'obj', 
+      q: "8. Ao armazenar milhões de registros de clientes, a opção mais adequada é:", 
+      options: [
+        "Bloco de Notas", 
+        "Paint", 
+        "Banco de Dados SQL", 
+        "Calculadora", 
+        "Compactador de Arquivos"
+      ], 
+      correct: 2 
+    },
+    { 
+      type: 'disc', 
+      q: "9. Discorra sobre seu projeto apresentado na feira das profissões e a integração dele com banco de dados:" 
+    },
+    { 
+      type: 'disc', 
+      q: "10. Justifique sua nota na feira das profissões citando suas atividades na preparação do estande e durante o dia da feira:" 
+    }
+  ];
+
+  let currentIdx = 0;
+  let score = 0;
+  let studentName = '';
+  let answersRecord = [];
+
+  function startMission() {
+    const nameInput = document.getElementById('input-nome').value.trim();
+    if (!nameInput) {
+      sfxError();
+      alert('ERRO: Digite seu nome completo!');
+      return;
+    }
+    studentName = nameInput;
+    document.getElementById('screen-login').classList.add('hidden');
+    document.getElementById('screen-game').classList.remove('hidden');
+    loadQuestion();
+  }
+
+  function loadQuestion() {
+    const q = questions[currentIdx];
+    document.getElementById('quest-counter').textContent = `QUESTÃO ${currentIdx + 1} / ${questions.length}`;
+    document.getElementById('quest-title').textContent = q.type === 'obj' ? 'OBJETIVO: MÚLTIPLA ESCOLHA' : 'QUESTÃO DISCURSIVA';
+    document.getElementById('quest-enunciado').textContent = q.q;
+    document.getElementById('quest-score').textContent = `${score} XP`;
+
+    const optContainer = document.getElementById('quest-options');
+    const discContainer = document.getElementById('quest-discursive-container');
+
+    if (q.type === 'obj') {
+      discContainer.classList.add('hidden');
+      optContainer.classList.remove('hidden');
+      optContainer.innerHTML = q.options.map((opt, i) => `
+        <button onclick="handleObjAnswer(${i}, event)" class="gamemaker-btn w-full text-left p-3.5 rounded text-[8px] sm:text-[10px] text-gray-200 font-tech flex items-center gap-3 group">
+          <span class="w-6 h-6 rounded bg-[#181425] border-2 border-blue-500 flex items-center justify-center text-blue-400 font-bold">${String.fromCharCode(97 + i)}</span>
+          <span>${opt}</span>
+        </button>
+      `).join('');
+    } else {
+      optContainer.classList.add('hidden');
+      discContainer.classList.remove('hidden');
+      document.getElementById('quest-discursive-input').value = '';
+    }
+  }
+
+  function handleObjAnswer(selectedIndex, event) {
+    const q = questions[currentIdx];
+    const correct = selectedIndex === q.correct;
+    const rect = event.currentTarget.getBoundingClientRect();
+    
+    if (correct) {
+      score += 10;
+      sfxSuccess();
+      spawnParticle('+10 XP', rect.x + rect.width / 2, rect.y, '#34d399');
+    } else {
+      sfxError();
+      spawnParticle('MISS!', rect.x + rect.width / 2, rect.y, '#f87171');
+    }
+
+    answersRecord.push({ q: currentIdx + 1, type: 'obj', chosen: selectedIndex, correct });
+    nextStep();
+  }
+
+  function submitDiscursive() {
+    const val = document.getElementById('quest-discursive-input').value.trim();
+    if (!val) {
+      sfxError();
+      alert('ERRO: Escreva uma resposta antes de avançar.');
+      return;
+    }
+    score += 15;
+    sfxSuccess();
+    answersRecord.push({ q: currentIdx + 1, type: 'disc', text: val });
+    nextStep();
+  }
+
+  function nextStep() {
+    currentIdx++;
+    if (currentIdx < questions.length) {
+      loadQuestion();
+    } else {
+      finishMission();
+    }
+  }
+
+  async function finishMission() {
+    document.getElementById('screen-game').classList.add('hidden');
+    document.getElementById('screen-result').classList.remove('hidden');
+    document.getElementById('res-nome').textContent = studentName;
+    document.getElementById('res-acertos').textContent = `${score} XP`;
+
+    const now = new Date();
+    const payload = {
+      id: crypto.randomUUID ? crypto.randomUUID() : 'id_' + Math.random().toString(36).substring(2),
+      timestamp: now.toISOString(),
+      date: now.toISOString().slice(0, 10),
+      hour: now.getHours(),
+      type: 'avaliacao_banco_dados_1ano',
+      confidence: score / 100,
+      tracking_id: studentName,
+      session_id: 'db_1ano_' + Date.now(),
+      zone: '1_ano_ds_matutino',
+      source: JSON.stringify(answersRecord)
+    };
+
+    try {
+      const { error } = await supabaseClient.from('gamejogos3').insert([payload]);
+      if (error) throw error;
+      console.log('Salvo com sucesso na tabela gamejogos3!');
+    } catch (err) {
+      console.error(err);
+      sfxError();
+      alert('AVISO: Falha ao enviar dados para o Supabase.');
+    }
+  }
+
+  function toggleAdminPanel() {
+    const modal = document.getElementById('admin-modal');
+    modal.classList.toggle('hidden');
+    if (!modal.classList.contains('hidden')) {
+      loadAdminData();
+    }
+  }
+
+  async function loadAdminData() {
+    const tbody = document.getElementById('admin-table-body');
+    tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400">Carregando gamejogos3...</td></tr>`;
+    try {
+      const { data, error } = await supabaseClient
+        .from('gamejogos3')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-500">Nenhum registro encontrado.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(row => `
+        <tr class="border-b border-blue-950 hover:bg-blue-950/40">
+          <td class="p-3 text-gray-400">${new Date(row.timestamp).toLocaleTimeString('pt-BR')}</td>
+          <td class="p-3 font-semibold text-white">${row.tracking_id || 'Anônimo'}</td>
+          <td class="p-3 text-emerald-400 font-bold">${Math.round((row.confidence || 0) * 100)} XP</td>
+          <td class="p-3 text-gray-400">${row.date}</td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      console.error(err);
+      tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-red-400">Erro ao carregar dados.</td></tr>`;
+    }
+  }
+
+  async function exportCSV() {
+    try {
+      const { data, error } = await supabaseClient.from('gamejogos3').select('*');
+      if (error) throw error;
+      if (!data || !data.length) { alert('Sem dados.'); return; }
+
+      const keys = Object.keys(data[0]);
+      const csv = [keys.join(',')].concat(data.map(row => keys.map(k => `"${String(row[k] || '').replace(/"/g, '""')}"`).join(','))).join('\n');
+      
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'banco_dados_1ano_' + new Date().toISOString().slice(0, 10) + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Erro ao exportar CSV.');
+    }
+  }
+</script>
+</body>
+</html>
