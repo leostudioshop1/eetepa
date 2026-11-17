@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PROTOTYPE QUEST: 16-BIT EDITION | Missão Feira das Profissões</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Press Start 2P (16-bit Arcade) & VT323 & Space Grotesk -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@500;700&family=VT323&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --retro-bg: #120924;
+            --retro-panel: #1e1138;
+            --retro-border: #f8fafc;
+            --retro-gold: #ffd700;
+            --retro-green: #22c55e;
+            --retro-cyan: #06b6d4;
+            --retro-red: #ef4444;
+            --retro-purple: #a855f7;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--retro-bg);
+            color: #f8fafc;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            /* Fundo Pixel Grid estilo RPG 16-bit */
+            background-image: 
+                radial-gradient(#2e1a54 2px, transparent 2px),
+                radial-gradient(#231242 2px, var(--retro-bg) 2px);
+            background-size: 32px 32px;
+            background-position: 0 0, 16px 16px;
+        }
+
+        .font-pixel {
+            font-family: 'Press Start 2P', cursive;
+            line-height: 1.5;
+        }
+
+        .font-terminal {
+            font-family: 'VT323', monospace;
+        }
+
+        /* Caixa de Diálogo Clássica SNES / RPG 16-Bit */
+        .snes-box {
+            background-color: var(--retro-panel);
+            border: 4px solid #ffffff;
+            box-shadow: 
+                0 0 0 4px #090414,
+                inset 0 0 0 4px #4c1d95,
+                8px 8px 0px rgba(0, 0, 0, 0.65);
+            border-radius: 6px;
+            position: relative;
+        }
+
+        .snes-box-gold {
+            background-color: #1c1427;
+            border: 4px solid var(--retro-gold);
+            box-shadow: 
+                0 0 0 4px #090414,
+                inset 0 0 0 3px #92400e,
+                8px 8px 0px rgba(0, 0, 0, 0.7);
+            border-radius: 6px;
+        }
+
+        /* Botão Arcade 3D Pixelado */
+        .arcade-btn {
+            background: linear-gradient(180deg, #ffd700 0%, #f59e0b 100%);
+            color: #120924;
+            border: 4px solid #ffffff;
+            box-shadow: 
+                0 6px 0 #92400e,
+                0 10px 15px rgba(0,0,0,0.6);
+            transition: transform 0.08s ease, box-shadow 0.08s ease;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.6);
+        }
+
+        .arcade-btn:hover:not(:disabled) {
+            filter: brightness(1.08);
+            transform: translateY(-2px);
+            box-shadow: 
+                0 8px 0 #92400e,
+                0 12px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .arcade-btn:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 
+                0 2px 0 #92400e,
+                0 4px 8px rgba(0,0,0,0.6);
+        }
+
+        /* Opções de Escolha Estilo Menu RPG */
+        .rpg-choice {
+            background-color: #160c2b;
+            border: 3px solid #6d28d9;
+            box-shadow: 4px 4px 0px #090414;
+            transition: all 0.12s ease;
+            touch-action: manipulation;
+        }
+
+        .rpg-choice:hover:not(:disabled) {
+            border-color: var(--retro-gold);
+            background-color: #27154a;
+            transform: translateX(6px);
+            box-shadow: 6px 6px 0px #090414;
+        }
+
+        .rpg-choice:hover:not(:disabled) .cursor-arrow {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .cursor-arrow {
+            opacity: 0;
+            transform: translateX(-6px);
+            transition: all 0.12s ease;
+        }
+
+        .choice-correct {
+            background-color: #064e3b !important;
+            border-color: #34d399 !important;
+            box-shadow: 0 0 15px rgba(52, 211, 153, 0.5), 4px 4px 0px #090414 !important;
+        }
+
+        .choice-wrong {
+            background-color: #7f1d1d !important;
+            border-color: #f87171 !important;
+            box-shadow: 0 0 15px rgba(248, 113, 113, 0.5), 4px 4px 0px #090414 !important;
+        }
+
+        /* Scanlines CRT Opcionais */
+        .crt-overlay {
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.28) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        /* Animação Flutuante Mascote Pixel Art */
+        @keyframes pixelFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+        .animate-pixel-float {
+            animation: pixelFloat 1.8s ease-in-out infinite;
+        }
+
+        /* Piscar PRESS START */
+        @keyframes blinkRetro {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0.25; }
+        }
+        .blink-retro {
+            animation: blinkRetro 1.1s infinite;
+        }
+
+        /* Screen Shake (Dano / Erro) */
+        @keyframes damageShake {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-12px, 4px); }
+            40% { transform: translate(12px, -4px); }
+            60% { transform: translate(-8px, -3px); }
+            80% { transform: translate(8px, 3px); }
+        }
+        .shake-damage {
+            animation: damageShake 0.4s steps(2, end);
+        }
+
+        /* Flash de Tela */
+        @keyframes flashHit {
+            0% { background-color: rgba(34, 197, 94, 0.35); }
+            100% { background-color: transparent; }
+        }
+        @keyframes flashHurt {
+            0% { background-color: rgba(239, 68, 68, 0.45); }
+            100% { background-color: transparent; }
+        }
+        .flash-hit { animation: flashHit 0.4s ease-out; }
+        .flash-hurt { animation: flashHurt 0.45s ease-out; }
+
+        /* Entrada de Fase */
+        @keyframes stageEnter {
+            from { opacity: 0; transform: scale(0.95) translateY(12px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .stage-enter {
+            animation: stageEnter 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        #pixel-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Modo Impressão Limpo para Savegame / Registro */
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                background-image: none !important;
+            }
+            .no-print, #pixel-canvas, #crt-layer, #screen-flash {
+                display: none !important;
+            }
+            .snes-box, .snes-box-gold {
+                background: #ffffff !important;
+                border: 2px solid #000000 !important;
+                box-shadow: none !important;
+                color: #000000 !important;
+            }
+            .snes-box *, .snes-box-gold * {
+                color: #000000 !important;
+                text-shadow: none !important;
+                border-color: #333333 !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between relative">
+
+    <!-- Camada CRT Scanlines -->
+    <div id="crt-layer" class="crt-overlay fixed inset-0 z-40"></div>
+
+    <!-- Camada Flash Dano/Acerto -->
+    <div id="screen-flash" class="fixed inset-0 pointer-events-none z-40"></div>
+
+    <!-- Canvas de Partículas / Moedas / Confetes Pixelados -->
+    <canvas id="pixel-canvas"></canvas>
+
+    <!-- Toast Customizado Retro (Zero alert()) -->
+    <div id="retro-toast-box" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-md pointer-events-none"></div>
+
+    <!-- =========================================================
+         TOP BAR RETRO CONSOLE
+         ========================================================= -->
+    <header class="no-print w-full bg-[#090414] border-b-4 border-purple-700 px-3 py-2.5 sm:px-6 sticky top-0 z-30">
+        <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 bg-yellow-400 border-2 border-white flex items-center justify-center text-[#120924] font-pixel text-xs shadow">
+                    PQ
+                </div>
+                <div>
+                    <h1 class="font-pixel text-[10px] sm:text-xs text-yellow-400 tracking-wide">PROTOTYPE QUEST</h1>
+                    <p class="font-terminal text-sm sm:text-base text-cyan-300 leading-none">16-BIT EDITION • GUILDA DEV 3º ANO</p>
+                </div>
+            </div>
+
+            <!-- Botões Hardware Console (Som, Vibração, CRT) -->
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <button onclick="toggleAudio()" id="btn-audio" class="px-2.5 py-1.5 bg-purple-950 border-2 border-cyan-400 text-cyan-300 font-pixel text-[9px] sm:text-[10px] hover:bg-purple-900 active:translate-y-0.5 cursor-pointer" title="Ligar/Desligar Chiptune">
+                    <i id="icon-audio" class="fa-solid fa-volume-high mr-1"></i><span id="txt-audio">SFX:ON</span>
+                </button>
+                <button onclick="toggleVibe()" id="btn-vibe" class="px-2.5 py-1.5 bg-purple-950 border-2 border-pink-400 text-pink-300 font-pixel text-[9px] sm:text-[10px] hover:bg-purple-900 active:translate-y-0.5 cursor-pointer" title="Ligar/Desligar Rumble Pak">
+                    <i id="icon-vibe" class="fa-solid fa-gamepad mr-1"></i><span id="txt-vibe">RUMBLE:ON</span>
+                </button>
+                <button onclick="toggleCRT()" id="btn-crt" class="hidden sm:inline-flex items-center px-2.5 py-1.5 bg-purple-950 border-2 border-emerald-400 text-emerald-300 font-pixel text-[9px] sm:text-[10px] hover:bg-purple-900 active:translate-y-0.5 cursor-pointer" title="Alternar Filtro TV Tubo CRT">
+                    CRT:ON
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- =========================================================
+         ÁREA CENTRAL DO GAME
+         ========================================================= -->
+    <main class="flex-grow flex items-center justify-center p-3 sm:p-6 z-10">
+
+        <!-- =====================================================
+             TELA 1: TITLE SCREEN ("INSERT COIN / PRESS START")
+             ===================================================== -->
+        <section id="title-screen" class="w-full max-w-3xl stage-enter">
+            <div class="snes-box p-5 sm:p-8 text-center">
+                
+                <!-- Badge da Guilda / Estúdio -->
+                <div class="inline-block bg-purple-950 border-2 border-cyan-400 px-3 py-1 mb-4">
+                    <span class="font-terminal text-base sm:text-lg text-cyan-300 tracking-wider uppercase">
+                        ★ ESTÚDIO EEEP JORDAME CORRÊA QUEIROZ FILHO ★
+                    </span>
+                </div>
+
+                <!-- Logo Principal 16-Bit -->
+                <div class="my-2">
+                    <h2 class="font-pixel text-xl sm:text-3xl md:text-4xl text-yellow-400 drop-shadow-[4px_4px_0px_#7e22ce] leading-snug">
+                        PROTOTYPE QUEST
+                    </h2>
+                    <p class="font-pixel text-xs sm:text-sm text-emerald-400 mt-2 tracking-widest">
+                        MISSÃO: FEIRA DAS PROFISSÕES
+                    </p>
+                </div>
+
+                <!-- Mascote Pixel Art SVG Animado -->
+                <div class="my-5 flex flex-col items-center justify-center">
+                    <div class="animate-pixel-float bg-[#090414] border-4 border-purple-500 p-3 rounded-lg shadow-inner">
+                        <!-- SVG Pixel Art: Dev Robô com Cartucho Dourado -->
+                        <svg width="96" height="96" viewBox="0 0 16 16" shape-rendering="crispEdges" class="w-20 h-20 sm:w-24 sm:h-24">
+                            <!-- Antena -->
+                            <rect x="7" y="0" width="2" height="1" fill="#ffd700"/>
+                            <rect x="7" y="1" width="2" height="1" fill="#94a3b8"/>
+                            <!-- Capacete / Cabeça Dev -->
+                            <rect x="4" y="2" width="8" height="2" fill="#06b6d4"/>
+                            <rect x="3" y="4" width="10" height="5" fill="#e2e8f0"/>
+                            <!-- Visor Gamer -->
+                            <rect x="4" y="5" width="8" height="3" fill="#0f172a"/>
+                            <rect x="5" y="6" width="2" height="1" fill="#22c55e"/>
+                            <rect x="9" y="6" width="2" height="1" fill="#22c55e"/>
+                            <!-- Corpo / Jaqueta Guilda -->
+                            <rect x="4" y="9" width="8" height="4" fill="#7e22ce"/>
+                            <rect x="6" y="10" width="4" height="2" fill="#ffd700"/>
+                            <!-- Braços segurando Controle/Protótipo -->
+                            <rect x="2" y="10" width="2" height="2" fill="#e2e8f0"/>
+                            <rect x="12" y="10" width="2" height="2" fill="#e2e8f0"/>
+                            <!-- Botas -->
+                            <rect x="4" y="13" width="3" height="2" fill="#06b6d4"/>
+                            <rect x="9" y="13" width="3" height="2" fill="#06b6d4"/>
+                        </svg>
+                    </div>
+                    <span class="font-terminal text-base sm:text-lg text-purple-300 mt-2">
+                        Divisão: Programação de Jogos (3º Ano • Vespertino) • Game Master: <strong class="text-yellow-300">Prof. Léo</strong>
+                    </span>
+                </div>
+
+                <!-- Lore / Briefing da Missão -->
+                <div class="bg-[#090414] border-2 border-purple-700 p-3.5 sm:p-4 text-left mb-6">
+                    <p class="font-pixel text-[10px] sm:text-xs text-cyan-400 mb-2">
+                        <i class="fa-solid fa-scroll mr-1"></i> BRIEFING DO ESTÚDIO:
+                    </p>
+                    <p class="font-terminal text-lg sm:text-xl text-slate-200 leading-snug">
+                        A <strong>Feira das Profissões</strong> vai começar! Você é o(a) Dev líder responsável por evoluir o protótipo do estúdio — saindo de um simples <em>Rascunho no Papel</em> até o lendário <em>Protótipo Ouro</em> — enfrentando 10 fases de decisões técnicas, investidores e chefões!
+                    </p>
+                </div>
+
+                <!-- Input Player Name & Data -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 text-left">
+                    <div class="sm:col-span-2">
+                        <label for="player-name" class="block font-pixel text-[10px] text-yellow-400 mb-2">
+                            PLAYER NAME (NOME COMPLETO DO DEV):
+                        </label>
+                        <input type="text" id="player-name" placeholder="Ex: Lucas Silva..." 
+                            class="w-full px-3.5 py-3 bg-[#090414] border-3 border-cyan-400 text-white font-terminal text-xl sm:text-2xl focus:outline-none focus:border-yellow-400 placeholder-slate-600">
+                    </div>
+                    <div>
+                        <label for="mission-date" class="block font-pixel text-[10px] text-yellow-400 mb-2">
+                            SAVE DATE:
+                        </label>
+                        <input type="date" id="mission-date" 
+                            class="w-full px-3 py-3 bg-[#090414] border-3 border-cyan-400 text-white font-terminal text-xl sm:text-2xl focus:outline-none focus:border-yellow-400">
+                    </div>
+                </div>
+
+                <!-- Botão Gigante INSERT COIN / START MISSION -->
+                <button onclick="startMission()" class="arcade-btn w-full py-4 px-6 font-pixel text-xs sm:text-base md:text-lg uppercase tracking-wider cursor-pointer flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-coins"></i>
+                    <span class="blink-retro">INSERT COIN / START MISSION</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- =====================================================
+             TELA 2: GAMEPLAY (10 FASES + EVOLUÇÃO DO PROTÓTIPO)
+             ===================================================== -->
+        <section id="gameplay-screen" class="hidden w-full max-w-4xl">
+            
+            <!-- HUD SUPERIOR ESTILO SNES / MEGA DRIVE -->
+            <div class="snes-box p-3 sm:p-4 mb-4">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 items-center">
+                    
+                    <!-- HP / Vidas do Protótipo -->
+                    <div class="bg-[#090414] border-2 border-purple-800 p-2">
+                        <span class="block font-pixel text-[9px] text-slate-400 mb-1">ESTABILIDADE HP</span>
+                        <div id="hud-hearts" class="flex items-center gap-1.5 text-red-500 text-base sm:text-lg">
+                            <i class="fa-solid fa-heart"></i>
+                            <i class="fa-solid fa-heart"></i>
+                            <i class="fa-solid fa-heart"></i>
+                        </div>
+                    </div>
+
+                    <!-- Stage Atual -->
+                    <div class="bg-[#090414] border-2 border-purple-800 p-2">
+                        <span class="block font-pixel text-[9px] text-slate-400 mb-1">STAGE / FASE</span>
+                        <span id="hud-stage" class="font-pixel text-xs sm:text-sm text-cyan-400">01 / 10</span>
+                    </div>
+
+                    <!-- Moedas / XP -->
+                    <div class="bg-[#090414] border-2 border-purple-800 p-2">
+                        <span class="block font-pixel text-[9px] text-slate-400 mb-1">DEV XP / COINS</span>
+                        <span id="hud-xp" class="font-pixel text-xs sm:text-sm text-yellow-400">0000</span>
+                    </div>
+
+                    <!-- Combo -->
+                    <div class="bg-[#090414] border-2 border-purple-800 p-2">
+                        <span class="block font-pixel text-[9px] text-slate-400 mb-1">STREAK COMBO</span>
+                        <span id="hud-combo" class="font-pixel text-xs sm:text-sm text-emerald-400">x1</span>
+                    </div>
+                </div>
+
+                <!-- Barra de Evolução Visual do Protótipo -->
+                <div class="mt-3 pt-2.5 border-t-2 border-purple-900 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <!-- Sprite Pixel Art Dinâmico do Protótipo -->
+                        <div id="prototype-sprite-box" class="w-12 h-12 bg-[#090414] border-2 border-yellow-400 flex items-center justify-center flex-shrink-0 animate-pixel-float">
+                            <!-- SVG atualizado via JS conforme evolução -->
+                        </div>
+                        <div>
+                            <span class="block font-pixel text-[9px] text-purple-300">NÍVEL DO PROTÓTIPO:</span>
+                            <span id="prototype-tier-name" class="font-pixel text-[10px] sm:text-xs text-yellow-300">LVL 1: RASCUNHO NO PAPEL</span>
+                        </div>
+                    </div>
+
+                    <!-- Barra de Progresso Segmentada -->
+                    <div class="w-full sm:w-1/2">
+                        <div class="flex justify-between font-pixel text-[9px] text-cyan-300 mb-1">
+                            <span>BUILD PROGRESS</span>
+                            <span id="hud-pct">10%</span>
+                        </div>
+                        <div class="w-full h-4 bg-[#090414] border-2 border-white p-0.5">
+                            <div id="hud-bar" class="h-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-yellow-400 transition-all duration-300" style="width: 10%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CAIXA DE MISSÃO / DIÁLOGO RPG -->
+            <div id="stage-card" class="snes-box p-4 sm:p-7 stage-enter">
+                
+                <!-- Título da Fase e Tag -->
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b-2 border-purple-800">
+                    <span id="stage-title-badge" class="font-pixel text-[10px] sm:text-xs text-yellow-400 uppercase">
+                        STAGE 01: O PRIMEIRO ESBOÇO
+                    </span>
+                    <span id="stage-type-tag" class="px-2.5 py-1 bg-cyan-950 border border-cyan-400 font-pixel text-[9px] text-cyan-300">
+                        DECISÃO DEV
+                    </span>
+                </div>
+
+                <!-- Narrativa / Desafio da Fase -->
+                <div class="bg-[#090414] border-2 border-purple-700 p-4 mb-5">
+                    <p id="stage-narrative" class="font-terminal text-xl sm:text-2xl text-white leading-snug">
+                        Carregando fase...
+                    </p>
+                </div>
+
+                <!-- MODO 1: ALTERNATIVAS RPG (Fases 1 a 8) -->
+                <div id="choices-wrapper" class="space-y-2.5">
+                    <!-- Botões gerados dinamicamente -->
+                </div>
+
+                <!-- MODO 2: TERMINAL DE BATALHA DISCURSIVA (Boss Fases 9 e 10) -->
+                <div id="boss-terminal-wrapper" class="hidden space-y-4">
+                    <div class="bg-[#090414] border-3 border-yellow-400 p-3.5">
+                        <div class="flex flex-wrap items-center justify-between gap-2 pb-2 mb-2 border-b border-purple-800 font-pixel text-[9px] text-yellow-300">
+                            <span><i class="fa-solid fa-terminal mr-1"></i> LOG_DE_MISSAO.SAV</span>
+                            <span id="boss-char-counter" class="text-pink-400">0 / 30 CARACTERES</span>
+                        </div>
+                        <textarea id="boss-textarea" rows="5" oninput="onBossTyping()"
+                            placeholder="Escreva aqui o relato épico da sua equipe..."
+                            class="w-full bg-transparent text-emerald-300 font-terminal text-xl sm:text-2xl focus:outline-none resize-y placeholder-purple-800 leading-snug"></textarea>
+                    </div>
+
+                    <!-- Barra de Carga do Ataque Especial -->
+                    <div>
+                        <div class="flex justify-between font-pixel text-[9px] mb-1">
+                            <span class="text-cyan-300">CARGA DO ATAQUE FINAL</span>
+                            <span id="boss-charge-label" class="text-pink-400">CARREGANDO...</span>
+                        </div>
+                        <div class="w-full h-3.5 bg-[#090414] border-2 border-white p-0.5">
+                            <div id="boss-charge-bar" class="h-full bg-pink-500 transition-all duration-150" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <button id="btn-boss-attack" onclick="submitBossStage()" disabled
+                        class="w-full py-4 px-5 font-pixel text-xs sm:text-sm uppercase tracking-wider bg-slate-800 text-slate-500 border-4 border-slate-600 cursor-not-allowed flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-bolt"></i> <span id="btn-boss-text">DISPARAR RELATÓRIO</span>
+                    </button>
+                </div>
+
+                <!-- CAIXA DE FEEDBACK DA JOGADA (Pós-escolha) -->
+                <div id="stage-feedback" class="hidden mt-5 p-4 border-3 stage-enter">
+                    <div class="flex items-start gap-3">
+                        <div id="fb-icon" class="text-2xl mt-0.5"></div>
+                        <div class="flex-grow">
+                            <h3 id="fb-title" class="font-pixel text-[11px] sm:text-xs uppercase mb-1.5"></h3>
+                            <p id="fb-text" class="font-terminal text-lg sm:text-xl text-slate-100 leading-snug"></p>
+                        </div>
+                    </div>
+                    <button onclick="advanceStage()" class="arcade-btn mt-4 w-full py-3.5 px-5 font-pixel text-xs sm:text-sm uppercase flex items-center justify-center gap-2 cursor-pointer">
+                        <span>CONTINUAR MISSÃO</span> <i class="fa-solid fa-forward"></i>
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- =====================================================
+             TELA 3: VICTORY / MISSION ACCOMPLISHED + SAVEGAME
+             ===================================================== -->
+        <section id="victory-screen" class="hidden w-full max-w-4xl stage-enter">
+            <div class="snes-box-gold p-5 sm:p-8">
+                
+                <!-- Banner de Vitória -->
+                <div class="text-center border-b-4 border-yellow-500/40 pb-5 mb-6">
+                    <p class="font-pixel text-[10px] sm:text-xs text-emerald-400 tracking-widest mb-2">
+                        ★ QUEST COMPLETED • FEIRA DAS PROFISSÕES ★
+                    </p>
+                    <h2 class="font-pixel text-xl sm:text-3xl text-yellow-400 drop-shadow-[3px_3px_0px_#7e22ce]">
+                        MISSION ACCOMPLISHED!
+                    </h2>
+                    <p class="font-terminal text-lg sm:text-xl text-purple-200 mt-2">
+                        EEEP Jordame Corrêa Queiroz Filho • Programação de Jogos (3º Ano) • Prof. Léo
+                    </p>
+
+                    <!-- Dados do Jogador -->
+                    <div class="mt-4 bg-[#090414] border-2 border-yellow-400 p-3 flex flex-wrap items-center justify-between gap-2 text-left">
+                        <div>
+                            <span class="font-pixel text-[9px] text-slate-400 block">DEV PLAYER:</span>
+                            <span id="win-player-name" class="font-pixel text-xs sm:text-sm text-cyan-300 uppercase">---</span>
+                        </div>
+                        <div>
+                            <span class="font-pixel text-[9px] text-slate-400 block">DATA DA MISSÃO:</span>
+                            <span id="win-mission-date" class="font-terminal text-xl text-white">--/--/----</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Finais e Evolução Máxima -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 text-center">
+                    <div class="bg-[#090414] border-2 border-yellow-400 p-3">
+                        <span class="block font-pixel text-[9px] text-slate-400 mb-1">RANK FINAL</span>
+                        <span id="win-rank" class="font-pixel text-2xl sm:text-3xl text-yellow-400">S</span>
+                    </div>
+                    <div class="bg-[#090414] border-2 border-emerald-400 p-3">
+                        <span class="block font-pixel text-[9px] text-slate-400 mb-1">FASES VENCIDAS</span>
+                        <span id="win-hits" class="font-pixel text-xl sm:text-2xl text-emerald-400">8/8</span>
+                    </div>
+                    <div class="bg-[#090414] border-2 border-cyan-400 p-3">
+                        <span class="block font-pixel text-[9px] text-slate-400 mb-1">TOTAL DEV XP</span>
+                        <span id="win-xp" class="font-pixel text-xl sm:text-2xl text-cyan-400">0000</span>
+                    </div>
+                    <div class="bg-[#090414] border-2 border-purple-400 p-3">
+                        <span class="block font-pixel text-[9px] text-slate-400 mb-1">MAX COMBO</span>
+                        <span id="win-combo" class="font-pixel text-xl sm:text-2xl text-purple-300">x1</span>
+                    </div>
+                </div>
+
+                <!-- SAVEGAME / REGISTRO DA MISSÃO PARA O PROF. LÉO -->
+                <div class="bg-[#090414] border-2 border-purple-700 p-4 mb-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-pixel text-[10px] sm:text-xs text-yellow-400 uppercase">
+                            <i class="fa-solid fa-floppy-disk mr-1.5"></i> SAVEGAME LOG (REGISTRO DA MISSÃO)
+                        </h3>
+                        <span class="font-terminal text-sm text-emerald-400">STATUS: VERIFICADO</span>
+                    </div>
+
+                    <!-- Grid das Fases 1 a 8 -->
+                    <div id="win-log-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                        <!-- Preenchido via JS -->
+                    </div>
+
+                    <!-- Relatos dos Bosses 9 e 10 -->
+                    <div class="space-y-3">
+                        <div class="border border-purple-800 bg-[#140a26] p-3">
+                            <span class="block font-pixel text-[9px] text-pink-400 mb-1">
+                                BOSS 09 - DIÁRIO DE BORDO (DIFICULDADES NA FEIRA):
+                            </span>
+                            <p id="win-boss-9" class="font-terminal text-lg sm:text-xl text-slate-200 whitespace-pre-wrap leading-snug"></p>
+                        </div>
+
+                        <div class="border border-purple-800 bg-[#140a26] p-3">
+                            <span class="block font-pixel text-[9px] text-cyan-400 mb-1">
+                                BOSS 10 - VISÃO DE FUTURO DO PROTÓTIPO NO MERCADO:
+                            </span>
+                            <p id="win-boss-10" class="font-terminal text-lg sm:text-xl text-slate-200 whitespace-pre-wrap leading-snug"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botões de Exportação / Savegame (Super úteis para o Prof. Léo) -->
+                <div class="no-print grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <button onclick="copyMissionLog()" class="arcade-btn py-3.5 px-4 font-pixel text-[10px] sm:text-xs uppercase flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-copy"></i> COPIAR REGISTRO (PROF. LÉO)
+                    </button>
+                    <button onclick="downloadSaveFile()" class="py-3.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-[#090414] border-4 border-white font-pixel text-[10px] sm:text-xs uppercase flex items-center justify-center gap-2 cursor-pointer shadow-lg active:translate-y-0.5">
+                        <i class="fa-solid fa-download"></i> BAIXAR SAVE (.TXT)
+                    </button>
+                    <button onclick="window.print()" class="py-3.5 px-4 bg-cyan-400 hover:bg-cyan-300 text-[#090414] border-4 border-white font-pixel text-[10px] sm:text-xs uppercase flex items-center justify-center gap-2 cursor-pointer shadow-lg active:translate-y-0.5">
+                        <i class="fa-solid fa-print"></i> IMPRIMIR / PDF
+                    </button>
+                    <button onclick="restartMission()" class="py-3.5 px-4 bg-purple-900 hover:bg-purple-800 text-white border-4 border-white font-pixel text-[10px] sm:text-xs uppercase flex items-center justify-center gap-2 cursor-pointer shadow-lg active:translate-y-0.5">
+                        <i class="fa-solid fa-rotate-left"></i> NEW GAME
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- =========================================================
+         RODAPÉ ARCADE
+         ========================================================= -->
+    <footer class="no-print bg-[#090414] border-t-2 border-purple-900 py-2.5 px-4 text-center z-10">
+        <p class="font-terminal text-base sm:text-lg text-purple-300">
+            © 2026 EEEP JORDAME CORRÊA QUEIROZ FILHO • DIVISÃO PROGRAMAÇÃO DE JOGOS • GAME MASTER PROF. LÉO
+        </p>
+    </footer>
+
+    <!-- =========================================================
+         ENGINE RETRO 16-BIT: ÁUDIO CHIPTUNE, SPRITES, PARTÍCULAS E LÓGICA
+         ========================================================= -->
+    <script>
+        /* =========================================================
+           1. FASES DA MISSÃO (10 STAGES)
+           ========================================================= */
+        const MISSION_STAGES = [
+            {
+                id: 1,
+                type: 'choice',
+                stageTitle: 'STAGE 01: O PRIMEIRO ESBOÇO',
+                tag: 'CONCEITO BASE',
+                narrative: 'O cliente chegou na guilda pedindo um jogo inédito, mas o orçamento está apertado! Para começar com o pé direito, o que realmente define um PROTÓTIPO?',
+                options: [
+                    { letter: 'A', text: 'Gastar o máximo de recursos possíveis' },
+                    { letter: 'B', text: 'Validar ideias com o cliente de forma ágil e de baixo custo' },
+                    { letter: 'C', text: 'Substituir completamente o produto final' },
+                    { letter: 'D', text: 'Evitar qualquer feedback do usuário' },
+                    { letter: 'E', text: 'Demorar o máximo possível para lançar' }
+                ],
+                correct: 'B',
+                lootText: 'CRITICAL HIT! Um protótipo existe para testar mecânicas e validar ideias gastando pouco tempo e dinheiro!'
+            },
+            {
+                id: 2,
+                type: 'choice',
+                stageTitle: 'STAGE 02: ESCUDO ANTI-BUGS',
+                tag: 'DEFESA +15',
+                narrative: 'Antes de programar milhares de linhas de código do jogo inteiro, você ativa a técnica da Prototipação. Qual é o maior superpoder dessa habilidade?',
+                options: [
+                    { letter: 'A', text: 'Aumenta significativamente o custo do projeto' },
+                    { letter: 'B', text: 'Tornar o processo lento e burocrático' },
+                    { letter: 'C', text: 'Elimina a necessidade de conversar com o cliente' },
+                    { letter: 'D', text: 'Garante que o produto nunca precisará de alterações' },
+                    { letter: 'E', text: 'Permite identificar erros e melhorar a solução antes do desenvolvimento completo' }
+                ],
+                correct: 'E',
+                lootText: 'BUG BLOQUEADO! Descobrir falhas de design cedo salva o estúdio de retrabalho gigante lá na frente!'
+            },
+            {
+                id: 3,
+                type: 'choice',
+                stageTitle: 'STAGE 03: CARISMA +10 COM O CLIENTE',
+                tag: 'DIPLOMACIA DEV',
+                narrative: 'Um investidor parou no seu estande! Qual é a melhor estratégia para conquistar o cliente durante a fase de prototipação?',
+                options: [
+                    { letter: 'A', text: 'Entregar o protótipo sem nenhuma explicação' },
+                    { letter: 'B', text: 'Ignorar o cliente e fazer uma surpresa' },
+                    { letter: 'C', text: 'Esconder as falhas do protótipo' },
+                    { letter: 'D', text: 'Envolver o cliente no processo e mostrar evolução rápida' },
+                    { letter: 'E', text: 'Ignorar completamente o feedback recebido' }
+                ],
+                correct: 'D',
+                lootText: 'ALIANÇA FORMADA! Mostrar atualizações rápidas e ouvir o cliente transforma ele em fã do seu projeto!'
+            },
+            {
+                id: 4,
+                type: 'choice',
+                stageTitle: 'STAGE 04: UPGRADE ALTA FIDELIDADE',
+                tag: 'ITEM RARO',
+                narrative: 'Você abriu um baú e equipou o item "Protótipo de Alta Fidelidade"! O que esse equipamento representa no desenvolvimento?',
+                options: [
+                    { letter: 'A', text: 'Um desenho feito à mão em papel' },
+                    { letter: 'B', text: 'Uma versão muito próxima do produto final em aparência e interação' },
+                    { letter: 'C', text: 'Apenas uma lista de requisitos' },
+                    { letter: 'D', text: 'Um documento de texto' },
+                    { letter: 'E', text: 'Nenhuma das alternativas' }
+                ],
+                correct: 'B',
+                lootText: 'EQUIPADO! Diferente do rascunho em papel, o protótipo de alta fidelidade já tem visual, menus e interações quase reais!'
+            },
+            {
+                id: 5,
+                type: 'choice',
+                stageTitle: 'STAGE 05: SPEEDRUN DE MERCADO',
+                tag: 'VELOCIDADE +20',
+                narrative: 'Estúdios rivais estão criando jogos parecidos! Por que a prototipação rápida ajuda sua equipe a vencer a concorrência e ganhar mercado?',
+                options: [
+                    { letter: 'A', text: 'Porque atrasa o lançamento do produto' },
+                    { letter: 'B', text: 'Porque permite testar e validar a solução com usuários reais antes da concorrência' },
+                    { letter: 'C', text: 'Porque aumenta os custos de desenvolvimento' },
+                    { letter: 'D', text: 'Porque elimina a necessidade de inovação' },
+                    { letter: 'E', text: 'Porque foca apenas em documentação' }
+                ],
+                correct: 'B',
+                lootText: 'SPEEDRUN RECORD! Colocar o jogo na mão de jogadores reais antes dos concorrentes garante vantagem competitiva!'
+            },
+            {
+                id: 6,
+                type: 'choice',
+                stageTitle: 'STAGE 06: ARMADILHA DETECTADA!',
+                tag: 'CUIDADO / TRAP',
+                narrative: 'ALERTA DE ARMADILHA! Um sabotador misturou efeitos falsos no inventário. Qual das opções abaixo NÃO é um benefício da prototipação?',
+                options: [
+                    { letter: 'A', text: 'Redução de riscos' },
+                    { letter: 'B', text: 'Melhoria da comunicação com o cliente' },
+                    { letter: 'C', text: 'Aumento desnecessário de custos sem retorno' },
+                    { letter: 'D', text: 'Validação precoce de ideias' },
+                    { letter: 'E', text: 'Identificação rápida de problemas' }
+                ],
+                correct: 'C',
+                lootText: 'ARMADILHA DESARMADA! A prototipação serve justamente para cortar gastos desnecessários, nunca aumentá-los sem retorno!'
+            },
+            {
+                id: 7,
+                type: 'choice',
+                stageTitle: 'STAGE 07: DEMO DAY NO PALCO',
+                tag: 'APRESENTAÇÃO',
+                narrative: 'Chegou a hora de apresentar seu protótipo ao vivo para o cliente! Qual é a jogada de mestre (boa prática) recomendada pela guilda?',
+                options: [
+                    { letter: 'A', text: 'Mostrar apenas o que está perfeito e esconder limitações' },
+                    { letter: 'B', text: 'Explicar claramente o que é protótipo e coletar feedback honesto' },
+                    { letter: 'C', text: 'Entregar o protótipo sem nenhuma conversa' },
+                    { letter: 'D', text: 'Cobrar o valor total do produto final' },
+                    { letter: 'E', text: 'Evitar perguntas do cliente' }
+                ],
+                correct: 'B',
+                lootText: 'JOGADA DE MESTRE! Deixar claro o que já funciona e o que ainda está em teste gera feedbacks honestos e valiosos!'
+            },
+            {
+                id: 8,
+                type: 'choice',
+                stageTitle: 'STAGE 08: PROTÓTIPO VS VERSÃO FINAL',
+                tag: 'MINI-BOSS',
+                narrative: 'O Guardião do Portão bloqueia a entrada da Feira! Responda ao enigma: qual é a diferença real entre um protótipo e o produto final?',
+                options: [
+                    { letter: 'A', text: 'O protótipo é sempre mais caro' },
+                    { letter: 'B', text: 'O protótipo é uma versão simplificada usada para aprendizado e validação' },
+                    { letter: 'C', text: 'Não existe diferença entre eles' },
+                    { letter: 'D', text: 'O protótipo nunca pode ser testado' },
+                    { letter: 'E', text: 'O protótipo é a versão que vai para o mercado' }
+                ],
+                correct: 'B',
+                lootText: 'MINI-BOSS DERROTADO! O protótipo é a versão de testes e aprendizado; só depois dele nasce o produto final!'
+            },
+            {
+                id: 9,
+                type: 'boss',
+                stageTitle: 'STAGE 09: BOSS BATTLE 1 • DIÁRIO DE BORDO',
+                tag: 'BOSS TERMINAL',
+                buttonLabel: 'DISPARAR RELATÓRIO DE BATALHA',
+                narrative: 'LOG DE BATALHA DA FEIRA: Relate os chefões, imprevistos e dificuldades técnicas que sua equipe enfrentou ao criar e apresentar o protótipo na Feira das Profissões!'
+            },
+            {
+                id: 10,
+                type: 'boss',
+                stageTitle: 'STAGE 10: FINAL BOSS • VISÃO DE FUTURO',
+                tag: 'FINAL BOSS',
+                buttonLabel: 'ZERAR MISSÃO / FINALIZAR JOGO',
+                narrative: 'DESAFIO FINAL DO ESTÚDIO: Descreva o protótipo que você desenvolveu e qual será o futuro épico desse projeto caso ele conquiste o mercado!'
+            }
+        ];
+
+        /* =========================================================
+           2. SPRITES PIXEL ART DO PROTÓTIPO EM EVOLUÇÃO
+           ========================================================= */
+        const PROTOTYPE_TIERS = [
+            {
+                minHits: 0,
+                name: 'LVL 1: RASCUNHO NO PAPEL',
+                svg: `<svg viewBox="0 0 16 16" shape-rendering="crispEdges" class="w-9 h-9">
+                        <rect x="3" y="2" width="10" height="12" fill="#f8fafc"/>
+                        <rect x="5" y="4" width="6" height="1" fill="#64748b"/>
+                        <rect x="5" y="6" width="4" height="1" fill="#64748b"/>
+                        <rect x="5" y="8" width="6" height="3" fill="#94a3b8"/>
+                      </svg>`
+            },
+            {
+                minHits: 2,
+                name: 'LVL 2: WIREFRAME DIGITAL',
+                svg: `<svg viewBox="0 0 16 16" shape-rendering="crispEdges" class="w-9 h-9">
+                        <rect x="2" y="3" width="12" height="10" fill="#0f172a" stroke="#06b6d4" stroke-width="1"/>
+                        <rect x="4" y="5" width="8" height="2" fill="#06b6d4"/>
+                        <rect x="4" y="8" width="3" height="3" fill="#22d3ee"/>
+                        <rect x="9" y="8" width="3" height="3" fill="#0891b2"/>
+                      </svg>`
+            },
+            {
+                minHits: 5,
+                name: 'LVL 3: ALPHA JOGÁVEL',
+                svg: `<svg viewBox="0 0 16 16" shape-rendering="crispEdges" class="w-9 h-9">
+                        <rect x="2" y="5" width="12" height="6" fill="#7e22ce"/>
+                        <rect x="1" y="6" width="2" height="5" fill="#9333ea"/>
+                        <rect x="13" y="6" width="2" height="5" fill="#9333ea"/>
+                        <rect x="4" y="7" width="1" height="3" fill="#f8fafc"/>
+                        <rect x="3" y="8" width="3" height="1" fill="#f8fafc"/>
+                        <rect x="10" y="8" width="1" height="1" fill="#22c55e"/>
+                        <rect x="12" y="7" width="1" height="1" fill="#ef4444"/>
+                      </svg>`
+            },
+            {
+                minHits: 7,
+                name: 'LVL MAX: PROTÓTIPO OURO ★',
+                svg: `<svg viewBox="0 0 16 16" shape-rendering="crispEdges" class="w-9 h-9">
+                        <rect x="3" y="2" width="10" height="12" fill="#ffd700"/>
+                        <rect x="4" y="2" width="8" height="2" fill="#fef08a"/>
+                        <rect x="5" y="5" width="6" height="4" fill="#1e1138"/>
+                        <rect x="7" y="6" width="2" height="2" fill="#22c55e"/>
+                        <rect x="5" y="11" width="6" height="1" fill="#b45309"/>
+                      </svg>`
+            }
+        ];
+
+        /* =========================================================
+           3. ESTADO DO JOGO
+           ========================================================= */
+        let state = {
+            playerName: '',
+            missionDate: '',
+            stageIdx: 0,
+            xp: 0,
+            combo: 1,
+            maxCombo: 1,
+            hits: 0,
+            hp: 3,
+            locked: false,
+            sfxOn: true,
+            rumbleOn: true,
+            crtOn: true,
+            answers: {}
+        };
+
+        /* =========================================================
+           4. SINTETIZADOR CHIPTUNE 8-BIT / 16-BIT (WEB AUDIO API)
+           ========================================================= */
+        let audioCtx = null;
+
+        function ensureAudio() {
+            if (!audioCtx) {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC) audioCtx = new AC();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playChiptune(sfx) {
+            if (!state.sfxOn) return;
+            try {
+                ensureAudio();
+                if (!audioCtx) return;
+                const t = audioCtx.currentTime;
+
+                if (sfx === 'coin') {
+                    // Clássico som de moeda 8-bit (B5 -> E6)
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(987.77, t);
+                    osc.frequency.setValueAtTime(1318.51, t + 0.08);
+                    gain.gain.setValueAtTime(0.14, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.32);
+                }
+                else if (sfx === 'start') {
+                    // Som de Insert Coin / Start Game
+                    const notes = [523.25, 659.25, 783.99, 1046.5];
+                    notes.forEach((f, i) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(f, t + i * 0.06);
+                        gain.gain.setValueAtTime(0.13, t + i * 0.06);
+                        gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.06 + 0.14);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(t + i * 0.06);
+                        osc.stop(t + i * 0.06 + 0.14);
+                    });
+                }
+                else if (sfx === 'hurt') {
+                    // Som de Dano 8-bit descendente
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(240, t);
+                    osc.frequency.linearRampToValueAtTime(75, t + 0.35);
+                    gain.gain.setValueAtTime(0.2, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.36);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.36);
+                }
+                else if (sfx === 'blip') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(440 + Math.random() * 120, t);
+                    gain.gain.setValueAtTime(0.04, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.03);
+                }
+                else if (sfx === 'clear') {
+                    // Fanfarra Stage Clear 16-bit
+                    const seq = [
+                        { f: 523.25, s: 0.00, d: 0.11 },
+                        { f: 659.25, s: 0.11, d: 0.11 },
+                        { f: 783.99, s: 0.22, d: 0.11 },
+                        { f: 1046.5, s: 0.33, d: 0.22 },
+                        { f: 783.99, s: 0.56, d: 0.11 },
+                        { f: 1046.5, s: 0.68, d: 0.45 }
+                    ];
+                    seq.forEach(n => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(n.f, t + n.s);
+                        gain.gain.setValueAtTime(0.14, t + n.s);
+                        gain.gain.exponentialRampToValueAtTime(0.001, t + n.s + n.d);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(t + n.s);
+                        osc.stop(t + n.s + n.d);
+                    });
+                }
+            } catch (e) {}
+        }
+
+        function rumble(pattern) {
+            if (!state.rumbleOn) return;
+            if (navigator && typeof navigator.vibrate === 'function') {
+                try { navigator.vibrate(pattern); } catch (e) {}
+            }
+        }
+
+        function toggleAudio() {
+            state.sfxOn = !state.sfxOn;
+            document.getElementById('txt-audio').textContent = state.sfxOn ? 'SFX:ON' : 'SFX:OFF';
+            document.getElementById('icon-audio').className = state.sfxOn ? 'fa-solid fa-volume-high mr-1' : 'fa-solid fa-volume-xmark mr-1 text-slate-500';
+            if (state.sfxOn) playChiptune('coin');
+        }
+
+        function toggleVibe() {
+            state.rumbleOn = !state.rumbleOn;
+            document.getElementById('txt-vibe').textContent = state.rumbleOn ? 'RUMBLE:ON' : 'RUMBLE:OFF';
+            if (state.rumbleOn) {
+                rumble(45);
+                playChiptune('blip');
+            }
+        }
+
+        function toggleCRT() {
+            state.crtOn = !state.crtOn;
+            const layer = document.getElementById('crt-layer');
+            layer.classList.toggle('hidden', !state.crtOn);
+            document.getElementById('btn-crt').textContent = state.crtOn ? 'CRT:ON' : 'CRT:OFF';
+            playChiptune('blip');
+        }
+
+        /* =========================================================
+           5. PARTÍCULAS PIXELADAS (MOEDAS E CONFETES 16-BIT)
+           ========================================================= */
+        const pCanvas = document.getElementById('pixel-canvas');
+        const pCtx = pCanvas.getContext('2d');
+        let pixelParticles = [];
+
+        function resizePixelCanvas() {
+            pCanvas.width = window.innerWidth;
+            pCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizePixelCanvas);
+
+        function spawnPixelBurst(x, y, palette = ['#ffd700', '#22c55e', '#06b6d4', '#f43f5e'], amount = 38) {
+            for (let i = 0; i < amount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 2.5 + Math.random() * 6.5;
+                pixelParticles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 2.5,
+                    size: (Math.floor(Math.random() * 3) + 2) * 3, // múltiplos de 3px para visual pixelado
+                    color: palette[Math.floor(Math.random() * palette.length)],
+                    life: 1.0,
+                    decay: 0.018 + Math.random() * 0.02
+                });
+            }
+        }
+
+        function loopPixelParticles() {
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+            for (let i = pixelParticles.length - 1; i >= 0; i--) {
+                const p = pixelParticles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.22;
+                p.life -= p.decay;
+                if (p.life <= 0) {
+                    pixelParticles.splice(i, 1);
+                } else {
+                    pCtx.globalAlpha = p.life;
+                    pCtx.fillStyle = p.color;
+                    pCtx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+                }
+            }
+            pCtx.globalAlpha = 1;
+            requestAnimationFrame(loopPixelParticles);
+        }
+
+        function flashScreen(mode) {
+            const el = document.getElementById('screen-flash');
+            el.className = 'fixed inset-0 pointer-events-none z-40';
+            void el.offsetWidth;
+            el.classList.add(mode === 'hit' ? 'flash-hit' : 'flash-hurt');
+        }
+
+        function shakeStageCard() {
+            const card = document.getElementById('stage-card');
+            card.classList.remove('shake-damage');
+            void card.offsetWidth;
+            card.classList.add('shake-damage');
+        }
+
+        function showRetroToast(msg, isSuccess = false) {
+            const box = document.getElementById('retro-toast-box');
+            const div = document.createElement('div');
+            div.className = `p-3 border-4 ${isSuccess ? 'bg-emerald-950 border-emerald-400 text-emerald-200' : 'bg-red-950 border-yellow-400 text-yellow-200'} font-terminal text-lg sm:text-xl shadow-2xl mb-2 stage-enter text-center`;
+            div.textContent = msg;
+            box.appendChild(div);
+            setTimeout(() => div.remove(), 3000);
+        }
+
+        /* =========================================================
+           6. CONTROLE DE FLUXO DA MISSÃO
+           ========================================================= */
+        window.onload = function() {
+            resizePixelCanvas();
+            loopPixelParticles();
+
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            document.getElementById('mission-date').value = `${yyyy}-${mm}-${dd}`;
+        };
+
+        function startMission() {
+            ensureAudio();
+            const nameVal = document.getElementById('player-name').value.trim();
+            const dateVal = document.getElementById('mission-date').value;
+
+            if (nameVal.length < 3) {
+                playChiptune('hurt');
+                rumble([60, 40, 60]);
+                showRetroToast('INSERT PLAYER NAME! Digite seu nome completo para criar o Savegame.');
+                document.getElementById('player-name').focus();
+                return;
+            }
+
+            playChiptune('start');
+            rumble([40, 30, 80]);
+
+            state.playerName = nameVal;
+            state.missionDate = dateVal ? dateVal.split('-').reverse().join('/') : '--/--/----';
+            state.stageIdx = 0;
+            state.xp = 0;
+            state.combo = 1;
+            state.maxCombo = 1;
+            state.hits = 0;
+            state.hp = 3;
+            state.answers = {};
+
+            document.getElementById('title-screen').classList.add('hidden');
+            document.getElementById('gameplay-screen').classList.remove('hidden');
+
+            spawnPixelBurst(window.innerWidth / 2, window.innerHeight / 2);
+            loadStage();
+        }
+
+        function refreshHUD() {
+            const stageNum = state.stageIdx + 1;
+            const total = MISSION_STAGES.length;
+            const pct = Math.round((stageNum / total) * 100);
+
+            document.getElementById('hud-stage').textContent = `${String(stageNum).padStart(2, '0')} / ${total}`;
+            document.getElementById('hud-xp').textContent = String(state.xp).padStart(4, '0');
+            document.getElementById('hud-combo').textContent = `x${state.combo}`;
+            document.getElementById('hud-pct').textContent = `${pct}%`;
+            document.getElementById('hud-bar').style.width = `${pct}%`;
+
+            // Corações de HP (regenera visualmente se chegar a 0 para nunca travar o jogador)
+            const heartsEl = document.getElementById('hud-hearts');
+            heartsEl.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                if (i < state.hp) {
+                    heartsEl.innerHTML += '<i class="fa-solid fa-heart text-red-500"></i>';
+                } else {
+                    heartsEl.innerHTML += '<i class="fa-regular fa-heart text-slate-600"></i>';
+                }
+            }
+
+            // Evolução do Sprite do Protótipo
+            let currentTier = PROTOTYPE_TIERS[0];
+            for (const tier of PROTOTYPE_TIERS) {
+                if (state.hits >= tier.minHits) {
+                    currentTier = tier;
+                }
+            }
+            document.getElementById('prototype-sprite-box').innerHTML = currentTier.svg;
+            document.getElementById('prototype-tier-name').textContent = currentTier.name;
+        }
+
+        function loadStage() {
+            state.locked = false;
+            refreshHUD();
+
+            const stage = MISSION_STAGES[state.stageIdx];
+            const card = document.getElementById('stage-card');
+            card.classList.remove('stage-enter', 'snes-box-gold');
+            card.classList.add('snes-box');
+            void card.offsetWidth;
+            card.classList.add('stage-enter');
+
+            document.getElementById('stage-title-badge').textContent = stage.stageTitle;
+            document.getElementById('stage-type-tag').textContent = stage.tag;
+            document.getElementById('stage-narrative').textContent = stage.narrative;
+            document.getElementById('stage-feedback').classList.add('hidden');
+
+            const choicesWrap = document.getElementById('choices-wrapper');
+            const bossWrap = document.getElementById('boss-terminal-wrapper');
+
+            if (stage.type === 'choice') {
+                bossWrap.classList.add('hidden');
+                choicesWrap.classList.remove('hidden');
+                choicesWrap.innerHTML = '';
+
+                stage.options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'rpg-choice w-full text-left p-3 sm:p-4 flex items-center gap-3 cursor-pointer';
+                    btn.dataset.letter = opt.letter;
+                    btn.onclick = () => selectChoice(opt.letter, btn);
+
+                    btn.innerHTML = `
+                        <span class="cursor-arrow font-pixel text-yellow-400 text-xs">▶</span>
+                        <span class="w-8 h-8 flex-shrink-0 bg-purple-900 border-2 border-yellow-400 font-pixel text-xs text-yellow-300 flex items-center justify-center">
+                            ${opt.letter}
+                        </span>
+                        <span class="font-terminal text-xl sm:text-2xl text-white leading-tight">
+                            ${opt.text}
+                        </span>
+                    `;
+                    choicesWrap.appendChild(btn);
+                });
+            } else {
+                // BOSS STAGE (Fases 9 e 10)
+                card.classList.remove('snes-box');
+                card.classList.add('snes-box-gold');
+
+                choicesWrap.classList.add('hidden');
+                bossWrap.classList.remove('hidden');
+
+                document.getElementById('btn-boss-text').textContent = stage.buttonLabel;
+                const ta = document.getElementById('boss-textarea');
+                ta.value = '';
+                onBossTyping();
+                setTimeout(() => ta.focus(), 120);
+            }
+        }
+
+        function selectChoice(letter, btnEl) {
+            if (state.locked) return;
+            state.locked = true;
+
+            const stage = MISSION_STAGES[state.stageIdx];
+            const isCorrect = letter === stage.correct;
+
+            const allBtns = document.querySelectorAll('#choices-wrapper button');
+            allBtns.forEach(b => {
+                b.disabled = true;
+                const l = b.dataset.letter;
+                if (l === stage.correct) {
+                    b.classList.add('choice-correct');
+                } else if (l === letter && !isCorrect) {
+                    b.classList.add('choice-wrong');
+                } else {
+                    b.classList.add('opacity-50');
+                }
+            });
+
+            state.answers[stage.id] = {
+                selected: letter,
+                correct: stage.correct,
+                isCorrect: isCorrect
+            };
+
+            const fbBox = document.getElementById('stage-feedback');
+            const fbIcon = document.getElementById('fb-icon');
+            const fbTitle = document.getElementById('fb-title');
+            const fbText = document.getElementById('fb-text');
+
+            if (isCorrect) {
+                playChiptune('coin');
+                rumble([40, 30, 75]);
+                flashScreen('hit');
+
+                const rect = btnEl.getBoundingClientRect();
+                spawnPixelBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+                const gainedXP = 250 * state.combo;
+                state.xp += gainedXP;
+                state.hits++;
+                state.combo++;
+                if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+
+                fbBox.className = 'mt-5 p-4 border-4 border-emerald-400 bg-emerald-950/80 stage-enter';
+                fbIcon.innerHTML = '<i class="fa-solid fa-coins text-yellow-400"></i>';
+                fbTitle.textContent = `STAGE CLEAR! +${gainedXP} XP (COMBO x${state.combo - 1})`;
+                fbTitle.className = 'font-pixel text-[10px] sm:text-xs text-emerald-300 uppercase mb-1.5';
+            } else {
+                playChiptune('hurt');
+                rumble([120, 60, 160]);
+                flashScreen('hurt');
+                shakeStageCard();
+
+                state.combo = 1;
+                if (state.hp > 1) {
+                    state.hp--;
+                } else {
+                    // Escudo de emergência da guilda evita Game Over abrupto e permite terminar a prova
+                    state.hp = 1;
+                }
+
+                fbBox.className = 'mt-5 p-4 border-4 border-red-400 bg-red-950/80 stage-enter';
+                fbIcon.innerHTML = '<i class="fa-solid fa-skull-crossbones text-red-400"></i>';
+                fbTitle.textContent = `DANO RECEBIDO! A jogada certa era [${stage.correct}]`;
+                fbTitle.className = 'font-pixel text-[10px] sm:text-xs text-red-300 uppercase mb-1.5';
+            }
+
+            fbText.textContent = stage.lootText;
+            fbBox.classList.remove('hidden');
+            refreshHUD();
+        }
+
+        function onBossTyping() {
+            const val = document.getElementById('boss-textarea').value;
+            const len = val.trim().length;
+            const req = 30;
+            const pct = Math.min(100, Math.round((len / req) * 100));
+
+            playChiptune('blip');
+
+            document.getElementById('boss-char-counter').textContent = `${len} / ${req} CARACTERES`;
+            const bar = document.getElementById('boss-charge-bar');
+            const lbl = document.getElementById('boss-charge-label');
+            const btn = document.getElementById('btn-boss-attack');
+
+            bar.style.width = `${pct}%`;
+
+            if (len >= req) {
+                bar.className = 'h-full bg-gradient-to-r from-emerald-400 to-yellow-400 transition-all duration-150';
+                lbl.textContent = 'ATAQUE ESPECIAL PRONTO!';
+                lbl.className = 'text-emerald-400';
+
+                btn.disabled = false;
+                btn.className = 'arcade-btn w-full py-4 px-5 font-pixel text-xs sm:text-sm uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2';
+            } else {
+                bar.className = 'h-full bg-pink-500 transition-all duration-150';
+                lbl.textContent = 'CARREGANDO...';
+                lbl.className = 'text-pink-400';
+
+                btn.disabled = true;
+                btn.className = 'w-full py-4 px-5 font-pixel text-xs sm:text-sm uppercase tracking-wider bg-slate-800 text-slate-500 border-4 border-slate-600 cursor-not-allowed flex items-center justify-center gap-2';
+            }
+        }
+
+        function submitBossStage() {
+            const stage = MISSION_STAGES[state.stageIdx];
+            const txt = document.getElementById('boss-textarea').value.trim();
+
+            if (txt.length < 30) {
+                playChiptune('hurt');
+                rumble(80);
+                showRetroToast('CARGA INSUFICIENTE! Escreva pelo menos 30 caracteres para derrotar o Boss.');
+                return;
+            }
+
+            playChiptune('coin');
+            rumble([50, 40, 90]);
+            flashScreen('hit');
+            spawnPixelBurst(window.innerWidth / 2, window.innerHeight / 2, ['#ffd700', '#a855f7', '#06b6d4'], 50);
+
+            state.answers[stage.id] = txt;
+            state.xp += 600;
+            advanceStage();
+        }
+
+        function advanceStage() {
+            playChiptune('blip');
+            rumble(30);
+
+            if (state.stageIdx < MISSION_STAGES.length - 1) {
+                state.stageIdx++;
+                loadStage();
+            } else {
+                completeMission();
+            }
+        }
+
+        /* =========================================================
+           7. TELA DE VITÓRIA E EXPORTAÇÃO DO REGISTRO DA MISSÃO
+           ========================================================= */
+        function completeMission() {
+            playChiptune('clear');
+            rumble([70, 40, 70, 40, 180]);
+
+            document.getElementById('gameplay-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.remove('hidden');
+
+            // Chuva de moedas/confetes 16-bit
+            setTimeout(() => spawnPixelBurst(window.innerWidth * 0.25, window.innerHeight * 0.3, ['#ffd700', '#22c55e'], 60), 100);
+            setTimeout(() => spawnPixelBurst(window.innerWidth * 0.75, window.innerHeight * 0.3, ['#06b6d4', '#a855f7'], 60), 350);
+            setTimeout(() => spawnPixelBurst(window.innerWidth * 0.50, window.innerHeight * 0.25, ['#ffd700', '#22c55e', '#06b6d4', '#ef4444'], 75), 650);
+
+            document.getElementById('win-player-name').textContent = state.playerName;
+            document.getElementById('win-mission-date').textContent = state.missionDate;
+
+            let rank = 'C';
+            if (state.hits === 8) rank = 'S';
+            else if (state.hits >= 6) rank = 'A';
+            else if (state.hits >= 4) rank = 'B';
+
+            document.getElementById('win-rank').textContent = rank;
+            document.getElementById('win-hits').textContent = `${state.hits}/8`;
+            document.getElementById('win-xp').textContent = String(state.xp).padStart(4, '0');
+            document.getElementById('win-combo').textContent = `x${state.maxCombo}`;
+
+            // Renderiza Savegame Log (Fases 1 a 8)
+            const logGrid = document.getElementById('win-log-grid');
+            logGrid.innerHTML = '';
+
+            for (let i = 1; i <= 8; i++) {
+                const ans = state.answers[i];
+                const ok = ans && ans.isCorrect;
+                const box = document.createElement('div');
+                box.className = `p-2.5 border-2 ${ok ? 'border-emerald-400 bg-emerald-950/40' : 'border-red-400 bg-red-950/40'} flex items-center justify-between`;
+                box.innerHTML = `
+                    <span class="font-pixel text-[9px] text-slate-300">FASE 0${i}</span>
+                    <span class="font-pixel text-xs ${ok ? 'text-emerald-300' : 'text-red-300'}">
+                        ${ans ? ans.selected : '-'} ${ok ? '★' : `(${ans.correct})`}
+                    </span>
+                `;
+                logGrid.appendChild(box);
+            }
+
+            document.getElementById('win-boss-9').textContent = state.answers[9] || '';
+            document.getElementById('win-boss-10').textContent = state.answers[10] || '';
+        }
+
+        function buildMissionReportText() {
+            let txt = `====================================================\n`;
+            txt += `PROTOTYPE QUEST: 16-BIT EDITION (SAVEGAME LOG)\n`;
+            txt += `Escola: EEEP Jordame Corrêa Queiroz Filho\n`;
+            txt += `Curso: EMI Técnico em PROGRAMAÇÃO DE JOGOS (3º Ano)\n`;
+            txt += `Disciplina: PROTOTIPAÇÃO | Prof. Léo | Turno: Vespertino\n`;
+            txt += `====================================================\n`;
+            txt += `PLAYER (Aluno): ${state.playerName.toUpperCase()}\n`;
+            txt += `DATA DA MISSÃO: ${state.missionDate}\n`;
+            txt += `DESEMPENHO: ${state.hits}/8 Fases | XP: ${state.xp} | Max Combo: x${state.maxCombo}\n\n`;
+            txt += `--- REGISTRO DAS FASES 01 A 08 ---\n`;
+
+            for (let i = 1; i <= 8; i++) {
+                const a = state.answers[i];
+                txt += `Fase 0${i}: [ ${a.selected} ] ${a.isCorrect ? '-> CLEAR' : `-> CORRETA: ${a.correct}`}\n`;
+            }
+
+            txt += `\n--- BOSS 09: DIFICULDADES NA FEIRA DAS PROFISSÕES ---\n`;
+            txt += `${state.answers[9]}\n`;
+            txt += `\n--- BOSS 10: PROTÓTIPO E EXPECTATIVAS DE MERCADO ---\n`;
+            txt += `${state.answers[10]}\n`;
+            txt += `====================================================`;
+            return txt;
+        }
+
+        function copyMissionLog() {
+            playChiptune('coin');
+            rumble(45);
+            const report = buildMissionReportText();
+
+            const tmp = document.createElement('textarea');
+            tmp.value = report;
+            tmp.style.position = 'fixed';
+            tmp.style.left = '-9999px';
+            document.body.appendChild(tmp);
+            tmp.select();
+            tmp.setSelectionRange(0, 99999);
+
+            try {
+                document.execCommand('copy');
+                showRetroToast('SAVEGAME COPIADO! Envie no WhatsApp ou Classroom do Prof. Léo!', true);
+            } catch (e) {
+                showRetroToast('Use o botão BAIXAR SAVE (.TXT) ou IMPRIMIR / PDF.');
+            }
+            document.body.removeChild(tmp);
+        }
+
+        function downloadSaveFile() {
+            playChiptune('coin');
+            rumble(45);
+            const report = buildMissionReportText();
+            const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const safeName = state.playerName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
+            a.href = url;
+            a.download = `PROTOTYPE_QUEST_${safeName}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showRetroToast('SAVEGAME (.TXT) BAIXADO COM SUCESSO!', true);
+        }
+
+        function restartMission() {
+            playChiptune('blip');
+            rumble(35);
+            document.getElementById('victory-screen').classList.add('hidden');
+            document.getElementById('title-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
