@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Quiz Multimídia • Apps Móveis</title>
+<style>
+  :root {
+    --bg: #0f0f1a;
+    --card: #1a1a2e;
+    --accent: #00d4ff;
+    --accent2: #ff00aa;
+    --success: #00ff88;
+    --error: #ff3366;
+    --text: #f0f0f5;
+    --muted: #8888aa;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-image: 
+      radial-gradient(ellipse at 20% 20%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(255, 0, 170, 0.08) 0%, transparent 50%);
+  }
+
+  /* ========== SCREENS ========== */
+  .screen {
+    display: none;
+    width: 100%;
+    max-width: 480px;
+    padding: 20px;
+    animation: fadeIn 0.5s ease;
+  }
+  .screen.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ========== START ========== */
+  #start-screen {
+    text-align: center;
+  }
+  .logo {
+    font-size: 3.2rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+    letter-spacing: -1px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 1.05rem;
+    margin-bottom: 30px;
+  }
+  .info-box {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 28px;
+    border: 1px solid rgba(255,255,255,0.06);
+    text-align: left;
+  }
+  .info-box p {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 6px;
+  }
+  .info-box strong { color: var(--accent); }
+
+  .btn {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--accent), #0099cc);
+    color: #000;
+    font-weight: 700;
+    font-size: 1.15rem;
+    padding: 16px 48px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.35);
+    position: relative;
+    overflow: hidden;
+  }
+  .btn:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 12px 30px rgba(0, 212, 255, 0.5);
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn.secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 2px solid var(--accent);
+    box-shadow: none;
+    margin-top: 12px;
+  }
+
+  /* ========== HUD ========== */
+  #hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    gap: 12px;
+  }
+  .stat {
+    background: var(--card);
+    padding: 8px 14px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stat span { color: var(--accent); }
+  .progress-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+
+  /* ========== QUESTION CARD ========== */
+  .question-card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 24px 20px;
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+  }
+  .q-number {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+  }
+  .question-text {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 24px;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .option {
+    background: rgba(255,255,255,0.04);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 16px 18px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    color: var(--text);
+    position: relative;
+    overflow: hidden;
+  }
+  .option:hover:not(.disabled) {
+    border-color: var(--accent);
+    background: rgba(0, 212, 255, 0.08);
+    transform: translateX(4px);
+  }
+  .option.correct {
+    border-color: var(--success);
+    background: rgba(0, 255, 136, 0.12);
+    animation: correctPulse 0.5s ease;
+  }
+  .option.wrong {
+    border-color: var(--error);
+    background: rgba(255, 51, 102, 0.12);
+    animation: shake 0.4s ease;
+  }
+  .option.disabled { pointer-events: none; opacity: 0.7; }
+
+  @keyframes correctPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
+
+  /* Feedback overlay */
+  .feedback {
+    position: absolute;
+    inset: 0;
+    background: rgba(15,15,26,0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    border-radius: 20px;
+    z-index: 10;
+  }
+  .feedback.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .feedback-icon {
+    font-size: 4rem;
+    margin-bottom: 12px;
+    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .feedback-text {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .feedback-answer {
+    font-size: 0.95rem;
+    color: var(--muted);
+    text-align: center;
+    padding: 0 20px;
+    max-width: 90%;
+  }
+  @keyframes popIn {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  /* ========== RESULT ========== */
+  #result-screen {
+    text-align: center;
+  }
+  .score-circle {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: conic-gradient(var(--accent) calc(var(--pct) * 1%), rgba(255,255,255,0.08) 0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    position: relative;
+    animation: scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .score-circle::before {
+    content: '';
+    position: absolute;
+    inset: 12px;
+    background: var(--bg);
+    border-radius: 50%;
+  }
+  .score-value {
+    position: relative;
+    font-size: 2.4rem;
+    font-weight: 900;
+    z-index: 1;
+  }
+  @keyframes scaleIn {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+  }
+  .result-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .result-msg {
+    color: var(--muted);
+    margin-bottom: 28px;
+    font-size: 1rem;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .stat-card .label { font-size: 0.8rem; color: var(--muted); }
+  .stat-card .value { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+
+  /* Confetti */
+  .confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    top: -20px;
+    z-index: 100;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    to {
+      transform: translateY(110vh) rotate(720deg);
+      opacity: 0;
+    }
+  }
+
+  /* Floating particles */
+  .particle {
+    position: fixed;
+    pointer-events: none;
+    border-radius: 50%;
+    opacity: 0.6;
+    animation: floatUp 3s ease-out forwards;
+  }
+  @keyframes floatUp {
+    to {
+      transform: translateY(-100px) scale(0);
+      opacity: 0;
+    }
+  }
+
+  /* Combo */
+  .combo {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--accent2);
+    text-shadow: 0 0 20px var(--accent2);
+    z-index: 50;
+    pointer-events: none;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .combo.show { transform: translateX(-50%) scale(1); }
+
+  footer {
+    margin-top: 30px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- START SCREEN -->
+<div id="start-screen" class="screen active">
+  <div class="logo">📱 QUIZ</div>
+  <div class="subtitle">Multimídia 2º Ano • Apps Móveis</div>
+  
+  <div class="info-box">
+    <p>🎯 <strong>25 perguntas</strong> de revisão</p>
+    <p>⭐ Pontuação + combo de acertos</p>
+    <p>🔊 Sons e animações</p>
+    <p>📱 Totalmente responsivo</p>
+  </div>
+
+  <button class="btn" onclick="startGame()">COMEÇAR</button>
+  <br>
+  <button class="btn secondary" onclick="toggleMute()" id="mute-btn">🔊 Som ligado</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game-screen" class="screen">
+  <div id="hud">
+    <div class="stat">⭐ <span id="score">0</span></div>
+    <div class="stat">🔥 <span id="combo">0</span></div>
+    <div class="stat">❓ <span id="q-current">1</span>/<span id="q-total">25</span></div>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progress"></div>
+  </div>
+
+  <div class="question-card" id="q-card">
+    <div class="q-number" id="q-number">PERGUNTA 01</div>
+    <div class="question-text" id="question"></div>
+    <div class="options" id="options"></div>
+
+    <div class="feedback" id="feedback">
+      <div class="feedback-icon" id="fb-icon"></div>
+      <div class="feedback-text" id="fb-text"></div>
+      <div class="feedback-answer" id="fb-answer"></div>
+      <button class="btn" style="margin-top:20px; padding:12px 32px; font-size:1rem;" onclick="nextQuestion()">Continuar</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT SCREEN -->
+<div id="result-screen" class="screen">
+  <div class="score-circle" id="score-circle" style="--pct:0">
+    <div class="score-value" id="final-score">0%</div>
+  </div>
+  <div class="result-title" id="result-title">Parabéns!</div>
+  <div class="result-msg" id="result-msg">Você arrasou!</div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="label">Pontuação</div>
+      <div class="value" id="res-score">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Acertos</div>
+      <div class="value" id="res-correct">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Maior Combo</div>
+      <div class="value" id="res-combo">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Tempo</div>
+      <div class="value" id="res-time">0s</div>
+    </div>
+  </div>
+
+  <button class="btn" onclick="restartGame()">JOGAR NOVAMENTE</button>
+  <br>
+  <button class="btn secondary" onclick="location.reload()">Voltar ao Início</button>
+</div>
+
+<div class="combo" id="combo-popup">🔥 COMBO x3!</div>
+
+<footer>Multimídia 2º Ano • Revisão de Aplicativos Móveis</footer>
+
+<script>
+// ===================== DADOS =====================
+const questions = [
+  {
+    q: "O que é um aplicativo móvel?",
+    options: [
+      "Um software desenvolvido especificamente para dispositivos portáteis (smartphones e tablets)",
+      "Qualquer programa que roda em um computador",
+      "Um site que só funciona no Wi-Fi",
+      "Um vírus que se instala no celular"
+    ],
+    correct: 0,
+    explanation: "É um software otimizado para telas sensíveis ao toque, sensores e limitações de bateria/memória."
+  },
+  {
+    q: "Qual a principal diferença entre um app móvel e um programa de computador tradicional?",
+    options: [
+      "Apps móveis usam mouse e teclado",
+      "Apps móveis são projetados para toque, movimento e economia de recursos",
+      "Programas de computador usam GPS",
+      "Não há diferença relevante"
+    ],
+    correct: 1,
+    explanation: "Apps móveis priorizam toque, uso em movimento, bateria e sensores."
+  },
+  {
+    q: "Quais são as duas principais plataformas de sistemas operacionais para dispositivos móveis?",
+    options: [
+      "Windows e Linux",
+      "Android e iOS",
+      "macOS e ChromeOS",
+      "Symbian e BlackBerry OS"
+    ],
+    correct: 1,
+    explanation: "Android (Google) e iOS (Apple) dominam o mercado."
+  },
+  {
+    q: "O que são aplicativos nativos?",
+    options: [
+      "Apps que funcionam só no navegador",
+      "Apps desenvolvidos exclusivamente para uma plataforma específica",
+      "Apps feitos com HTML e CSS apenas",
+      "Apps que não precisam de internet"
+    ],
+    correct: 1,
+    explanation: "Usam ferramentas e linguagens oficiais da plataforma (melhor desempenho e acesso total aos recursos)."
+  },
+  {
+    q: "O que são aplicativos híbridos ou multiplataforma?",
+    options: [
+      "Apps que só funcionam em um celular de cada vez",
+      "Apps desenvolvidos com um único código para várias plataformas",
+      "Apps que misturam Android e Windows",
+      "Apps que precisam de dois celulares para funcionar"
+    ],
+    correct: 1,
+    explanation: "Tecnologias como Flutter, React Native ou Ionic permitem um código para Android e iOS."
+  },
+  {
+    q: "O que são Web Apps?",
+    options: [
+      "Apps que precisam ser instalados na Play Store",
+      "Aplicações que funcionam dentro do navegador, sem instalação",
+      "Apps feitos apenas para tablets",
+      "Jogos offline"
+    ],
+    correct: 1,
+    explanation: "Funcionam como um site responsivo, sem necessidade de download."
+  },
+  {
+    q: "Cite recursos de hardware comuns em smartphones que os apps podem utilizar:",
+    options: [
+      "Apenas a tela e o processador",
+      "Câmera, GPS, acelerômetro, microfone, Bluetooth e sensores",
+      "Somente Wi-Fi e bateria",
+      "Apenas o teclado virtual"
+    ],
+    correct: 1,
+    explanation: "Sensores e hardware especializados enriquecem a experiência dos apps."
+  },
+  {
+    q: "Por que a economia de bateria é um fator importante no desenvolvimento de apps móveis?",
+    options: [
+      "Porque os celulares têm bateria infinita",
+      "Porque os usuários esperam que o app não consuma muita energia",
+      "Porque a bateria não influencia o desempenho",
+      "Porque só importa em jogos"
+    ],
+    correct: 1,
+    explanation: "Dispositivos móveis têm bateria limitada; apps devem ser eficientes, especialmente em segundo plano."
+  },
+  {
+    q: "O que significa dizer que um aplicativo deve ser “responsivo”?",
+    options: [
+      "Que ele responde rápido aos toques",
+      "Que a interface se adapta a diferentes tamanhos e densidades de tela",
+      "Que ele só funciona em celulares grandes",
+      "Que ele precisa de internet o tempo todo"
+    ],
+    correct: 1,
+    explanation: "A interface deve se adaptar a celulares pequenos, grandes e tablets mantendo usabilidade."
+  },
+  {
+    q: "Qual a importância dos sensores de movimento (acelerômetro e giroscópio)?",
+    options: [
+      "Servem apenas para medir a temperatura",
+      "Permitem detectar orientação e movimento do dispositivo",
+      "Só funcionam em iPhones",
+      "Não têm utilidade prática"
+    ],
+    correct: 1,
+    explanation: "Essenciais em jogos, realidade aumentada, fitness e controle de câmera."
+  },
+  {
+    q: "O que significa UI?",
+    options: [
+      "User Internet",
+      "User Interface (Interface do Usuário)",
+      "Universal Installation",
+      "Unique Identifier"
+    ],
+    correct: 1,
+    explanation: "Refere-se a todos os elementos visuais: botões, menus, cores, tipografia, ícones e layouts."
+  },
+  {
+    q: "O que significa UX?",
+    options: [
+      "User Experience (Experiência do Usuário)",
+      "User Extra",
+      "Universal Experience",
+      "User Exit"
+    ],
+    correct: 0,
+    explanation: "Trata de como o usuário se sente ao usar o app — se é fácil, intuitivo e agradável."
+  },
+  {
+    q: "Cite três princípios básicos de boa interface para apps móveis:",
+    options: [
+      "Elementos minúsculos, sem feedback e navegação complexa",
+      "Elementos grandes para o dedo, feedback imediato e navegação simples",
+      "Muitos menus escondidos e textos longos",
+      "Cores aleatórias e animações sem propósito"
+    ],
+    correct: 1,
+    explanation: "Toque confortável, resposta clara e consistência são fundamentais."
+  },
+  {
+    q: "Por que o design de apps móveis deve priorizar a interação com uma mão?",
+    options: [
+      "Porque a maioria dos usuários usa o celular com uma mão",
+      "Porque é mais bonito",
+      "Porque os celulares são muito pequenos",
+      "Porque a Apple exige"
+    ],
+    correct: 0,
+    explanation: "Especialmente em movimento; botões e menus devem ficar em áreas de fácil alcance."
+  },
+  {
+    q: "O que é um layout em um aplicativo móvel?",
+    options: [
+      "O código-fonte do app",
+      "A forma como os elementos visuais são organizados e posicionados na tela",
+      "O nome do arquivo de instalação",
+      "A versão do sistema operacional"
+    ],
+    correct: 1,
+    explanation: "É a estrutura visual de botões, textos, imagens etc."
+  },
+  {
+    q: "O que são widgets ou componentes visuais?",
+    options: [
+      "Apenas imagens decorativas",
+      "Elementos de interface reutilizáveis (botões, listas, menus...)",
+      "Arquivos de áudio",
+      "Sensores do celular"
+    ],
+    correct: 1,
+    explanation: "São blocos de construção da interface: botões, caixas de texto, listas, barras etc."
+  },
+  {
+    q: "O que é um “evento” em programação de aplicativos?",
+    options: [
+      "Uma festa de lançamento do app",
+      "Uma ação do usuário (toque, digitação, deslize) que dispara uma resposta",
+      "Um erro no código",
+      "A atualização do sistema"
+    ],
+    correct: 1,
+    explanation: "Toques, deslizes e outras interações geram eventos que o app processa."
+  },
+  {
+    q: "O que significa “persistência de dados” em um app?",
+    options: [
+      "Guardar dados apenas enquanto o app está aberto",
+      "Armazenar informações de forma permanente no dispositivo ou na nuvem",
+      "Apagar tudo quando fecha o app",
+      "Sincronizar apenas com Wi-Fi"
+    ],
+    correct: 1,
+    explanation: "Garante que informações não sejam perdidas ao fechar o aplicativo."
+  },
+  {
+    q: "Explique o que é o ciclo de vida de um aplicativo:",
+    options: [
+      "O tempo que o usuário leva para instalar o app",
+      "Os estados pelos quais o app passa: criado, iniciado, em execução, pausado, parado e destruído",
+      "A duração da bateria",
+      "O processo de publicação na loja"
+    ],
+    correct: 1,
+    explanation: "O desenvolvedor gerencia esses estados para economizar recursos e salvar dados."
+  },
+  {
+    q: "Por que é importante entender o ciclo de vida de um aplicativo?",
+    options: [
+      "Para evitar consumo desnecessário de bateria e memória e salvar o progresso do usuário",
+      "Porque é obrigatório por lei",
+      "Só importa em jogos",
+      "Não tem importância prática"
+    ],
+    correct: 0,
+    explanation: "Permite gerenciar recursos, salvar estado e garantir retorno correto do app."
+  },
+  {
+    q: "Cite três recursos multimídia que podem ser integrados em um app móvel:",
+    options: [
+      "Apenas texto e números",
+      "Imagens, áudio, vídeo e animações",
+      "Somente gráficos 3D",
+      "Apenas notificações push"
+    ],
+    correct: 1,
+    explanation: "Imagens, áudio (reprodução/gravação), vídeo e animações enriquecem a experiência."
+  },
+  {
+    q: "Quais são as etapas básicas do processo de criação de um aplicativo?",
+    options: [
+      "Só programar e publicar",
+      "Identificar problema → definir público → protótipo → desenvolver → testar → corrigir → publicar",
+      "Desenhar e vender",
+      "Copiar um app existente"
+    ],
+    correct: 1,
+    explanation: "Processo completo vai da ideia até a publicação e melhoria contínua."
+  },
+  {
+    q: "Onde os aplicativos Android e iOS são normalmente distribuídos?",
+    options: [
+      "Apenas em sites de terceiros",
+      "Android na Google Play Store e iOS na App Store",
+      "Somente por e-mail",
+      "No WhatsApp"
+    ],
+    correct: 1,
+    explanation: "As lojas oficiais garantem distribuição segura e atualizações."
+  },
+  {
+    q: "Por que é importante testar o aplicativo em diferentes dispositivos?",
+    options: [
+      "Porque todos os celulares são iguais",
+      "Porque existem muitos modelos com telas, resoluções e sistemas diferentes",
+      "Só para gastar tempo",
+      "Porque a Apple e o Google exigem 100 dispositivos"
+    ],
+    correct: 1,
+    explanation: "Garante que o app funcione bem para a maioria dos usuários."
+  },
+  {
+    q: "Por que a disciplina de Aplicativos para Dispositivos Móveis é especialmente importante para alunos de Multimídia?",
+    options: [
+      "Porque une design, usabilidade, imagens, áudio e vídeo com soluções interativas do dia a dia",
+      "Porque é a matéria mais fácil",
+      "Porque só ensina a instalar apps",
+      "Porque não tem relação com o mercado"
+    ],
+    correct: 0,
+    explanation: "Aproxima a formação técnica da realidade do mercado e do comportamento digital atual."
+  }
+];
+
+// ===================== ESTADO =====================
+let current = 0;
+let score = 0;
+let correctCount = 0;
+let combo = 0;
+let maxCombo = 0;
+let startTime = 0;
+let muted = false;
+let answered = false;
+
+// ===================== ÁUDIO =====================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function initAudio() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+}
+
+function playTone(freq, type, duration, volume = 0.15) {
+  if (muted || !audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function playCorrect() {
+  playTone(523.25, 'sine', 0.12); // C5
+  setTimeout(() => playTone(659.25, 'sine', 0.12), 80); // E5
+  setTimeout(() => playTone(783.99, 'sine', 0.2), 160); // G5
+}
+
+function playWrong() {
+  playTone(200, 'sawtooth', 0.25, 0.1);
+  setTimeout(() => playTone(150, 'sawtooth', 0.3, 0.1), 100);
+}
+
+function playClick() {
+  playTone(800, 'square', 0.05, 0.05);
+}
+
+function playWin() {
+  [523, 659, 784, 1047].forEach((f, i) => {
+    setTimeout(() => playTone(f, 'sine', 0.2, 0.12), i * 120);
+  });
+}
+
+function playCombo() {
+  playTone(880, 'triangle', 0.1, 0.1);
+  setTimeout(() => playTone(1108, 'triangle', 0.15, 0.12), 80);
+}
+
+// ===================== FUNÇÕES =====================
+function toggleMute() {
+  muted = !muted;
+  document.getElementById('mute-btn').textContent = muted ? '🔇 Som desligado' : '🔊 Som ligado';
+  playClick();
+}
+
+function startGame() {
+  initAudio();
+  playClick();
+  current = 0;
+  score = 0;
+  correctCount = 0;
+  combo = 0;
+  maxCombo = 0;
+  startTime = Date.now();
+  document.getElementById('start-screen').classList.remove('active');
+  document.getElementById('game-screen').classList.add('active');
+  document.getElementById('q-total').textContent = questions.length;
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  const q = questions[current];
+  document.getElementById('q-number').textContent = `PERGUNTA ${String(current + 1).padStart(2, '0')}`;
+  document.getElementById('question').textContent = q.q;
+  document.getElementById('q-current').textContent = current + 1;
+  document.getElementById('score').textContent = score;
+  document.getElementById('combo').textContent = combo;
+  document.getElementById('progress').style.width = `${(current / questions.length) * 100}%`;
+
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.onclick = () => selectOption(i);
+    opts.appendChild(btn);
+  });
+
+  document.getElementById('feedback').classList.remove('show');
+}
+
+function selectOption(index) {
+  if (answered) return;
+  answered = true;
+  playClick();
+
+  const q = questions[current];
+  const options = document.querySelectorAll('.option');
+  options.forEach(o => o.classList.add('disabled'));
+
+  const isCorrect = index === q.correct;
+
+  if (isCorrect) {
+    options[index].classList.add('correct');
+    playCorrect();
+    combo++;
+    if (combo > maxCombo) maxCombo = combo;
+    score += 100 + (combo * 20);
+    correctCount++;
+    showFeedback(true, q.explanation);
+    if (combo >= 3) showComboPopup();
+    spawnParticles(true);
+  } else {
+    options[index].classList.add('wrong');
+    options[q.correct].classList.add('correct');
+    playWrong();
+    combo = 0;
+    showFeedback(false, q.explanation);
+    spawnParticles(false);
+  }
+
+  document.getElementById('score').textContent = score;
+  document.getElementById('combo').textContent = combo;
+}
+
+function showFeedback(correct, explanation) {
+  const fb = document.getElementById('feedback');
+  document.getElementById('fb-icon').textContent = correct ? '🎉' : '😅';
+  document.getElementById('fb-text').textContent = correct ? 'Muito bem!' : 'Quase!';
+  document.getElementById('fb-text').style.color = correct ? 'var(--success)' : 'var(--error)';
+  document.getElementById('fb-answer').textContent = explanation;
+  fb.classList.add('show');
+}
+
+function showComboPopup() {
+  const popup = document.getElementById('combo-popup');
+  popup.textContent = `🔥 COMBO x${combo}!`;
+  popup.classList.add('show');
+  playCombo();
+  setTimeout(() => popup.classList.remove('show'), 1200);
+}
+
+function nextQuestion() {
+  playClick();
+  current++;
+  if (current < questions.length) {
+    showQuestion();
+  } else {
+    endGame();
+  }
+}
+
+function endGame() {
+  document.getElementById('game-screen').classList.remove('active');
+  document.getElementById('result-screen').classList.add('active');
+
+  const pct = Math.round((correctCount / questions.length) * 100);
+  document.getElementById('score-circle').style.setProperty('--pct', pct);
+  document.getElementById('final-score').textContent = pct + '%';
+  document.getElementById('res-score').textContent = score;
+  document.getElementById('res-correct').textContent = `${correctCount}/${questions.length}`;
+  document.getElementById('res-combo').textContent = maxCombo;
+  document.getElementById('res-time').textContent = Math.round((Date.now() - startTime) / 1000) + 's';
+
+  let title, msg;
+  if (pct >= 90) {
+    title = 'Incrível! 🏆';
+    msg = 'Você dominou o conteúdo de Apps Móveis!';
+    playWin();
+    launchConfetti();
+  } else if (pct >= 70) {
+    title = 'Muito bom! 👏';
+    msg = 'Ótimo desempenho. Continue revisando!';
+    playWin();
+  } else if (pct >= 50) {
+    title = 'Bom esforço! 💪';
+    msg = 'Você está no caminho. Revise os pontos fracos.';
+  } else {
+    title = 'Continue estudando! 📚';
+    msg = 'A prática leva à perfeição. Jogue de novo!';
+  }
+  document.getElementById('result-title').textContent = title;
+  document.getElementById('result-msg').textContent = msg;
+}
+
+function restartGame() {
+  playClick();
+  document.getElementById('result-screen').classList.remove('active');
+  document.getElementById('game-screen').classList.add('active');
+  current = 0;
+  score = 0;
+  correctCount = 0;
+  combo = 0;
+  maxCombo = 0;
+  startTime = Date.now();
+  showQuestion();
+}
+
+// ========== EFEITOS VISUAIS ==========
+function spawnParticles(success) {
+  const colors = success ? ['#00ff88', '#00d4ff', '#fff'] : ['#ff3366', '#ff00aa'];
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = (40 + Math.random() * 20) + 'vw';
+    p.style.top = '50%';
+    p.style.width = p.style.height = (4 + Math.random() * 8) + 'px';
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    p.style.animationDuration = (1.5 + Math.random()) + 's';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 2500);
+  }
+}
+
+function launchConfetti() {
+  const colors = ['#00d4ff', '#ff00aa', '#00ff88', '#ffcc00', '#ff3366'];
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.width = (6 + Math.random() * 8) + 'px';
+      c.style.height = (6 + Math.random() * 8) + 'px';
+      c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      c.style.animationDuration = (2 + Math.random() * 2) + 's';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 4000);
+    }, i * 30);
+  }
+}
+</script>
+</body>
+</html>

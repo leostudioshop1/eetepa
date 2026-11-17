@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MOBILE DEV QUEST | Revisão Multimídia 2º Ano</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Orbitron & Plus Jakarta Sans & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome para ícones modernos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Orbitron', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        cyber: {
+                            dark: '#090914',
+                            card: 'rgba(20, 21, 43, 0.78)',
+                            purple: '#9D4EDD',
+                            neonPurple: '#C77DFF',
+                            cyan: '#00F5D4',
+                            pink: '#FF2A85',
+                            yellow: '#FEE440',
+                            blue: '#3A86FF'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Estilos Base e Background Cyber Animado */
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #070711;
+            color: #F8FAFC;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* Grid Perspectiva Neon no Fundo */
+        .cyber-grid-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background: 
+                radial-gradient(circle at 15% 15%, rgba(157, 78, 221, 0.22) 0%, transparent 45%),
+                radial-gradient(circle at 85% 80%, rgba(0, 245, 212, 0.16) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(255, 42, 133, 0.1) 0%, transparent 60%),
+                #070711;
+        }
+
+        .cyber-grid-lines {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background-image: 
+                linear-gradient(to right, rgba(0, 245, 212, 0.06) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(157, 78, 221, 0.08) 1px, transparent 1px);
+            background-size: 44px 44px;
+            animation: gridMove 24s linear infinite;
+            mask-image: radial-gradient(ellipse at center, black 40%, transparent 90%);
+        }
+
+        @keyframes gridMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 44px 44px; }
+        }
+
+        /* Glassmorphism Cards */
+        .glass-panel {
+            background: rgba(18, 20, 42, 0.76);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        }
+
+        .glass-panel-neon {
+            background: rgba(16, 18, 38, 0.85);
+            backdrop-filter: blur(18px);
+            border: 1px solid rgba(0, 245, 212, 0.35);
+            box-shadow: 0 0 25px rgba(0, 245, 212, 0.12), inset 0 0 15px rgba(157, 78, 221, 0.1);
+        }
+
+        /* Botões Estilo Game Arcade / Cyber */
+        .btn-cyber {
+            position: relative;
+            transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .btn-cyber:hover:not(:disabled) {
+            transform: translateY(-3px) scale(1.015);
+        }
+
+        .btn-cyber:active:not(:disabled) {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .btn-cyber:disabled {
+            opacity: 0.42;
+            cursor: not-allowed;
+            filter: grayscale(0.6);
+        }
+
+        /* Animações de Feedback */
+        @keyframes shakeError {
+            0%, 100% { transform: translateX(0); }
+            15% { transform: translateX(-10px) rotate(-1deg); }
+            30% { transform: translateX(10px) rotate(1deg); }
+            45% { transform: translateX(-8px); }
+            60% { transform: translateX(8px); }
+            75% { transform: translateX(-4px); }
+        }
+
+        .animate-shake {
+            animation: shakeError 0.48s ease-in-out;
+        }
+
+        @keyframes popSuccess {
+            0% { transform: scale(0.95); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        .animate-pop {
+            animation: popSuccess 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes floatMascot {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-7px) rotate(1.5deg); }
+        }
+
+        .mascot-float {
+            animation: floatMascot 3.2s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 14px rgba(0, 245, 212, 0.35); }
+            50% { box-shadow: 0 0 28px rgba(255, 42, 133, 0.6); }
+        }
+
+        .glow-pulse {
+            animation: pulseGlow 2.4s infinite;
+        }
+
+        /* 3D Flip para Modo Flashcards */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 1.5rem;
+        }
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
+
+        /* Canvas de Partículas / Confetes */
+        #fx-canvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 60;
+        }
+
+        /* Barra de rolagem customizada */
+        ::-webkit-scrollbar {
+            width: 7px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090914;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #9D4EDD, #00F5D4);
+            border-radius: 999px;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-slate-100 selection:bg-cyber-pink selection:text-white">
+
+    <!-- Fundo Animado e Canvas de Efeitos -->
+    <div class="cyber-grid-bg"></div>
+    <div class="cyber-grid-lines"></div>
+    <canvas id="fx-canvas"></canvas>
+
+    <!-- BARRA SUPERIOR GLOBAL (Audio, Voltar, Status) -->
+    <header class="sticky top-0 z-40 glass-panel border-b border-white/10 px-4 py-3">
+        <div class="max-w-5xl mx-auto flex items-center justify-between gap-2">
+            <!-- Logo / Voltar -->
+            <button onclick="App.confirmHome()" class="flex items-center gap-2.5 text-left group focus:outline-none">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyber-purple via-cyber-pink to-cyber-cyan p-[2px] shadow-lg group-hover:scale-105 transition">
+                    <div class="w-full h-full bg-cyber-dark rounded-[10px] flex items-center justify-center">
+                        <i class="fa-solid fa-mobile-screen-button text-cyber-cyan text-lg"></i>
+                    </div>
+                </div>
+                <div>
+                    <span class="font-display font-extrabold text-sm sm:text-base tracking-wider bg-gradient-to-r from-cyber-cyan via-white to-cyber-neonPurple bg-clip-text text-transparent block leading-tight">
+                        MOBILE DEV QUEST
+                    </span>
+                    <span class="text-[11px] font-mono text-cyber-yellow/90 tracking-wide">
+                        MULTIMÍDIA • 2º ANO
+                    </span>
+                </div>
+            </button>
+
+            <!-- Controles de Áudio & Ranking -->
+            <div class="flex items-center gap-2">
+                <button id="btn-music" onclick="SoundEngine.toggleMusic()" title="Música Synthwave" class="btn-cyber px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs sm:text-sm font-semibold flex items-center gap-1.5 text-slate-300">
+                    <i id="icon-music" class="fa-solid fa-music text-cyber-pink"></i>
+                    <span class="hidden sm:inline" id="label-music">Synth: OFF</span>
+                </button>
+
+                <button id="btn-sfx" onclick="SoundEngine.toggleMute()" title="Efeitos Sonoros" class="btn-cyber px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs sm:text-sm font-semibold flex items-center gap-1.5 text-cyber-cyan">
+                    <i id="icon-sfx" class="fa-solid fa-volume-high"></i>
+                    <span class="hidden sm:inline" id="label-sfx">Som: ON</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTAINER PRINCIPAL -->
+    <main class="flex-1 w-full max-w-5xl mx-auto px-4 py-6 sm:py-8 flex flex-col justify-center">
+
+        <!-- ========================================== -->
+        <!-- 1. TELA INICIAL (HOME SCREEN)              -->
+        <!-- ========================================== -->
+        <section id="screen-home" class="space-y-6 animate-pop">
+            <!-- Hero Card -->
+            <div class="glass-panel-neon rounded-3xl p-6 sm:p-8 relative overflow-hidden">
+                <div class="absolute -right-12 -top-12 w-56 h-56 bg-cyber-purple/25 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -left-12 -bottom-12 w-56 h-56 bg-cyber-cyan/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="flex flex-col md:flex-row items-center gap-6 relative z-10">
+                    <!-- Mascote Dev Cyber SVG -->
+                    <div class="w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0 mascot-float">
+                        <svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-[0_0_20px_rgba(0,245,212,0.45)]">
+                            <defs>
+                                <linearGradient id="visorGrad" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0%" stop-color="#00F5D4"/>
+                                    <stop offset="100%" stop-color="#9D4EDD"/>
+                                </linearGradient>
+                                <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#2B2D5B"/>
+                                    <stop offset="100%" stop-color="#14152B"/>
+                                </linearGradient>
+                            </defs>
+                            <!-- Antena -->
+                            <line x1="100" y1="28" x2="100" y2="12" stroke="#00F5D4" stroke-width="5" stroke-linecap="round"/>
+                            <circle cx="100" cy="10" r="7" fill="#FF2A85"/>
+                            <!-- Fones / Headphones -->
+                            <rect x="24" y="72" width="18" height="46" rx="9" fill="#FF2A85"/>
+                            <rect x="158" y="72" width="18" height="46" rx="9" fill="#FF2A85"/>
+                            <!-- Cabeça Robô Designer -->
+                            <rect x="38" y="28" width="124" height="106" rx="32" fill="url(#bodyGrad)" stroke="#00F5D4" stroke-width="4"/>
+                            <!-- Visor -->
+                            <rect x="52" y="50" width="96" height="54" rx="18" fill="#090914" stroke="url(#visorGrad)" stroke-width="3"/>
+                            <!-- Olhos Expressivos -->
+                            <circle cx="78" cy="75" r="10" fill="#00F5D4"/>
+                            <circle cx="81" cy="72" r="3.5" fill="#FFFFFF"/>
+                            <circle cx="122" cy="75" r="10" fill="#00F5D4"/>
+                            <circle cx="125" cy="72" r="3.5" fill="#FFFFFF"/>
+                            <!-- Sorriso -->
+                            <path d="M86 91 Q100 102 114 91" stroke="#FEE440" stroke-width="4" fill="none" stroke-linecap="round"/>
+                            <!-- Corpo / Smartphone Badge -->
+                            <rect x="58" y="140" width="84" height="46" rx="18" fill="url(#bodyGrad)" stroke="#9D4EDD" stroke-width="3.5"/>
+                            <rect x="86" y="150" width="28" height="26" rx="5" fill="#090914" stroke="#00F5D4" stroke-width="2"/>
+                            <circle cx="100" cy="171" r="2" fill="#FF2A85"/>
+                        </svg>
+                    </div>
+
+                    <!-- Texto e Input do Jogador -->
+                    <div class="flex-1 text-center md:text-left space-y-3">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyber-purple/25 border border-cyber-neonPurple/40 text-cyber-neonPurple text-xs font-mono font-bold">
+                            <i class="fa-solid fa-bolt text-cyber-yellow"></i> ARENA DE REVISÃO INTERATIVA • 25 QUESTÕES
+                        </div>
+                        <h1 class="font-display text-2xl sm:text-4xl font-black tracking-tight leading-tight text-white">
+                            MOBILE DEV <span class="bg-gradient-to-r from-cyber-cyan via-cyber-yellow to-cyber-pink bg-clip-text text-transparent">QUEST</span>
+                        </h1>
+                        <p class="text-slate-300 text-sm sm:text-base max-w-xl">
+                            Domine conceitos de <strong class="text-cyber-cyan">Apps Móveis, UI/UX, Hardware, Sensores e Ciclo de Vida</strong> para gabaritar a revisão de Multimídia 2º Ano!
+                        </p>
+
+                        <!-- Input Nome do Aluno -->
+                        <div class="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 max-w-md mx-auto md:mx-0">
+                            <div class="relative flex-1">
+                                <i class="fa-solid fa-user-astronaut absolute left-3.5 top-1/2 -translate-y-1/2 text-cyber-cyan"></i>
+                                <input id="player-name-input" type="text" maxlength="22" placeholder="Seu nome ou apelido..." 
+                                    class="w-full pl-10 pr-4 py-3 rounded-xl bg-cyber-dark/90 border border-white/15 focus:border-cyber-cyan focus:outline-none text-white font-semibold placeholder:text-slate-500 transition">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modos de Jogo -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Modo 1: Campanha -->
+                <button onclick="App.startGame('campaign')" class="btn-cyber glass-panel rounded-2xl p-5 text-left border-2 border-cyber-cyan/40 hover:border-cyber-cyan flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="w-12 h-12 rounded-2xl bg-cyber-cyan/20 text-cyber-cyan flex items-center justify-center text-2xl group-hover:scale-110 transition">
+                                <i class="fa-solid fa-rocket"></i>
+                            </span>
+                            <span class="px-2.5 py-1 rounded-lg bg-cyber-cyan/15 text-cyber-cyan font-mono text-xs font-bold">4 FASES</span>
+                        </div>
+                        <h3 class="font-display font-bold text-lg text-white mb-1">Modo Campanha</h3>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            Enfrente todas as <strong>25 questões</strong> divididas em 4 fases temáticas com chefes de conhecimento, vidas e power-ups!
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-cyber-cyan font-bold text-sm">
+                        <span>Iniciar Jornada</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
+                    </div>
+                </button>
+
+                <!-- Modo 2: Blitz Contra o Tempo -->
+                <button onclick="App.startGame('blitz')" class="btn-cyber glass-panel rounded-2xl p-5 text-left border-2 border-cyber-pink/40 hover:border-cyber-pink flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="w-12 h-12 rounded-2xl bg-cyber-pink/20 text-cyber-pink flex items-center justify-center text-2xl group-hover:scale-110 transition">
+                                <i class="fa-solid fa-stopwatch"></i>
+                            </span>
+                            <span class="px-2.5 py-1 rounded-lg bg-cyber-pink/15 text-cyber-pink font-mono text-xs font-bold">60 SEG</span>
+                        </div>
+                        <h3 class="font-display font-bold text-lg text-white mb-1">Blitz Contra o Tempo</h3>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            Velocidade máxima! Você tem 60 segundos para acertar o máximo de questões. Cada acerto dá <strong>+5s extras</strong>!
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-cyber-pink font-bold text-sm">
+                        <span>Modo Turbo</span>
+                        <i class="fa-solid fa-bolt group-hover:translate-x-1 transition"></i>
+                    </div>
+                </button>
+
+                <!-- Modo 3: Flashcards -->
+                <button onclick="App.startFlashcards()" class="btn-cyber glass-panel rounded-2xl p-5 text-left border-2 border-cyber-yellow/40 hover:border-cyber-yellow flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="w-12 h-12 rounded-2xl bg-cyber-yellow/20 text-cyber-yellow flex items-center justify-center text-2xl group-hover:scale-110 transition">
+                                <i class="fa-solid fa-layer-group"></i>
+                            </span>
+                            <span class="px-2.5 py-1 rounded-lg bg-cyber-yellow/15 text-cyber-yellow font-mono text-xs font-bold">ESTUDO</span>
+                        </div>
+                        <h3 class="font-display font-bold text-lg text-white mb-1">Flashcards Rápidos</h3>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            Revise todas as 25 perguntas e respostas oficiais da turma virando cards interativos 3D antes do desafio!
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-cyber-yellow font-bold text-sm">
+                        <span>Revisar Conteúdo</span>
+                        <i class="fa-solid fa-book-open group-hover:translate-x-1 transition"></i>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Mapa das 4 Fases & Hall da Fama Local -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <!-- Fases -->
+                <div class="lg:col-span-2 glass-panel rounded-2xl p-5">
+                    <h4 class="font-display text-sm font-bold text-cyber-neonPurple uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-map-location-dot"></i> Trilha de Fases da Campanha
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div class="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-300 font-display font-bold flex items-center justify-center">01</span>
+                            <div>
+                                <div class="font-bold text-white">Fundamentos Mobile</div>
+                                <div class="text-slate-400">Apps, Plataformas, Nativos, Híbridos e Web Apps</div>
+                            </div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-300 font-display font-bold flex items-center justify-center">02</span>
+                            <div>
+                                <div class="font-bold text-white">Hardware & Sensores</div>
+                                <div class="text-slate-400">Recursos físicos, Bateria, Responsividade e Giroscópio</div>
+                            </div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-pink-500/20 text-pink-300 font-display font-bold flex items-center justify-center">03</span>
+                            <div>
+                                <div class="font-bold text-white">UI/UX & Multimídia</div>
+                                <div class="text-slate-400">Design, Uso com 1 mão, Layouts, Widgets e Áudio/Vídeo</div>
+                            </div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-yellow-500/20 text-yellow-300 font-display font-bold flex items-center justify-center">04</span>
+                            <div>
+                                <div class="font-bold text-white">Ciclo de Vida & Publicação</div>
+                                <div class="text-slate-400">Eventos, Persistência, Estados, Lojas e Mercado</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ranking Local -->
+                <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-display text-sm font-bold text-cyber-yellow uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-trophy"></i> Top Devs Local
+                            </h4>
+                            <button onclick="App.clearLeaderboard()" class="text-[11px] text-slate-400 hover:text-cyber-pink transition">Limpar</button>
+                        </div>
+                        <div id="leaderboard-list" class="space-y-2 text-xs">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 2. TELA DE QUIZ ATIVO (GAMEPLAY)           -->
+        <!-- ========================================== -->
+        <section id="screen-quiz" class="hidden space-y-4">
+            <!-- HUD Superior: Fase, Vidas, Combo, XP e Timer -->
+            <div class="glass-panel rounded-2xl p-3.5 sm:p-4">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                    <!-- Badge da Fase -->
+                    <div class="flex items-center gap-2">
+                        <span id="hud-phase-badge" class="px-3 py-1 rounded-lg bg-cyber-purple/30 border border-cyber-neonPurple/50 text-cyber-neonPurple font-display text-xs font-bold">
+                            FASE 1: FUNDAMENTOS
+                        </span>
+                        <span id="hud-q-counter" class="font-mono text-xs sm:text-sm font-bold text-slate-300">
+                            1 / 25
+                        </span>
+                    </div>
+
+                    <!-- Status: Vidas, Combo, Pontos -->
+                    <div class="flex items-center gap-3 sm:gap-5">
+                        <!-- Vidas (Baterias) -->
+                        <div id="hud-lives" class="flex items-center gap-1 text-cyber-pink text-base sm:text-lg" title="Bateria / Vidas">
+                            <i class="fa-solid fa-battery-full"></i>
+                            <i class="fa-solid fa-battery-full"></i>
+                            <i class="fa-solid fa-battery-full"></i>
+                        </div>
+
+                        <!-- Combo -->
+                        <div id="hud-combo-box" class="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 font-display text-xs sm:text-sm font-extrabold text-cyber-yellow transition-transform">
+                            <i class="fa-solid fa-fire mr-1"></i><span id="hud-combo">x1</span>
+                        </div>
+
+                        <!-- Pontuação XP -->
+                        <div class="font-display text-sm sm:text-base font-black text-cyber-cyan">
+                            <span id="hud-score">0</span> <span class="text-xs font-normal text-slate-400">XP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra de Progresso & Barra de Tempo -->
+                <div class="space-y-1.5">
+                    <div class="w-full h-2 bg-cyber-dark rounded-full overflow-hidden border border-white/10">
+                        <div id="hud-progress-bar" class="h-full bg-gradient-to-r from-cyber-purple via-cyber-pink to-cyber-cyan transition-all duration-500" style="width: 4%"></div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-regular fa-clock text-xs text-cyber-cyan"></i>
+                        <div class="flex-1 h-1.5 bg-cyber-dark rounded-full overflow-hidden">
+                            <div id="hud-timer-bar" class="h-full bg-cyber-cyan transition-all duration-100" style="width: 100%"></div>
+                        </div>
+                        <span id="hud-timer-text" class="font-mono text-xs font-bold text-cyber-cyan w-9 text-right">30s</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Área Principal da Questão + Mascote Reativo -->
+            <div id="question-card" class="glass-panel-neon rounded-3xl p-5 sm:p-7 relative transition-all">
+                <div class="flex items-start gap-4 mb-5">
+                    <!-- Mini Mascote Reativo -->
+                    <div id="quiz-mascot" class="w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 rounded-2xl bg-cyber-dark border-2 border-cyber-cyan/50 flex items-center justify-center shadow-lg transition-transform">
+                        <span id="mascot-face" class="text-3xl sm:text-4xl select-none">🤖</span>
+                    </div>
+
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span id="q-original-num" class="text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-white/10 text-cyber-cyan">
+                                Questão #1
+                            </span>
+                            <span id="q-topic-tag" class="text-[11px] font-semibold text-slate-400">
+                                Conceitos Básicos
+                            </span>
+                        </div>
+                        <h2 id="question-text" class="text-lg sm:text-2xl font-bold text-white leading-snug">
+                            Carregando pergunta...
+                        </h2>
+                    </div>
+                </div>
+
+                <!-- Caixa de Dica do Prof (Oculta até usar Power-up) -->
+                <div id="hint-box" class="hidden mb-4 p-3.5 rounded-2xl bg-cyber-yellow/15 border border-cyber-yellow/50 text-cyber-yellow text-xs sm:text-sm flex items-start gap-2.5 animate-pop">
+                    <i class="fa-solid fa-lightbulb text-lg mt-0.5"></i>
+                    <div>
+                        <strong class="block font-display text-xs uppercase tracking-wider">Dica do Prof:</strong>
+                        <span id="hint-text"></span>
+                    </div>
+                </div>
+
+                <!-- Grid de 4 Alternativas -->
+                <div id="options-grid" class="grid grid-cols-1 gap-3">
+                    <!-- Botões gerados dinamicamente -->
+                </div>
+
+                <!-- Card de Feedback Imediato e Explicação Oficial -->
+                <div id="feedback-panel" class="hidden mt-5 p-4 sm:p-5 rounded-2xl border-2 animate-pop">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+                        <div class="flex items-center gap-2.5">
+                            <span id="feedback-icon" class="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-bold"></span>
+                            <div>
+                                <h4 id="feedback-title" class="font-display font-extrabold text-base sm:text-lg"></h4>
+                                <p id="feedback-xp-gain" class="text-xs font-mono font-bold"></p>
+                            </div>
+                        </div>
+                        <button id="btn-next-question" onclick="App.nextQuestion()" class="btn-cyber px-5 py-3 rounded-xl bg-gradient-to-r from-cyber-cyan to-cyber-blue text-cyber-dark font-display font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-lg flex items-center justify-center gap-2">
+                            <span>Próxima Questão</span>
+                            <i class="fa-solid fa-forward"></i>
+                        </button>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-white/10 text-xs sm:text-sm text-slate-200 leading-relaxed">
+                        <span class="font-bold text-cyber-cyan uppercase text-[11px] font-mono block mb-1">
+                            <i class="fa-solid fa-book-bookmark mr-1"></i> Resposta Oficial da Revisão:
+                        </span>
+                        <p id="feedback-explanation"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barra Inferior de Power-Ups (Ajudas) -->
+            <div class="glass-panel rounded-2xl p-3 flex flex-wrap items-center justify-center gap-2 sm:gap-4">
+                <span class="text-xs font-mono text-slate-400 uppercase hidden sm:inline">Power-Ups:</span>
+
+                <button id="pwr-5050" onclick="App.usePowerup('5050')" class="btn-cyber flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-purple-600/25 hover:bg-purple-600/40 border border-cyber-neonPurple/50 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-bug-slash text-cyber-neonPurple"></i>
+                    <span>50/50 Debug</span>
+                    <span id="count-5050" class="px-1.5 py-0.5 rounded bg-cyber-dark text-cyber-neonPurple font-mono text-xs">2</span>
+                </button>
+
+                <button id="pwr-hint" onclick="App.usePowerup('hint')" class="btn-cyber flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-yellow-500/20 hover:bg-yellow-500/35 border border-cyber-yellow/50 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-lightbulb text-cyber-yellow"></i>
+                    <span>Dica do Prof</span>
+                    <span id="count-hint" class="px-1.5 py-0.5 rounded bg-cyber-dark text-cyber-yellow font-mono text-xs">2</span>
+                </button>
+
+                <button id="pwr-skip" onclick="App.usePowerup('skip')" class="btn-cyber flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyber-cyan/50 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-forward-fast text-cyber-cyan"></i>
+                    <span>Hotfix Pular</span>
+                    <span id="count-skip" class="px-1.5 py-0.5 rounded bg-cyber-dark text-cyber-cyan font-mono text-xs">1</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 3. TELA DE FLASHCARDS (ESTUDO RÁPIDO)      -->
+        <!-- ========================================== -->
+        <section id="screen-flashcards" class="hidden space-y-5 animate-pop">
+            <div class="flex items-center justify-between glass-panel rounded-2xl p-4">
+                <div>
+                    <h2 class="font-display font-bold text-lg sm:text-xl text-cyber-yellow flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group"></i> Flashcards de Revisão
+                    </h2>
+                    <p class="text-xs text-slate-400">Toque no card para revelar a resposta oficial da turma</p>
+                </div>
+                <span id="fc-counter" class="font-mono font-bold text-sm px-3 py-1.5 rounded-xl bg-cyber-dark border border-cyber-yellow/40 text-cyber-yellow">
+                    1 / 25
+                </span>
+            </div>
+
+            <!-- Card 3D Flip -->
+            <div class="perspective-1000 w-full h-80 sm:h-96 cursor-pointer" onclick="App.flipFlashcard()">
+                <div id="fc-inner" class="flip-card-inner flip-card">
+                    <!-- Frente: Pergunta -->
+                    <div class="flip-card-front glass-panel-neon p-6 sm:p-10 flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span id="fc-phase" class="text-xs font-mono uppercase px-3 py-1 rounded-full bg-cyber-purple/30 text-cyber-neonPurple font-bold">
+                                Fase 1
+                            </span>
+                            <span class="text-xs text-slate-400 flex items-center gap-1">
+                                <i class="fa-solid fa-rotate"></i> Clique para virar
+                            </span>
+                        </div>
+                        <div class="my-auto text-center">
+                            <span id="fc-num" class="text-xs font-mono text-cyber-cyan block mb-2">QUESTÃO #1</span>
+                            <h3 id="fc-question" class="text-xl sm:text-3xl font-extrabold text-white leading-snug">
+                                O que é um aplicativo móvel?
+                            </h3>
+                        </div>
+                        <div class="text-center text-xs font-mono text-cyber-cyan/80">
+                            [ TOCAR PARA VER RESPOSTA ]
+                        </div>
+                    </div>
+
+                    <!-- Verso: Resposta Oficial -->
+                    <div class="flip-card-back glass-panel p-6 sm:p-10 border-2 border-cyber-yellow/60 flex flex-col justify-between bg-gradient-to-br from-[#191636] to-[#0d1224]">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-mono uppercase px-3 py-1 rounded-full bg-cyber-yellow/20 text-cyber-yellow font-bold">
+                                <i class="fa-solid fa-check-circle mr-1"></i> Resposta Oficial
+                            </span>
+                            <span class="text-xs text-slate-400">
+                                <i class="fa-solid fa-rotate"></i> Voltar
+                            </span>
+                        </div>
+                        <div class="my-auto overflow-y-auto max-h-52 pr-1">
+                            <p id="fc-answer" class="text-base sm:text-xl text-slate-100 font-medium leading-relaxed text-center">
+                                Resposta aqui...
+                            </p>
+                        </div>
+                        <div class="text-center text-xs font-mono text-cyber-yellow/80">
+                            MULTIMÍDIA 2º ANO • MATERIAL DE ESTUDO
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navegação Flashcards -->
+            <div class="flex items-center justify-between gap-3">
+                <button onclick="App.prevFlashcard()" class="btn-cyber flex-1 py-3.5 rounded-xl glass-panel hover:bg-white/10 font-bold text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-chevron-left"></i> Anterior
+                </button>
+                <button onclick="App.startGame('campaign')" class="btn-cyber flex-1 py-3.5 rounded-xl bg-gradient-to-r from-cyber-purple to-cyber-pink font-display font-bold text-xs sm:text-sm uppercase tracking-wider shadow-lg">
+                    Ir para o Quiz!
+                </button>
+                <button onclick="App.nextFlashcard()" class="btn-cyber flex-1 py-3.5 rounded-xl glass-panel hover:bg-white/10 font-bold text-sm flex items-center justify-center gap-2">
+                    Próximo <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 4. TELA FINAL / RESULTADOS                 -->
+        <!-- ========================================== -->
+        <section id="screen-results" class="hidden space-y-6 animate-pop">
+            <div class="glass-panel-neon rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden">
+                <div class="inline-block px-4 py-1.5 rounded-full bg-cyber-yellow/20 border border-cyber-yellow/50 text-cyber-yellow font-display text-xs font-bold uppercase tracking-widest mb-3">
+                    Missão Concluída!
+                </div>
+
+                <!-- Troféu / Patente -->
+                <div id="result-badge-icon" class="w-24 h-24 mx-auto my-2 rounded-3xl bg-gradient-to-br from-cyber-cyan via-cyber-purple to-cyber-pink p-1 shadow-[0_0_35px_rgba(157,78,221,0.5)] flex items-center justify-center">
+                    <div class="w-full h-full bg-cyber-dark rounded-[20px] flex items-center justify-center text-5xl">
+                        🏆
+                    </div>
+                </div>
+
+                <h2 id="result-player-name" class="text-slate-300 font-semibold text-base mt-2">Dev Multimídia</h2>
+                <h1 id="result-rank-title" class="font-display text-2xl sm:text-4xl font-black bg-gradient-to-r from-cyber-cyan via-cyber-yellow to-cyber-pink bg-clip-text text-transparent my-1">
+                    Mestre Full-Stack Multimídia
+                </h1>
+                <p id="result-subtitle" class="text-sm text-slate-300 max-w-lg mx-auto">
+                    Excelente desempenho na revisão de Aplicativos para Dispositivos Móveis!
+                </p>
+
+                <!-- Métricas -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+                    <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                        <span class="text-xs text-slate-400 block">Pontuação Total</span>
+                        <span id="stat-score" class="font-display text-xl sm:text-2xl font-black text-cyber-cyan">0 XP</span>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                        <span class="text-xs text-slate-400 block">Acertos</span>
+                        <span id="stat-correct" class="font-display text-xl sm:text-2xl font-black text-emerald-400">0/25</span>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                        <span class="text-xs text-slate-400 block">Precisão</span>
+                        <span id="stat-accuracy" class="font-display text-xl sm:text-2xl font-black text-cyber-yellow">0%</span>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                        <span class="text-xs text-slate-400 block">Maior Combo</span>
+                        <span id="stat-combo" class="font-display text-xl sm:text-2xl font-black text-cyber-pink">x1</span>
+                    </div>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="flex flex-wrap items-center justify-center gap-3 mt-6">
+                    <button onclick="App.replayCurrentMode()" class="btn-cyber px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyber-cyan to-cyber-blue text-cyber-dark font-display font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-lg flex items-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i> Jogar Novamente
+                    </button>
+                    <button onclick="App.shareResult()" class="btn-cyber px-6 py-3.5 rounded-xl bg-cyber-purple/30 hover:bg-cyber-purple/50 border border-cyber-neonPurple text-white font-display font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-share-nodes"></i> Copiar Resultado
+                    </button>
+                    <button onclick="App.goHome()" class="btn-cyber px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-house"></i> Menu Inicial
+                    </button>
+                </div>
+            </div>
+
+            <!-- Revisão dos Erros (Se houver) -->
+            <div id="mistakes-section" class="hidden glass-panel rounded-3xl p-5 sm:p-6 space-y-4">
+                <h3 class="font-display font-bold text-base sm:text-lg text-cyber-pink flex items-center gap-2">
+                    <i class="fa-solid fa-screwdriver-wrench"></i> Debug de Erros (Revise o que você errou)
+                </h3>
+                <div id="mistakes-list" class="space-y-3">
+                    <!-- Lista gerada via JS -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL CUSTOMIZADO (Substitui alert/confirm conforme boas práticas) -->
+    <div id="custom-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+        <div class="glass-panel-neon rounded-3xl p-6 max-w-sm w-full text-center space-y-4 animate-pop">
+            <div id="modal-icon" class="w-14 h-14 mx-auto rounded-2xl bg-cyber-purple/25 text-cyber-cyan flex items-center justify-center text-2xl">
+                <i class="fa-solid fa-circle-info"></i>
+            </div>
+            <h3 id="modal-title" class="font-display font-bold text-lg text-white">Aviso</h3>
+            <p id="modal-msg" class="text-sm text-slate-300"></p>
+            <div id="modal-actions" class="flex items-center justify-center gap-3 pt-2">
+                <!-- Botões dinâmicos -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- JAVASCRIPT: ÁUDIO, DADOS E ENGINE DO JOGO  -->
+    <!-- ========================================== -->
+    <script>
+        /**
+         * 1. MOTOR DE ÁUDIO SINTETIZADO (WEB AUDIO API)
+         * Gera efeitos sonoros e trilha synthwave sem arquivos externos.
+         */
+        const SoundEngine = (() => {
+            let ctx = null;
+            let isMuted = false;
+            let musicPlaying = false;
+            let musicInterval = null;
+            let step = 0;
+
+            function init() {
+                if (!ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    ctx = new AudioCtx();
+                }
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+            }
+
+            function playTone(freq, type = 'sine', duration = 0.15, vol = 0.18, delay = 0, slideTo = null) {
+                if (isMuted) return;
+                init();
+                const now = ctx.currentTime + delay;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, now);
+                if (slideTo) {
+                    osc.frequency.exponentialRampToValueAtTime(slideTo, now + duration);
+                }
+
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(vol, now + 0.015);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + duration + 0.02);
+            }
+
+            // Efeitos Sonoros Específicos
+            function click() {
+                playTone(680, 'triangle', 0.07, 0.14, 0, 920);
+            }
+
+            function correct(combo = 1) {
+                const pitchBoost = Math.min(combo * 35, 250);
+                playTone(523.25 + pitchBoost, 'triangle', 0.14, 0.22, 0);
+                playTone(659.25 + pitchBoost, 'triangle', 0.14, 0.22, 0.08);
+                playTone(783.99 + pitchBoost, 'sine', 0.24, 0.25, 0.16);
+                if (combo >= 3) {
+                    playTone(1046.5 + pitchBoost, 'sine', 0.3, 0.22, 0.24);
+                }
+            }
+
+            function wrong() {
+                playTone(210, 'sawtooth', 0.22, 0.18, 0, 130);
+                playTone(165, 'sawtooth', 0.28, 0.18, 0.14, 95);
+            }
+
+            function powerup() {
+                playTone(440, 'sine', 0.1, 0.2, 0, 880);
+                playTone(660, 'triangle', 0.12, 0.2, 0.08, 1320);
+                playTone(880, 'sine', 0.2, 0.22, 0.16, 1760);
+            }
+
+            function victory() {
+                const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50];
+                const times = [0, 0.12, 0.24, 0.38, 0.54, 0.68];
+                const durs  = [0.12, 0.12, 0.14, 0.16, 0.14, 0.45];
+                notes.forEach((n, i) => playTone(n, 'triangle', durs[i], 0.24, times[i]));
+            }
+
+            function toggleMute() {
+                isMuted = !isMuted;
+                const icon = document.getElementById('icon-sfx');
+                const label = document.getElementById('label-sfx');
+                if (isMuted) {
+                    icon.className = 'fa-solid fa-volume-xmark text-slate-500';
+                    label.textContent = 'Som: OFF';
+                } else {
+                    icon.className = 'fa-solid fa-volume-high text-cyber-cyan';
+                    label.textContent = 'Som: ON';
+                    click();
+                }
+            }
+
+            // Trilha Synthwave Procedural Leve
+            function toggleMusic() {
+                init();
+                musicPlaying = !musicPlaying;
+                const icon = document.getElementById('icon-music');
+                const label = document.getElementById('label-music');
+
+                if (musicPlaying) {
+                    icon.className = 'fa-solid fa-music text-cyber-cyan animate-bounce';
+                    label.textContent = 'Synth: ON';
+                    const bassline = [110, 110, 130.81, 130.81, 146.83, 146.83, 98, 123.47];
+                    const arp = [440, 523.25, 659.25, 523.25, 587.33, 659.25, 783.99, 659.25];
+                    musicInterval = setInterval(() => {
+                        if (isMuted) return;
+                        const b = bassline[step % bassline.length];
+                        const a = arp[step % arp.length];
+                        playTone(b, 'triangle', 0.22, 0.055, 0);
+                        if (step % 2 === 0) {
+                            playTone(a, 'sine', 0.14, 0.035, 0.05);
+                        }
+                        step++;
+                    }, 280);
+                } else {
+                    icon.className = 'fa-solid fa-music text-cyber-pink';
+                    label.textContent = 'Synth: OFF';
+                    clearInterval(musicInterval);
+                }
+            }
+
+            return { click, correct, wrong, powerup, victory, toggleMute, toggleMusic };
+        })();
+
+
+        /**
+         * 2. BANCO DE QUESTÕES OFICIAL (TODAS AS 25 QUESTÕES DO MATERIAL)
+         * Mapeadas fielmente às respostas da turma de Multimídia 2º Ano.
+         */
+        const QUESTIONS_DB = [
+            // --- FASE 1: FUNDAMENTOS MOBILE (Q1 a Q6) ---
+            {
+                id: 1,
+                phase: 1,
+                phaseName: "Fase 1: Fundamentos Mobile",
+                topic: "Conceito de App Móvel",
+                question: "O que é um aplicativo móvel?",
+                options: [
+                    "Um software desenvolvido especificamente para dispositivos portáteis (smartphones e tablets), otimizado para toque, hardware e limitações de bateria e memória.",
+                    "Qualquer sistema operacional instalado exclusivamente em servidores de nuvem e computadores desktop de alto desempenho.",
+                    "Um cabo ou acessório físico conectado ao smartphone para aumentar sua capacidade de armazenamento interno.",
+                    "Uma planilha eletrônica que só funciona quando o celular está conectado a um teclado e mouse externos."
+                ],
+                correctIndex: 0,
+                hint: "Pense em dispositivos portáteis, telas sensíveis ao toque e recursos como câmera e GPS.",
+                officialAnswer: "É um software desenvolvido especificamente para dispositivos portáteis (smartphones e tablets), otimizado para telas sensíveis ao toque, recursos de hardware (câmera, GPS, sensores) e limitações de bateria e memória."
+            },
+            {
+                id: 2,
+                phase: 1,
+                phaseName: "Fase 1: Fundamentos Mobile",
+                topic: "Mobile vs Desktop",
+                question: "Qual a principal diferença entre um aplicativo móvel e um programa de computador tradicional?",
+                options: [
+                    "Programas de computador funcionam apenas sem internet, enquanto apps móveis dependem exclusivamente de cabos de rede.",
+                    "Apps móveis são projetados para interação por toque, uso em movimento, economia de bateria/dados e sensores, enquanto programas de PC usam mouse/teclado e têm menos restrições de hardware.",
+                    "Apps móveis não possuem interface gráfica, sendo controlados apenas por linhas de comando no terminal.",
+                    "Não existe diferença técnica; o mesmo arquivo executável (.exe) de PC roda diretamente em qualquer smartphone."
+                ],
+                correctIndex: 1,
+                hint: "Compare como interagimos (toque vs mouse/teclado) e as restrições de bateria e mobilidade.",
+                officialAnswer: "Os apps móveis são projetados para interação por toque, uso em movimento, economia de recursos (bateria e dados) e aproveitamento de sensores do dispositivo, enquanto programas de computador geralmente usam mouse e teclado e têm menos restrições de hardware."
+            },
+            {
+                id: 3,
+                phase: 1,
+                phaseName: "Fase 1: Fundamentos Mobile",
+                topic: "Sistemas Operacionais",
+                question: "Quais são as duas principais plataformas de sistemas operacionais para dispositivos móveis atualmente?",
+                options: [
+                    "Windows XP e Linux Ubuntu.",
+                    "macOS e ChromeOS.",
+                    "Android (Google) e iOS (Apple).",
+                    "Symbian (Nokia) e BlackBerry OS."
+                ],
+                correctIndex: 2,
+                hint: "Um pertence ao Google e o outro à Apple.",
+                officialAnswer: "Android (Google) e iOS (Apple)."
+            },
+            {
+                id: 4,
+                phase: 1,
+                phaseName: "Fase 1: Fundamentos Mobile",
+                topic: "Desenvolvimento Nativo",
+                question: "O que são aplicativos nativos?",
+                options: [
+                    "Aplicativos que vêm gravados em papel no manual do aparelho e precisam ser digitados pelo usuário.",
+                    "Sites comuns abertos no navegador que não têm acesso à câmera nem ao GPS do celular.",
+                    "Aplicativos feitos com um único código genérico que roda exatamente igual em smart TVs e geladeiras.",
+                    "Aplicativos desenvolvidos exclusivamente para uma plataforma específica (ex.: apenas Android ou iOS), usando ferramentas e linguagens oficiais para máximo desempenho e acesso total ao hardware."
+                ],
+                correctIndex: 3,
+                hint: "Eles são criados especificamente para uma única plataforma usando suas linguagens oficiais.",
+                officialAnswer: "São aplicativos desenvolvidos exclusivamente para uma plataforma específica (ex.: apenas Android ou apenas iOS), utilizando as ferramentas e linguagens oficiais daquela plataforma, o que garante melhor desempenho e acesso total aos recursos do aparelho."
+            },
+            {
+                id: 5,
+                phase: 1,
+                phaseName: "Fase 1: Fundamentos Mobile",
+                topic: "Multiplataforma",
+                question: "O que são aplicativos híbridos ou multiplataforma?",
+                options: [
+                    "Aplicativos desenvolvidos com um único código que pode ser executado em diferentes plataformas (Android e iOS), usando tecnologias como Flutter, React Native ou Ionic.",
+                    "Aplicativos que funcionam metade no celular e metade na televisão ao mesmo tempo.",
+                    "Jogos que só podem ser executados quando o aparelho está carregando na tomada.",
+                    "Softwares desenvolvidos exclusivamente em linguagem de máquina para um único modelo de chip."
+                ],
+                correctIndex: 0,
+                hint: "Lembre-se de frameworks como Flutter, React Native e Ionic que reaproveitam o mesmo código.",
+                officialAnswer: "São aplicativos desenvolvidos com um único código que pode ser executado em diferentes plataformas (Android e iOS), utilizando tecnologias como Flutter, React Native ou Ionic."
+            },
+            {
+                id: 6,
+                phase: 1,
+                phaseName: "Fase 1: Fundamentos Mobile",
+                topic: "Web Apps",
+                question: "O que são Web Apps?",
+                options: [
+                    "Aplicativos pesados que exigem download obrigatório de vários gigabytes na loja oficial.",
+                    "Aplicações que funcionam dentro do navegador do dispositivo móvel, sem necessidade de instalação, comportando-se de forma semelhante a um site responsivo.",
+                    "Antivírus instalados na placa-mãe do smartphone durante a fabricação.",
+                    "Programas que só funcionam via Bluetooth sem acesso à internet."
+                ],
+                correctIndex: 1,
+                hint: "Não precisam ser instalados pela loja; rodam direto no browser do celular.",
+                officialAnswer: "São aplicações que funcionam dentro do navegador do dispositivo móvel, sem necessidade de instalação, comportando-se de forma semelhante a um site responsivo."
+            },
+
+            // --- FASE 2: HARDWARE & SENSORES (Q7 a Q10) ---
+            {
+                id: 7,
+                phase: 2,
+                phaseName: "Fase 2: Hardware & Sensores",
+                topic: "Recursos de Hardware",
+                question: "Quais dos itens abaixo representam recursos de hardware comuns em smartphones que os apps podem utilizar?",
+                options: [
+                    "Drive de disquete, leitor de CD-ROM, porta paralela e cooler líquido.",
+                    "Câmera, GPS, acelerômetro/giroscópio, microfone, sensores de proximidade/luminosidade e Bluetooth.",
+                    "Apenas o cabo carregador USB e a bandeja metálica do chip SIM.",
+                    "Teclado mecânico numérico, monitor CRT e impressora matricial."
+                ],
+                correctIndex: 1,
+                hint: "Pense nos componentes internos que capturam imagem, som, localização e movimento.",
+                officialAnswer: "Câmera, GPS, acelerômetro/giroscópio, microfone, sensores de proximidade e luminosidade, Bluetooth e conexão de dados móveis/Wi-Fi."
+            },
+            {
+                id: 8,
+                phase: 2,
+                phaseName: "Fase 2: Hardware & Sensores",
+                topic: "Eficiência Energética",
+                question: "Por que a economia de bateria é um fator importante no desenvolvimento de apps móveis?",
+                options: [
+                    "Porque os smartphones têm bateria ilimitada e nunca precisam ser recarregados.",
+                    "Porque apps que gastam muita bateria aumentam a resolução da tela automaticamente.",
+                    "Porque dispositivos móveis têm bateria limitada e os usuários esperam que o app não consuma muita energia, especialmente em segundo plano ou em tarefas contínuas.",
+                    "Porque o sistema operacional apaga todas as fotos do usuário se a bateria chegar a 50%."
+                ],
+                correctIndex: 2,
+                hint: "Considere a capacidade limitada das baterias portáteis e o uso em segundo plano.",
+                officialAnswer: "Porque os dispositivos móveis têm bateria limitada e os usuários esperam que o aplicativo não consuma muita energia, especialmente quando está em segundo plano ou realizando tarefas contínuas."
+            },
+            {
+                id: 9,
+                phase: 2,
+                phaseName: "Fase 2: Hardware & Sensores",
+                topic: "Responsividade",
+                question: "O que significa dizer que um aplicativo deve ser “responsivo”?",
+                options: [
+                    "Que o aplicativo responde mensagens de WhatsApp sozinho usando inteligência artificial.",
+                    "Que o aplicativo emite um som de sirene toda vez que o usuário toca na tela.",
+                    "Que o aplicativo funciona apenas em celulares com tela de 6 polegadas.",
+                    "Que a interface do aplicativo se adapta automaticamente a diferentes tamanhos e densidades de tela (celulares pequenos, grandes e tablets), mantendo usabilidade e legibilidade."
+                ],
+                correctIndex: 3,
+                hint: "Adaptação automática da interface para celulares pequenos, grandes e tablets.",
+                officialAnswer: "Significa que a interface do aplicativo deve se adaptar automaticamente a diferentes tamanhos e densidades de tela (celulares pequenos, grandes e tablets), mantendo a usabilidade e a legibilidade."
+            },
+            {
+                id: 10,
+                phase: 2,
+                phaseName: "Fase 2: Hardware & Sensores",
+                topic: "Sensores de Movimento",
+                question: "Qual a importância dos sensores de movimento (acelerômetro e giroscópio) em aplicativos?",
+                options: [
+                    "Permitem detectar a orientação e o movimento do dispositivo, sendo essenciais em jogos, realidade aumentada, controle de câmera e apps de fitness.",
+                    "Servem exclusivamente para medir a temperatura da água quando o celular cai na piscina.",
+                    "Substituem a memória RAM quando o aparelho fica sem espaço livre.",
+                    "Controlam apenas o volume do toque de chamada quando o celular está desligado."
+                ],
+                correctIndex: 0,
+                hint: "Inclinar o celular em jogos de corrida ou contar passos em apps fitness usa esses sensores.",
+                officialAnswer: "Eles permitem que o app detecte a orientação e o movimento do dispositivo, sendo essenciais em jogos, aplicativos de realidade aumentada, controle de câmera e apps de fitness."
+            },
+
+            // --- FASE 3: UI/UX & MULTIMÍDIA (Q11, Q12, Q13, Q14, Q16, Q17, Q22) ---
+            {
+                id: 11,
+                phase: 3,
+                phaseName: "Fase 3: UI/UX & Multimídia",
+                topic: "User Interface (UI)",
+                question: "O que significa a sigla UI no desenvolvimento de aplicativos?",
+                options: [
+                    "Universal Internet — conexão global gratuita para smartphones.",
+                    "User Interface (Interface do Usuário) — refere-se aos elementos visuais com os quais o usuário interage: botões, menus, cores, tipografia, ícones e layouts.",
+                    "Unit Installation — processo de compactação de arquivos no Android.",
+                    "Ultra Image — formato exclusivo de fotografia em alta definição."
+                ],
+                correctIndex: 1,
+                hint: "Envolve a parte visual palpável: botões, cores, tipografia, ícones e layouts.",
+                officialAnswer: "UI significa User Interface (Interface do Usuário). Refere-se a todos os elementos visuais com os quais o usuário interage: botões, menus, cores, tipografia, ícones e layouts."
+            },
+            {
+                id: 12,
+                phase: 3,
+                phaseName: "Fase 3: UI/UX & Multimídia",
+                topic: "User Experience (UX)",
+                question: "O que significa a sigla UX no design de aplicativos?",
+                options: [
+                    "User Execution — velocidade com que o processador abre um arquivo.",
+                    "Ultra X-Ray — filtro visual aplicado em câmeras noturnas.",
+                    "User Experience (Experiência do Usuário) — trata-se de como o usuário se sente ao utilizar o app: se é fácil, intuitivo, agradável e eficiente.",
+                    "Unified Extension — cabo adaptador para conectar o celular ao projetor."
+                ],
+                correctIndex: 2,
+                hint: "Foca na sensação, facilidade, intuição e satisfação de quem usa o app.",
+                officialAnswer: "UX significa User Experience (Experiência do Usuário). Trata-se de como o usuário se sente ao utilizar o aplicativo — se é fácil, intuitivo, agradável e eficiente."
+            },
+            {
+                id: 13,
+                phase: 3,
+                phaseName: "Fase 3: UI/UX & Multimídia",
+                topic: "Princípios de Interface",
+                question: "Quais são três princípios básicos de uma boa interface para aplicativos móveis?",
+                options: [
+                    "Botões minúsculos, ausência total de sons/cores e menus escondidos em cada página.",
+                    "Textos longos em fontes ilegíveis, telas piscando e navegação diferente em cada aba.",
+                    "Elementos grandes o suficiente para serem tocados com o dedo, feedback visual/sonoro imediato após uma ação e navegação simples e consistente.",
+                    "Uso obrigatório de duas mãos, excesso de pop-ups e carregamento lento proposital."
+                ],
+                correctIndex: 2,
+                hint: "Pense no tamanho do toque do dedo, resposta imediata ao clique e navegação clara.",
+                officialAnswer: "Elementos grandes o suficiente para serem tocados com o dedo; Feedback visual ou sonoro imediato após uma ação; Navegação simples e consistente entre as telas."
+            },
+            {
+                id: 14,
+                phase: 3,
+                phaseName: "Fase 3: UI/UX & Multimídia",
+                topic: "Ergonomia Mobile",
+                question: "Por que o design de apps móveis deve priorizar a interação com uma mão?",
+                options: [
+                    "Porque a outra mão deve ficar sempre segurando o carregador portátil.",
+                    "Porque os smartphones bloqueiam o toque se detectarem dois dedos na tela.",
+                    "Porque a maioria dos usuários utiliza o celular com uma única mão (especialmente em movimento), exigindo botões e menus em áreas de fácil alcance.",
+                    "Porque aplicativos móveis não permitem rolar a tela verticalmente."
+                ],
+                correctIndex: 2,
+                hint: "Pense na chamada 'zona do polegar' quando seguramos o celular andando.",
+                officialAnswer: "Porque a maioria dos usuários utiliza o celular com uma única mão, especialmente enquanto está em movimento. Botões e menus devem ficar em áreas de fácil alcance."
+            },
+            {
+                id: 16,
+                phase: 3,
+                phaseName: "Fase 3: UI/UX & Multimídia",
+                topic: "Organização Visual",
+                question: "O que é um layout em um aplicativo móvel?",
+                options: [
+                    "É a forma como os elementos visuais (botões, textos, imagens) são organizados e posicionados na tela.",
+                    "É o código secreto usado para desbloquear a senha do Wi-Fi.",
+                    "É a marca da fabricante da bateria interna do smartphone.",
+                    "É o tempo máximo que um vídeo pode ter antes de ser apagado."
+                ],
+                correctIndex: 0,
+                hint: "Refere-se à estrutura e posicionamento de botões, textos e imagens na tela.",
+                officialAnswer: "É a forma como os elementos visuais (botões, textos, imagens) são organizados e posicionados na tela."
+            },
+            {
+                id: 17,
+                phase: 3,
+                phaseName: "Fase 3: UI/UX & Multimídia",
+                topic: "Componentes de Interface",
+                question: "O que são widgets ou componentes visuais em um aplicativo?",
+                options: [
+                    "São vírus que deixam o navegador mais lento.",
+                    "São elementos de interface reutilizáveis, como botões, caixas de texto, imagens, listas, menus e barras de navegação.",
+                    "São apenas os parafusos internos que prendem a tela do celular.",
+                    "São planos de dados móveis vendidos pelas operadoras."
+                ],
+                correctIndex: 1,
+                hint: "São os blocos reutilizáveis que montam a interface (botões, listas, inputs, menus).",
+                officialAnswer: "São elementos de interface reutilizáveis, como botões, caixas de texto, imagens, listas, menus e barras de navegação."
+            },
+            {
+                id: 22,
+                phase: 3,
+                phaseName: "Fase 3: UI/UX & Multimídia",
+                topic: "Multimídia em Apps",
+                question: "Quais recursos multimídia podem ser integrados em um aplicativo móvel?",
+                options: [
+                    "Apenas planilhas de texto puro sem formatação.",
+                    "Imagens, áudio (reprodução e gravação), vídeo (reprodução e captura) e animações.",
+                    "Somente sinais de código Morse emitidos pelo flash da câmera.",
+                    "Apenas documentos impressos via cabo serial."
+                ],
+                correctIndex: 1,
+                hint: "Lembre-se da essência do curso de Multimídia: som, imagem, movimento e vídeo!",
+                officialAnswer: "Imagens, áudio (reprodução e gravação), vídeo (reprodução e captura) e animações."
+            },
+
+            // --- FASE 4: CICLO DE VIDA & PUBLICAÇÃO (Q18, Q19, Q20, Q21, Q26, Q27, Q28, Q30) ---
+            {
+                id: 18,
+                phase: 4,
+                phaseName: "Fase 4: Ciclo de Vida & Publicação",
+                topic: "Programação Orientada a Eventos",
+                question: "O que é um “evento” em programação de aplicativos?",
+                options: [
+                    "É uma festa de lançamento realizada quando o app atinge mil downloads.",
+                    "É uma falha grave que obriga o usuário a formatar o celular.",
+                    "É uma ação realizada pelo usuário (como tocar em um botão, digitar um texto ou deslizar a tela) que dispara uma resposta do aplicativo.",
+                    "É o horário em que a bateria do smartphone chega a 100%."
+                ],
+                correctIndex: 2,
+                hint: "Toque no botão, digitação ou deslize (swipe) que aciona uma reação do código.",
+                officialAnswer: "É uma ação realizada pelo usuário (como tocar em um botão, digitar um texto ou deslizar a tela) que dispara uma resposta do aplicativo."
+            },
+            {
+                id: 19,
+                phase: 4,
+                phaseName: "Fase 4: Ciclo de Vida & Publicação",
+                topic: "Armazenamento",
+                question: "O que significa “persistência de dados” em um app?",
+                options: [
+                    "É quando o aplicativo trava na mesma tela e não deixa o usuário sair.",
+                    "É a capacidade de armazenar informações de forma permanente no dispositivo (ou na nuvem), para que não sejam perdidas quando o aplicativo é fechado.",
+                    "É apagar todo o histórico do usuário toda vez que a tela é bloqueada.",
+                    "É enviar spam repetidamente para os contatos da agenda."
+                ],
+                correctIndex: 1,
+                hint: "Garante que seus dados salvos continuem lá mesmo depois de fechar o app.",
+                officialAnswer: "É a capacidade de armazenar informações de forma permanente no dispositivo (ou na nuvem), para que elas não sejam perdidas quando o aplicativo é fechado."
+            },
+            {
+                id: 20,
+                phase: 4,
+                phaseName: "Fase 4: Ciclo de Vida & Publicação",
+                topic: "Estados do Aplicativo",
+                question: "O que é o ciclo de vida de um aplicativo?",
+                options: [
+                    "É o prazo de validade de 30 dias após o qual o aplicativo se autodestrói.",
+                    "É a velocidade de download da internet 5G na região.",
+                    "É o conjunto de estados pelos quais um app passa: criado, iniciado, em execução (visível), pausado (segundo plano), parado e destruído.",
+                    "É o tempo que a tela leva para apagar quando ninguém toca nela."
+                ],
+                correctIndex: 2,
+                hint: "Envolve os estados: criado, iniciado, em execução, pausado, parado e destruído.",
+                officialAnswer: "É o conjunto de estados pelos quais um app passa: criado, iniciado, em execução (visível), pausado (segundo plano), parado e destruído. O desenvolvedor precisa gerenciar esses estados para economizar recursos e salvar dados do usuário."
+            },
+            {
+                id: 21,
+                phase: 4,
+                phaseName: "Fase 4: Ciclo de Vida & Publicação",
+                topic: "Gerenciamento de Estados",
+                question: "Por que é importante entender o ciclo de vida de um aplicativo?",
+                options: [
+                    "Para evitar consumo desnecessário de bateria e memória, salvar o progresso do usuário quando o app sai de foco e garantir que volte corretamente ao ser reaberto.",
+                    "Para impedir que o usuário receba ligações telefônicas enquanto usa o app.",
+                    "Para aumentar o preço do aplicativo nas lojas virtuais.",
+                    "Porque apps que não usam ciclo de vida não podem ter ícones coloridos."
+                ],
+                correctIndex: 0,
+                hint: "Pense em salvar o progresso ao minimizar o app e não gastar bateria à toa.",
+                officialAnswer: "Para evitar consumo desnecessário de bateria e memória, salvar o progresso do usuário quando o app sai de foco e garantir que o aplicativo volte corretamente quando for reaberto."
+            },
+            {
+                id: 26,
+                phase: 4,
+                phaseName: "Fase 4: Ciclo de Vida & Publicação",
+                topic: "Processo de Criação",
+                question: "Qual sequência representa corretamente as etapas básicas do processo de criação de um aplicativo?",
+                options: [
+                    "Publicar na loja → Apagar o código → Criar protótipo → Identificar o problema.",
+                    "Identificar o problema → Definir público e funcionalidades → Criar protótipo (wireframe/design) → Desenvolver telas e lógica → Testar → Corrigir e melhorar → Publicar.",
+                    "Comprar um servidor → Desenvolver sem testar → Publicar → Definir o público-alvo.",
+                    "Fazer apenas o logotipo → Publicar na Play Store → Escrever o código depois."
+                ],
+                correctIndex: 1,
+                hint: "Começa identificando o problema, passa por protótipo, código, testes e termina na publicação.",
+                officialAnswer: "1. Identificar o problema/necessidade; 2. Definir público-alvo e funcionalidades; 3. Criar protótipo (wireframe e design); 4. Desenvolver as telas e a lógica; 5. Testar; 6. Corrigir e melhorar; 7. Publicar."
+            },
+            {
+                id: 27,
+                phase: 4,
+                phaseName: "Fase 4: Ciclo de Vida & Publicação",
+                topic: "Lojas de Aplicativos",
+                question: "Onde os aplicativos Android e iOS são normalmente distribuídos?",
+                options: [
+                    "Android na Steam e iOS na Epic Games Store.",
+                    "Android na App Store e iOS na Microsoft Store.",
+                    "Android na Google Play Store e iOS na App Store da Apple.",
+                    "Ambos são distribuídos exclusivamente via pen drive em lojas físicas."
+                ],
+                correctIndex: 2,
+                hint: "Google Play para Android e App Store para iPhone/iPad.",
+                officialAnswer: "Android na Google Play Store e iOS na App Store da Apple."
+            },
+            {
+                id: 28,
+                phase: 4,
+                phaseName: "Fase 4: Ciclo de Vida & Publicação",
+                topic: "Garantia de Qualidade (QA)",
+                question: "Por que é importante testar o aplicativo em diferentes dispositivos?",
+                options: [
+                    "Porque existem muitos modelos de celulares com tamanhos de tela, resoluções e versões de sistema operacional diferentes, garantindo que funcione bem para a maioria.",
+                    "Porque cada celular exige que o usuário pague uma taxa extra para testar.",
+                    "Para gastar a bateria de todos os aparelhos da equipe antes do lançamento.",
+                    "Porque aplicativos só funcionam em aparelhos fabricados no mesmo ano."
+                ],
+                correctIndex: 0,
+                hint: "Considere a grande variedade de telas, resoluções e versões de Android/iOS.",
+                officialAnswer: "Porque existem muitos modelos de celulares com tamanhos de tela, resoluções e versões de sistema operacional diferentes. Testar garante que o app funcione bem para a maioria dos usuários."
+            },
+            {
+                id: 30,
+                phase: 4,
+                phaseName: "Fase 4: Ciclo de Vida & Publicação",
+                topic: "Multimídia 2º Ano",
+                question: "Por que a disciplina de Aplicativos para Dispositivos Móveis é especialmente importante para os alunos de Multimídia 2º ano?",
+                options: [
+                    "Porque ensina exclusivamente a consertar placas eletrônicas com ferro de solda.",
+                    "Porque substitui todas as outras disciplinas de design, áudio e vídeo do curso.",
+                    "Porque une conhecimentos de design, usabilidade, imagens, áudio e vídeo com a criação de soluções interativas usadas no dia a dia, aproximando a formação do mercado digital.",
+                    "Porque permite criar aplicativos apenas para computadores antigos sem acesso à internet."
+                ],
+                correctIndex: 2,
+                hint: "Une design, usabilidade, áudio, imagem e vídeo na criação de soluções interativas reais!",
+                officialAnswer: "Porque une conhecimentos de design, usabilidade, produção de imagens, áudio e vídeo com a criação de soluções interativas que as pessoas usam no dia a dia em seus celulares, aproximando a formação técnica da realidade do mercado e do comportamento digital atual."
+            }
+        ];
+
+
+        /**
+         * 3. SISTEMA DE PARTÍCULAS E CONFETES (CANVAS)
+         */
+        const ParticleFX = (() => {
+            const canvas = document.getElementById('fx-canvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            function burst(x, y, colors = ['#00F5D4', '#9D4EDD', '#FF2A85', '#FEE440'], count = 36) {
+                for (let i = 0; i < count; i++) {
+                    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+                    const speed = 3 + Math.random() * 7;
+                    particles.push({
+                        x,
+                        y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed - 2,
+                        size: 4 + Math.random() * 5,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        alpha: 1,
+                        gravity: 0.22,
+                        rotation: Math.random() * 360,
+                        vRot: (Math.random() - 0.5) * 12
+                    });
+                }
+            }
+
+            function loop() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += p.gravity;
+                    p.alpha -= 0.018;
+                    p.rotation += p.vRot;
+
+                    if (p.alpha <= 0) {
+                        particles.splice(i, 1);
+                        continue;
+                    }
+
+                    ctx.save();
+                    ctx.globalAlpha = p.alpha;
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.65);
+                    ctx.restore();
+                }
+                requestAnimationFrame(loop);
+            }
+            loop();
+
+            return { burst };
+        })();
+
+
+        /**
+         * 4. CONTROLADOR PRINCIPAL DO JOGO (APP ENGINE)
+         */
+        const App = (() => {
+            let state = {
+                mode: 'campaign', // 'campaign' | 'blitz'
+                playerName: 'Dev Multimídia',
+                questions: [],
+                currentIndex: 0,
+                score: 0,
+                lives: 3,
+                combo: 1,
+                maxCombo: 1,
+                correctCount: 0,
+                mistakes: [],
+                answered: false,
+                timer: 30,
+                timerInterval: null,
+                powerups: { '5050': 2, 'hint': 2, 'skip': 1 },
+                fcIndex: 0
+            };
+
+            // Elementos de Tela
+            const screens = {
+                home: document.getElementById('screen-home'),
+                quiz: document.getElementById('screen-quiz'),
+                flashcards: document.getElementById('screen-flashcards'),
+                results: document.getElementById('screen-results')
+            };
+
+            function showScreen(name) {
+                Object.values(screens).forEach(s => s.classList.add('hidden'));
+                screens[name].classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            // Embaralhar array (Fisher-Yates)
+            function shuffle(arr) {
+                const copy = [...arr];
+                for (let i = copy.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [copy[i], copy[j]] = [copy[j], copy[i]];
+                }
+                return copy;
+            }
+
+            // Iniciar Jogo
+            function startGame(mode) {
+                SoundEngine.click();
+                clearInterval(state.timerInterval);
+
+                const inputName = document.getElementById('player-name-input').value.trim();
+                state.playerName = inputName || 'Dev Multimídia';
+                state.mode = mode;
+                state.currentIndex = 0;
+                state.score = 0;
+                state.lives = mode === 'campaign' ? 3 : 99;
+                state.combo = 1;
+                state.maxCombo = 1;
+                state.correctCount = 0;
+                state.mistakes = [];
+                state.answered = false;
+                state.powerups = { '5050': 2, 'hint': 2, 'skip': 1 };
+
+                if (mode === 'campaign') {
+                    // Mantém progressão das 4 fases, embaralhando dentro de cada fase
+                    const p1 = shuffle(QUESTIONS_DB.filter(q => q.phase === 1));
+                    const p2 = shuffle(QUESTIONS_DB.filter(q => q.phase === 2));
+                    const p3 = shuffle(QUESTIONS_DB.filter(q => q.phase === 3));
+                    const p4 = shuffle(QUESTIONS_DB.filter(q => q.phase === 4));
+                    state.questions = [...p1, ...p2, ...p3, ...p4];
+                } else {
+                    // Modo Blitz: todas embaralhadas, 60s totais
+                    state.questions = shuffle(QUESTIONS_DB);
+                    state.timer = 60;
+                }
+
+                updatePowerupUI();
+                showScreen('quiz');
+                renderQuestion();
+
+                if (mode === 'blitz') {
+                    startBlitzTimer();
+                }
+            }
+
+            function replayCurrentMode() {
+                startGame(state.mode);
+            }
+
+            // Renderizar Questão Atual
+            function renderQuestion() {
+                const q = state.questions[state.currentIndex];
+                if (!q) {
+                    endGame();
+                    return;
+                }
+
+                state.answered = false;
+                document.getElementById('feedback-panel').classList.add('hidden');
+                document.getElementById('hint-box').classList.add('hidden');
+                document.getElementById('mascot-face').textContent = '🤖';
+                document.getElementById('quiz-mascot').className = 'w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 rounded-2xl bg-cyber-dark border-2 border-cyber-cyan/50 flex items-center justify-center shadow-lg transition-transform';
+
+                // HUD Updates
+                document.getElementById('hud-phase-badge').textContent = state.mode === 'blitz' ? '⚡ MODO BLITZ' : q.phaseName.toUpperCase();
+                document.getElementById('hud-q-counter').textContent = `${state.currentIndex + 1} / ${state.questions.length}`;
+                document.getElementById('hud-score').textContent = state.score;
+                document.getElementById('hud-combo').textContent = `x${state.combo}`;
+
+                // Vidas
+                const livesEl = document.getElementById('hud-lives');
+                if (state.mode === 'blitz') {
+                    livesEl.innerHTML = `<span class="text-xs font-mono text-cyber-pink font-bold px-2 py-1 rounded bg-cyber-pink/15">TURBO</span>`;
+                } else {
+                    let hearts = '';
+                    for (let i = 0; i < 3; i++) {
+                        hearts += i < state.lives 
+                            ? `<i class="fa-solid fa-battery-full text-cyber-cyan drop-shadow-[0_0_6px_rgba(0,245,212,0.8)]"></i>` 
+                            : `<i class="fa-solid fa-battery-empty text-slate-600"></i>`;
+                    }
+                    livesEl.innerHTML = hearts;
+                }
+
+                // Progresso
+                const pct = ((state.currentIndex) / state.questions.length) * 100;
+                document.getElementById('hud-progress-bar').style.width = `${Math.max(4, pct)}%`;
+
+                // Textos da Questão
+                document.getElementById('q-original-num').textContent = `Questão #${q.id}`;
+                document.getElementById('q-topic-tag').textContent = q.topic;
+                document.getElementById('question-text').textContent = q.question;
+
+                // Embaralhar alternativas mantendo rastreamento da correta
+                const indexedOptions = q.options.map((text, idx) => ({
+                    text,
+                    isCorrect: idx === q.correctIndex
+                }));
+                const shuffledOpts = shuffle(indexedOptions);
+
+                const letters = ['A', 'B', 'C', 'D'];
+                const grid = document.getElementById('options-grid');
+                grid.innerHTML = '';
+
+                shuffledOpts.forEach((opt, i) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn btn-cyber w-full p-4 rounded-2xl bg-white/5 hover:bg-white/12 border border-white/15 hover:border-cyber-cyan/60 text-left flex items-center gap-3.5 transition-all group';
+                    btn.dataset.correct = opt.isCorrect ? '1' : '0';
+                    btn.innerHTML = `
+                        <span class="opt-letter w-9 h-9 rounded-xl bg-cyber-dark border border-white/15 group-hover:border-cyber-cyan group-hover:text-cyber-cyan font-display font-bold text-sm flex items-center justify-center flex-shrink-0 transition">
+                            ${letters[i]}
+                        </span>
+                        <span class="text-sm sm:text-base font-medium text-slate-100 leading-snug flex-1">
+                            ${opt.text}
+                        </span>
+                    `;
+                    btn.onclick = () => selectAnswer(btn, opt.isCorrect);
+                    grid.appendChild(btn);
+                });
+
+                // Timer por questão no Modo Campanha
+                if (state.mode === 'campaign') {
+                    startQuestionTimer();
+                }
+            }
+
+            // Timer por Questão (Modo Campanha)
+            function startQuestionTimer() {
+                clearInterval(state.timerInterval);
+                state.timer = 35;
+                updateTimerUI(35, 35);
+
+                state.timerInterval = setInterval(() => {
+                    if (state.answered) return;
+                    state.timer -= 0.1;
+                    if (state.timer <= 0) {
+                        state.timer = 0;
+                        clearInterval(state.timerInterval);
+                        handleTimeOut();
+                    }
+                    updateTimerUI(state.timer, 35);
+                }, 100);
+            }
+
+            // Timer Global (Modo Blitz)
+            function startBlitzTimer() {
+                clearInterval(state.timerInterval);
+                updateTimerUI(state.timer, 60);
+
+                state.timerInterval = setInterval(() => {
+                    state.timer -= 0.1;
+                    if (state.timer <= 0) {
+                        state.timer = 0;
+                        clearInterval(state.timerInterval);
+                        endGame();
+                    }
+                    updateTimerUI(state.timer, 60);
+                }, 100);
+            }
+
+            function updateTimerUI(current, max) {
+                const pct = Math.max(0, Math.min(100, (current / max) * 100));
+                const bar = document.getElementById('hud-timer-bar');
+                const txt = document.getElementById('hud-timer-text');
+
+                bar.style.width = `${pct}%`;
+                txt.textContent = `${Math.ceil(current)}s`;
+
+                if (pct < 28) {
+                    bar.className = 'h-full bg-cyber-pink transition-all duration-100';
+                    txt.className = 'font-mono text-xs font-bold text-cyber-pink w-9 text-right animate-pulse';
+                } else if (pct < 55) {
+                    bar.className = 'h-full bg-cyber-yellow transition-all duration-100';
+                    txt.className = 'font-mono text-xs font-bold text-cyber-yellow w-9 text-right';
+                } else {
+                    bar.className = 'h-full bg-cyber-cyan transition-all duration-100';
+                    txt.className = 'font-mono text-xs font-bold text-cyber-cyan w-9 text-right';
+                }
+            }
+
+            function handleTimeOut() {
+                selectAnswer(null, false, true);
+            }
+
+            // Processar Resposta do Jogador
+            function selectAnswer(selectedBtn, isCorrect, isTimeout = false) {
+                if (state.answered) return;
+                state.answered = true;
+                if (state.mode === 'campaign') clearInterval(state.timerInterval);
+
+                const q = state.questions[state.currentIndex];
+                const allBtns = document.querySelectorAll('.option-btn');
+
+                allBtns.forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.dataset.correct === '1') {
+                        btn.classList.remove('bg-white/5', 'border-white/15');
+                        btn.classList.add('bg-emerald-500/25', 'border-emerald-400', 'shadow-[0_0_20px_rgba(16,185,129,0.25)]');
+                        btn.querySelector('.opt-letter').classList.add('bg-emerald-500', 'text-cyber-dark', 'border-emerald-300');
+                    }
+                });
+
+                const fbPanel = document.getElementById('feedback-panel');
+                const fbIcon = document.getElementById('feedback-icon');
+                const fbTitle = document.getElementById('feedback-title');
+                const fbXp = document.getElementById('feedback-xp-gain');
+                const fbExp = document.getElementById('feedback-explanation');
+                const card = document.getElementById('question-card');
+
+                fbPanel.classList.remove('hidden', 'border-emerald-400/60', 'bg-emerald-950/40', 'border-cyber-pink/60', 'bg-rose-950/40');
+                fbExp.textContent = q.officialAnswer;
+
+                if (isCorrect) {
+                    // ACERTOU!
+                    SoundEngine.correct(state.combo);
+                    const timeBonus = state.mode === 'campaign' ? Math.round(state.timer * 3) : 50;
+                    const gainedXP = (100 + timeBonus) * state.combo;
+                    state.score += gainedXP;
+                    state.correctCount++;
+                    state.combo++;
+                    if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+
+                    if (state.mode === 'blitz') {
+                        state.timer = Math.min(60, state.timer + 5);
+                    }
+
+                    // Efeito Visual Mascote + Confetes
+                    document.getElementById('mascot-face').textContent = '🤩';
+                    document.getElementById('quiz-mascot').classList.add('border-emerald-400', 'scale-110');
+                    card.classList.add('animate-pop');
+                    setTimeout(() => card.classList.remove('animate-pop'), 400);
+
+                    if (selectedBtn) {
+                        const rect = selectedBtn.getBoundingClientRect();
+                        ParticleFX.burst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                    }
+
+                    fbPanel.classList.add('border-emerald-400/60', 'bg-emerald-950/40');
+                    fbIcon.className = 'w-9 h-9 rounded-xl bg-emerald-500 text-cyber-dark flex items-center justify-center text-lg font-bold';
+                    fbIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
+                    fbTitle.className = 'font-display font-extrabold text-base sm:text-lg text-emerald-300';
+                    fbTitle.textContent = state.combo > 2 ? `Combo Insano x${state.combo - 1}! Mandou bem!` : 'Resposta Correta!';
+                    fbXp.className = 'text-xs font-mono font-bold text-cyber-cyan';
+                    fbXp.textContent = `+${gainedXP} XP ${state.mode === 'blitz' ? '• +5s Bônus!' : ''}`;
+
+                } else {
+                    // ERROU!
+                    SoundEngine.wrong();
+                    state.combo = 1;
+                    if (state.mode === 'campaign') state.lives--;
+
+                    state.mistakes.push({
+                        id: q.id,
+                        question: q.question,
+                        officialAnswer: q.officialAnswer
+                    });
+
+                    if (selectedBtn) {
+                        selectedBtn.classList.remove('bg-white/5', 'border-white/15');
+                        selectedBtn.classList.add('bg-rose-500/25', 'border-cyber-pink');
+                        selectedBtn.querySelector('.opt-letter').classList.add('bg-cyber-pink', 'text-white');
+                    }
+
+                    // Efeito Shake + Mascote Bug
+                    document.getElementById('mascot-face').textContent = '🤯';
+                    document.getElementById('quiz-mascot').classList.add('border-cyber-pink');
+                    card.classList.add('animate-shake');
+                    setTimeout(() => card.classList.remove('animate-shake'), 500);
+
+                    fbPanel.classList.add('border-cyber-pink/60', 'bg-rose-950/40');
+                    fbIcon.className = 'w-9 h-9 rounded-xl bg-cyber-pink text-white flex items-center justify-center text-lg font-bold';
+                    fbIcon.innerHTML = '<i class="fa-solid fa-bug"></i>';
+                    fbTitle.className = 'font-display font-extrabold text-base sm:text-lg text-cyber-pink';
+                    fbTitle.textContent = isTimeout ? 'Tempo Esgotado!' : 'Ops! Bug na Resposta!';
+                    fbXp.className = 'text-xs font-mono font-bold text-rose-300';
+                    fbXp.textContent = state.mode === 'campaign' ? `Combo zerado • Baterias restantes: ${Math.max(0, state.lives)}` : 'Combo zerado!';
+                }
+
+                // Atualiza HUD imediato
+                document.getElementById('hud-score').textContent = state.score;
+                document.getElementById('hud-combo').textContent = `x${state.combo}`;
+                if (state.mode === 'campaign') {
+                    let hearts = '';
+                    for (let i = 0; i < 3; i++) {
+                        hearts += i < state.lives 
+                            ? `<i class="fa-solid fa-battery-full text-cyber-cyan"></i>` 
+                            : `<i class="fa-solid fa-battery-empty text-slate-600"></i>`;
+                    }
+                    document.getElementById('hud-lives').innerHTML = hearts;
+                }
+
+                const nextBtn = document.getElementById('btn-next-question');
+                if (state.mode === 'campaign' && state.lives <= 0) {
+                    nextBtn.innerHTML = `<span>Ver Resultado</span> <i class="fa-solid fa-flag-checkered"></i>`;
+                } else if (state.currentIndex + 1 >= state.questions.length) {
+                    nextBtn.innerHTML = `<span>Finalizar Missão</span> <i class="fa-solid fa-trophy"></i>`;
+                } else {
+                    nextBtn.innerHTML = `<span>Próxima Questão</span> <i class="fa-solid fa-forward"></i>`;
+                }
+
+                fbPanel.classList.remove('hidden');
+            }
+
+            // Avançar para Próxima Questão
+            function nextQuestion() {
+                SoundEngine.click();
+                if (state.mode === 'campaign' && state.lives <= 0) {
+                    endGame();
+                    return;
+                }
+                state.currentIndex++;
+                if (state.currentIndex >= state.questions.length) {
+                    endGame();
+                } else {
+                    renderQuestion();
+                }
+            }
+
+            // Power-Ups
+            function usePowerup(type) {
+                if (state.answered || state.powerups[type] <= 0) return;
+
+                if (type === '5050') {
+                    const wrongBtns = Array.from(document.querySelectorAll('.option-btn'))
+                        .filter(b => b.dataset.correct === '0' && !b.disabled);
+                    if (wrongBtns.length < 2) return;
+
+                    SoundEngine.powerup();
+                    state.powerups['5050']--;
+                    shuffle(wrongBtns).slice(0, 2).forEach(btn => {
+                        btn.disabled = true;
+                        btn.classList.add('opacity-25', 'line-through');
+                    });
+                } else if (type === 'hint') {
+                    const hintBox = document.getElementById('hint-box');
+                    if (!hintBox.classList.contains('hidden')) return;
+
+                    SoundEngine.powerup();
+                    state.powerups['hint']--;
+                    const q = state.questions[state.currentIndex];
+                    document.getElementById('hint-text').textContent = q.hint;
+                    hintBox.classList.remove('hidden');
+                } else if (type === 'skip') {
+                    SoundEngine.powerup();
+                    state.powerups['skip']--;
+                    updatePowerupUI();
+                    state.currentIndex++;
+                    if (state.currentIndex >= state.questions.length) {
+                        endGame();
+                    } else {
+                        renderQuestion();
+                    }
+                    return;
+                }
+
+                updatePowerupUI();
+            }
+
+            function updatePowerupUI() {
+                ['5050', 'hint', 'skip'].forEach(key => {
+                    const count = state.powerups[key];
+                    document.getElementById(`count-${key}`).textContent = count;
+                    document.getElementById(`pwr-${key}`).disabled = count <= 0;
+                });
+            }
+
+            // Finalizar Partida e Exibir Resultados
+            function endGame() {
+                clearInterval(state.timerInterval);
+                SoundEngine.victory();
+                ParticleFX.burst(window.innerWidth / 2, window.innerHeight / 3, ['#00F5D4', '#FEE440', '#FF2A85', '#9D4EDD'], 65);
+
+                const total = state.mode === 'campaign' ? state.questions.length : Math.max(1, state.currentIndex + (state.answered ? 1 : 0));
+                const accuracy = Math.round((state.correctCount / total) * 100);
+
+                // Determinar Patente
+                let rank = 'Estagiário de UI';
+                let icon = '📱';
+                let sub = 'Continue praticando os flashcards para dominar todos os conceitos!';
+                if (accuracy >= 90) {
+                    rank = 'Mestre Full-Stack Multimídia 2º Ano';
+                    icon = '👑';
+                    sub = 'Lendário! Você dominou a revisão de Aplicativos Móveis com maestria!';
+                } else if (accuracy >= 70) {
+                    rank = 'Designer UX/UI Sênior';
+                    icon = '🚀';
+                    sub = 'Mandou super bem! Você está prontíssimo para os desafios mobile!';
+                } else if (accuracy >= 45) {
+                    rank = 'Dev Mobile Júnior';
+                    icon = '💻';
+                    sub = 'Bom progresso! Revise os erros abaixo para subir de patente.';
+                }
+
+                document.getElementById('result-badge-icon').firstElementChild.textContent = icon;
+                document.getElementById('result-player-name').textContent = state.playerName;
+                document.getElementById('result-rank-title').textContent = rank;
+                document.getElementById('result-subtitle').textContent = sub;
+
+                document.getElementById('stat-score').textContent = `${state.score} XP`;
+                document.getElementById('stat-correct').textContent = `${state.correctCount}/${total}`;
+                document.getElementById('stat-accuracy').textContent = `${accuracy}%`;
+                document.getElementById('stat-combo').textContent = `x${state.maxCombo}`;
+
+                // Revisão de Erros
+                const mistakesSec = document.getElementById('mistakes-section');
+                const mistakesList = document.getElementById('mistakes-list');
+                if (state.mistakes.length > 0) {
+                    mistakesSec.classList.remove('hidden');
+                    mistakesList.innerHTML = state.mistakes.map(m => `
+                        <div class="p-4 rounded-2xl bg-white/5 border border-cyber-pink/30 space-y-1.5">
+                            <div class="text-xs font-mono text-cyber-pink font-bold">Questão #${m.id}</div>
+                            <div class="font-bold text-sm text-white">${m.question}</div>
+                            <div class="text-xs text-emerald-300 bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-500/20">
+                                <strong>Resposta Correta:</strong> ${m.officialAnswer}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    mistakesSec.classList.add('hidden');
+                }
+
+                saveToLeaderboard(state.playerName, state.score, accuracy);
+                showScreen('results');
+            }
+
+            // Flashcards de Estudo Rápido
+            function startFlashcards() {
+                SoundEngine.click();
+                state.fcIndex = 0;
+                renderFlashcard();
+                showScreen('flashcards');
+            }
+
+            function renderFlashcard() {
+                const q = QUESTIONS_DB[state.fcIndex];
+                const inner = document.getElementById('fc-inner');
+                inner.classList.remove('flipped');
+
+                document.getElementById('fc-counter').textContent = `${state.fcIndex + 1} / ${QUESTIONS_DB.length}`;
+                document.getElementById('fc-phase').textContent = q.phaseName;
+                document.getElementById('fc-num').textContent = `QUESTÃO #${q.id} • ${q.topic.toUpperCase()}`;
+                document.getElementById('fc-question').textContent = q.question;
+                document.getElementById('fc-answer').textContent = q.officialAnswer;
+            }
+
+            function flipFlashcard() {
+                SoundEngine.click();
+                document.getElementById('fc-inner').classList.toggle('flipped');
+            }
+
+            function nextFlashcard() {
+                SoundEngine.click();
+                state.fcIndex = (state.fcIndex + 1) % QUESTIONS_DB.length;
+                renderFlashcard();
+            }
+
+            function prevFlashcard() {
+                SoundEngine.click();
+                state.fcIndex = (state.fcIndex - 1 + QUESTIONS_DB.length) % QUESTIONS_DB.length;
+                renderFlashcard();
+            }
+
+            // Leaderboard LocalStorage
+            function saveToLeaderboard(name, score, accuracy) {
+                try {
+                    const list = JSON.parse(localStorage.getItem('mdq_leaderboard') || '[]');
+                    list.push({ name, score, accuracy, date: new Date().toLocaleDateString('pt-BR') });
+                    list.sort((a, b) => b.score - a.score);
+                    localStorage.setItem('mdq_leaderboard', JSON.stringify(list.slice(0, 5)));
+                    renderLeaderboard();
+                } catch (e) {}
+            }
+
+            function renderLeaderboard() {
+                const container = document.getElementById('leaderboard-list');
+                try {
+                    const list = JSON.parse(localStorage.getItem('mdq_leaderboard') || '[]');
+                    if (list.length === 0) {
+                        container.innerHTML = `<p class="text-slate-400 italic py-4 text-center">Nenhum recorde ainda. Seja o 1º Dev no ranking!</p>`;
+                        return;
+                    }
+                    const medals = ['🥇', '🥈', '🥉', '4º', '5º'];
+                    container.innerHTML = list.map((item, idx) => `
+                        <div class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10">
+                            <div class="flex items-center gap-2 truncate">
+                                <span class="font-bold text-sm">${medals[idx]}</span>
+                                <span class="font-semibold text-white truncate">${item.name}</span>
+                            </div>
+                            <div class="font-mono font-bold text-cyber-cyan flex-shrink-0">
+                                ${item.score} XP
+                            </div>
+                        </div>
+                    `).join('');
+                } catch (e) {}
+            }
+
+            function clearLeaderboard() {
+                SoundEngine.click();
+                localStorage.removeItem('mdq_leaderboard');
+                renderLeaderboard();
+            }
+
+            // Modal Customizado & Navegação
+            function showModal(title, msg, buttonsHtml) {
+                document.getElementById('modal-title').textContent = title;
+                document.getElementById('modal-msg').textContent = msg;
+                document.getElementById('modal-actions').innerHTML = buttonsHtml;
+                const modal = document.getElementById('custom-modal');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            function closeModal() {
+                const modal = document.getElementById('custom-modal');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+
+            function confirmHome() {
+                SoundEngine.click();
+                if (!screens.quiz.classList.contains('hidden')) {
+                    showModal(
+                        'Sair da Partida?',
+                        'Seu progresso atual nesta partida será perdido. Deseja voltar ao menu inicial?',
+                        `
+                            <button onclick="App.closeModal()" class="btn-cyber px-4 py-2.5 rounded-xl bg-white/10 text-white text-xs font-bold">Continuar Jogando</button>
+                            <button onclick="App.closeModal(); App.goHome()" class="btn-cyber px-4 py-2.5 rounded-xl bg-cyber-pink text-white text-xs font-bold">Sair</button>
+                        `
+                    );
+                } else {
+                    goHome();
+                }
+            }
+
+            function goHome() {
+                clearInterval(state.timerInterval);
+                renderLeaderboard();
+                showScreen('home');
+            }
+
+            function shareResult() {
+                SoundEngine.click();
+                const text = `🚀 MOBILE DEV QUEST (Multimídia 2º Ano)\n👤 ${state.playerName}\n🏆 ${document.getElementById('result-rank-title').textContent}\n⚡ Pontuação: ${state.score} XP | 🎯 Acertos: ${document.getElementById('stat-correct').textContent}`;
+                const temp = document.createElement('textarea');
+                temp.value = text;
+                document.body.appendChild(temp);
+                temp.select();
+                document.execCommand('copy');
+                document.body.removeChild(temp);
+
+                showModal(
+                    'Resultado Copiado!',
+                    'O resumo da sua pontuação foi copiado para a área de transferência. Cole no grupo da turma!',
+                    `<button onclick="App.closeModal()" class="btn-cyber px-5 py-2.5 rounded-xl bg-cyber-cyan text-cyber-dark text-xs font-extrabold">Show!</button>`
+                );
+            }
+
+            // Inicialização
+            renderLeaderboard();
+
+            return {
+                startGame,
+                replayCurrentMode,
+                nextQuestion,
+                usePowerup,
+                startFlashcards,
+                flipFlashcard,
+                nextFlashcard,
+                prevFlashcard,
+                clearLeaderboard,
+                confirmHome,
+                goHome,
+                closeModal,
+                shareResult
+            };
+        })();
+    </script>
+</body>
+</html>
