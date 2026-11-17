@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PROTOTYPE QUEST - 25 MISSIONS FX (gamejogos3)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@500;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            pixel: ['"Press Start 2P"', 'monospace'],
+            tech: ['"Chakra Petch"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Press Start 2P', monospace;
+      background: #0d0b1e;
+      color: #f3f4f6;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+    .gamemaker-window {
+      background: #181425;
+      border: 4px solid #76428a;
+      box-shadow: 0 0 0 4px #181425, 0 0 0 8px #3b2346, 0 10px 25px rgba(0,0,0,0.8);
+      transition: transform 0.05s ease;
+    }
+    .gamemaker-btn {
+      background: #3b2346;
+      border: 3px solid #b55088;
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,0.5);
+      transition: all 0.1s ease;
+      cursor: pointer;
+    }
+    .gamemaker-btn:hover {
+      background: #5d366d;
+      border-color: #e06f8b;
+      transform: translateY(-2px);
+    }
+    .gamemaker-btn:active {
+      transform: translateY(2px);
+      box-shadow: inset 0 -1px 0 rgba(0,0,0,0.5);
+    }
+    .scanline {
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0.3));
+      background-size: 100% 4px;
+    }
+    @keyframes shake {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      20% { transform: translate(-8px, 6px) rotate(-1deg); }
+      40% { transform: translate(8px, -6px) rotate(1deg); }
+      60% { transform: translate(-6px, -4px) rotate(0deg); }
+      80% { transform: translate(6px, 4px) rotate(1deg); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }
+    .screen-shake {
+      animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+    }
+    .particle {
+      position: absolute;
+      pointer-events: none;
+      animation: floatUp 0.8s ease-out forwards;
+      font-size: 10px;
+      font-family: 'Press Start 2P', monospace;
+    }
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-60px) scale(1.5); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-3 sm:p-6 scanline relative">
+
+  <!-- HUD SUPERIOR -->
+  <header class="gamemaker-window rounded-xl p-3 sm:p-4 max-w-4xl w-full mx-auto flex items-center justify-between flex-wrap gap-3 z-20">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-[#e06f8b] border-2 border-[#f8c0c8] flex items-center justify-center text-xs text-[#181425] font-bold shadow animate-pulse">25</div>
+      <div>
+        <h1 class="text-[9px] sm:text-xs text-[#f8c0c8] tracking-wider leading-relaxed">ROOM: rm_epic_arena</h1>
+        <p class="text-[7px] sm:text-[8px] text-gray-400 font-tech uppercase">EEEP Jordame Corrêa · 3º Ano Jogos</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap">
+      <span id="db-status" class="px-2 py-1 text-[7px] sm:text-[8px] bg-[#3b2346] text-[#e43b44] border-2 border-[#e43b44] rounded">CONNECTING...</span>
+      <button onclick="sfxClick(); toggleAdminPanel()" class="gamemaker-btn px-3 py-1.5 text-[7px] sm:text-[8px] text-[#f8c0c8] rounded">ADMIN.ini</button>
+    </div>
+  </header>
+
+  <!-- ÁREA CENTRAL -->
+  <main id="main-container" class="flex-1 max-w-4xl w-full mx-auto my-4 sm:my-6 flex flex-col justify-center relative">
+    
+    <!-- TELA DE LOGIN -->
+    <div id="screen-login" class="gamemaker-window rounded-xl p-5 sm:p-8 space-y-5 relative overflow-hidden">
+      <div class="absolute right-4 top-4 text-3xl sm:text-5xl opacity-20 select-none">🎮</div>
+      <div class="space-y-2">
+        <span class="text-[7px] sm:text-[8px] text-[#e06f8b] tracking-widest uppercase animate-pulse">--- CAMPAIGN: 25 MISSIONS ---</span>
+        <h2 class="text-[11px] sm:text-sm text-white font-bold leading-relaxed">PROTOTYPE QUEST: ULTIMATE EDITION</h2>
+        <p class="text-[8px] sm:text-[9px] text-gray-300 font-tech leading-relaxed">
+          Campanha expandida com 25 desafios de prototipação!<br>Insira seu nickname para salvar sua pontuação na tabela <code class="text-[#e06f8b]">gamejogos3</code>.
+        </p>
+      </div>
+
+      <div class="space-y-4 pt-2">
+        <div>
+          <label class="block text-[7px] sm:text-[8px] text-[#f8c0c8] mb-2 uppercase">PLAYER_NAME:</label>
+          <input type="text" id="input-nome" placeholder="EX: LUCAS DEV" class="w-full bg-[#0d0b1e] border-2 border-[#76428a] rounded px-4 py-3 text-[10px] sm:text-xs text-white font-tech focus:outline-none focus:border-[#e06f8b]" />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[7px] sm:text-[8px] text-gray-400 mb-1 uppercase">TURMA:</label>
+            <input type="text" value="3º Ano Jogos" disabled class="w-full bg-[#0d0b1e]/50 border-2 border-[#3b2346] rounded px-3 py-2 text-[9px] text-gray-500 font-tech cursor-not-allowed" />
+          </div>
+          <div>
+            <label class="block text-[7px] sm:text-[8px] text-gray-400 mb-1 uppercase">PROFESSOR:</label>
+            <input type="text" value="Léo" disabled class="w-full bg-[#0d0b1e]/50 border-2 border-[#3b2346] rounded px-3 py-2 text-[9px] text-gray-500 font-tech cursor-not-allowed" />
+          </div>
+        </div>
+        <button onclick="sfxStart(); startMission()" class="gamemaker-btn w-full py-4 text-[10px] sm:text-xs text-white font-bold tracking-widest uppercase rounded mt-2">
+          ▶ INICIALIZAR CAMPANHA (25 FASES)
+        </button>
+      </div>
+    </div>
+
+    <!-- TELA DE JOGO -->
+    <div id="screen-game" class="hidden space-y-4">
+      <div class="gamemaker-window rounded-xl p-3 sm:p-4 flex items-center justify-between">
+        <div>
+          <span id="quest-counter" class="text-[7px] sm:text-[8px] text-[#e06f8b] tracking-wider block mb-1">STAGE 1 / 25</span>
+          <h3 id="quest-title" class="text-[9px] sm:text-xs text-white">OBJETIVO: Questão Ativa</h3>
+        </div>
+        <div class="text-right">
+          <span class="text-[7px] sm:text-[8px] text-gray-400 block">SCORE</span>
+          <strong id="quest-score" class="text-[10px] sm:text-sm text-[#30e6c9]">0 XP</strong>
+        </div>
+      </div>
+
+      <div class="gamemaker-window rounded-xl p-4 sm:p-8 space-y-5 relative">
+        <div class="bg-[#0d0b1e] border-2 border-[#76428a] rounded-lg p-4 sm:p-6 shadow-inner">
+          <p id="quest-enunciado" class="text-[9px] sm:text-xs text-gray-200 font-tech leading-loose">
+            Carregando enunciado...
+          </p>
+        </div>
+
+        <div id="quest-options" class="space-y-2.5">
+          <!-- Alternativas geradas via JS -->
+        </div>
+
+        <div id="quest-discursive-container" class="hidden space-y-3">
+          <textarea id="quest-discursive-input" rows="4" class="w-full bg-[#0d0b1e] border-2 border-[#76428a] rounded p-4 text-[9px] sm:text-xs text-white font-tech focus:outline-none focus:border-[#e06f8b]" placeholder="Digite sua resposta discursiva detalhada..."></textarea>
+          <button onclick="sfxClick(); submitDiscursive()" class="gamemaker-btn w-full py-3 text-[9px] sm:text-[10px] text-white font-bold uppercase rounded">
+            CONFIRMAR RESPOSTA ➔
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TELA DE VITÓRIA -->
+    <div id="screen-result" class="hidden gamemaker-window rounded-xl p-6 sm:p-8 text-center space-y-5">
+      <div class="w-16 h-16 bg-[#30e6c9]/20 border-2 border-[#30e6c9] text-[#30e6c9] rounded-full flex items-center justify-center text-2xl mx-auto animate-bounce">🏆</div>
+      <div class="space-y-2">
+        <span class="text-[7px] sm:text-[8px] text-[#30e6c9] tracking-widest uppercase">*** CAMPAIGN CLEARED ***</span>
+        <h2 class="text-[10px] sm:text-sm text-white font-bold">TODAS AS 25 MISSÕES CONCLUÍDAS!</h2>
+        <p class="text-[8px] sm:text-[9px] text-gray-300 font-tech leading-relaxed">Seu relatório completo foi salvo na tabela <code class="text-[#30e6c9]">gamejogos3</code>.</p>
+      </div>
+      <div class="bg-[#0d0b1e] border-2 border-[#76428a] rounded-xl p-4 max-w-sm mx-auto text-left space-y-2 text-[8px] sm:text-[9px] font-tech">
+        <div class="flex justify-between"><span class="text-gray-400">PLAYER:</span> <strong id="res-nome" class="text-white">—</strong></div>
+        <div class="flex justify-between"><span class="text-gray-400">PONTUAÇÃO:</span> <strong id="res-acertos" class="text-[#30e6c9]">—</strong></div>
+        <div class="flex justify-between"><span class="text-gray-400">STATUS DB:</span> <strong class="text-[#30e6c9]">ONLINE ☁️</strong></div>
+      </div>
+      <button onclick="sfxClick(); location.reload()" class="gamemaker-btn px-6 py-3 text-[9px] sm:text-[10px] text-white font-bold uppercase rounded inline-block">
+        JOGAR NOVAMENTE
+      </button>
+    </div>
+
+  </main>
+
+  <!-- PAINEL ADMIN -->
+  <div id="admin-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+    <div class="gamemaker-window rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div class="px-5 py-3 bg-[#3b2346] border-b-2 border-[#76428a] flex items-center justify-between">
+        <h3 class="text-[9px] sm:text-[10px] text-[#f8c0c8]">DEBUG_OVERLAY // Tabela: gamejogos3</h3>
+        <button onclick="sfxClick(); toggleAdminPanel()" class="text-gray-400 hover:text-white text-xs">X</button>
+      </div>
+      <div class="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="sfxClick(); loadAdminData()" class="gamemaker-btn px-4 py-2 text-[7px] sm:text-[8px] text-white rounded">🔄 REFRESH DATA</button>
+          <button onclick="sfxClick(); exportCSV()" class="gamemaker-btn px-4 py-2 text-[7px] sm:text-[8px] text-[#30e6c9] rounded">📥 EXPORT CSV</button>
+        </div>
+        <div class="bg-[#0d0b1e] border-2 border-[#76428a] rounded-xl overflow-x-auto">
+          <table class="w-full text-left text-[8px] sm:text-[9px] font-tech whitespace-nowrap">
+            <thead class="bg-[#3b2346] text-gray-300">
+              <tr>
+                <th class="p-3">TIME</th>
+                <th class="p-3">PLAYER</th>
+                <th class="p-3">SCORE</th>
+                <th class="p-3">DATA</th>
+              </tr>
+            </thead>
+            <tbody id="admin-table-body">
+              <tr><td colspan="4" class="p-6 text-center text-gray-500">Clique em "REFRESH DATA".</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center py-3 text-[6px] sm:text-[7px] text-gray-500 font-tech">
+    EEEP Jordame Corrêa Queiroz Filho · Xinguara, Pará · 25 Missions Edition
+  </footer>
+
+<script>
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  function playTone(freq, type, duration) {
+    try {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch(e) {}
+  }
+
+  function sfxClick() {
+    playTone(440, 'square', 0.08);
+    if (navigator.vibrate) navigator.vibrate(30);
+  }
+
+  function sfxStart() {
+    playTone(587.33, 'triangle', 0.15);
+    setTimeout(() => playTone(880, 'triangle', 0.25), 150);
+    if (navigator.vibrate) navigator.vibrate([40, 50, 80]);
+  }
+
+  function sfxSuccess() {
+    playTone(523.25, 'square', 0.1);
+    setTimeout(() => playTone(659.25, 'square', 0.1), 100);
+    setTimeout(() => playTone(783.99, 'square', 0.2), 200);
+    setTimeout(() => playTone(1046.50, 'square', 0.3), 300);
+    if (navigator.vibrate) navigator.vibrate([50, 40, 50, 40, 100]);
+  }
+
+  function sfxError() {
+    playTone(150, 'sawtooth', 0.25);
+    setTimeout(() => playTone(100, 'sawtooth', 0.3), 120);
+    if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
+    triggerScreenShake();
+  }
+
+  function triggerScreenShake() {
+    const container = document.getElementById('main-container');
+    container.classList.add('screen-shake');
+    setTimeout(() => container.classList.remove('screen-shake'), 300);
+  }
+
+  function spawnParticle(text, x, y, color = '#30e6c9') {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = x + 'px';
+    p.style.top = y + 'px';
+    p.style.color = color;
+    p.textContent = text;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 800);
+  }
+
+  if (!window.SUPABASE_CONFIG) {
+    alert("Erro crítico: config.js ausente ou sem credenciais do Supabase!");
+  }
+  const supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
+
+  async function testSupabase() {
+    const badge = document.getElementById('db-status');
+    try {
+      const { error } = await supabaseClient.from('gamejogos3').select('id').limit(1);
+      if (error) throw error;
+      badge.textContent = 'ONLINE (gamejogos3)';
+      badge.className = 'px-2 py-1 text-[7px] sm:text-[8px] bg-[#3b2346] text-[#30e6c9] border-2 border-[#30e6c9] rounded';
+    } catch (err) {
+      console.error(err);
+      badge.textContent = 'ERROR DB';
+      badge.className = 'px-2 py-1 text-[7px] sm:text-[8px] bg-[#3b2346] text-[#e43b44] border-2 border-[#e43b44] rounded';
+    }
+  }
+  testSupabase();
+
+  // ==========================================
+  // BANCO DE 25 QUESTÕES (10 ORIGINAIS + 15 NOVAS)
+  // ==========================================
+  const questions = [
+    // 1-10 (Originais)
+    { type: 'obj', q: "Abaixo qual alternativa define melhor protótipo?", options: ["Gastar o máximo de recursos possíveis", "Validar ideias com o cliente de forma ágil e de baixo custo", "Substituir completamente o produto final", "Evitar qualquer feedback do usuário", "Demorar o máximo possível para lançar"], correct: 1 },
+    { type: 'obj', q: "Abaixo qual das alternativas é uma vantagem importante da prototipação?", options: ["Aumenta significativamente o custo do projeto", "Tornar o processo lento e burocrático", "Elimina a necessidade de conversar com o cliente", "Garante que o produto nunca precisará de alterações", "Permite identificar erros e melhorar a solução antes do desenvolvimento completo"], correct: 4 },
+    { type: 'obj', q: "Uma das melhores formas de conquistar o cliente durante a prototipação é:", options: ["Entregar o protótipo sem nenhuma explicação", "Ignorar o cliente e fazer uma surpresa", "Esconder as falhas do protótipo", "Envolver o cliente no processo e mostrar evolução rápida", "Ignorar completamente o feedback recebido"], correct: 3 },
+    { type: 'obj', q: "Qual a melhor definição de protótipo de alta fidelidade?", options: ["Um desenho feito à mão em papel", "Uma versão muito próxima do produto final em aparência e interação", "Apenas uma lista de requisitos", "Um documento de texto", "Nenhuma das alternativas"], correct: 1 },
+    { type: 'obj', q: "Por que a prototipação rápida ajuda a ganhar mercado?", options: ["Porque atrasa o lançamento do produto", "Porque permite testar e validar a solução com usuários reais antes da concorrência", "Porque aumenta os custos de desenvolvimento", "Porque elimina a necessidade de inovação", "Porque foca apenas em documentação"], correct: 1 },
+    { type: 'obj', q: "NÃO é um benefício da prototipação?", options: ["Redução de riscos", "Melhoria da comunicação com o cliente", "Aumento desnecessário de custos sem retorno", "Validação precoce de ideias", "Identificação rápida de problemas"], correct: 2 },
+    { type: 'obj', q: "Qual é uma boa prática ao apresentar um protótipo para o cliente?", options: ["Mostrar apenas o que está perfeito e esconder limitações", "Explicar claramente o que é protótipo e coletar feedback honesto", "Entregar o protótipo sem nenhuma conversa", "Cobrar o valor total do produto final", "Evitar perguntas do cliente"], correct: 1 },
+    { type: 'obj', q: "Das alternativas abaixo, qual define melhor a diferença entre um protótipo e o produto final?", options: ["O protótipo é sempre mais caro", "O protótipo é uma versão simplificada usada para aprendizado e validação", "Não existe diferença entre eles", "O protótipo nunca pode ser testado", "O protótipo é a versão que vai para o mercado"], correct: 1 },
+    { type: 'disc', q: "Discorra sobre as dificuldades enfrentadas em seu projeto de protótipo do seu grupo apresentado na feira das profissões:" },
+    { type: 'disc', q: "Fale sobre seu protótipo desenvolvido e suas expectativas para o futuro, caso ele seja bem aceito no mercado:" },
+
+    // 11-25 (15 Novas Questões Baseadas no Mesmo Conteúdo)
+    { type: 'obj', q: "Qual o principal objetivo de um protótipo de baixa fidelidade (ex: wireframe em papel)?", options: ["Testar a paleta de cores final", "Validar o fluxo estrutural e layout básico rapidamente", "Garantir o desempenho de renderização 3D", "Implementar som e física avançada", "Substituir o código fonte do jogo"], correct: 1 },
+    { type: 'obj', q: "No contexto de desenvolvimento de jogos, o que significa MVP (Minimum Viable Product)?", options: ["O jogo completo com gráficos ultra realistas", "A versão inicial jogável que possui apenas as mecânicas essenciais para validação", "Um patch de correção de bugs pós-lançamento", "O manual de instruções em PDF", "O motor gráfico utilizado"], correct: 1 },
+    { type: 'obj', q: "Por que testar um protótipo com usuários reais na Feira de Profissões é crucial?", options: ["Para convencer o público a comprar o produto finalizado", "Para identificar bugs de usabilidade que os desenvolvedores não perceberam", "Para eliminar a necessidade de testes de QA internos", "Para atrasar o cronograma de entrega", "Para evitar qualquer tipo de sugestão externa"], correct: 1 },
+    { type: 'obj', q: "Qual das opções caracteriza melhor a prototipação iterativa?", options: ["Criar o protótipo uma única vez e nunca mais alterar", "Desenvolver, testar, coletar feedback e refinar o protótipo em ciclos contínuos", "Mudar de engine a cada duas horas de trabalho", "Copiar jogos da concorrente sem alterações", "Focar exclusivamente na documentação em texto"], correct: 1 },
+    { type: 'obj', q: "Em um projeto de jogo apresentado em feiras tecnológicas, qual a vantagem de um protótipo funcional interativo comparado a imagens estáticas?", options: ["Ocupa mais espaço no disco rígido", "Permite que o avaliador sinta a real jogabilidade e mecânica proposta", "Garante que o jogo não terá bugs", "Dispensa testes com o público", "Torna o projeto mais caro e inviável"], correct: 1 },
+    { type: 'obj', q: "O que deve ser evitado ao coletar feedback de um protótipo?", options: ["Ouvir atentamente as críticas construtivas", "Observar a linguagem corporal do testador", "Levar críticas para o lado pessoal e tentar argumentar contra o usuário", "Anotar os pontos de melhoria apontados", "Testar com diferentes perfis de jogadores"], correct: 2 },
+    { type: 'obj', q: "Qual o papel do escopo em um protótipo voltado para feiras escolares e prazos curtos?", options: ["Expandir infinitamente com novas ideias durante os testes", "Delimitar claramente o que é essencial para entregar funcionando a tempo", "Eliminar qualquer interatividade", "Aumentar os custos de produção", "Evitar testes de validação"], correct: 1 },
+    { type: 'obj', q: "Como a prototipação contribui para a mitigação de riscos em desenvolvimento de software e jogos?", options: ["Permite descobrir falhas de design e conceitos inviáveis antes de investir meses de código", "Aumenta a complexidade técnica desnecessariamente", "Garante lucro financeiro automático", "Gera mais bugs na versão final", "Elimina a necessidade de planejamento"], correct: 0 },
+    { type: 'obj', q: "Qual alternativa descreve um cenário típico de protótipo horizontal?", options: ["Foca em aprofundar uma única mecânica complexa até o fim", "Foca na amplitude da interface e navegação visual, cobrindo muitas telas sem lógica profunda por trás", "Simula a inteligência artificial completa do jogo", "Implementa todo o banco de dados em nuvem", "Cria apenas a engine gráfica do zero"], correct: 1 },
+    { type: 'obj', q: "Qual alternativa descreve um cenário típico de protótipo vertical?", options: ["Foca em testar a profundidade e funcionamento real de uma única funcionalidade ou mecânica chave", "Apenas esboços em papel de menus secundários", "Lista de requisitos textuais sem interatividade", "Apresentação de slides estática", "Testes visuais sem código"], correct: 0 },
+    { type: 'obj', q: "Durante a apresentação de um protótipo de jogo na Feira das Profissões, o jogador travou em um menu confuso. Isso indica:", options: ["Que o jogador não sabe jogar videogames", "Um problema claro de UX/UI (Experiência do Usuário) que precisa ser redesenhado", "Que o jogo está perfeito e complexo", "Que o protótipo deve ser descartado", "Que a prototipação falhou em todos os aspectos"], correct: 1 },
+    { type: 'obj', q: "Por que o custo de correção de um erro descoberto na fase de prototipagem é menor do que no produto final?", options: ["Porque o código e a estrutura ainda são simples e flexíveis de alterar", "Porque os clientes não percebem os erros", "Porque o protótipo não pode ser modificado", "Porque o governo financia correções", "Não há diferença de custo"], correct: 0 },
+    { type: 'obj', q: "Qual a importância de documentar as lições aprendidas após testar um protótipo?", options: ["Preencher espaço no relatório final", "Servir de base para guiar as próximas fases de desenvolvimento e evitar repetir erros", "Garantir nota máxima sem esforço", "Substituir o código do jogo", "Impedir que outros alunos vejam o projeto"], correct: 1 },
+    { type: 'disc', q: "Explique com suas palavras como a validação rápida com o público da feira alterou ou confirmou as ideias iniciais do seu grupo:" },
+    { type: 'disc', q: "Quais lições aprendidas sobre prototipação e MVP você pretende levar para seus futuros projetos de desenvolvimento de software e jogos?" }
+  ];
+
+  let currentIdx = 0;
+  let score = 0;
+  let studentName = '';
+  let answersRecord = [];
+
+  function startMission() {
+    const nameInput = document.getElementById('input-nome').value.trim();
+    if (!nameInput) {
+      sfxError();
+      alert('ERRO: Digite seu nome de player!');
+      return;
+    }
+    studentName = nameInput;
+    document.getElementById('screen-login').classList.add('hidden');
+    document.getElementById('screen-game').classList.remove('hidden');
+    loadQuestion();
+  }
+
+  function loadQuestion() {
+    const q = questions[currentIdx];
+    document.getElementById('quest-counter').textContent = `STAGE ${currentIdx + 1} / ${questions.length}`;
+    document.getElementById('quest-title').textContent = q.type === 'obj' ? 'OBJETIVO: MÚLTIPLA ESCOLHA' : 'OBJETIVO: DISCURSIVA';
+    document.getElementById('quest-enunciado').textContent = q.q;
+    document.getElementById('quest-score').textContent = `${score} XP`;
+
+    const optContainer = document.getElementById('quest-options');
+    const discContainer = document.getElementById('quest-discursive-container');
+
+    if (q.type === 'obj') {
+      discContainer.classList.add('hidden');
+      optContainer.classList.remove('hidden');
+      optContainer.innerHTML = q.options.map((opt, i) => `
+        <button onclick="handleObjAnswer(${i}, event)" class="gamemaker-btn w-full text-left p-3.5 rounded text-[8px] sm:text-[10px] text-gray-200 font-tech flex items-center gap-3 group">
+          <span class="w-6 h-6 rounded bg-[#181425] border-2 border-[#76428a] flex items-center justify-center text-[#e06f8b] font-bold">${String.fromCharCode(65 + i)}</span>
+          <span>${opt}</span>
+        </button>
+      `).join('');
+    } else {
+      optContainer.classList.add('hidden');
+      discContainer.classList.remove('hidden');
+      document.getElementById('quest-discursive-input').value = '';
+    }
+  }
+
+  function handleObjAnswer(selectedIndex, event) {
+    const q = questions[currentIdx];
+    const correct = selectedIndex === q.correct;
+    const rect = event.currentTarget.getBoundingClientRect();
+    
+    if (correct) {
+      score += 10;
+      sfxSuccess();
+      spawnParticle('+10 XP', rect.x + rect.width / 2, rect.y, '#30e6c9');
+    } else {
+      sfxError();
+      spawnParticle('MISS!', rect.x + rect.width / 2, rect.y, '#e43b44');
+    }
+
+    answersRecord.push({ q: currentIdx + 1, type: 'obj', chosen: selectedIndex, correct });
+    nextStep();
+  }
+
+  function submitDiscursive() {
+    const val = document.getElementById('quest-discursive-input').value.trim();
+    if (!val) {
+      sfxError();
+      alert('ERRO: Escreva uma resposta antes de avançar.');
+      return;
+    }
+    score += 15;
+    sfxSuccess();
+    answersRecord.push({ q: currentIdx + 1, type: 'disc', text: val });
+    nextStep();
+  }
+
+  function nextStep() {
+    currentIdx++;
+    if (currentIdx < questions.length) {
+      loadQuestion();
+    } else {
+      finishMission();
+    }
+  }
+
+  async function finishMission() {
+    document.getElementById('screen-game').classList.add('hidden');
+    document.getElementById('screen-result').classList.remove('hidden');
+    document.getElementById('res-nome').textContent = studentName;
+    document.getElementById('res-acertos').textContent = `${score} XP`;
+
+    const now = new Date();
+    const payload = {
+      id: crypto.randomUUID ? crypto.randomUUID() : 'id_' + Math.random().toString(36).substring(2),
+      timestamp: now.toISOString(),
+      date: now.toISOString().slice(0, 10),
+      hour: now.getHours(),
+      type: 'campaign_clear_25',
+      confidence: score / 250, // Normalizado para a escala de 25 missões
+      tracking_id: studentName,
+      session_id: 'gm_fx_25_' + Date.now(),
+      zone: '3_ano_jogos',
+      source: JSON.stringify(answersRecord)
+    };
+
+    try {
+      const { error } = await supabaseClient.from('gamejogos3').insert([payload]);
+      if (error) throw error;
+      console.log('Salvo com sucesso na tabela gamejogos3!');
+    } catch (err) {
+      console.error(err);
+      sfxError();
+      alert('AVISO: Falha ao enviar dados para o Supabase.');
+    }
+  }
+
+  function toggleAdminPanel() {
+    const modal = document.getElementById('admin-modal');
+    modal.classList.toggle('hidden');
+    if (!modal.classList.contains('hidden')) {
+      loadAdminData();
+    }
+  }
+
+  async function loadAdminData() {
+    const tbody = document.getElementById('admin-table-body');
+    tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400">Carregando gamejogos3...</td></tr>`;
+    try {
+      const { data, error } = await supabaseClient
+        .from('gamejogos3')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-500">Nenhum registro encontrado.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(row => `
+        <tr class="border-b border-[#3b2346] hover:bg-[#3b2346]/40">
+          <td class="p-3 text-gray-400">${new Date(row.timestamp).toLocaleTimeString('pt-BR')}</td>
+          <td class="p-3 font-semibold text-white">${row.tracking_id || 'Anônimo'}</td>
+          <td class="p-3 text-[#30e6c9] font-bold">${Math.round((row.confidence || 0) * 250)} XP</td>
+          <td class="p-3 text-gray-400">${row.date}</td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      console.error(err);
+      tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-red-400">Erro ao carregar dados.</td></tr>`;
+    }
+  }
+
+  async function exportCSV() {
+    try {
+      const { data, error } = await supabaseClient.from('gamejogos3').select('*');
+      if (error) throw error;
+      if (!data || !data.length) { alert('Sem dados.'); return; }
+
+      const keys = Object.keys(data[0]);
+      const csv = [keys.join(',')].concat(data.map(row => keys.map(k => `"${String(row[k] || '').replace(/"/g, '""')}"`).join(','))).join('\n');
+      
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'gamejogos3_25_missions_' + new Date().toISOString().slice(0, 10) + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Erro ao exportar CSV.');
+    }
+  }
+</script>
+</body>
+</html>
