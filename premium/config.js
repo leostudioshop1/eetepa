@@ -1,5 +1,4 @@
 // ==================== CONFIGURAÇÃO SUPABASE ====================
-// Compatível com todas as formas de acesso global (window.SUPABASE_CONFIG, SUPABASE_CONFIG, SUPABASE_URL, SUPABASE_KEY)
 var SUPABASE_URL = "https://osofdmgokrxdzsxozsrf.supabase.co";
 var SUPABASE_KEY = "sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe";
 

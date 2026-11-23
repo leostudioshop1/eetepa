@@ -7,33 +7,48 @@ async function carregarProfessores() {
     if (ul) {
       ul.innerHTML =
         '<li class="text-amber-700 text-sm p-3 bg-amber-50 border border-amber-200 rounded-lg">' +
-        '<i class="fas fa-exclamation-triangle mr-1"></i> Não foi possível inicializar o cliente Supabase. Verifique a conexão com a internet e recarregue a página.' +
+        '<i class="fas fa-exclamation-triangle mr-1"></i> Modo offline / cache local ativo. Verifique a conexão com o Supabase.' +
         '</li>';
     }
+    renderProfessores();
+    renderLegenda();
     return;
   }
 
-  if (ul) {
+  if (ul && !Horario.getState().professores.length) {
     ul.innerHTML =
       '<li class="text-gray-400 text-sm text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Carregando...</li>';
   }
 
-  var res = await db.from("professores").select("*").order("nome", { ascending: true });
+  try {
+    var res = await Promise.race([
+      db.from("professores").select("*").order("nome", { ascending: true }),
+      new Promise(function (_, reject) {
+        setTimeout(function () {
+          reject(new Error("Tempo esgotado ao buscar professores"));
+        }, 7000);
+      })
+    ]);
 
-  if (res.error) {
-    if (ul) {
-      ul.innerHTML =
-        '<li class="text-red-600 text-sm p-3 bg-red-50 border border-red-200 rounded-lg">Erro ao buscar professores: ' +
-        Horario.escapeHtml(res.error.message) +
-        '</li>';
+    if (res.error) {
+      if (ul) {
+        ul.innerHTML =
+          '<li class="text-red-600 text-sm p-3 bg-red-50 border border-red-200 rounded-lg">Erro ao buscar professores: ' +
+          Horario.escapeHtml(res.error.message) +
+          '</li>';
+      }
+      return;
     }
-    return;
-  }
 
-  Horario.setProfessores(res.data || []);
-  renderProfessores();
-  renderLegenda();
-  renderGrade();
+    Horario.setProfessores(res.data || []);
+    renderProfessores();
+    renderLegenda();
+    renderGrade();
+  } catch (err) {
+    console.warn("[Professores] Falha ao carregar:", err);
+    renderProfessores();
+    renderLegenda();
+  }
 }
 
 function renderProfessores() {
@@ -71,7 +86,7 @@ function renderProfessores() {
         : '<span class="text-xs text-gray-400">Sem disponibilidade</span>';
 
       return (
-        '<li onclick="toggleDestaqueProfessor('' + p.id + '')"' +
+        '<li onclick="toggleDestaqueProfessor(\'' + p.id + '\')"' +
         ' class="cursor-pointer rounded-xl p-4 border transition ' +
         (ativo ? "bg-indigo-50 border-indigo-400 ring-2 ring-indigo-200" : "bg-gray-50 border-gray-200 hover:bg-gray-100") +
         '">' +
@@ -115,7 +130,7 @@ function renderLegenda() {
       var carga = Horario.getAulasDoProfessor(p.id);
       var ativo = String(professorDestacadoId) === String(p.id);
       return (
-        '<button type="button" onclick="toggleDestaqueProfessor('' + p.id + '')"' +
+        '<button type="button" onclick="toggleDestaqueProfessor(\'' + p.id + '\')"' +
         ' class="flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm transition ' +
         (ativo ? "bg-indigo-600 text-white border-indigo-600 shadow-sm" : "bg-gray-50 text-gray-800 hover:bg-gray-100") +
         '">' +

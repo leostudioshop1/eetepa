@@ -183,8 +183,8 @@ async function gerarPDFCompleto() {
 }
 
 function atualizarBadgeSync(info) {
-  var status = info.status;
-  var detalhe = info.detalhe;
+  var status = info && info.status;
+  var detalhe = info && info.detalhe;
   var el = document.getElementById("sync-status");
   if (!el) return;
 
@@ -193,7 +193,7 @@ function atualizarBadgeSync(info) {
     synced: { cls: "bg-emerald-400/20 text-emerald-100 border-emerald-300/40", icon: "fa-check-circle", text: detalhe || "Supabase OK" },
     offline: { cls: "bg-slate-400/20 text-slate-100 border-slate-300/40", icon: "fa-database", text: detalhe || "Cache Local" },
     error: { cls: "bg-red-500/30 text-red-100 border-red-300/40", icon: "fa-exclamation-circle", text: detalhe || "Erro Supabase" },
-    idle: { cls: "bg-white/10 text-indigo-100 border-white/20", icon: "fa-circle", text: "Iniciando" }
+    idle: { cls: "bg-white/10 text-indigo-100 border-white/20", icon: "fa-database", text: detalhe || "Pronto" }
   };
 
   var atual = mapa[status] || mapa.idle;
@@ -201,15 +201,19 @@ function atualizarBadgeSync(info) {
   el.innerHTML = '<i class="fas ' + atual.icon + '"></i><span>' + Horario.escapeHtml(atual.text) + "</span>";
 }
 
+var jaInicializou = false;
+
 async function init() {
+  if (jaInicializou) return;
+  jaInicializou = true;
+
   var devEl = document.getElementById("device-info");
   if (devEl) {
     devEl.textContent = (navigator.platform || "") + " • " + new Date().toLocaleDateString("pt-BR");
   }
 
-  if (typeof getSupabaseClient === "function") {
-    getSupabaseClient();
-  }
+  // Garante que a UI nunca fique presa em "Iniciando" mesmo se a rede demorar
+  atualizarBadgeSync({ status: "offline", detalhe: "Cache Local" });
 
   Horario.init({
     onChange: function () {
@@ -227,17 +231,27 @@ async function init() {
   atualizarFiltroTurma();
   renderLegenda();
 
-  DispositivoTracker.iniciar();
+  try {
+    if (typeof DispositivoTracker !== "undefined" && DispositivoTracker.iniciar) {
+      DispositivoTracker.iniciar();
+    }
+  } catch (e) {
+    console.warn("[Init] DispositivoTracker:", e);
+  }
+
+  // Trava de segurança: após 9s, se ainda estiver em "syncing", atualiza badge para não travar visualmente
+  setTimeout(function () {
+    var st = Horario.getState().syncStatus;
+    if (st === "syncing" || st === "idle") {
+      atualizarBadgeSync({ status: "offline", detalhe: "Cache Local / Rede lenta" });
+    }
+  }, 9000);
 
   await Horario.carregarTudoDoSupabase();
-  await carregarProfessores();
+  if (typeof carregarProfessores === "function") {
+    await carregarProfessores();
+  }
   Horario.iniciarRealtime();
-
-  renderTurmas();
-  renderDisciplinas();
-  atualizarFiltroTurma();
-  renderProfessores();
-  renderLegenda();
 }
 
 if (document.readyState === "loading") {

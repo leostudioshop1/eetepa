@@ -59,7 +59,7 @@ function renderTurmas() {
         '      <span>' + stats.alocadas + '/' + stats.total + ' aulas (' + stats.percentual + '%)</span>' +
         '    </div>' +
         '  </div>' +
-        '  <button onclick="removerTurma('' + t.id + '')" title="Remover turma" class="text-red-500 hover:text-red-700 p-2 flex-shrink-0">' +
+        '  <button onclick="removerTurma(\'' + t.id + '\')" title="Remover turma" class="text-red-500 hover:text-red-700 p-2 flex-shrink-0">' +
         '    <i class="fas fa-trash-alt"></i>' +
         '  </button>' +
         '</li>'

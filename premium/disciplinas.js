@@ -38,7 +38,7 @@ function renderDisciplinas() {
         '    <span class="font-medium text-gray-800 break-words">' + Horario.escapeHtml(d.nome) + '</span>' +
         (d.cargaHoraria ? '<span class="ml-2 text-xs text-gray-500">(' + d.cargaHoraria + 'h)</span>' : '') +
         '  </div>' +
-        '  <button onclick="removerDisciplina('' + d.id + '')" title="Remover disciplina" class="text-red-500 hover:text-red-700 p-1.5 flex-shrink-0">' +
+        '  <button onclick="removerDisciplina(\'' + d.id + '\')" title="Remover disciplina" class="text-red-500 hover:text-red-700 p-1.5 flex-shrink-0">' +
         '    <i class="fas fa-times"></i>' +
         '  </button>' +
         '</li>'

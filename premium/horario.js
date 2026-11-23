@@ -59,6 +59,7 @@
   };
 
   var realtimeChannel = null;
+  var isLoadingFromDb = false;
 
   function uid() {
     if (global.crypto && typeof global.crypto.randomUUID === "function") {
@@ -80,7 +81,11 @@
     state.syncStatus = status;
     if (status === "synced") state.lastSyncAt = new Date();
     if (typeof state.onStatusChange === "function") {
-      state.onStatusChange({ status: status, detalhe: detalhe || "", lastSyncAt: state.lastSyncAt });
+      try {
+        state.onStatusChange({ status: status, detalhe: detalhe || "", lastSyncAt: state.lastSyncAt });
+      } catch (e) {
+        console.warn("[Horario] onStatusChange erro:", e);
+      }
     }
   }
 
@@ -114,7 +119,11 @@
   function notificarMudanca() {
     salvarCacheLocal();
     if (typeof state.onChange === "function") {
-      state.onChange(getState());
+      try {
+        state.onChange(getState());
+      } catch (e) {
+        console.warn("[Horario] onChange erro:", e);
+      }
     }
   }
 
@@ -126,88 +135,132 @@
     return null;
   }
 
+  function comTimeout(promise, ms, label) {
+    return new Promise(function (resolve, reject) {
+      var timer = setTimeout(function () {
+        reject(new Error("Tempo esgotado (" + (label || "rede") + ")"));
+      }, ms);
+      Promise.resolve(promise).then(
+        function (val) {
+          clearTimeout(timer);
+          resolve(val);
+        },
+        function (err) {
+          clearTimeout(timer);
+          reject(err);
+        }
+      );
+    });
+  }
+
   // ==================== CARREGAMENTO DO SUPABASE ====================
   async function carregarTudoDoSupabase() {
-    var db = getDb();
-    var cache = carregarCacheLocal();
+    if (isLoadingFromDb) return { ok: false, busy: true };
+    isLoadingFromDb = true;
 
+    var cache = carregarCacheLocal();
     if (cache) {
       state.turmas = Array.isArray(cache.turmas) ? cache.turmas : [];
       state.disciplinas = Array.isArray(cache.disciplinas) ? cache.disciplinas : [];
       state.grade = cache.grade && typeof cache.grade === "object" ? cache.grade : {};
     }
 
+    var db = getDb();
     if (!db) {
-      setStatus("offline", "Sem cliente Supabase");
+      setStatus("offline", cache ? "Cache Local" : "Offline");
       notificarMudanca();
+      isLoadingFromDb = false;
       return { ok: false, offline: true };
     }
 
     setStatus("syncing", "Sincronizando...");
 
     try {
-      var results = await Promise.all([
-        db.from("turmas").select("*").order("ordem", { ascending: true }).order("nome", { ascending: true }),
-        db.from("disciplinas").select("*").order("nome", { ascending: true }),
-        db.from("grade_horarios").select("*"),
-        db.from("professores").select("*").order("nome", { ascending: true })
-      ]);
+      var results = await comTimeout(
+        Promise.allSettled([
+          db.from("turmas").select("*").order("ordem", { ascending: true }).order("nome", { ascending: true }),
+          db.from("disciplinas").select("*").order("nome", { ascending: true }),
+          db.from("grade_horarios").select("*"),
+          db.from("professores").select("*").order("nome", { ascending: true })
+        ]),
+        8000,
+        "Supabase"
+      );
 
-      var resTurmas = results[0];
-      var resDisciplinas = results[1];
-      var resGrade = results[2];
-      var resProfs = results[3];
+      var rTurmas = results[0].status === "fulfilled" ? results[0].value : { error: results[0].reason };
+      var rDisc = results[1].status === "fulfilled" ? results[1].value : { error: results[1].reason };
+      var rGrade = results[2].status === "fulfilled" ? results[2].value : { error: results[2].reason };
+      var rProfs = results[3].status === "fulfilled" ? results[3].value : { error: results[3].reason };
 
-      if (resTurmas.error) throw resTurmas.error;
-      if (resDisciplinas.error) throw resDisciplinas.error;
-      if (resGrade.error) throw resGrade.error;
+      var algumErro = false;
 
-      state.turmas = (resTurmas.data || []).map(function (t, idx) {
-        return {
-          id: t.id,
-          nome: t.nome,
-          turno: t.turno,
-          ordem: t.ordem != null ? t.ordem : idx
-        };
-      });
-
-      state.disciplinas = (resDisciplinas.data || []).map(function (d) {
-        return {
-          id: d.id,
-          nome: d.nome,
-          cargaHoraria: d.carga_horaria != null ? d.carga_horaria : null
-        };
-      });
-
-      var novaGrade = {};
-      var rowsGrade = resGrade.data || [];
-      for (var i = 0; i < rowsGrade.length; i++) {
-        var row = rowsGrade[i];
-        if (!novaGrade[row.turma_id]) novaGrade[row.turma_id] = {};
-        var key = row.dia + "|" + row.horario;
-        novaGrade[row.turma_id][key] = {
-          id: row.id,
-          disciplina: row.disciplina,
-          professorId: row.professor_id,
-          professorNome: row.professor_nome,
-          cor: row.cor || "#4f46e5"
-        };
+      if (!rTurmas.error && Array.isArray(rTurmas.data)) {
+        state.turmas = rTurmas.data.map(function (t, idx) {
+          return {
+            id: t.id,
+            nome: t.nome,
+            turno: t.turno,
+            ordem: t.ordem != null ? t.ordem : idx
+          };
+        });
+      } else {
+        algumErro = true;
       }
-      state.grade = novaGrade;
 
-      if (!resProfs.error && Array.isArray(resProfs.data)) {
-        state.professores = resProfs.data;
+      if (!rDisc.error && Array.isArray(rDisc.data)) {
+        state.disciplinas = rDisc.data.map(function (d) {
+          return {
+            id: d.id,
+            nome: d.nome,
+            cargaHoraria: d.carga_horaria != null ? d.carga_horaria : null
+          };
+        });
+      } else {
+        algumErro = true;
+      }
+
+      if (!rGrade.error && Array.isArray(rGrade.data)) {
+        var novaGrade = {};
+        for (var i = 0; i < rGrade.data.length; i++) {
+          var row = rGrade.data[i];
+          if (!novaGrade[row.turma_id]) novaGrade[row.turma_id] = {};
+          var key = row.dia + "|" + row.horario;
+          novaGrade[row.turma_id][key] = {
+            id: row.id,
+            disciplina: row.disciplina,
+            professorId: row.professor_id,
+            professorNome: row.professor_nome,
+            cor: row.cor || "#4f46e5"
+          };
+        }
+        state.grade = novaGrade;
+      } else {
+        algumErro = true;
+      }
+
+      if (!rProfs.error && Array.isArray(rProfs.data)) {
+        state.professores = rProfs.data;
       }
 
       salvarCacheLocal();
-      setStatus("synced", "Supabase OK");
+
+      if (algumErro && !cache) {
+        setStatus("error", "Erro ao ler tabelas");
+      } else if (algumErro && cache) {
+        setStatus("offline", "Cache Local");
+      } else {
+        setStatus("synced", "Supabase OK");
+      }
+
       notificarMudanca();
-      return { ok: true };
+      isLoadingFromDb = false;
+      return { ok: !algumErro };
     } catch (err) {
-      console.error("[Horario] Erro ao carregar do Supabase:", err);
-      setStatus(cache ? "offline" : "error", err.message || "Erro Supabase");
+      console.warn("[Horario] Falha ao sincronizar:", err);
+      setStatus(cache ? "offline" : "error", cache ? "Cache Local" : "Sem conexão");
       notificarMudanca();
-      return { ok: false, erro: err.message };
+      isLoadingFromDb = false;
+      return { ok: false, erro: err && err.message };
     }
   }
 

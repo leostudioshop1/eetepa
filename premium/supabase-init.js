@@ -4,7 +4,6 @@ var supabaseClient = null;
 (function (global) {
   "use strict";
 
-  // Configuração de fallback caso config.js falhe ao carregar por rede/caminho relativo
   var DEFAULT_CONFIG = {
     url: "https://osofdmgokrxdzsxozsrf.supabase.co",
     key: "sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe",
@@ -52,12 +51,12 @@ var supabaseClient = null;
       (typeof supabase !== "undefined" ? supabase : null);
 
     if (!sdk || typeof sdk.createClient !== "function") {
-      console.error("[SupabaseInit] Biblioteca @supabase/supabase-js não carregada.");
+      console.warn("[SupabaseInit] SDK @supabase/supabase-js não disponível no momento.");
       return null;
     }
 
     if (!cfg.url || !cfg.key) {
-      console.error("[SupabaseInit] URL ou Key do Supabase ausentes.");
+      console.warn("[SupabaseInit] URL ou Key do Supabase ausentes.");
       return null;
     }
 
@@ -78,7 +77,7 @@ var supabaseClient = null;
       supabaseClient = client;
       return client;
     } catch (err) {
-      console.error("[SupabaseInit] Falha ao criar cliente Supabase:", err);
+      console.warn("[SupabaseInit] Falha ao criar cliente Supabase:", err);
       return null;
     }
   }

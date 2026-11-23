@@ -258,8 +258,10 @@ var DispositivoTracker = (function () {
     document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("pagehide", onPageHide);
 
-    sincronizar(false);
     atualizarUI();
+    setTimeout(function () {
+      sincronizar(false);
+    }, 500);
 
     clearInterval(syncTimer);
     clearInterval(uiTimer);

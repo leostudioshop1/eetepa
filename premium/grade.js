@@ -95,8 +95,8 @@ function renderGrade() {
             (apagado ? "opacity-35" : "") +
             '"' +
             ' style="background:' + Horario.escapeHtml(corProf) + '22; border-left: 4px solid ' + Horario.escapeHtml(corProf) + '"' +
-            ' onclick="abrirModal('' + dia + '', '' + h + '', '' + turmaId + '')"' +
-            ' oncontextmenu="event.preventDefault(); removerAlocacao('' + turmaId + '', '' + key + '')">' +
+            ' onclick="abrirModal(\'' + dia + '\', \'' + h + '\', \'' + turmaId + '\')"' +
+            ' oncontextmenu="event.preventDefault(); removerAlocacao(\'' + turmaId + '\', \'' + key + '\')">' +
             '  <div class="cell-content">' +
             '    <div class="cell-disciplina">' + Horario.escapeHtml(cell.disciplina) + '</div>' +
             '    <div class="cell-professor">' + Horario.escapeHtml(nomeProf) + '</div>' +
@@ -105,7 +105,7 @@ function renderGrade() {
           );
         }
         return (
-          '<td class="border p-1 horario-cell cell-livre" onclick="abrirModal('' + dia + '', '' + h + '', '' + turmaId + '')">' +
+          '<td class="border p-1 horario-cell cell-livre" onclick="abrirModal(\'' + dia + '\', \'' + h + '\', \'' + turmaId + '\')">' +
           '  <div class="h-14 flex items-center justify-center text-gray-300 hover:text-indigo-500 text-sm font-medium">+</div>' +
           '</td>'
         );
