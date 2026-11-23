@@ -1,35 +1,32 @@
 // ==================== HORÁRIO.JS ====================
-// Gerenciamento de horários, alocações, persistência Supabase + Cache Local
-// e detecção de conflitos (disponibilidade do professor + choque entre turmas).
-
 (function (global) {
   "use strict";
 
-  const CACHE_KEY = "eetepa_master_horario_cache_v1";
+  var CACHE_KEY = "eetepa_master_horario_cache_v1";
 
-  const DIAS = ["segunda", "terca", "quarta", "quinta", "sexta"];
-  const DIAS_LABEL = {
+  var DIAS = ["segunda", "terca", "quarta", "quinta", "sexta"];
+  var DIAS_LABEL = {
     segunda: "Segunda",
     terca: "Terça",
     quarta: "Quarta",
     quinta: "Quinta",
-    sexta: "Sexta",
+    sexta: "Sexta"
   };
 
-  const TURNO_LABEL = {
+  var TURNO_LABEL = {
     manha: "Manhã",
     tarde: "Tarde",
-    noite: "Noite",
+    noite: "Noite"
   };
 
-  const HORARIOS = {
+  var HORARIOS = {
     manha: [
       "07:00 - 07:45",
       "07:45 - 08:30",
       "08:30 - 09:15",
       "09:30 - 10:15",
       "10:15 - 11:00",
-      "11:00 - 11:45",
+      "11:00 - 11:45"
     ],
     tarde: [
       "13:00 - 13:35",
@@ -37,39 +34,41 @@
       "14:10 - 14:45",
       "15:00 - 15:35",
       "15:35 - 16:10",
-      "16:10 - 16:45",
+      "16:10 - 16:45"
     ],
     noite: [
       "19:00 - 19:35",
       "19:35 - 20:10",
       "20:10 - 20:40",
       "21:00 - 21:35",
-      "21:35 - 22:10",
-    ],
+      "21:35 - 22:10"
+    ]
   };
 
-  let state = {
+  var state = {
     turmas: [],
     disciplinas: [],
-    grade: {}, // { turmaId: { "segunda|07:00 - 07:45": { id, disciplina, professorId, professorNome, cor } } }
+    grade: {},
     professores: [],
     modalCtx: { dia: null, horario: null, turmaId: null },
     professorDestacadoId: null,
     syncStatus: "idle",
     lastSyncAt: null,
     onChange: null,
-    onStatusChange: null,
+    onStatusChange: null
   };
 
-  let realtimeChannel = null;
+  var realtimeChannel = null;
 
   function uid() {
-    if (global.crypto?.randomUUID) return global.crypto.randomUUID();
+    if (global.crypto && typeof global.crypto.randomUUID === "function") {
+      return global.crypto.randomUUID();
+    }
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
 
   function escapeHtml(str) {
-    return String(str ?? "")
+    return String(str == null ? "" : str)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
@@ -77,11 +76,11 @@
       .replace(/'/g, "&#039;");
   }
 
-  function setStatus(status, detalhe = "") {
+  function setStatus(status, detalhe) {
     state.syncStatus = status;
     if (status === "synced") state.lastSyncAt = new Date();
     if (typeof state.onStatusChange === "function") {
-      state.onStatusChange({ status, detalhe, lastSyncAt: state.lastSyncAt });
+      state.onStatusChange({ status: status, detalhe: detalhe || "", lastSyncAt: state.lastSyncAt });
     }
   }
 
@@ -93,7 +92,7 @@
           turmas: state.turmas,
           disciplinas: state.disciplinas,
           grade: state.grade,
-          savedAt: new Date().toISOString(),
+          savedAt: new Date().toISOString()
         })
       );
     } catch (e) {
@@ -103,7 +102,7 @@
 
   function carregarCacheLocal() {
     try {
-      const raw = localStorage.getItem(CACHE_KEY);
+      var raw = localStorage.getItem(CACHE_KEY);
       if (!raw) return null;
       return JSON.parse(raw);
     } catch (e) {
@@ -120,13 +119,17 @@
   }
 
   function getDb() {
-    return global.supabaseClient || null;
+    if (global.supabaseClient) return global.supabaseClient;
+    if (typeof global.getSupabaseClient === "function") {
+      return global.getSupabaseClient();
+    }
+    return null;
   }
 
   // ==================== CARREGAMENTO DO SUPABASE ====================
   async function carregarTudoDoSupabase() {
-    const db = getDb();
-    const cache = carregarCacheLocal();
+    var db = getDb();
+    var cache = carregarCacheLocal();
 
     if (cache) {
       state.turmas = Array.isArray(cache.turmas) ? cache.turmas : [];
@@ -143,40 +146,51 @@
     setStatus("syncing", "Sincronizando...");
 
     try {
-      const [resTurmas, resDisciplinas, resGrade, resProfs] = await Promise.all([
+      var results = await Promise.all([
         db.from("turmas").select("*").order("ordem", { ascending: true }).order("nome", { ascending: true }),
         db.from("disciplinas").select("*").order("nome", { ascending: true }),
         db.from("grade_horarios").select("*"),
-        db.from("professores").select("*").order("nome", { ascending: true }),
+        db.from("professores").select("*").order("nome", { ascending: true })
       ]);
+
+      var resTurmas = results[0];
+      var resDisciplinas = results[1];
+      var resGrade = results[2];
+      var resProfs = results[3];
 
       if (resTurmas.error) throw resTurmas.error;
       if (resDisciplinas.error) throw resDisciplinas.error;
       if (resGrade.error) throw resGrade.error;
 
-      state.turmas = (resTurmas.data || []).map((t, idx) => ({
-        id: t.id,
-        nome: t.nome,
-        turno: t.turno,
-        ordem: t.ordem ?? idx,
-      }));
+      state.turmas = (resTurmas.data || []).map(function (t, idx) {
+        return {
+          id: t.id,
+          nome: t.nome,
+          turno: t.turno,
+          ordem: t.ordem != null ? t.ordem : idx
+        };
+      });
 
-      state.disciplinas = (resDisciplinas.data || []).map((d) => ({
-        id: d.id,
-        nome: d.nome,
-        cargaHoraria: d.carga_horaria ?? null,
-      }));
+      state.disciplinas = (resDisciplinas.data || []).map(function (d) {
+        return {
+          id: d.id,
+          nome: d.nome,
+          cargaHoraria: d.carga_horaria != null ? d.carga_horaria : null
+        };
+      });
 
-      const novaGrade = {};
-      for (const row of resGrade.data || []) {
+      var novaGrade = {};
+      var rowsGrade = resGrade.data || [];
+      for (var i = 0; i < rowsGrade.length; i++) {
+        var row = rowsGrade[i];
         if (!novaGrade[row.turma_id]) novaGrade[row.turma_id] = {};
-        const key = `${row.dia}|${row.horario}`;
+        var key = row.dia + "|" + row.horario;
         novaGrade[row.turma_id][key] = {
           id: row.id,
           disciplina: row.disciplina,
           professorId: row.professor_id,
           professorNome: row.professor_nome,
-          cor: row.cor || "#4f46e5",
+          cor: row.cor || "#4f46e5"
         };
       }
       state.grade = novaGrade;
@@ -198,16 +212,24 @@
   }
 
   function iniciarRealtime() {
-    const db = getDb();
-    if (!db || !global.SUPABASE_CONFIG?.realtime || realtimeChannel) return;
+    var db = getDb();
+    if (!db || !global.SUPABASE_CONFIG || !global.SUPABASE_CONFIG.realtime || realtimeChannel) return;
 
     try {
       realtimeChannel = db
         .channel("master-horario-realtime")
-        .on("postgres_changes", { event: "*", schema: "public", table: "turmas" }, () => carregarTudoDoSupabase())
-        .on("postgres_changes", { event: "*", schema: "public", table: "disciplinas" }, () => carregarTudoDoSupabase())
-        .on("postgres_changes", { event: "*", schema: "public", table: "grade_horarios" }, () => carregarTudoDoSupabase())
-        .on("postgres_changes", { event: "*", schema: "public", table: "professores" }, () => carregarTudoDoSupabase())
+        .on("postgres_changes", { event: "*", schema: "public", table: "turmas" }, function () {
+          carregarTudoDoSupabase();
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "disciplinas" }, function () {
+          carregarTudoDoSupabase();
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "grade_horarios" }, function () {
+          carregarTudoDoSupabase();
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "professores" }, function () {
+          carregarTudoDoSupabase();
+        })
         .subscribe();
     } catch (e) {
       console.warn("[Horario] Realtime indisponível:", e);
@@ -217,14 +239,14 @@
   // ==================== DISPONIBILIDADE E CHOQUE ====================
   function professorDisponivel(prof, dia, horario) {
     if (!prof || !prof.disponibilidade) return false;
-    const disp = prof.disponibilidade;
+    var disp = prof.disponibilidade;
 
     if (disp[dia] && Array.isArray(disp[dia])) {
-      return disp[dia].includes(horario);
+      return disp[dia].indexOf(horario) !== -1;
     }
 
     if (Array.isArray(disp.dias) && Array.isArray(disp.horarios)) {
-      return disp.dias.includes(dia) && disp.horarios.includes(horario);
+      return disp.dias.indexOf(dia) !== -1 && disp.horarios.indexOf(horario) !== -1;
     }
 
     return false;
@@ -233,19 +255,20 @@
   function professorEmChoque(professorId, dia, horario, turmaIdAtual) {
     if (!professorId) return { conflito: false };
 
-    for (const turma of state.turmas) {
+    for (var i = 0; i < state.turmas.length; i++) {
+      var turma = state.turmas[i];
       if (turma.id === turmaIdAtual) continue;
 
-      const alocacoes = state.grade[turma.id] || {};
-      const key = `${dia}|${horario}`;
-      const cell = alocacoes[key];
+      var alocacoes = state.grade[turma.id] || {};
+      var key = dia + "|" + horario;
+      var cell = alocacoes[key];
 
       if (cell && String(cell.professorId) === String(professorId)) {
         return {
           conflito: true,
           turmaNome: turma.nome,
           disciplina: cell.disciplina,
-          turno: turma.turno,
+          turno: turma.turno
         };
       }
     }
@@ -254,10 +277,10 @@
   }
 
   function validarAlocacao(professorId, dia, horario, turmaId, disciplinaNome) {
-    const resultado = {
+    var resultado = {
       valido: false,
       mensagem: "",
-      tipo: "erro",
+      tipo: "erro"
     };
 
     if (!professorId || !disciplinaNome) {
@@ -265,7 +288,9 @@
       return resultado;
     }
 
-    const prof = state.professores.find((p) => String(p.id) === String(professorId));
+    var prof = state.professores.find(function (p) {
+      return String(p.id) === String(professorId);
+    });
     if (!prof) {
       resultado.mensagem = "Professor não encontrado.";
       return resultado;
@@ -278,9 +303,16 @@
       return resultado;
     }
 
-    const choque = professorEmChoque(prof.id, dia, horario, turmaId);
+    var choque = professorEmChoque(prof.id, dia, horario, turmaId);
     if (choque.conflito) {
-      resultado.mensagem = `Choque de horário: <strong>${escapeHtml(prof.nome)}</strong> já está lotado em <strong>${escapeHtml(choque.turmaNome)}</strong> (${escapeHtml(choque.disciplina)}) neste mesmo dia e horário.`;
+      resultado.mensagem =
+        "Choque de horário: <strong>" +
+        escapeHtml(prof.nome) +
+        "</strong> já está lotado em <strong>" +
+        escapeHtml(choque.turmaNome) +
+        "</strong> (" +
+        escapeHtml(choque.disciplina) +
+        ") neste mesmo dia e horário.";
       resultado.tipo = "erro";
       return resultado;
     }
@@ -293,35 +325,35 @@
 
   // ==================== CRUD TURMAS ====================
   async function addTurma(nome, turno) {
-    const limpo = (nome || "").trim();
+    var limpo = (nome || "").trim();
     if (!limpo) return { ok: false, erro: "Digite o nome da turma" };
-    if (!["manha", "tarde", "noite"].includes(turno)) {
+    if (["manha", "tarde", "noite"].indexOf(turno) === -1) {
       return { ok: false, erro: "Turno inválido" };
     }
 
-    const novaTurma = {
+    var novaTurma = {
       id: uid(),
       nome: limpo,
-      turno,
-      ordem: state.turmas.length,
+      turno: turno,
+      ordem: state.turmas.length
     };
 
     state.turmas.push(novaTurma);
     notificarMudanca();
 
-    const db = getDb();
+    var db = getDb();
     if (db) {
       setStatus("syncing", "Salvando turma...");
-      const { error } = await db.from("turmas").insert({
+      var res = await db.from("turmas").insert({
         id: novaTurma.id,
         nome: novaTurma.nome,
         turno: novaTurma.turno,
         ordem: novaTurma.ordem,
-        updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       });
-      if (error) {
-        setStatus("error", error.message);
-        return { ok: false, erro: `Salvo localmente, mas erro no Supabase: ${error.message}` };
+      if (res.error) {
+        setStatus("error", res.error.message);
+        return { ok: false, erro: "Salvo localmente, mas erro no Supabase: " + res.error.message };
       }
       setStatus("synced", "Supabase OK");
     }
@@ -330,18 +362,20 @@
   }
 
   async function removerTurma(id) {
-    state.turmas = state.turmas.filter((t) => t.id !== id);
+    state.turmas = state.turmas.filter(function (t) {
+      return t.id !== id;
+    });
     delete state.grade[id];
     notificarMudanca();
 
-    const db = getDb();
+    var db = getDb();
     if (db) {
       setStatus("syncing", "Removendo turma...");
       await db.from("grade_horarios").delete().eq("turma_id", id);
-      const { error } = await db.from("turmas").delete().eq("id", id);
-      if (error) {
-        setStatus("error", error.message);
-        return { ok: false, erro: error.message };
+      var res = await db.from("turmas").delete().eq("id", id);
+      if (res.error) {
+        setStatus("error", res.error.message);
+        return { ok: false, erro: res.error.message };
       }
       setStatus("synced", "Supabase OK");
     }
@@ -349,37 +383,37 @@
   }
 
   // ==================== CRUD DISCIPLINAS ====================
-  async function addDisciplina(nome, cargaHoraria = null) {
-    const limpo = (nome || "").trim();
+  async function addDisciplina(nome, cargaHoraria) {
+    var limpo = (nome || "").trim();
     if (!limpo) return { ok: false, erro: "Digite o nome da disciplina" };
 
-    const duplicada = state.disciplinas.some(
-      (d) => d.nome.toLowerCase() === limpo.toLowerCase()
-    );
+    var duplicada = state.disciplinas.some(function (d) {
+      return d.nome.toLowerCase() === limpo.toLowerCase();
+    });
     if (duplicada) return { ok: false, erro: "Esta disciplina já está cadastrada" };
 
-    const ch = cargaHoraria ? parseInt(cargaHoraria, 10) : null;
-    const novaDisciplina = {
+    var ch = cargaHoraria ? parseInt(cargaHoraria, 10) : null;
+    var novaDisciplina = {
       id: uid(),
       nome: limpo,
-      cargaHoraria: Number.isFinite(ch) && ch > 0 ? ch : null,
+      cargaHoraria: Number.isFinite(ch) && ch > 0 ? ch : null
     };
 
     state.disciplinas.push(novaDisciplina);
     notificarMudanca();
 
-    const db = getDb();
+    var db = getDb();
     if (db) {
       setStatus("syncing", "Salvando disciplina...");
-      const { error } = await db.from("disciplinas").insert({
+      var res = await db.from("disciplinas").insert({
         id: novaDisciplina.id,
         nome: novaDisciplina.nome,
         carga_horaria: novaDisciplina.cargaHoraria,
-        updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       });
-      if (error) {
-        setStatus("error", error.message);
-        return { ok: false, erro: `Salvo localmente, mas erro no Supabase: ${error.message}` };
+      if (res.error) {
+        setStatus("error", res.error.message);
+        return { ok: false, erro: "Salvo localmente, mas erro no Supabase: " + res.error.message };
       }
       setStatus("synced", "Supabase OK");
     }
@@ -388,16 +422,18 @@
   }
 
   async function removerDisciplina(id) {
-    state.disciplinas = state.disciplinas.filter((d) => d.id !== id);
+    state.disciplinas = state.disciplinas.filter(function (d) {
+      return d.id !== id;
+    });
     notificarMudanca();
 
-    const db = getDb();
+    var db = getDb();
     if (db) {
       setStatus("syncing", "Removendo disciplina...");
-      const { error } = await db.from("disciplinas").delete().eq("id", id);
-      if (error) {
-        setStatus("error", error.message);
-        return { ok: false, erro: error.message };
+      var res = await db.from("disciplinas").delete().eq("id", id);
+      if (res.error) {
+        setStatus("error", res.error.message);
+        return { ok: false, erro: res.error.message };
       }
       setStatus("synced", "Supabase OK");
     }
@@ -410,13 +446,13 @@
     state.grade[turmaId] = {};
     notificarMudanca();
 
-    const db = getDb();
+    var db = getDb();
     if (db) {
       setStatus("syncing", "Limpando grade...");
-      const { error } = await db.from("grade_horarios").delete().eq("turma_id", turmaId);
-      if (error) {
-        setStatus("error", error.message);
-        return { ok: false, erro: error.message };
+      var res = await db.from("grade_horarios").delete().eq("turma_id", turmaId);
+      if (res.error) {
+        setStatus("error", res.error.message);
+        return { ok: false, erro: res.error.message };
       }
       setStatus("synced", "Supabase OK");
     }
@@ -424,24 +460,26 @@
   }
 
   async function removerAlocacao(turmaId, key) {
-    if (!turmaId || !key || !state.grade[turmaId]?.[key]) return { ok: false };
+    if (!turmaId || !key || !state.grade[turmaId] || !state.grade[turmaId][key]) return { ok: false };
 
-    const [dia, horario] = key.split("|");
+    var partes = key.split("|");
+    var dia = partes[0];
+    var horario = partes[1];
     delete state.grade[turmaId][key];
     notificarMudanca();
 
-    const db = getDb();
+    var db = getDb();
     if (db && dia && horario) {
       setStatus("syncing", "Removendo alocação...");
-      const { error } = await db
+      var res = await db
         .from("grade_horarios")
         .delete()
         .eq("turma_id", turmaId)
         .eq("dia", dia)
         .eq("horario", horario);
-      if (error) {
-        setStatus("error", error.message);
-        return { ok: false, erro: error.message };
+      if (res.error) {
+        setStatus("error", res.error.message);
+        return { ok: false, erro: res.error.message };
       }
       setStatus("synced", "Supabase OK");
     }
@@ -449,49 +487,51 @@
   }
 
   async function salvarAlocacao(turmaId, dia, horario, disciplina, professorId) {
-    const validacao = validarAlocacao(professorId, dia, horario, turmaId, disciplina);
+    var validacao = validarAlocacao(professorId, dia, horario, turmaId, disciplina);
     if (!validacao.valido) {
       return { ok: false, mensagem: validacao.mensagem };
     }
 
-    const prof = state.professores.find((p) => String(p.id) === String(professorId));
+    var prof = state.professores.find(function (p) {
+      return String(p.id) === String(professorId);
+    });
     if (!prof) {
       return { ok: false, mensagem: "Professor não encontrado." };
     }
 
     if (!state.grade[turmaId]) state.grade[turmaId] = {};
-    const key = `${dia}|${horario}`;
-    const celula = {
-      id: state.grade[turmaId][key]?.id || uid(),
-      disciplina,
+    var key = dia + "|" + horario;
+    var celula = {
+      id: (state.grade[turmaId][key] && state.grade[turmaId][key].id) || uid(),
+      disciplina: disciplina,
       professorId: prof.id,
       professorNome: prof.nome,
-      cor: prof.cor || "#4f46e5",
+      cor: prof.cor || "#4f46e5"
     };
 
     state.grade[turmaId][key] = celula;
     notificarMudanca();
 
-    const db = getDb();
+    var db = getDb();
     if (db) {
       setStatus("syncing", "Salvando aula...");
-      const { error } = await db.from("grade_horarios").upsert(
+      var res = await db.from("grade_horarios").upsert(
         {
           id: celula.id,
           turma_id: turmaId,
-          dia,
-          horario,
+          dia: dia,
+          horario: horario,
           disciplina: celula.disciplina,
           professor_id: String(celula.professorId),
           professor_nome: celula.professorNome,
           cor: celula.cor,
-          updated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         },
         { onConflict: "turma_id,dia,horario" }
       );
-      if (error) {
-        setStatus("error", error.message);
-        return { ok: false, mensagem: `Erro ao salvar no Supabase: ${error.message}` };
+      if (res.error) {
+        setStatus("error", res.error.message);
+        return { ok: false, mensagem: "Erro ao salvar no Supabase: " + res.error.message };
       }
       setStatus("synced", "Supabase OK");
     }
@@ -505,46 +545,56 @@
   }
 
   function getAlocacao(turmaId, dia, horario) {
-    const alocacoes = state.grade[turmaId] || {};
-    return alocacoes[`${dia}|${horario}`] || null;
+    var alocacoes = state.grade[turmaId] || {};
+    return alocacoes[dia + "|" + horario] || null;
   }
 
   function getProfessorAtual(professorId) {
-    return state.professores.find((p) => String(p.id) === String(professorId)) || null;
+    return (
+      state.professores.find(function (p) {
+        return String(p.id) === String(professorId);
+      }) || null
+    );
   }
 
   function getEstatisticasTurma(turmaId) {
-    const turma = state.turmas.find((t) => t.id === turmaId);
+    var turma = state.turmas.find(function (t) {
+      return t.id === turmaId;
+    });
     if (!turma) return { alocadas: 0, total: 0, percentual: 0 };
-    const horarios = getHorariosDoTurno(turma.turno);
-    const total = horarios.length * DIAS.length;
-    const alocacoes = state.grade[turmaId] || {};
-    let alocadas = 0;
-    for (const h of horarios) {
-      for (const d of DIAS) {
-        if (alocacoes[`${d}|${h}`]) alocadas++;
+    var horarios = getHorariosDoTurno(turma.turno);
+    var total = horarios.length * DIAS.length;
+    var alocacoes = state.grade[turmaId] || {};
+    var alocadas = 0;
+    for (var i = 0; i < horarios.length; i++) {
+      for (var j = 0; j < DIAS.length; j++) {
+        if (alocacoes[DIAS[j] + "|" + horarios[i]]) alocadas++;
       }
     }
-    const percentual = total > 0 ? Math.round((alocadas / total) * 100) : 0;
-    return { alocadas, total, percentual };
+    var percentual = total > 0 ? Math.round((alocadas / total) * 100) : 0;
+    return { alocadas: alocadas, total: total, percentual: percentual };
   }
 
   function getAulasDoProfessor(professorId) {
-    let totalAulas = 0;
-    const turmasSet = new Set();
-    for (const turma of state.turmas) {
-      const alocacoes = state.grade[turma.id] || {};
-      for (const cell of Object.values(alocacoes)) {
-        if (String(cell.professorId) === String(professorId)) {
+    var totalAulas = 0;
+    var turmasSet = {};
+    for (var i = 0; i < state.turmas.length; i++) {
+      var turma = state.turmas[i];
+      var alocacoes = state.grade[turma.id] || {};
+      var keys = Object.keys(alocacoes);
+      for (var j = 0; j < keys.length; j++) {
+        var cell = alocacoes[keys[j]];
+        if (cell && String(cell.professorId) === String(professorId)) {
           totalAulas++;
-          turmasSet.add(turma.nome);
+          turmasSet[turma.nome] = true;
         }
       }
     }
-    return { totalAulas, turmas: Array.from(turmasSet) };
+    return { totalAulas: totalAulas, turmas: Object.keys(turmasSet) };
   }
 
-  function init(opts = {}) {
+  function init(opts) {
+    opts = opts || {};
     state.turmas = opts.turmas || [];
     state.disciplinas = opts.disciplinas || [];
     state.grade = opts.grade || {};
@@ -564,7 +614,7 @@
   }
 
   function setModalCtx(dia, horario, turmaId) {
-    state.modalCtx = { dia, horario, turmaId };
+    state.modalCtx = { dia: dia, horario: horario, turmaId: turmaId };
   }
 
   function getModalCtx() {
@@ -579,39 +629,39 @@
       professores: state.professores,
       professorDestacadoId: state.professorDestacadoId,
       syncStatus: state.syncStatus,
-      lastSyncAt: state.lastSyncAt,
+      lastSyncAt: state.lastSyncAt
     };
   }
 
   global.Horario = {
-    DIAS,
-    DIAS_LABEL,
-    TURNO_LABEL,
-    HORARIOS,
-    escapeHtml,
-    init,
-    carregarTudoDoSupabase,
-    iniciarRealtime,
-    setProfessores,
-    setProfessorDestacado,
-    setModalCtx,
-    getModalCtx,
-    getState,
-    uid,
-    professorDisponivel,
-    professorEmChoque,
-    validarAlocacao,
-    addTurma,
-    removerTurma,
-    addDisciplina,
-    removerDisciplina,
-    limparGradeTurma,
-    removerAlocacao,
-    salvarAlocacao,
-    getHorariosDoTurno,
-    getAlocacao,
-    getProfessorAtual,
-    getEstatisticasTurma,
-    getAulasDoProfessor,
+    DIAS: DIAS,
+    DIAS_LABEL: DIAS_LABEL,
+    TURNO_LABEL: TURNO_LABEL,
+    HORARIOS: HORARIOS,
+    escapeHtml: escapeHtml,
+    init: init,
+    carregarTudoDoSupabase: carregarTudoDoSupabase,
+    iniciarRealtime: iniciarRealtime,
+    setProfessores: setProfessores,
+    setProfessorDestacado: setProfessorDestacado,
+    setModalCtx: setModalCtx,
+    getModalCtx: getModalCtx,
+    getState: getState,
+    uid: uid,
+    professorDisponivel: professorDisponivel,
+    professorEmChoque: professorEmChoque,
+    validarAlocacao: validarAlocacao,
+    addTurma: addTurma,
+    removerTurma: removerTurma,
+    addDisciplina: addDisciplina,
+    removerDisciplina: removerDisciplina,
+    limparGradeTurma: limparGradeTurma,
+    removerAlocacao: removerAlocacao,
+    salvarAlocacao: salvarAlocacao,
+    getHorariosDoTurno: getHorariosDoTurno,
+    getAlocacao: getAlocacao,
+    getProfessorAtual: getProfessorAtual,
+    getEstatisticasTurma: getEstatisticasTurma,
+    getAulasDoProfessor: getAulasDoProfessor
   };
 })(typeof window !== "undefined" ? window : globalThis);

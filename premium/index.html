@@ -10,9 +10,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js"></script>
-  <script src="horario.js"></script>
-  <link rel="stylesheet" href="styles.css">
+  <script src="config.js?v=2"></script>
+  <script src="supabase-init.js?v=2"></script>
+  <script src="horario.js?v=2"></script>
+  <link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body class="bg-gray-50 font-sans flex flex-col h-screen" oncontextmenu="return false;">
 
@@ -75,7 +76,7 @@
         <ul id="lista-disciplinas" class="space-y-2"></ul>
       </div>
 
-      <!-- Tab Professores (somente leitura do Supabase) -->
+      <!-- Tab Professores -->
       <div id="tab-2" class="tab-content p-6 hidden">
         <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-5 text-sm text-indigo-800">
           <i class="fas fa-info-circle mr-1"></i>
@@ -168,13 +169,12 @@
   </div>
 
   <!-- Scripts divididos (ordem importante) -->
-  <script src="supabase-init.js"></script>
-  <script src="dispositivo-tracker.js"></script>
-  <script src="turmas.js"></script>
-  <script src="disciplinas.js"></script>
-  <script src="professores.js"></script>
-  <script src="grade.js"></script>
-  <script src="modal.js"></script>
-  <script src="export-init.js"></script>
+  <script src="dispositivo-tracker.js?v=2"></script>
+  <script src="turmas.js?v=2"></script>
+  <script src="disciplinas.js?v=2"></script>
+  <script src="professores.js?v=2"></script>
+  <script src="grade.js?v=2"></script>
+  <script src="modal.js?v=2"></script>
+  <script src="export-init.js?v=2"></script>
 </body>
 </html>
