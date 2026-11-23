@@ -1,0 +1,120 @@
+/* ==================== STYLES.CSS - MASTER HORÁRIO EETEPA ==================== */
+@keyframes pulseTitle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.92; }
+}
+
+.title-animation {
+  animation: pulseTitle 4s ease-in-out infinite;
+}
+
+.tab-button {
+  color: #4b5563;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+  color: #4338ca;
+  background-color: #f9fafb;
+}
+
+.tab-active {
+  color: #4338ca;
+  border-bottom-color: #4338ca;
+  background-color: #eef2ff;
+  font-weight: 600;
+}
+
+/* Tabela e células da grade */
+#grade-horarios {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.horario-cell {
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background-color 0.15s ease, transform 0.12s ease;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.cell-livre:hover {
+  background-color: #eef2ff;
+}
+
+.cell-ocupada:hover {
+  filter: brightness(0.97);
+}
+
+.cell-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 3px;
+  min-height: 54px;
+  padding: 6px 8px;
+  line-height: 1.25;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.cell-disciplina {
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: #111827;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.cell-professor {
+  font-weight: 500;
+  font-size: 0.74rem;
+  color: #374151;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+/* Modo específico para captura de imagem/PDF: garante zero corte de texto */
+.modo-exportacao {
+  width: 1320px !important;
+  max-width: none !important;
+  table-layout: fixed !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.modo-exportacao th,
+.modo-exportacao td {
+  border: 1px solid #cbd5e1 !important;
+}
+
+.modo-exportacao .cell-content {
+  min-height: 62px !important;
+  padding: 8px 10px !important;
+  line-height: 1.3 !important;
+}
+
+.modo-exportacao .cell-disciplina {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.modo-exportacao .cell-professor {
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
