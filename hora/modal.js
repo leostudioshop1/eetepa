@@ -1,3 +1,4 @@
+// ==================== MODAL ====================
 function abrirModal(dia, horario, turmaId) {
   Horario.setModalCtx(dia, horario, turmaId);
   const { turmas } = Horario.getState();
@@ -44,7 +45,11 @@ function atualizarProfessoresModal() {
   validarDisponibilidade();
 }
 
-
+/**
+ * Validação em tempo real no modal:
+ * - Disponibilidade cadastrada (dias + horários)
+ * - Choque: mesmo professor no mesmo dia/horário em outra turma
+ */
 function validarDisponibilidade() {
   const aviso = document.getElementById("aviso-disponibilidade");
   const btn = document.getElementById("btn-salvar");

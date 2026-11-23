@@ -1,3 +1,4 @@
+// ==================== GRADE ====================
 function atualizarFiltroTurma() {
   const { turmas } = Horario.getState();
   const sel = document.getElementById("filtro-turma");

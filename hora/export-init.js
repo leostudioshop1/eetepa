@@ -1,3 +1,4 @@
+// ==================== EXPORTAÇÃO ====================
 async function exportarImagem() {
   const el = document.getElementById("grade-horarios");
   const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff" });
@@ -37,12 +38,12 @@ async function gerarPDFCompleto() {
   renderGrade();
   pdf.save(`Horarios_Completos_EETEPA.pdf`);
 }
-// agora vai iniciar, tenhamos fé
+// ==================== INIT ====================
 function init() {
   document.getElementById("device-info").textContent =
     `${navigator.platform || ""} • ${new Date().toLocaleDateString("pt-BR")}`;
 
-  // Registrar o tempo de uso
+  // Registra dispositivo + tempo de uso no Supabase
   DispositivoTracker.iniciar();
 
   renderTurmas();

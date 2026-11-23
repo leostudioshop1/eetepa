@@ -1,4 +1,4 @@
-// as melhores matérias
+// ==================== DISCIPLINAS ====================
 function addDisciplina() {
   const nome = document.getElementById("nova-disciplina").value.trim();
   const res = Horario.addDisciplina(nome);
