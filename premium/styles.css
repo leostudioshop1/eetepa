@@ -1,6 +1,6 @@
 .horario-cell { transition: all 0.2s; }
 .horario-cell:hover { transform: scale(1.02); z-index: 10; }
-.professor-tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 9999px; word-break: break-word; white-space: normal; }
+.professor-tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 9999px; }
 .aula-alocada { background: linear-gradient(135deg, #f3e8ff, #e0f2fe); border-left: 4px solid #6366f1; }
 .title-animation { animation: slideTitle 8s infinite alternate ease-in-out; }
 @keyframes slideTitle { 0% { transform: translateX(-10px); } 100% { transform: translateX(10px); } }
