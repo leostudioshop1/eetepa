@@ -1,32 +1,51 @@
 // ==================== RASTREAMENTO DE DISPOSITIVO E TEMPO DE USO ====================
-var DispositivoTracker = (function () {
-  var DEVICE_KEY = "eetepa_dispositivo_id";
-  var SESSION_KEY = "eetepa_sessao_id";
-  var SYNC_INTERVAL_MS = 30000;
+// Tabela esperada no Supabase (execute no SQL Editor):
+//
+// create table if not exists dispositivos_acesso (
+//   dispositivo_id text primary key,
+//   user_agent text,
+//   plataforma text,
+//   idioma text,
+//   resolucao text,
+//   primeiro_acesso timestamptz default now(),
+//   ultimo_acesso timestamptz default now(),
+//   tempo_uso_segundos bigint default 0,
+//   sessoes integer default 0
+// );
+//
+// -- (opcional) histórico por sessão:
+// create table if not exists sessoes_uso (
+//   id uuid primary key default gen_random_uuid(),
+//   dispositivo_id text not null references dispositivos_acesso(dispositivo_id),
+//   inicio timestamptz default now(),
+//   fim timestamptz,
+//   tempo_uso_segundos integer default 0,
+//   user_agent text,
+//   plataforma text
+// );
 
-  var dispositivoId = null;
-  var sessaoId = null;
-  var inicioSessao = null;
-  var tempoAcumuladoSessao = 0;
-  var ultimoTick = null;
-  var paginaVisivel = true;
-  var syncTimer = null;
-  var uiTimer = null;
-  var salvando = false;
-  var sessaoRegistradaNoBanco = false;
+const DispositivoTracker = (function () {
+  const STORAGE_KEY = "eetepa_dispositivo_id";
+  const SYNC_INTERVAL_MS = 30000; // sincroniza a cada 30s
+  let dispositivoId = null;
+  let sessaoId = null;
+  let inicioSessao = null;
+  let tempoAcumuladoSessao = 0; // segundos já contabilizados nesta sessão
+  let ultimoTick = null;
+  let paginaVisivel = true;
+  let syncTimer = null;
+  let salvando = false;
 
   function gerarId() {
-    if (window.crypto && typeof window.crypto.randomUUID === "function") {
-      return window.crypto.randomUUID();
-    }
+    if (crypto?.randomUUID) return crypto.randomUUID();
     return "dev-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
   }
 
   function obterDispositivoId() {
-    var id = localStorage.getItem(DEVICE_KEY);
+    let id = localStorage.getItem(STORAGE_KEY);
     if (!id) {
       id = gerarId();
-      localStorage.setItem(DEVICE_KEY, id);
+      localStorage.setItem(STORAGE_KEY, id);
     }
     return id;
   }
@@ -36,23 +55,21 @@ var DispositivoTracker = (function () {
       user_agent: navigator.userAgent || "",
       plataforma: navigator.platform || "",
       idioma: navigator.language || "",
-      resolucao: ((window.screen && window.screen.width) || 0) + "x" + ((window.screen && window.screen.height) || 0)
+      resolucao: `${window.screen?.width || 0}x${window.screen?.height || 0}`,
     };
   }
 
-  function getDb() {
-    if (window.supabaseClient) return window.supabaseClient;
-    if (typeof window.getSupabaseClient === "function") return window.getSupabaseClient();
-    return null;
+  function segundosDesde(ultimo) {
+    if (!ultimo) return 0;
+    return Math.max(0, Math.floor((Date.now() - ultimo) / 1000));
   }
 
   function tick() {
     if (!paginaVisivel || !ultimoTick) return;
-    var agora = Date.now();
-    var delta = Math.max(0, Math.floor((agora - ultimoTick) / 1000));
+    const delta = segundosDesde(ultimoTick);
     if (delta > 0) {
       tempoAcumuladoSessao += delta;
-      ultimoTick = agora;
+      ultimoTick = Date.now();
     }
   }
 
@@ -61,57 +78,65 @@ var DispositivoTracker = (function () {
     return tempoAcumuladoSessao;
   }
 
-  async function sincronizarDispositivo(deltaSegundos, isNovaSessao) {
-    var db = getDb();
-    if (!db || !dispositivoId) return;
-    var env = infoAmbiente();
-    var delta = Math.max(0, Math.floor(deltaSegundos || 0));
+  async function upsertDispositivo(tempoSessao) {
+    if (!supabaseClient || !dispositivoId) return;
 
-    var rpcRes = await db.rpc("registrar_uso_dispositivo", {
-      p_dispositivo_id: dispositivoId,
-      p_delta_segundos: delta,
-      p_nova_sessao: Boolean(isNovaSessao),
-      p_user_agent: env.user_agent,
-      p_plataforma: env.plataforma,
-      p_idioma: env.idioma,
-      p_resolucao: env.resolucao
-    });
+    const env = infoAmbiente();
+    const agora = new Date().toISOString();
 
-    if (!rpcRes.error) return;
-
-    var agora = new Date().toISOString();
-    var selRes = await db
+    const { data: existente, error: errSelect } = await supabaseClient
       .from("dispositivos_acesso")
       .select("tempo_uso_segundos, sessoes, primeiro_acesso")
       .eq("dispositivo_id", dispositivoId)
       .maybeSingle();
 
-    var existente = selRes.data;
+    if (errSelect) {
+      console.warn("[DispositivoTracker] select:", errSelect.message);
+      return;
+    }
 
-    await db.from("dispositivos_acesso").upsert(
-      {
-        dispositivo_id: dispositivoId,
-        user_agent: env.user_agent,
-        plataforma: env.plataforma,
-        idioma: env.idioma,
-        resolucao: env.resolucao,
-        primeiro_acesso: (existente && existente.primeiro_acesso) || agora,
-        ultimo_acesso: agora,
-        tempo_uso_segundos: ((existente && existente.tempo_uso_segundos) || 0) + delta,
-        sessoes: ((existente && existente.sessoes) || 0) + (isNovaSessao ? 1 : 0)
-      },
-      { onConflict: "dispositivo_id" }
-    );
+    const tempoAnterior = existente?.tempo_uso_segundos || 0;
+    const isPrimeiraSyncSessao = !existente || !sessionStorage.getItem("eetepa_sessao_contada");
+    const sessoesAnterior = existente?.sessoes || 0;
+
+    const payload = {
+      dispositivo_id: dispositivoId,
+      user_agent: env.user_agent,
+      plataforma: env.plataforma,
+      idioma: env.idioma,
+      resolucao: env.resolucao,
+      ultimo_acesso: agora,
+      tempo_uso_segundos: tempoAnterior + tempoSessao,
+      sessoes: isPrimeiraSyncSessao ? sessoesAnterior + 1 : sessoesAnterior,
+      primeiro_acesso: existente?.primeiro_acesso || agora,
+    };
+
+    const { error } = await supabaseClient
+      .from("dispositivos_acesso")
+      .upsert(payload, { onConflict: "dispositivo_id" });
+
+    if (error) {
+      console.warn("[DispositivoTracker] upsert dispositivo:", error.message);
+      return;
+    }
+
+    if (isPrimeiraSyncSessao) {
+      sessionStorage.setItem("eetepa_sessao_contada", "1");
+    }
+
+    sessionStorage.setItem("eetepa_tempo_enviado", String(
+      (parseInt(sessionStorage.getItem("eetepa_tempo_enviado") || "0", 10) || 0) + tempoSessao
+    ));
   }
 
-  async function upsertSessao(tempoSessao, finalizar) {
-    var db = getDb();
-    if (!db || !dispositivoId) return;
-    var env = infoAmbiente();
-    var agora = new Date().toISOString();
+  async function upsertSessao(tempoSessao, finalizar = false) {
+    if (!supabaseClient || !dispositivoId) return;
+
+    const env = infoAmbiente();
+    const agora = new Date().toISOString();
 
     if (!sessaoId) {
-      var insRes = await db
+      const { data, error } = await supabaseClient
         .from("sessoes_uso")
         .insert({
           dispositivo_id: dispositivoId,
@@ -119,49 +144,102 @@ var DispositivoTracker = (function () {
           tempo_uso_segundos: tempoSessao,
           fim: finalizar ? agora : null,
           user_agent: env.user_agent,
-          plataforma: env.plataforma
+          plataforma: env.plataforma,
         })
         .select("id")
         .single();
 
-      if (!insRes.error && insRes.data && insRes.data.id) {
-        sessaoId = insRes.data.id;
-        sessionStorage.setItem(SESSION_KEY, sessaoId);
+      if (error) {
+        console.warn("[DispositivoTracker] insert sessao:", error.message);
+        return;
       }
+      sessaoId = data?.id || null;
+      if (sessaoId) sessionStorage.setItem("eetepa_sessao_id", sessaoId);
       return;
     }
 
-    await db
+    const { error } = await supabaseClient
       .from("sessoes_uso")
       .update({
         tempo_uso_segundos: tempoSessao,
-        fim: finalizar ? agora : null
+        fim: finalizar ? agora : null,
       })
       .eq("id", sessaoId);
+
+    if (error) {
+      console.warn("[DispositivoTracker] update sessao:", error.message);
+    }
   }
 
-  async function sincronizar(finalizar) {
-    var db = getDb();
-    if (!db || salvando) return;
+  async function sincronizar(finalizar = false) {
+    if (!supabaseClient || salvando) return;
     salvando = true;
     try {
-      var totalSessao = tempoSessaoAtual();
-      var jaEnviado = parseInt(sessionStorage.getItem("eetepa_tempo_enviado") || "0", 10) || 0;
-      var delta = Math.max(0, totalSessao - jaEnviado);
-      var novaSessao = !sessaoRegistradaNoBanco;
+      const tempoTotalSessao = tempoSessaoAtual();
+      const jaEnviado = parseInt(sessionStorage.getItem("eetepa_tempo_enviado") || "0", 10) || 0;
+      const deltaParaEnviar = Math.max(0, tempoTotalSessao - jaEnviado);
 
-      if (delta > 0 || novaSessao || finalizar) {
-        await sincronizarDispositivo(delta, novaSessao);
-        sessaoRegistradaNoBanco = true;
-        sessionStorage.setItem("eetepa_tempo_enviado", String(jaEnviado + delta));
+      if (deltaParaEnviar > 0 || finalizar || !sessionStorage.getItem("eetepa_sessao_contada")) {
+        await sincronizarDispositivoComDelta(deltaParaEnviar, finalizar);
       }
 
-      await upsertSessao(totalSessao, Boolean(finalizar));
+      await upsertSessao(tempoTotalSessao, finalizar);
     } catch (e) {
-      console.warn("[DispositivoTracker] sync:", e);
+      console.warn("[DispositivoTracker] sincronizar:", e);
     } finally {
       salvando = false;
     }
+  }
+
+  async function sincronizarDispositivoComDelta(deltaSegundos, forcar = false) {
+    if (!supabaseClient || !dispositivoId) return;
+    if (deltaSegundos <= 0 && !forcar && sessionStorage.getItem("eetepa_sessao_contada")) return;
+
+    const env = infoAmbiente();
+    const agora = new Date().toISOString();
+
+    const { data: existente, error: errSelect } = await supabaseClient
+      .from("dispositivos_acesso")
+      .select("tempo_uso_segundos, sessoes, primeiro_acesso")
+      .eq("dispositivo_id", dispositivoId)
+      .maybeSingle();
+
+    if (errSelect) {
+      console.warn("[DispositivoTracker] select:", errSelect.message);
+      return;
+    }
+
+    const isPrimeiraSyncSessao = !sessionStorage.getItem("eetepa_sessao_contada");
+    const tempoAnterior = existente?.tempo_uso_segundos || 0;
+    const sessoesAnterior = existente?.sessoes || 0;
+
+    const payload = {
+      dispositivo_id: dispositivoId,
+      user_agent: env.user_agent,
+      plataforma: env.plataforma,
+      idioma: env.idioma,
+      resolucao: env.resolucao,
+      ultimo_acesso: agora,
+      tempo_uso_segundos: tempoAnterior + Math.max(0, deltaSegundos),
+      sessoes: isPrimeiraSyncSessao ? sessoesAnterior + 1 : sessoesAnterior,
+      primeiro_acesso: existente?.primeiro_acesso || agora,
+    };
+
+    const { error } = await supabaseClient
+      .from("dispositivos_acesso")
+      .upsert(payload, { onConflict: "dispositivo_id" });
+
+    if (error) {
+      console.warn("[DispositivoTracker] upsert dispositivo:", error.message);
+      return;
+    }
+
+    if (isPrimeiraSyncSessao) {
+      sessionStorage.setItem("eetepa_sessao_contada", "1");
+    }
+
+    const jaEnviado = parseInt(sessionStorage.getItem("eetepa_tempo_enviado") || "0", 10) || 0;
+    sessionStorage.setItem("eetepa_tempo_enviado", String(jaEnviado + Math.max(0, deltaSegundos)));
   }
 
   function onVisibilityChange() {
@@ -176,71 +254,57 @@ var DispositivoTracker = (function () {
     }
   }
 
-  function onPageHide() {
+  function onBeforeUnload() {
     tick();
-    var totalSessao = tempoAcumuladoSessao;
-    var jaEnviado = parseInt(sessionStorage.getItem("eetepa_tempo_enviado") || "0", 10) || 0;
-    var delta = Math.max(0, totalSessao - jaEnviado);
-    var cfg = window.SUPABASE_CONFIG || {};
+    const tempoTotalSessao = tempoAcumuladoSessao;
+    const jaEnviado = parseInt(sessionStorage.getItem("eetepa_tempo_enviado") || "0", 10) || 0;
+    const delta = Math.max(0, tempoTotalSessao - jaEnviado);
 
-    if (!cfg.url || !cfg.key || !dispositivoId) return;
-    var base = cfg.url.replace(/\/$/, "");
-    var key = cfg.key;
-    var headers = {
+    try {
+      sincronizarFinalKeepalive(delta, tempoTotalSessao);
+    } catch (_) {}
+  }
+
+  function sincronizarFinalKeepalive(deltaSegundos, tempoTotalSessao) {
+    if (!window.SUPABASE_CONFIG?.url || !window.SUPABASE_CONFIG?.key || !dispositivoId) return;
+
+    const base = window.SUPABASE_CONFIG.url.replace(/\/$/, "");
+    const key = window.SUPABASE_CONFIG.key;
+    const headers = {
       "Content-Type": "application/json",
       apikey: key,
-      Authorization: "Bearer " + key,
-      Prefer: "return=minimal"
+      Authorization: `Bearer ${key}`,
+      Prefer: "resolution=merge-duplicates",
     };
 
-    if (delta > 0) {
-      fetch(base + "/rest/v1/rpc/registrar_uso_dispositivo", {
-        method: "POST",
-        headers: headers,
-        body: JSON.stringify({
-          p_dispositivo_id: dispositivoId,
-          p_delta_segundos: delta,
-          p_nova_sessao: !sessaoRegistradaNoBanco
-        }),
-        keepalive: true
-      }).catch(function () {});
-    }
-
     if (sessaoId) {
-      fetch(base + "/rest/v1/sessoes_uso?id=eq." + sessaoId, {
+      fetch(`${base}/rest/v1/sessoes_uso?id=eq.${sessaoId}`, {
         method: "PATCH",
-        headers: headers,
+        headers: { ...headers, Prefer: "return=minimal" },
         body: JSON.stringify({
-          tempo_uso_segundos: totalSessao,
-          fim: new Date().toISOString()
+          tempo_uso_segundos: tempoTotalSessao,
+          fim: new Date().toISOString(),
         }),
-        keepalive: true
-      }).catch(function () {});
+        keepalive: true,
+      }).catch(() => {});
     }
   }
 
   function formatarTempo(segundos) {
-    var h = Math.floor(segundos / 3600);
-    var m = Math.floor((segundos % 3600) / 60);
-    var s = segundos % 60;
-    if (h > 0) return h + "h " + m + "m";
-    if (m > 0) return m + "m " + s + "s";
-    return s + "s";
+    const h = Math.floor(segundos / 3600);
+    const m = Math.floor((segundos % 3600) / 60);
+    const s = segundos % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
   }
 
   function atualizarUI() {
-    var el = document.getElementById("device-info");
+    const el = document.getElementById("device-info");
     if (!el) return;
-    var idCurto = dispositivoId ? dispositivoId.slice(0, 8) : "—";
-    var tempo = formatarTempo(tempoSessaoAtual());
-    el.textContent =
-      (navigator.platform || "") +
-      " • " +
-      new Date().toLocaleDateString("pt-BR") +
-      " • ID: " +
-      idCurto +
-      "… • Uso: " +
-      tempo;
+    const idCurto = dispositivoId ? dispositivoId.slice(0, 8) : "—";
+    const tempo = formatarTempo(tempoSessaoAtual());
+    el.textContent = `${navigator.platform || ""} • ${new Date().toLocaleDateString("pt-BR")} • ID: ${idCurto}… • Uso: ${tempo}`;
   }
 
   function iniciar() {
@@ -249,24 +313,20 @@ var DispositivoTracker = (function () {
     ultimoTick = Date.now();
     paginaVisivel = !document.hidden;
     tempoAcumuladoSessao = 0;
-    sessaoRegistradaNoBanco = false;
 
-    var sessaoSalva = sessionStorage.getItem(SESSION_KEY);
+    const sessaoSalva = sessionStorage.getItem("eetepa_sessao_id");
     if (sessaoSalva) sessaoId = sessaoSalva;
+
     sessionStorage.setItem("eetepa_tempo_enviado", "0");
 
     document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("pagehide", onBeforeUnload);
 
+    sincronizar(false);
     atualizarUI();
-    setTimeout(function () {
-      sincronizar(false);
-    }, 500);
 
-    clearInterval(syncTimer);
-    clearInterval(uiTimer);
-
-    syncTimer = setInterval(function () {
+    syncTimer = setInterval(() => {
       if (paginaVisivel) {
         tick();
         sincronizar(false);
@@ -274,7 +334,7 @@ var DispositivoTracker = (function () {
       }
     }, SYNC_INTERVAL_MS);
 
-    uiTimer = setInterval(function () {
+    setInterval(() => {
       if (paginaVisivel) {
         tick();
         atualizarUI();
@@ -283,13 +343,9 @@ var DispositivoTracker = (function () {
   }
 
   return {
-    iniciar: iniciar,
-    getId: function () {
-      return dispositivoId;
-    },
-    getTempoSessao: function () {
-      return tempoSessaoAtual();
-    },
-    sincronizar: sincronizar
+    iniciar,
+    getId: () => dispositivoId,
+    getTempoSessao: () => tempoSessaoAtual(),
+    sincronizar,
   };
 })();

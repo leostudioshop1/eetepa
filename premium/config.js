@@ -1,4 +1,4 @@
-window.SUPABASE_CONFIG = window.SUPABASE_CONFIG || {
-  url: "SUA_SUPABASE_URL",
-  key: "SUA_SUPABASE_ANON_KEY"
+window.SUPABASE_CONFIG = {
+  url: "https://osofdmgokrxdzsxozsrf.supabase.co",
+  key: "sb_publishable_KTboch_e9KyCmMNZBlTM9w_V_XhY6Xe"
 };
