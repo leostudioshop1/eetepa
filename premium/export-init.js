@@ -80,7 +80,6 @@ async function gerarPDFCompleto() {
       renderGrade();
       prepararTabelaParaExportacao(true);
 
-      // Aguarda fontes e layout estabilizarem antes de capturar
       if (document.fonts && document.fonts.ready) {
         await document.fonts.ready;
       }
@@ -104,7 +103,6 @@ async function gerarPDFCompleto() {
       let imgW = maxW;
       let imgH = (canvas.height * imgW) / canvas.width;
 
-      // Ajusta proporcionalmente se a altura ultrapassar a página
       if (imgH > maxH) {
         imgH = maxH;
         imgW = (canvas.width * imgH) / canvas.height;
@@ -126,18 +124,30 @@ async function gerarPDFCompleto() {
   pdf.save(`Horarios_Completos_EETEPA.pdf`);
 }
 
+function showTab(idx) {
+  for (let i = 0; i < 3; i++) {
+    const content = document.getElementById(`tab-${i}`);
+    const btn = document.getElementById(`btn-tab-${i}`);
+    if (content) content.classList.toggle("hidden", i !== idx);
+    if (btn) btn.classList.toggle("tab-active", i === idx);
+  }
+}
+
 // ==================== INIT ====================
 function init() {
   document.getElementById("device-info").textContent =
     `${navigator.platform || ""} • ${new Date().toLocaleDateString("pt-BR")}`;
 
-  // Registra dispositivo + tempo de uso no Supabase
-  DispositivoTracker.iniciar();
+  if (typeof DispositivoTracker !== "undefined") {
+    DispositivoTracker.iniciar();
+  }
 
   renderTurmas();
   renderDisciplinas();
   atualizarFiltroTurma();
-  carregarProfessores();
+  if (typeof carregarProfessores === "function") {
+    carregarProfessores();
+  }
 }
 
 if (document.readyState === "loading") {

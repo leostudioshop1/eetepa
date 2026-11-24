@@ -1,36 +1,11 @@
 // ==================== RASTREAMENTO DE DISPOSITIVO E TEMPO DE USO ====================
-// Tabela esperada no Supabase (execute no SQL Editor):
-//
-// create table if not exists dispositivos_acesso (
-//   dispositivo_id text primary key,
-//   user_agent text,
-//   plataforma text,
-//   idioma text,
-//   resolucao text,
-//   primeiro_acesso timestamptz default now(),
-//   ultimo_acesso timestamptz default now(),
-//   tempo_uso_segundos bigint default 0,
-//   sessoes integer default 0
-// );
-//
-// -- (opcional) histórico por sessão:
-// create table if not exists sessoes_uso (
-//   id uuid primary key default gen_random_uuid(),
-//   dispositivo_id text not null references dispositivos_acesso(dispositivo_id),
-//   inicio timestamptz default now(),
-//   fim timestamptz,
-//   tempo_uso_segundos integer default 0,
-//   user_agent text,
-//   plataforma text
-// );
-
 const DispositivoTracker = (function () {
   const STORAGE_KEY = "eetepa_dispositivo_id";
-  const SYNC_INTERVAL_MS = 30000; // sincroniza a cada 30s
+  const SYNC_INTERVAL_MS = 30000;
   let dispositivoId = null;
   let sessaoId = null;
   let inicioSessao = null;
-  let tempoAcumuladoSessao = 0; // segundos já contabilizados nesta sessão
+  let tempoAcumuladoSessao = 0;
   let ultimoTick = null;
   let paginaVisivel = true;
   let syncTimer = null;
@@ -78,65 +53,15 @@ const DispositivoTracker = (function () {
     return tempoAcumuladoSessao;
   }
 
-  async function upsertDispositivo(tempoSessao) {
-    if (!supabaseClient || !dispositivoId) return;
-
-    const env = infoAmbiente();
-    const agora = new Date().toISOString();
-
-    const { data: existente, error: errSelect } = await supabaseClient
-      .from("dispositivos_acesso")
-      .select("tempo_uso_segundos, sessoes, primeiro_acesso")
-      .eq("dispositivo_id", dispositivoId)
-      .maybeSingle();
-
-    if (errSelect) {
-      console.warn("[DispositivoTracker] select:", errSelect.message);
-      return;
-    }
-
-    const tempoAnterior = existente?.tempo_uso_segundos || 0;
-    const isPrimeiraSyncSessao = !existente || !sessionStorage.getItem("eetepa_sessao_contada");
-    const sessoesAnterior = existente?.sessoes || 0;
-
-    const payload = {
-      dispositivo_id: dispositivoId,
-      user_agent: env.user_agent,
-      plataforma: env.plataforma,
-      idioma: env.idioma,
-      resolucao: env.resolucao,
-      ultimo_acesso: agora,
-      tempo_uso_segundos: tempoAnterior + tempoSessao,
-      sessoes: isPrimeiraSyncSessao ? sessoesAnterior + 1 : sessoesAnterior,
-      primeiro_acesso: existente?.primeiro_acesso || agora,
-    };
-
-    const { error } = await supabaseClient
-      .from("dispositivos_acesso")
-      .upsert(payload, { onConflict: "dispositivo_id" });
-
-    if (error) {
-      console.warn("[DispositivoTracker] upsert dispositivo:", error.message);
-      return;
-    }
-
-    if (isPrimeiraSyncSessao) {
-      sessionStorage.setItem("eetepa_sessao_contada", "1");
-    }
-
-    sessionStorage.setItem("eetepa_tempo_enviado", String(
-      (parseInt(sessionStorage.getItem("eetepa_tempo_enviado") || "0", 10) || 0) + tempoSessao
-    ));
-  }
-
   async function upsertSessao(tempoSessao, finalizar = false) {
-    if (!supabaseClient || !dispositivoId) return;
+    const client = window.supabaseClient;
+    if (!client || !dispositivoId) return;
 
     const env = infoAmbiente();
     const agora = new Date().toISOString();
 
     if (!sessaoId) {
-      const { data, error } = await supabaseClient
+      const { data, error } = await client
         .from("sessoes_uso")
         .insert({
           dispositivo_id: dispositivoId,
@@ -150,7 +75,6 @@ const DispositivoTracker = (function () {
         .single();
 
       if (error) {
-        console.warn("[DispositivoTracker] insert sessao:", error.message);
         return;
       }
       sessaoId = data?.id || null;
@@ -158,54 +82,30 @@ const DispositivoTracker = (function () {
       return;
     }
 
-    const { error } = await supabaseClient
+    await client
       .from("sessoes_uso")
       .update({
         tempo_uso_segundos: tempoSessao,
         fim: finalizar ? agora : null,
       })
       .eq("id", sessaoId);
-
-    if (error) {
-      console.warn("[DispositivoTracker] update sessao:", error.message);
-    }
-  }
-
-  async function sincronizar(finalizar = false) {
-    if (!supabaseClient || salvando) return;
-    salvando = true;
-    try {
-      const tempoTotalSessao = tempoSessaoAtual();
-      const jaEnviado = parseInt(sessionStorage.getItem("eetepa_tempo_enviado") || "0", 10) || 0;
-      const deltaParaEnviar = Math.max(0, tempoTotalSessao - jaEnviado);
-
-      if (deltaParaEnviar > 0 || finalizar || !sessionStorage.getItem("eetepa_sessao_contada")) {
-        await sincronizarDispositivoComDelta(deltaParaEnviar, finalizar);
-      }
-
-      await upsertSessao(tempoTotalSessao, finalizar);
-    } catch (e) {
-      console.warn("[DispositivoTracker] sincronizar:", e);
-    } finally {
-      salvando = false;
-    }
   }
 
   async function sincronizarDispositivoComDelta(deltaSegundos, forcar = false) {
-    if (!supabaseClient || !dispositivoId) return;
+    const client = window.supabaseClient;
+    if (!client || !dispositivoId) return;
     if (deltaSegundos <= 0 && !forcar && sessionStorage.getItem("eetepa_sessao_contada")) return;
 
     const env = infoAmbiente();
     const agora = new Date().toISOString();
 
-    const { data: existente, error: errSelect } = await supabaseClient
+    const { data: existente, error: errSelect } = await client
       .from("dispositivos_acesso")
       .select("tempo_uso_segundos, sessoes, primeiro_acesso")
       .eq("dispositivo_id", dispositivoId)
       .maybeSingle();
 
     if (errSelect) {
-      console.warn("[DispositivoTracker] select:", errSelect.message);
       return;
     }
 
@@ -225,12 +125,11 @@ const DispositivoTracker = (function () {
       primeiro_acesso: existente?.primeiro_acesso || agora,
     };
 
-    const { error } = await supabaseClient
+    const { error } = await client
       .from("dispositivos_acesso")
       .upsert(payload, { onConflict: "dispositivo_id" });
 
     if (error) {
-      console.warn("[DispositivoTracker] upsert dispositivo:", error.message);
       return;
     }
 
@@ -240,6 +139,25 @@ const DispositivoTracker = (function () {
 
     const jaEnviado = parseInt(sessionStorage.getItem("eetepa_tempo_enviado") || "0", 10) || 0;
     sessionStorage.setItem("eetepa_tempo_enviado", String(jaEnviado + Math.max(0, deltaSegundos)));
+  }
+
+  async function sincronizar(finalizar = false) {
+    if (!window.supabaseClient || salvando) return;
+    salvando = true;
+    try {
+      const tempoTotalSessao = tempoSessaoAtual();
+      const jaEnviado = parseInt(sessionStorage.getItem("eetepa_tempo_enviado") || "0", 10) || 0;
+      const deltaParaEnviar = Math.max(0, tempoTotalSessao - jaEnviado);
+
+      if (deltaParaEnviar > 0 || finalizar || !sessionStorage.getItem("eetepa_sessao_contada")) {
+        await sincronizarDispositivoComDelta(deltaParaEnviar, finalizar);
+      }
+
+      await upsertSessao(tempoTotalSessao, finalizar);
+    } catch (_) {
+    } finally {
+      salvando = false;
+    }
   }
 
   function onVisibilityChange() {
@@ -257,15 +175,12 @@ const DispositivoTracker = (function () {
   function onBeforeUnload() {
     tick();
     const tempoTotalSessao = tempoAcumuladoSessao;
-    const jaEnviado = parseInt(sessionStorage.getItem("eetepa_tempo_enviado") || "0", 10) || 0;
-    const delta = Math.max(0, tempoTotalSessao - jaEnviado);
-
     try {
-      sincronizarFinalKeepalive(delta, tempoTotalSessao);
+      sincronizarFinalKeepalive(tempoTotalSessao);
     } catch (_) {}
   }
 
-  function sincronizarFinalKeepalive(deltaSegundos, tempoTotalSessao) {
+  function sincronizarFinalKeepalive(tempoTotalSessao) {
     if (!window.SUPABASE_CONFIG?.url || !window.SUPABASE_CONFIG?.key || !dispositivoId) return;
 
     const base = window.SUPABASE_CONFIG.url.replace(/\/$/, "");
@@ -274,7 +189,6 @@ const DispositivoTracker = (function () {
       "Content-Type": "application/json",
       apikey: key,
       Authorization: `Bearer ${key}`,
-      Prefer: "resolution=merge-duplicates",
     };
 
     if (sessaoId) {

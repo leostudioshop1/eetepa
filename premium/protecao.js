@@ -16,28 +16,24 @@
     const key = (e.key || "").toUpperCase();
     const ctrlOrCmd = e.ctrlKey || e.metaKey;
 
-    // F12
     if (key === "F12" || e.keyCode === 123) {
       e.preventDefault();
       e.stopPropagation();
       return false;
     }
 
-    // Ctrl+Shift+I / J / C / K (DevTools / Inspetor / Console)
     if (ctrlOrCmd && e.shiftKey && ["I", "J", "C", "K"].includes(key)) {
       e.preventDefault();
       e.stopPropagation();
       return false;
     }
 
-    // Cmd+Option+I / J / C / U (macOS)
     if (e.metaKey && e.altKey && ["I", "J", "C", "U"].includes(key)) {
       e.preventDefault();
       e.stopPropagation();
       return false;
     }
 
-    // Ctrl+U (Exibir código-fonte), Ctrl+S (Salvar página), Ctrl+P (Imprimir)
     if (ctrlOrCmd && ["U", "S", "P"].includes(key)) {
       e.preventDefault();
       e.stopPropagation();
@@ -62,9 +58,10 @@
     `;
   }
 
-  // 4. Detecção por diferença de dimensão da janela (DevTools acoplado)
-  const LIMITE_DIMENSAO = 160;
+  // 4. Detecção por diferença de dimensão da janela (evitando falsos positivos em telas grandes)
+  const LIMITE_DIMENSAO = 200;
   function verificarDimensoes() {
+    if (window.outerWidth <= 0 || window.outerHeight <= 0) return;
     const larguraDiff = window.outerWidth - window.innerWidth > LIMITE_DIMENSAO;
     const alturaDiff = window.outerHeight - window.innerHeight > LIMITE_DIMENSAO;
     if (larguraDiff || alturaDiff) {
@@ -72,17 +69,7 @@
     }
   }
 
-  // 5. Detecção por armadilha de tempo (debugger) e limpeza de console
-  function verificarDebugger() {
-    const inicio = performance.now();
-    (function () {}.constructor("debugger")());
-    const fim = performance.now();
-    if (fim - inicio > 120) {
-      acionarBloqueio();
-    }
-  }
-
-  // 6. Armadilha de inspeção no console
+  // 5. Detecção via inspeção de propriedade no console
   const armadilhaConsole = new Image();
   Object.defineProperty(armadilhaConsole, "id", {
     get: function () {
@@ -93,12 +80,10 @@
 
   setInterval(() => {
     verificarDimensoes();
-    verificarDebugger();
     try {
-      console.clear();
       console.log("%c", armadilhaConsole);
     } catch (_) {}
-  }, 1000);
+  }, 1500);
 
   window.addEventListener("resize", verificarDimensoes);
 })();

@@ -1,12 +1,7 @@
 // ==================== HORÁRIO.JS ====================
-// Gerenciamento de horários, alocações e detecção de choques
-// - Respeita disponibilidade cadastrada do professor (dias + horários)
-// - Impede lotação do mesmo professor no mesmo dia/horário em turmas diferentes
-
 (function (global) {
   "use strict";
 
-  // Constantes compartilhadas
   const DIAS = ["segunda", "terca", "quarta", "quinta", "sexta"];
   const DIAS_LABEL = {
     segunda: "Segunda",
@@ -16,7 +11,6 @@
     sexta: "Sexta",
   };
 
-  // Horários compatíveis com o Gerenciador de Disponibilidade
   const HORARIOS = {
     manha: [
       "07:00 - 07:45",
@@ -43,7 +37,6 @@
     ],
   };
 
-  // Estado interno (referências externas injetadas via init)
   let state = {
     turmas: [],
     disciplinas: [],
@@ -53,7 +46,6 @@
     onSave: null,
   };
 
-  // ==================== UTILITÁRIOS ====================
   function uid() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
@@ -68,7 +60,6 @@
     }
   }
 
-  // ==================== DISPONIBILIDADE DO PROFESSOR ====================
   function professorDisponivel(prof, dia, horario) {
     if (!prof || !prof.disponibilidade) return false;
     const disp = prof.disponibilidade;
@@ -84,7 +75,6 @@
     return false;
   }
 
-  // ==================== CHOQUE DE HORÁRIOS ====================
   function professorEmChoque(professorId, dia, horario, turmaIdAtual) {
     if (!professorId) return { conflito: false };
 
@@ -146,7 +136,6 @@
     return resultado;
   }
 
-  // ==================== TURMAS ====================
   function addTurma(nome, turno) {
     if (!nome) return { ok: false, erro: "Digite o nome da turma" };
     state.turmas.push({ id: uid(), nome, turno });
@@ -160,7 +149,6 @@
     salvar();
   }
 
-  // ==================== DISCIPLINAS ====================
   function addDisciplina(nome) {
     if (!nome) return { ok: false, erro: "Digite o nome da disciplina" };
     state.disciplinas.push({ id: uid(), nome });
@@ -173,7 +161,6 @@
     salvar();
   }
 
-  // ==================== GRADE ====================
   function limparGradeTurma(turmaId) {
     if (!turmaId) return;
     state.grade[turmaId] = {};
@@ -218,7 +205,6 @@
     return { ok: true };
   }
 
-  // ==================== RENDERIZAÇÃO DA GRADE ====================
   function getHorariosDoTurno(turno) {
     return HORARIOS[turno] || [];
   }
@@ -228,7 +214,6 @@
     return alocacoes[`${dia}|${horario}`] || null;
   }
 
-  // ==================== INIT / API PÚBLICA ====================
   function init(opts = {}) {
     state.turmas = opts.turmas || [];
     state.disciplinas = opts.disciplinas || [];
