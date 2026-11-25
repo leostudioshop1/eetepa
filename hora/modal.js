@@ -45,11 +45,6 @@ function atualizarProfessoresModal() {
   validarDisponibilidade();
 }
 
-/**
- * Validação em tempo real no modal:
- * - Disponibilidade cadastrada (dias + horários)
- * - Choque: mesmo professor no mesmo dia/horário em outra turma
- */
 function validarDisponibilidade() {
   const aviso = document.getElementById("aviso-disponibilidade");
   const btn = document.getElementById("btn-salvar");

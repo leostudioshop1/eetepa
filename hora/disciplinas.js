@@ -16,6 +16,7 @@ function removerDisciplina(id) {
 function renderDisciplinas() {
   const { disciplinas } = Horario.getState();
   const ul = document.getElementById("lista-disciplinas");
+  if (!ul) return;
   if (!disciplinas.length) {
     ul.innerHTML = `<li class="text-gray-400 text-sm text-center py-4">Nenhuma disciplina</li>`;
     return;

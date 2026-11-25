@@ -37,8 +37,8 @@ function renderGrade() {
                 onclick="abrirModal('${dia}', '${h}', '${turmaId}')"
                 oncontextmenu="event.preventDefault(); removerAlocacao('${turmaId}', '${key}')">
               <div class="p-2 rounded-lg text-center">
-                <div class="font-semibold text-sm truncate">${cell.disciplina}</div>
-                <div class="text-xs mt-1 opacity-80 truncate">${cell.professorNome}</div>
+                <div class="texto-celula font-semibold text-sm leading-snug truncate">${cell.disciplina}</div>
+                <div class="texto-celula text-xs mt-1 opacity-80 leading-snug truncate">${cell.professorNome}</div>
               </div>
             </td>
           `;

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Master Horário EETEPA</title>
+  <script src="protecao.js"></script>
   <link rel="icon" type="image/png" href="icone.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -14,7 +15,7 @@
   <script src="horario.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-gray-50 font-sans flex flex-col h-screen" oncontextmenu="return false;">
+<body class="bg-gray-50 font-sans flex flex-col h-screen select-none" oncontextmenu="return false;">
 
   <div class="bg-indigo-700 text-white py-4 px-6 flex items-center justify-between shadow-lg">
     <div class="flex items-center gap-3">
@@ -157,7 +158,7 @@
     </div>
   </div>
 
-<!-- Scripts divididos (ordem importante) -->
+  <!-- Scripts divididos (ordem importante) -->
   <script src="supabase-init.js"></script>
   <script src="dispositivo-tracker.js"></script>
   <script src="turmas.js"></script>

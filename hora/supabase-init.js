@@ -1,27 +1,56 @@
-// ==================== CONFIGURAÇÃO ====================
-let supabaseClient = null;
-try {
-  if (window.SUPABASE_CONFIG?.url && window.SUPABASE_CONFIG?.key) {
-    supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.key);
+// ==================== INICIALIZAÇÃO DO SUPABASE ====================
+(function () {
+  "use strict";
+
+  const STORAGE_ESTADO_KEY = "eetepa_master_horario_estado_v1";
+
+  function carregarEstadoLocal() {
+    try {
+      const raw = localStorage.getItem(STORAGE_ESTADO_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          turmas: Array.isArray(parsed.turmas) ? parsed.turmas : [],
+          disciplinas: Array.isArray(parsed.disciplinas) ? parsed.disciplinas : [],
+          grade: parsed.grade && typeof parsed.grade === "object" ? parsed.grade : {},
+        };
+      }
+    } catch (e) {
+      console.warn("[SupabaseInit] Erro ao ler localStorage:", e);
+    }
+    return { turmas: [], disciplinas: [], grade: {} };
   }
-} catch (e) {
-  console.warn("Erro ao inicializar Supabase:", e);
-}
 
-// Estado local (turmas, disciplinas e grade ficam no navegador)
-// A lógica de negócio (disponibilidade + choque) está em horario.js
+  function salvarEstadoLocal(estado) {
+    try {
+      localStorage.setItem(STORAGE_ESTADO_KEY, JSON.stringify(estado));
+    } catch (e) {
+      console.warn("[SupabaseInit] Erro ao salvar localStorage:", e);
+    }
+  }
 
-function persistirLocal(data) {
-  localStorage.setItem("eetepa_turmas", JSON.stringify(data.turmas));
-  localStorage.setItem("eetepa_disciplinas", JSON.stringify(data.disciplinas));
-  localStorage.setItem("eetepa_grade", JSON.stringify(data.grade));
-}
+  // Cria cliente Supabase globalmente acessível como supabaseClient
+  if (typeof window.supabase !== "undefined" && window.SUPABASE_CONFIG?.url && window.SUPABASE_CONFIG?.key) {
+    window.supabaseClient = window.supabase.createClient(
+      window.SUPABASE_CONFIG.url,
+      window.SUPABASE_CONFIG.key
+    );
+  } else {
+    window.supabaseClient = null;
+    console.warn("[SupabaseInit] SDK do Supabase ou SUPABASE_CONFIG não disponível.");
+  }
 
-// Inicializa o módulo Horario com o estado salvo
-Horario.init({
-  turmas: JSON.parse(localStorage.getItem("eetepa_turmas") || "[]"),
-  disciplinas: JSON.parse(localStorage.getItem("eetepa_disciplinas") || "[]"),
-  grade: JSON.parse(localStorage.getItem("eetepa_grade") || "{}"),
-  professores: [],
-  onSave: persistirLocal,
-});
+  // Inicializa o módulo Horario com estado local persistente
+  const estadoInicial = carregarEstadoLocal();
+  if (typeof Horario !== "undefined") {
+    Horario.init({
+      turmas: estadoInicial.turmas,
+      disciplinas: estadoInicial.disciplinas,
+      grade: estadoInicial.grade,
+      professores: [],
+      onSave: function (novoEstado) {
+        salvarEstadoLocal(novoEstado);
+      },
+    });
+  }
+})();
