@@ -1,4 +1,4 @@
-// ==================== INICIALIZAÇÃO DO SUPABASE ====================
+
 (function () {
   "use strict";
 
@@ -29,7 +29,7 @@
     }
   }
 
-  // Cria cliente Supabase globalmente acessível como supabaseClient
+ 
   if (typeof window.supabase !== "undefined" && window.SUPABASE_CONFIG?.url && window.SUPABASE_CONFIG?.key) {
     window.supabaseClient = window.supabase.createClient(
       window.SUPABASE_CONFIG.url,
@@ -40,7 +40,7 @@
     console.warn("[SupabaseInit] SDK do Supabase ou SUPABASE_CONFIG não disponível.");
   }
 
-  // Inicializa o módulo Horario com estado local persistente
+
   const estadoInicial = carregarEstadoLocal();
   if (typeof Horario !== "undefined") {
     Horario.init({
